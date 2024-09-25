@@ -6,4 +6,4 @@
 [Жуков Георгий](https://github.com/dedxyk594)
 [Константин Сафронов](https://github.com/kosafronov)
 
-Ментор: [Тарасов Арётм](https://github.com/tarasovxx)
+Ментор: [Тарасов Артём](https://github.com/tarasovxx)
