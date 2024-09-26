@@ -9,12 +9,21 @@ servers:
 
 components:
   securitySchemes:
-    BearerAuth:
-      type: http
-      scheme: bearer
-      bearerFormat: JWT
+    SessionCookieAuth:
+      type: apiKey
+      in: cookie
+      name: session_id
+
 
   schemas:
+    Error:
+      properties:
+        status:
+          type: integer
+          example: 404
+        text:
+          type: string
+          example: "Board with such id not found"
     User:
       type: object
       properties:
@@ -78,7 +87,6 @@ components:
       type: object
       properties:
         user:
-          type: object
           $ref: "#/components/schemas/User"
         added_at:
           type: string
@@ -153,7 +161,6 @@ components:
           type: string
           format: password
           example: "securepassword123"
-
     LoginRequest:
       type: object
       required:
@@ -168,6 +175,22 @@ components:
           type: string
           format: password
           example: "securepassword123"
+    PasswordChangeRequest:
+      type: object
+      required:
+          - oldPassword
+          - newPassword
+      properties:
+
+        oldPassword:
+          type: string
+          format: password
+          example: "314159265"
+        newPassword:
+          type: string
+          format: password
+          example: "securepassword123"
+
 
     AuthResponse:
       type: object
@@ -218,6 +241,32 @@ paths:
                 $ref: "#/components/schemas/AuthResponse"
         "401":
           description: Неверные учетные данные
+  /auth/logout:
+    post:
+      summary: Выйти из системы
+      security:
+        - SessionCookieAuth: []
+      tags:
+        - Аутентификация
+      responses:
+        "301":
+          description: "Удалось выйти"
+        "400":
+          description: "Вы не залогинены"
+  /auth/changePassword:
+    post:
+      summary: Изменить пароль
+      security:
+        - SessionCookieAuth: []
+      tags:
+        - Аутентификация
+      responses:
+        "200":
+          description: "Удалось изменить пароль"
+        "403":
+          description: "Старый пароль неправильный"
+        "411":
+          description: "Новый пароль слишком слабый"
 
   /users/{user_id}:
     get:
@@ -225,7 +274,7 @@ paths:
       tags:
         - Пользователи
       security:
-        - BearerAuth: []
+        - SessionCookieAuth: []
       parameters:
         - name: user_id
           in: path
@@ -247,7 +296,7 @@ paths:
       tags:
         - Пользователи
       security:
-        - BearerAuth: []
+        - SessionCookieAuth: []
       parameters:
         - name: user_id
           in: path
@@ -287,7 +336,7 @@ paths:
       tags:
         - Доски
       security:
-        - BearerAuth: []
+        - SessionCookieAuth: []
       requestBody:
         required: true
         content:
@@ -323,7 +372,7 @@ paths:
       tags:
         - Доски
       security:
-        - BearerAuth: []
+        - SessionCookieAuth: []
       parameters:
         - name: board_id
           in: path
@@ -337,15 +386,15 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Board"
-        "404":
-          description: Доска не найдена
+                oneOf:
+                  - $ref: "#/components/schemas/Board"
+                  - $ref: "#/components/schemas/Error"
     patch:
       summary: Изменить имя, описание или фон доски
       tags:
         - Доски
       security:
-        - BearerAuth: []
+        - SessionCookieAuth: []
       parameters:
         - name: board_id
           in: path
@@ -385,7 +434,7 @@ paths:
       tags:
         - Доски
       security:
-        - BearerAuth: []
+        - SessionCookieAuth: []
       parameters:
         - name: board_id
           in: path
@@ -405,7 +454,7 @@ paths:
       tags:
         - Разрешения пользователей
       security:
-        - BearerAuth: []
+        - SessionCookieAuth: []
       parameters:
         - name: board_id
           in: path
@@ -432,7 +481,7 @@ paths:
       tags:
         - Разрешения пользователей
       security:
-        - BearerAuth: []
+        - SessionCookieAuth: []
       parameters:
         - name: board_id
           in: path
@@ -467,7 +516,7 @@ paths:
       tags:
         - Разрешения пользователей
       security:
-        - BearerAuth: []
+        - SessionCookieAuth: []
       parameters:
         - name: board_id
           in: path
@@ -496,7 +545,7 @@ paths:
       tags:
         - Карточки
       security:
-        - BearerAuth: []
+        - SessionCookieAuth: []
       parameters:
         - name: board_id
           in: path
@@ -521,7 +570,7 @@ paths:
       tags:
         - Карточки
       security:
-        - BearerAuth: []
+        - SessionCookieAuth: []
       parameters:
         - name: board_id
           in: path
@@ -566,7 +615,7 @@ paths:
       tags:
         - Карточки
       security:
-        - BearerAuth: []
+        - SessionCookieAuth: []
       parameters:
         - name: board_id
           in: path
@@ -594,7 +643,7 @@ paths:
       tags:
         - Карточки
       security:
-        - BearerAuth: []
+        - SessionCookieAuth: []
       parameters:
         - name: board_id
           in: path
@@ -640,7 +689,7 @@ paths:
       tags:
         - Карточки
       security:
-        - BearerAuth: []
+        - SessionCookieAuth: []
       parameters:
         - name: board_id
           in: path
@@ -661,4 +710,4 @@ paths:
           description: Доска или карточка не найдены
 
 security:
-  - BearerAuth: []
+  - SessionCookieAuth: []
