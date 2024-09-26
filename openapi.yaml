@@ -1,0 +1,664 @@
+openapi: 3.0.0
+info:
+  title: Pumpkin API
+  version: 1.0.0
+  description: RESTful API для облачного канбана Pumpkin
+servers:
+  - url: https://to.be.defined/api
+    description: Основной сервер API
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          example: "user_123"
+        name:
+          type: string
+          example: "Иван Иванов"
+        email:
+          type: string
+          format: email
+          example: "ivan@example.com"
+        created_at:
+          type: string
+          format: date-time
+          example: "2023-10-01T12:34:56Z"
+
+    Board:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 228
+        name:
+          type: string
+          example: "Любимый проект"
+        description:
+          type: string
+          example: "На этой доске размещены задачи любимого проекта! <3"
+        background:
+          oneOf:
+            - type: string
+              example: "#ffaaff"
+        created_at:
+          type: string
+          format: date-time
+          example: "2023-10-01T12:34:56Z"
+
+    Card:
+      type: object
+      properties:
+        id:
+          type: string
+          example: "card_789"
+        title:
+          type: string
+          example: "Задача 1"
+        description:
+          type: string
+          example: "Описание задачи 1"
+        status:
+          type: string
+          example: "To Do"
+        created_at:
+          type: string
+          format: date-time
+          example: "2023-10-01T12:34:56Z"
+
+    UserRights:
+      type: object
+      properties:
+        user:
+          type: object
+          $ref: "#/components/schemas/User"
+        added_at:
+          type: string
+          format: date-time
+          example: "2023-10-01T12:34:56Z"
+        added_by:
+          example: "creator_itself"
+          oneOf:
+            - type: string
+              enum: ["creator_itself"]
+            - type: object
+              $ref: "#/components/schemas/User"
+        can_edit:
+          type: boolean
+          example: true
+        can_modify:
+          type: boolean
+          example: true
+        can_share:
+          type: boolean
+          example: true
+        can_invite_members:
+          type: boolean
+          example: true
+        can_admin:
+          type: boolean
+          example: true
+
+        updated_at:
+          type: string
+          format: date-time
+          example: "2023-10-01T12:34:56Z"
+        updated_by:
+          type: string
+          format: date-time
+          example: "2023-10-01T12:34:56Z"
+
+    UserRightsPatch:
+      type: object
+      properties:
+        can_edit:
+          type: boolean
+          example: true
+        can_modify:
+          type: boolean
+          example: true
+        can_share:
+          type: boolean
+          example: true
+        can_invite_members:
+          type: boolean
+          example: true
+        can_admin:
+          type: boolean
+          example: true
+
+    RegisterRequest:
+      type: object
+      required:
+        - name
+        - email
+        - password
+      properties:
+        name:
+          type: string
+          example: "Иван Иванов"
+        email:
+          type: string
+          format: email
+          example: "tarasovxxx@example.com"
+        password:
+          type: string
+          format: password
+          example: "securepassword123"
+
+    LoginRequest:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+          example: "tarasovxxx@example.com"
+        password:
+          type: string
+          format: password
+          example: "securepassword123"
+
+    AuthResponse:
+      type: object
+      properties:
+        token:
+          type: string
+          description: JWT токен для авторизации
+          example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+
+paths:
+  /auth/register:
+    post:
+      summary: Регистрация нового пользователя
+      tags:
+        - Аутентификация
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterRequest"
+      responses:
+        "201":
+          description: Пользователь успешно зарегистрирован
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "400":
+          description: Некорректные данные
+  /auth/login:
+    post:
+      summary: Авторизация пользователя
+      tags:
+        - Аутентификация
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+      responses:
+        "200":
+          description: Успешная авторизация
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "401":
+          description: Неверные учетные данные
+
+  /users/{user_id}:
+    get:
+      summary: Получить информацию о пользователе
+      tags:
+        - Пользователи
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: user_id
+          in: path
+          required: true
+          schema:
+            type: string
+            example: "user_123"
+      responses:
+        "200":
+          description: Информация о пользователе
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "404":
+          description: Пользователь не найден
+    put:
+      summary: Обновить информацию о пользователе
+      tags:
+        - Пользователи
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: user_id
+          in: path
+          required: true
+          schema:
+            type: string
+            example: "user_123"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  example: "Иван Иванов"
+                email:
+                  type: string
+                  format: email
+                  example: "ivan_new@example.com"
+      responses:
+        "200":
+          description: Информация о пользователе обновлена
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "400":
+          description: Некорректные данные
+        "404":
+          description: Пользователь не найден
+
+  /boards:
+    post:
+      summary: Создать новую доску
+      tags:
+        - Доски
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+                - description
+              properties:
+                name:
+                  type: string
+                  example: "Новая доска"
+                description:
+                  type: string
+                  example: "Описание новой доски"
+                background:
+                  type: string
+                  example: "#FF5733"
+      responses:
+        "201":
+          description: Доска успешно создана
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Board"
+        "400":
+          description: Некорректные данные
+
+  /boards/{board_id}:
+    get:
+      summary: Получить информацию о доске
+      tags:
+        - Доски
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: board_id
+          in: path
+          required: true
+          schema:
+            type: string
+            example: "board_456"
+      responses:
+        "200":
+          description: Информация о доске
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Board"
+        "404":
+          description: Доска не найдена
+    patch:
+      summary: Изменить имя, описание или фон доски
+      tags:
+        - Доски
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: board_id
+          in: path
+          required: true
+          schema:
+            type: string
+            example: "board_456"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  example: "Обновленное имя доски"
+                description:
+                  type: string
+                  example: "Обновленное описание доски"
+                background:
+                  type: string
+                  example: "#33FF57"
+      responses:
+        "200":
+          description: Доска успешно обновлена
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Board"
+        "400":
+          description: Некорректные данные
+        "404":
+          description: Доска не найдена
+    delete:
+      summary: Удалить доску
+      tags:
+        - Доски
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: board_id
+          in: path
+          required: true
+          schema:
+            type: string
+            example: "board_456"
+      responses:
+        "204":
+          description: Доска успешно удалена
+        "404":
+          description: Доска не найдена
+
+  /boards/{board_id}/user_rights:
+    get:
+      summary: Получить информацию о правах всех пользователей на этой доске
+      tags:
+        - Разрешения пользователей
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: board_id
+          in: path
+          required: true
+          schema:
+            type: string
+            example: "board_456"
+      responses:
+        "200":
+          description: Список прав пользователей
+          content:
+            application/json:
+              schema:
+                type: "array"
+                items:
+                  type: "object"
+                  $ref: "#/components/schemas/UserRights"
+        "404":
+          description: Доска не найдена
+
+  /boards/{board_id}/user_rights/{user_id}:
+    patch:
+      summary: Изменить права пользователя
+      tags:
+        - Разрешения пользователей
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: board_id
+          in: path
+          required: true
+          schema:
+            type: string
+            example: "board_456"
+        - name: user_id
+          in: path
+          required: true
+          schema:
+            type: string
+            example: "tarasovxxx"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: "array"
+              items:
+                type: "object"
+                $ref: "#/components/schemas/UserRightsPatch"
+      responses:
+        "200":
+          description: "Успешно изменены права"
+        "403":
+          description: "У Вас недостаточно прав для администрирования"
+        "404":
+          description: "Доска или пользователь не найдены"
+    delete:
+      summary: Забрать у пользователя все права
+      tags:
+        - Разрешения пользователей
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: board_id
+          in: path
+          required: true
+          schema:
+            type: string
+            example: "board_456"
+        - name: user_id
+          in: path
+          required: true
+          schema:
+            type: string
+            example: "tarasovxxx"
+
+      responses:
+        "200":
+          description: "Успешно изменены права"
+        "403":
+          description: "У Вас недостаточно прав для администрирования"
+        "404":
+          description: "Доска или пользователь не найдены"
+
+  /boards/{board_id}/cards:
+    get:
+      summary: Получить все карточки на доске
+      tags:
+        - Карточки
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: board_id
+          in: path
+          required: true
+          schema:
+            type: string
+            example: "board_456"
+      responses:
+        "200":
+          description: Список карточек
+          content:
+            application/json:
+              schema:
+                type: "array"
+                items:
+                  type: "object"
+                  $ref: "#/components/schemas/Card"
+        "404":
+          description: Доска не найдена
+    post:
+      summary: Создать новую карточку на доске
+      tags:
+        - Карточки
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: board_id
+          in: path
+          required: true
+          schema:
+            type: string
+            example: "board_456"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - title
+                - description
+              properties:
+                title:
+                  type: string
+                  example: "Новая задача"
+                description:
+                  type: string
+                  example: "Описание новой задачи"
+                status:
+                  type: string
+                  example: "To Do"
+      responses:
+        "201":
+          description: Карточка успешно создана
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Card"
+        "400":
+          description: Некорректные данные
+        "404":
+          description: Доска не найдена
+
+  /boards/{board_id}/cards/{card_id}:
+    get:
+      summary: Получить информацию о карточке
+      tags:
+        - Карточки
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: board_id
+          in: path
+          required: true
+          schema:
+            type: string
+            example: "board_456"
+        - name: card_id
+          in: path
+          required: true
+          schema:
+            type: string
+            example: "card_789"
+      responses:
+        "200":
+          description: Информация о карточке
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Card"
+        "404":
+          description: Доска или карточка не найдены
+    patch:
+      summary: Обновить карточку
+      tags:
+        - Карточки
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: board_id
+          in: path
+          required: true
+          schema:
+            type: string
+            example: "board_456"
+        - name: card_id
+          in: path
+          required: true
+          schema:
+            type: string
+            example: "card_789"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                  example: "Обновленная задача"
+                description:
+                  type: string
+                  example: "Обновленное описание задачи"
+                status:
+                  type: string
+                  example: "In Progress"
+      responses:
+        "200":
+          description: Карточка успешно обновлена
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Card"
+        "400":
+          description: Некорректные данные
+        "404":
+          description: Доска или карточка не найдены
+    delete:
+      summary: Удалить карточку
+      tags:
+        - Карточки
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: board_id
+          in: path
+          required: true
+          schema:
+            type: string
+            example: "board_456"
+        - name: card_id
+          in: path
+          required: true
+          schema:
+            type: string
+            example: "card_789"
+      responses:
+        "204":
+          description: Карточка успешно удалена
+        "404":
+          description: Доска или карточка не найдены
+
+security:
+  - BearerAuth: []
