@@ -50,6 +50,23 @@ CREATE TABLE Card (
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (col_id) REFERENCES Column(col_id)
 );
+CREATE TABLE Tag(
+    t_id SERIAL PRIMARY KEY,
+    b_id INT NOT NULL,
+    name VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (b_id) REFERENCES Board(b_id)
+);
+CREATE TABLE Card_to_Tag(
+    ct_id SERIAL PRIMARY KEY,
+    crd_id INT NOT NULL,
+    t_id INT NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+    FOREIGN KEY (crd_id) REFERENCES Card(crd_id)
+    FOREIGN KEY (t_id) REFERENCES Tag(t_id)
+
+);
 CREATE TABLE CardUpdate (
     cu_id SERIAL PRIMARY KEY,
     crd_id INT NOT NULL,
@@ -68,7 +85,7 @@ CREATE TABLE CardPinnedFile (
     created_by INT NOT NULL,
     url VARCHAR(2048) NOT NULL,
     FOREIGN KEY (crd_id) REFERENCES Card(crd_id),
-    FOREIGN KEY (created_by) REFERENCES User(u_id) }
+    FOREIGN KEY (created_by) REFERENCES User(u_id)
 );
 CREATE TABLE Notification (
     u_id INT NOT NULL,
