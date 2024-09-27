@@ -268,7 +268,7 @@ paths:
         "411":
           description: "Новый пароль слишком слабый"
 
-  /users/{user_id}:
+  /users/{userId}:
     get:
       summary: Получить информацию о пользователе
       tags:
@@ -276,7 +276,7 @@ paths:
       security:
         - SessionCookieAuth: []
       parameters:
-        - name: user_id
+        - name: userId
           in: path
           required: true
           schema:
@@ -298,7 +298,7 @@ paths:
       security:
         - SessionCookieAuth: []
       parameters:
-        - name: user_id
+        - name: userId
           in: path
           required: true
           schema:
@@ -366,7 +366,7 @@ paths:
         "400":
           description: Некорректные данные
 
-  /boards/{board_id}:
+  /boards/{boardId}:
     get:
       summary: Получить информацию о доске
       tags:
@@ -374,7 +374,7 @@ paths:
       security:
         - SessionCookieAuth: []
       parameters:
-        - name: board_id
+        - name: boardId
           in: path
           required: true
           schema:
@@ -396,7 +396,7 @@ paths:
       security:
         - SessionCookieAuth: []
       parameters:
-        - name: board_id
+        - name: boardId
           in: path
           required: true
           schema:
@@ -436,7 +436,7 @@ paths:
       security:
         - SessionCookieAuth: []
       parameters:
-        - name: board_id
+        - name: boardId
           in: path
           required: true
           schema:
@@ -448,7 +448,7 @@ paths:
         "404":
           description: Доска не найдена
 
-  /boards/{board_id}/user_rights:
+  /boards/{boardId}/userRights:
     get:
       summary: Получить информацию о правах всех пользователей на этой доске
       tags:
@@ -456,7 +456,7 @@ paths:
       security:
         - SessionCookieAuth: []
       parameters:
-        - name: board_id
+        - name: boardId
           in: path
           required: true
           schema:
@@ -475,7 +475,7 @@ paths:
         "404":
           description: Доска не найдена
 
-  /boards/{board_id}/user_rights/{user_id}:
+  /boards/{boardId}/userRights/{userId}:
     patch:
       summary: Изменить права пользователя
       tags:
@@ -483,13 +483,13 @@ paths:
       security:
         - SessionCookieAuth: []
       parameters:
-        - name: board_id
+        - name: boardId
           in: path
           required: true
           schema:
             type: string
             example: "board_456"
-        - name: user_id
+        - name: userId
           in: path
           required: true
           schema:
@@ -518,13 +518,13 @@ paths:
       security:
         - SessionCookieAuth: []
       parameters:
-        - name: board_id
+        - name: boardId
           in: path
           required: true
           schema:
             type: string
             example: "board_456"
-        - name: user_id
+        - name: userId
           in: path
           required: true
           schema:
@@ -539,7 +539,7 @@ paths:
         "404":
           description: "Доска или пользователь не найдены"
 
-  /boards/{board_id}/cards:
+  /boards/{boardId}/cards:
     get:
       summary: Получить все карточки на доске
       tags:
@@ -547,7 +547,7 @@ paths:
       security:
         - SessionCookieAuth: []
       parameters:
-        - name: board_id
+        - name: boardId
           in: path
           required: true
           schema:
@@ -572,7 +572,7 @@ paths:
       security:
         - SessionCookieAuth: []
       parameters:
-        - name: board_id
+        - name: boardId
           in: path
           required: true
           schema:
@@ -609,7 +609,7 @@ paths:
         "404":
           description: Доска не найдена
 
-  /boards/{board_id}/cards/{card_id}:
+  /boards/{boardId}/cards/{cardId}:
     get:
       summary: Получить информацию о карточке
       tags:
@@ -617,13 +617,13 @@ paths:
       security:
         - SessionCookieAuth: []
       parameters:
-        - name: board_id
+        - name: boardId
           in: path
           required: true
           schema:
             type: string
             example: "board_456"
-        - name: card_id
+        - name: cardId
           in: path
           required: true
           schema:
@@ -645,13 +645,13 @@ paths:
       security:
         - SessionCookieAuth: []
       parameters:
-        - name: board_id
+        - name: boardId
           in: path
           required: true
           schema:
             type: string
             example: "board_456"
-        - name: card_id
+        - name: cardId
           in: path
           required: true
           schema:
@@ -691,13 +691,13 @@ paths:
       security:
         - SessionCookieAuth: []
       parameters:
-        - name: board_id
+        - name: boardId
           in: path
           required: true
           schema:
             type: string
             example: "board_456"
-        - name: card_id
+        - name: cardId
           in: path
           required: true
           schema:
