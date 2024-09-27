@@ -35,7 +35,7 @@ components:
         email:
           type: string
           format: email
-          example: "tarasovxxx@example.com"
+          example: "tarasovxx@example.com"
         createdAt:
           type: string
           format: date-time
@@ -197,7 +197,7 @@ components:
         email:
           type: string
           format: email
-          example: "tarasovxxx@example.com"
+          example: "tarasovxx@example.com"
         password:
           type: string
           format: password
@@ -212,7 +212,7 @@ components:
         email:
           type: string
           format: email
-          example: "tarasovxxx@example.com"
+          example: "tarasovxx@example.com"
         password:
           type: string
           format: password
@@ -535,7 +535,7 @@ paths:
           required: true
           schema:
             type: string
-            example: "tarasovxxx"
+            example: "tarasovxx"
       requestBody:
         required: true
         content:
@@ -570,7 +570,7 @@ paths:
           required: true
           schema:
             type: string
-            example: "tarasovxxx"
+            example: "tarasovxx"
 
       responses:
         "200":
