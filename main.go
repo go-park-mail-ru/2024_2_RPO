@@ -1,7 +1,9 @@
 package main
 
 import (
+	"RPO_back/database"
 	user_handlers "RPO_back/handlers/users"
+	"RPO_back/utils"
 	"fmt"
 	"log"
 	"net/http"
@@ -18,6 +20,22 @@ func helloHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
+	// Создаём логгер
+	logger := log.Default()
+
+	// Обрабатываем файл .env
+	serverConfig, err := utils.LoadDotEnv()
+	if err != nil {
+		log.Fatalf(err.Error())
+	}
+	logger.Printf("Server config: %#v", serverConfig)
+
+	// Подключаемся к базе
+	err2 := database.ConnectToDb(serverConfig.DbPort, serverConfig.DbUser, serverConfig.DbPasswd)
+	if err2 != nil {
+		log.Fatal(err2.Error())
+	}
+
 	// Создаём новый маршрутизатор
 	mux := http.NewServeMux()
 
@@ -26,8 +44,8 @@ func main() {
 	mux.HandleFunc("/hello", helloHandler)
 
 	// Определяем адрес и порт для сервера
-	addr := ":8080"
-	fmt.Printf("Сервер запущен на %s\n", addr)
+	addr := fmt.Sprintf(":%d", serverConfig.ServerPort)
+	fmt.Printf("Сервер запущен на http://localhost%s\n", addr)
 
 	// Запускаем сервер
 	if err := http.ListenAndServe(addr, mux); err != nil {
