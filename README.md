@@ -27,3 +27,5 @@ REDIS_PORT=6379
 REDIS_USER=tarasovxx
 REDIS_PASSWORD=my_secure_password
 ```
+
+Запуск: `go run main.go`
