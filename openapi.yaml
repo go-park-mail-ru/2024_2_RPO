@@ -1,0 +1,753 @@
+openapi: 3.0.0
+info:
+  title: Pumpkin API
+  version: 1.0.0
+  description: RESTful API для облачного канбана Pumpkin
+servers:
+  - url: https://to.be.defined/api
+    description: Основной сервер API
+
+components:
+  securitySchemes:
+    SessionCookieAuth:
+      type: apiKey
+      in: cookie
+      name: session_id
+
+  schemas:
+    Error:
+      properties:
+        status:
+          type: integer
+          example: 404
+        text:
+          type: string
+          example: "Board with such id not found"
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          example: "user_123"
+        name:
+          type: string
+          example: "Иван Иванов"
+        email:
+          type: string
+          format: email
+          example: "tarasovxxx@example.com"
+        createdAt:
+          type: string
+          format: date-time
+          example: "2023-10-01T12:34:56Z"
+
+    Board:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 228
+        name:
+          type: string
+          example: "Любимый проект"
+        description:
+          type: string
+          example: "На этой доске размещены задачи любимого проекта! <3"
+        background:
+          oneOf:
+            - type: string
+              example: "#ffaaff"
+        createdAt:
+          type: string
+          format: date-time
+          example: "2023-10-01T12:34:56Z"
+        updatedAt:
+          type: string
+          format: date-time
+          example: "2023-10-01T12:34:56Z"
+
+    Tag:
+      type: object
+      properties:
+        title:
+          type: string
+          example: "Дизайн"
+
+    BoardContent:
+      type: object
+      properties:
+        boardInfo:
+          $ref: "#/components/schemas/Board"
+        allColumns:
+          type: array
+          items:
+            type: object
+            $ref: "#/components/schemas/Column"
+        allCards:
+          type: array
+          items:
+            type: object
+            $ref: "#/components/schemas/Card"
+        allTags:
+          type: array
+          items:
+            type: object
+            $ref: "#/components/schemas/Tag"
+
+    Card:
+      type: object
+      properties:
+        id:
+          type: string
+          example: "card_789"
+        title:
+          type: string
+          example: "Задача 1"
+        description:
+          type: string
+          example: "Описание задачи 1"
+        columnId:
+          type: string
+          example: "col_228"
+        createdAt:
+          type: string
+          format: date-time
+          example: "2023-10-01T12:34:56Z"
+
+    Column:
+      type: object
+      properties:
+        id:
+          type: string
+          example: "col_228"
+        title:
+          type: string
+          example: "Backlog"
+
+    UserRights:
+      type: object
+      properties:
+        user:
+          $ref: "#/components/schemas/User"
+        addedAt:
+          type: string
+          format: date-time
+          example: "2023-10-01T12:34:56Z"
+        addedBy:
+          example: "creator_itself"
+          oneOf:
+            - type: string
+              enum: ["creator_itself"]
+            - type: object
+              $ref: "#/components/schemas/User"
+        canEdit:
+          type: boolean
+          example: true
+        canModify:
+          type: boolean
+          example: true
+        canShare:
+          type: boolean
+          example: true
+        canInviteMembers:
+          type: boolean
+          example: true
+        canAdmin:
+          type: boolean
+          example: true
+
+        updatedAt:
+          type: string
+          format: date-time
+          example: "2023-10-01T12:34:56Z"
+        updatedBy:
+          type: string
+          format: date-time
+          example: "2023-10-01T12:34:56Z"
+
+    UserRightsPatch:
+      type: object
+      properties:
+        canEdit:
+          type: boolean
+          example: true
+        canModify:
+          type: boolean
+          example: true
+        canShare:
+          type: boolean
+          example: true
+        canInviteMembers:
+          type: boolean
+          example: true
+        canAdmin:
+          type: boolean
+          example: true
+
+    RegisterRequest:
+      type: object
+      required:
+        - name
+        - email
+        - password
+      properties:
+        name:
+          type: string
+          example: "Иван Иванов"
+        email:
+          type: string
+          format: email
+          example: "tarasovxxx@example.com"
+        password:
+          type: string
+          format: password
+          example: "securepassword123"
+
+    LoginRequest:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+          example: "tarasovxxx@example.com"
+        password:
+          type: string
+          format: password
+          example: "securepassword123"
+
+    PasswordChangeRequest:
+      type: object
+      required:
+        - oldPassword
+        - newPassword
+      properties:
+        oldPassword:
+          type: string
+          format: password
+          example: "314159265"
+        newPassword:
+          type: string
+          format: password
+          example: "securepassword123"
+
+    AuthResponse:
+      type: object
+      properties:
+        token:
+          type: string
+          description: JWT токен для авторизации
+          example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+
+paths:
+  /auth/register:
+    post:
+      summary: Регистрация нового пользователя
+      tags:
+        - Аутентификация
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterRequest"
+      responses:
+        "201":
+          description: Пользователь успешно зарегистрирован
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "400":
+          description: Некорректные данные
+  /auth/login:
+    post:
+      summary: Авторизация пользователя
+      tags:
+        - Аутентификация
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+      responses:
+        "200":
+          description: Успешная авторизация
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "401":
+          description: Неверные учетные данные
+  /auth/logout:
+    post:
+      summary: Выйти из системы
+      security:
+        - SessionCookieAuth: []
+      tags:
+        - Аутентификация
+      responses:
+        "301":
+          description: "Удалось выйти"
+        "400":
+          description: "Вы не залогинены"
+  /auth/changePassword:
+    post:
+      summary: Изменить пароль
+      security:
+        - SessionCookieAuth: []
+      tags:
+        - Аутентификация
+      responses:
+        "200":
+          description: "Удалось изменить пароль"
+        "403":
+          description: "Старый пароль неправильный"
+        "411":
+          description: "Новый пароль слишком слабый"
+
+  /users/{userId}:
+    get:
+      summary: Получить информацию о пользователе
+      tags:
+        - Пользователи
+      security:
+        - SessionCookieAuth: []
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+            example: "user_123"
+      responses:
+        "200":
+          description: Информация о пользователе
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "404":
+          description: Пользователь не найден
+    put:
+      summary: Обновить информацию о пользователе
+      tags:
+        - Пользователи
+      security:
+        - SessionCookieAuth: []
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+            example: "user_123"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  example: "Иван Иванов"
+                email:
+                  type: string
+                  format: email
+                  example: "ivan_new@example.com"
+      responses:
+        "200":
+          description: Информация о пользователе обновлена
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "400":
+          description: Некорректные данные
+        "404":
+          description: Пользователь не найден
+
+  /boards:
+    post:
+      summary: Создать новую доску
+      tags:
+        - Доски
+      security:
+        - SessionCookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+                - description
+              properties:
+                name:
+                  type: string
+                  example: "Новая доска"
+                description:
+                  type: string
+                  example: "Описание новой доски"
+                background:
+                  type: string
+                  example: "#FF5733"
+      responses:
+        "201":
+          description: Доска успешно создана
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Board"
+        "400":
+          description: Некорректные данные
+
+  /boards/{boardId}:
+    get:
+      summary: Получить информацию о доске
+      tags:
+        - Доски
+      security:
+        - SessionCookieAuth: []
+      parameters:
+        - name: boardId
+          in: path
+          required: true
+          schema:
+            type: string
+            example: "board_456"
+      responses:
+        "200":
+          description: Информация о доске
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: "#/components/schemas/Board"
+                  - $ref: "#/components/schemas/Error"
+    patch:
+      summary: Изменить имя, описание или фон доски
+      tags:
+        - Доски
+      security:
+        - SessionCookieAuth: []
+      parameters:
+        - name: boardId
+          in: path
+          required: true
+          schema:
+            type: string
+            example: "board_456"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  example: "Обновленное имя доски"
+                description:
+                  type: string
+                  example: "Обновленное описание доски"
+                background:
+                  type: string
+                  example: "#33FF57"
+      responses:
+        "200":
+          description: Доска успешно обновлена
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Board"
+        "400":
+          description: Некорректные данные
+        "404":
+          description: Доска не найдена
+    delete:
+      summary: Удалить доску
+      tags:
+        - Доски
+      security:
+        - SessionCookieAuth: []
+      parameters:
+        - name: boardId
+          in: path
+          required: true
+          schema:
+            type: string
+            example: "board_456"
+      responses:
+        "204":
+          description: Доска успешно удалена
+        "404":
+          description: Доска не найдена
+
+  /boards/{boardId}/userRights:
+    get:
+      summary: Получить информацию о правах всех пользователей на этой доске
+      tags:
+        - Разрешения пользователей
+      security:
+        - SessionCookieAuth: []
+      parameters:
+        - name: boardId
+          in: path
+          required: true
+          schema:
+            type: string
+            example: "board_456"
+      responses:
+        "200":
+          description: Список прав пользователей
+          content:
+            application/json:
+              schema:
+                type: "array"
+                items:
+                  type: "object"
+                  $ref: "#/components/schemas/UserRights"
+        "404":
+          description: Доска не найдена
+
+  /boards/{boardId}/userRights/{userId}:
+    patch:
+      summary: Изменить права пользователя
+      tags:
+        - Разрешения пользователей
+      security:
+        - SessionCookieAuth: []
+      parameters:
+        - name: boardId
+          in: path
+          required: true
+          schema:
+            type: string
+            example: "board_456"
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+            example: "tarasovxxx"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: "array"
+              items:
+                type: "object"
+                $ref: "#/components/schemas/UserRightsPatch"
+      responses:
+        "200":
+          description: "Успешно изменены права"
+        "403":
+          description: "У Вас недостаточно прав для администрирования"
+        "404":
+          description: "Доска или пользователь не найдены"
+    delete:
+      summary: Забрать у пользователя все права
+      tags:
+        - Разрешения пользователей
+      security:
+        - SessionCookieAuth: []
+      parameters:
+        - name: boardId
+          in: path
+          required: true
+          schema:
+            type: string
+            example: "board_456"
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+            example: "tarasovxxx"
+
+      responses:
+        "200":
+          description: "Успешно изменены права"
+        "403":
+          description: "У Вас недостаточно прав для администрирования"
+        "404":
+          description: "Доска или пользователь не найдены"
+
+  /boards/{boardId}/all_content:
+    get:
+      summary: Получить все карточки на доске, а также все столбцы и теги
+      tags:
+        - Карточки
+      security:
+        - SessionCookieAuth: []
+      parameters:
+        - name: boardId
+          in: path
+          required: true
+          schema:
+            type: string
+            example: "board_456"
+      responses:
+        "200":
+          description: Список карточек
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BoardContent"
+        "404":
+          description: Доска не найдена
+
+  /boards/{boardId}/cards:
+    post:
+      summary: Создать новую карточку на доске
+      tags:
+        - Карточки
+      security:
+        - SessionCookieAuth: []
+      parameters:
+        - name: boardId
+          in: path
+          required: true
+          schema:
+            type: string
+            example: "board_456"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - title
+                - description
+              properties:
+                title:
+                  type: string
+                  example: "Новая задача"
+                description:
+                  type: string
+                  example: "Описание новой задачи"
+                status:
+                  type: string
+                  example: "To Do"
+      responses:
+        "201":
+          description: Карточка успешно создана
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Card"
+        "400":
+          description: Некорректные данные
+        "404":
+          description: Доска не найдена
+
+  /boards/{boardId}/cards/{cardId}:
+    get:
+      summary: Получить информацию о карточке
+      tags:
+        - Карточки
+      security:
+        - SessionCookieAuth: []
+      parameters:
+        - name: boardId
+          in: path
+          required: true
+          schema:
+            type: string
+            example: "board_456"
+        - name: cardId
+          in: path
+          required: true
+          schema:
+            type: string
+            example: "card_789"
+      responses:
+        "200":
+          description: Информация о карточке
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Card"
+        "404":
+          description: Доска или карточка не найдены
+    patch:
+      summary: Обновить карточку
+      tags:
+        - Карточки
+      security:
+        - SessionCookieAuth: []
+      parameters:
+        - name: boardId
+          in: path
+          required: true
+          schema:
+            type: string
+            example: "board_456"
+        - name: cardId
+          in: path
+          required: true
+          schema:
+            type: string
+            example: "card_789"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                  example: "Обновленная задача"
+                description:
+                  type: string
+                  example: "Обновленное описание задачи"
+                status:
+                  type: string
+                  example: "In Progress"
+      responses:
+        "200":
+          description: Карточка успешно обновлена
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Card"
+        "400":
+          description: Некорректные данные
+        "404":
+          description: Доска или карточка не найдены
+    delete:
+      summary: Удалить карточку
+      tags:
+        - Карточки
+      security:
+        - SessionCookieAuth: []
+      parameters:
+        - name: boardId
+          in: path
+          required: true
+          schema:
+            type: string
+            example: "board_456"
+        - name: cardId
+          in: path
+          required: true
+          schema:
+            type: string
+            example: "card_789"
+      responses:
+        "204":
+          description: Карточка успешно удалена
+        "404":
+          description: Доска или карточка не найдены
+
+security:
+  - SessionCookieAuth: []
