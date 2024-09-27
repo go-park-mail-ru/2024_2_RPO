@@ -66,6 +66,13 @@ components:
           format: date-time
           example: "2023-10-01T12:34:56Z"
 
+    Tag:
+      type: object
+      properties:
+        title:
+          type: string
+          example: "Дизайн"
+
     BoardContent:
       type: object
       properties:
