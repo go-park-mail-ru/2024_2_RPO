@@ -3,6 +3,7 @@ package auth
 import (
 	"RPO_back/auth"
 	"RPO_back/database"
+	"RPO_back/logs"
 	"RPO_back/models"
 	"encoding/json"
 	"net/http"
@@ -42,7 +43,8 @@ func RegisterUser(w http.ResponseWriter, r *http.Request) {
               VALUES ($1, $2, $3, $4, $5, $6) RETURNING u_id`
 	err = db.QueryRow(query, user.Name, user.Email, string(hashedPassword), "", time.Now(), time.Now()).Scan(&userID)
 	if err != nil {
-		http.Error(w, "Failed to insert user", http.StatusInternalServerError)
+		http.Error(w, "Internal error", http.StatusInternalServerError)
+		logs.GetLogger().Printf("Error in RegisterUser: %s", err)
 		return
 	}
 
