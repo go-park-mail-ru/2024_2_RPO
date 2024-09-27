@@ -14,7 +14,6 @@ components:
       in: cookie
       name: session_id
 
-
   schemas:
     Error:
       properties:
@@ -36,8 +35,8 @@ components:
         email:
           type: string
           format: email
-          example: "ivan@example.com"
-        created_at:
+          example: "tarasovxxx@example.com"
+        createdAt:
           type: string
           format: date-time
           example: "2023-10-01T12:34:56Z"
@@ -58,10 +57,35 @@ components:
           oneOf:
             - type: string
               example: "#ffaaff"
-        created_at:
+        createdAt:
           type: string
           format: date-time
           example: "2023-10-01T12:34:56Z"
+        updatedAt:
+          type: string
+          format: date-time
+          example: "2023-10-01T12:34:56Z"
+
+    BoardContent:
+      type: object
+      properties:
+        boardInfo:
+          $ref: "#/components/schemas/Board"
+        allColumns:
+          type: array
+          items:
+            type: object
+            $ref: "#/components/schemas/Column"
+        allCards:
+          type: array
+          items:
+            type: object
+            $ref: "#/components/schemas/Card"
+        allTags:
+          type: array
+          items:
+            type: object
+            $ref: "#/components/schemas/Tag"
 
     Card:
       type: object
@@ -75,51 +99,61 @@ components:
         description:
           type: string
           example: "Описание задачи 1"
-        status:
+        columnId:
           type: string
-          example: "To Do"
-        created_at:
+          example: "col_228"
+        createdAt:
           type: string
           format: date-time
           example: "2023-10-01T12:34:56Z"
+
+    Column:
+      type: object
+      properties:
+        id:
+          type: string
+          example: "col_228"
+        title:
+          type: string
+          example: "Backlog"
 
     UserRights:
       type: object
       properties:
         user:
           $ref: "#/components/schemas/User"
-        added_at:
+        addedAt:
           type: string
           format: date-time
           example: "2023-10-01T12:34:56Z"
-        added_by:
+        addedBy:
           example: "creator_itself"
           oneOf:
             - type: string
               enum: ["creator_itself"]
             - type: object
               $ref: "#/components/schemas/User"
-        can_edit:
+        canEdit:
           type: boolean
           example: true
-        can_modify:
+        canModify:
           type: boolean
           example: true
-        can_share:
+        canShare:
           type: boolean
           example: true
-        can_invite_members:
+        canInviteMembers:
           type: boolean
           example: true
-        can_admin:
+        canAdmin:
           type: boolean
           example: true
 
-        updated_at:
+        updatedAt:
           type: string
           format: date-time
           example: "2023-10-01T12:34:56Z"
-        updated_by:
+        updatedBy:
           type: string
           format: date-time
           example: "2023-10-01T12:34:56Z"
@@ -127,19 +161,19 @@ components:
     UserRightsPatch:
       type: object
       properties:
-        can_edit:
+        canEdit:
           type: boolean
           example: true
-        can_modify:
+        canModify:
           type: boolean
           example: true
-        can_share:
+        canShare:
           type: boolean
           example: true
-        can_invite_members:
+        canInviteMembers:
           type: boolean
           example: true
-        can_admin:
+        canAdmin:
           type: boolean
           example: true
 
@@ -161,6 +195,7 @@ components:
           type: string
           format: password
           example: "securepassword123"
+
     LoginRequest:
       type: object
       required:
@@ -175,13 +210,13 @@ components:
           type: string
           format: password
           example: "securepassword123"
+
     PasswordChangeRequest:
       type: object
       required:
-          - oldPassword
-          - newPassword
+        - oldPassword
+        - newPassword
       properties:
-
         oldPassword:
           type: string
           format: password
@@ -190,7 +225,6 @@ components:
           type: string
           format: password
           example: "securepassword123"
-
 
     AuthResponse:
       type: object
@@ -539,9 +573,9 @@ paths:
         "404":
           description: "Доска или пользователь не найдены"
 
-  /boards/{boardId}/cards:
+  /boards/{boardId}/all_content:
     get:
-      summary: Получить все карточки на доске
+      summary: Получить все карточки на доске, а также все столбцы и теги
       tags:
         - Карточки
       security:
@@ -559,12 +593,11 @@ paths:
           content:
             application/json:
               schema:
-                type: "array"
-                items:
-                  type: "object"
-                  $ref: "#/components/schemas/Card"
+                $ref: "#/components/schemas/BoardContent"
         "404":
           description: Доска не найдена
+
+  /boards/{boardId}/cards:
     post:
       summary: Создать новую карточку на доске
       tags:
