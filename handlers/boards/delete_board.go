@@ -3,7 +3,9 @@ package boards
 import (
 	"RPO_back/database"
 	"encoding/json"
+	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/gorilla/mux"
 )
@@ -17,6 +19,15 @@ func DeleteBoardHandler(w http.ResponseWriter, r *http.Request) {
 
 	params := mux.Vars(r)
 	boardId := params["boardId"]
+
+	if !strings.HasPrefix(boardId, "board_") || len(boardId) < 7 {
+		http.Error(w, "board id should start with 'board_'", http.StatusBadRequest)
+		return
+	}
+	boardId = strings.TrimPrefix(boardId, "board_")
+
+	fmt.Printf("Board id: %s\n", boardId)
+	fmt.Printf("UserId id: %d\n", userId)
 
 	db, err := database.GetDbConnection()
 	if err != nil {

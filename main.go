@@ -41,16 +41,17 @@ func main() {
 	r := mux.NewRouter()
 
 	r.Use(loggingMiddleware)
+	r.Use(corsMiddleware)
 
 	// Регистрируем обработчики
-	r.HandleFunc("/auth/register", auth_handlers.RegisterUser).Methods(("POST"))
-	r.HandleFunc("/users/me", user_handlers.GetMe).Methods("GET")
-	r.HandleFunc("/boards/my", boards_handlers.GetMyBoardsHandler).Methods("GET")
-	r.HandleFunc("/boards", boards_handlers.CreateBoardHandler).Methods(("POST"))
-	r.HandleFunc("/boards/{boardId}", boards_handlers.DeleteBoardHandler).Methods(("DELETE"))
-	r.HandleFunc("/auth/login", auth_handlers.LoginUser).Methods(("POST"))
-	r.HandleFunc("/auth/logout", auth_handlers.LogoutUser).Methods(("POST"))
-	
+	r.HandleFunc("/auth/register", auth_handlers.RegisterUser).Methods("POST", "OPTIONS")
+	r.HandleFunc("/users/me", user_handlers.GetMe).Methods("GET", "OPTIONS")
+	r.HandleFunc("/boards/my", boards_handlers.GetMyBoardsHandler).Methods("GET", "OPTIONS")
+	r.HandleFunc("/boards", boards_handlers.CreateBoardHandler).Methods("POST", "OPTIONS")
+	r.HandleFunc("/boards/{boardId}", boards_handlers.DeleteBoardHandler).Methods("DELETE", "OPTIONS")
+	r.HandleFunc("/auth/login", auth_handlers.LoginUser).Methods("POST", "OPTIONS")
+	r.HandleFunc("/auth/logout", auth_handlers.LogoutUser).Methods("POST", "OPTIONS")
+
 	// Определяем адрес и порт для сервера
 	addr := fmt.Sprintf(":%d", serverConfig.ServerPort)
 	fmt.Printf("Сервер запущен на http://localhost%s\n", addr)
@@ -64,6 +65,25 @@ func main() {
 func loggingMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		log.Printf("Запрос: %s %s", r.Method, r.RequestURI)
+		next.ServeHTTP(w, r)
+	})
+}
+
+// Middleware для настройки CORS
+func corsMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		fmt.Print("Cors mware")
+		w.Header().Set("Access-Control-Allow-Origin", "http://localhost:3000")
+		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS, PUT, DELETE")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+		w.Header().Set("Access-Control-Allow-Credentials", "true")
+
+		// Для префлайт-запросов
+		if r.Method == "OPTIONS" {
+			w.WriteHeader(http.StatusOK)
+			return
+		}
+
 		next.ServeHTTP(w, r)
 	})
 }

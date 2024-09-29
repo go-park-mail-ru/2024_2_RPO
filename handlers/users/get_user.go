@@ -14,8 +14,8 @@ func GetMe(w http.ResponseWriter, r *http.Request) {
 
 	user, err2 := database.GetUserByID(userId)
 	if err2 != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return 
+		http.Error(w, err2.Error(), http.StatusInternalServerError)
+		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")

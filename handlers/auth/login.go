@@ -13,15 +13,15 @@ import (
 
 func LoginUser(w http.ResponseWriter, r *http.Request) {
 	var loginRequest models.LoginRequest
-    var user models.User
+	var user models.User
 	var hashedPassword string
 
 	sessionID := auth.GenerateSessionID()
 
-    if err := json.NewDecoder(r.Body).Decode(&loginRequest); err != nil {
-        http.Error(w, "Invalid request payload", http.StatusBadRequest)
-        return
-    }
+	if err := json.NewDecoder(r.Body).Decode(&loginRequest); err != nil {
+		http.Error(w, "Invalid request payload", http.StatusBadRequest)
+		return
+	}
 
 	db, err := database.GetDbConnection()
 	if err != nil {
@@ -31,27 +31,27 @@ func LoginUser(w http.ResponseWriter, r *http.Request) {
 	defer db.Close()
 
 	err2 := db.QueryRow("SELECT u_id, nickname, email, description, joined_at, updated_at, password_hash FROM \"User\" WHERE email=$1", loginRequest.Email).Scan(
-        &user.ID,
-        &user.Name,
-        &user.Email,
-        &user.Description,
-        &user.JoinedAt,
-        &user.UpdatedAt,
+		&user.ID,
+		&user.Name,
+		&user.Email,
+		&user.Description,
+		&user.JoinedAt,
+		&user.UpdatedAt,
 		&hashedPassword,
-    )
+	)
 
-    if err2 != nil {
-        if err2 == sql.ErrNoRows {
-            http.Error(w, "Email not found", http.StatusUnauthorized)
-        } else {
-            http.Error(w, "Database error", http.StatusInternalServerError)
-        }
-        return
-    }
+	if err2 != nil {
+		if err2 == sql.ErrNoRows {
+			http.Error(w, "Email not found", http.StatusUnauthorized)
+		} else {
+			http.Error(w, "Database error", http.StatusInternalServerError)
+		}
+		return
+	}
 
 	if err := bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(loginRequest.Password)); err != nil {
-        http.Error(w, "Invalid password", http.StatusUnauthorized)
-        return
+		http.Error(w, "Invalid password", http.StatusUnauthorized)
+		return
 	}
 
 	cookie := http.Cookie{
@@ -59,8 +59,10 @@ func LoginUser(w http.ResponseWriter, r *http.Request) {
 		Value:    sessionID,
 		Path:     "/",
 		HttpOnly: true,
+		MaxAge:   10000,
 	}
 	http.SetCookie(w, &cookie)
+	auth.RegisterSessionRedis(sessionID, user.ID)
 
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte("Session cookie is set"))

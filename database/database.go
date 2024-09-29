@@ -19,15 +19,16 @@ var (
 	mu     sync.Mutex
 )
 
-func GetUserId (w http.ResponseWriter, r *http.Request) (int, error) {
+func GetUserId(w http.ResponseWriter, r *http.Request) (int, error) {
 	sessionCookie, err := r.Cookie("session_id")
 	if err != nil || sessionCookie.Value == "" {
 		http.Error(w, "not authorized", http.StatusUnauthorized)
+		return 0, errors.New("No session cookie detected")
 	}
-	
-	userId, err := auth.RetrieveUserIdFromSessionId(sessionCookie.Value)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusForbidden)
+
+	userId, err2 := auth.RetrieveUserIdFromSessionId(sessionCookie.Value)
+	if err2 != nil {
+		http.Error(w, err2.Error(), http.StatusForbidden)
 	}
 
 	return userId, nil

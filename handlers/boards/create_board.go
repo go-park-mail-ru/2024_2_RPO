@@ -28,9 +28,10 @@ func CreateBoardHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var board models.Board
+	fmt.Printf("Name: %s\n", req.Name)
 	board.Name = req.Name
 	board.Description = req.Description
-	board.Background = req.Background
+	board.Background = "red" //TODO пересмотреть
 	board.OwnerID = userId
 
 	db, err := database.GetDbConnection()
@@ -42,10 +43,10 @@ func CreateBoardHandler(w http.ResponseWriter, r *http.Request) {
 
 	var boardId int
 	err = db.QueryRow(`
-		INSERT INTO Board (description, created_by, updated_at)
-		VALUES ($1, $2, CURRENT_TIMESTAMP)
+		INSERT INTO Board (description, name, created_by, updated_at)
+		VALUES ($1, $2, $3, CURRENT_TIMESTAMP)
 		RETURNING b_id`,
-		board.Description, board.OwnerID).Scan(&boardId)
+		board.Description, board.Name, board.OwnerID).Scan(&boardId)
 	if err != nil {
 		http.Error(w, "Failed to insert board", http.StatusInternalServerError)
 		fmt.Println(err.Error())

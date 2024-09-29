@@ -5,7 +5,6 @@ import "time"
 type CreateBoardRequest struct {
 	Name        string `json:"name"`
 	Description string `json:"description"`
-	Background  string `json:"background,omitempty"`
 }
 
 type DeleteBoardRequest struct {

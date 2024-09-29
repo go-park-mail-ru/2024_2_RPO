@@ -53,6 +53,7 @@ func RegisterUser(w http.ResponseWriter, r *http.Request) {
 	err = auth.RegisterSessionRedis(sessionID, userID)
 	if err != nil {
 		http.Error(w, "Failed to register session", http.StatusInternalServerError)
+		logs.GetLogger().Printf("Error in RegisterSessionRedis: %s", err)
 		return
 	}
 
@@ -61,6 +62,7 @@ func RegisterUser(w http.ResponseWriter, r *http.Request) {
 		Value:    sessionID,
 		Path:     "/",
 		HttpOnly: true,
+		MaxAge:   10000,
 	}
 	http.SetCookie(w, &cookie)
 
