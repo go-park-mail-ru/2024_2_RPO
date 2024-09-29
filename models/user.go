@@ -16,3 +16,8 @@ type User struct {
 	JoinedAt    time.Time `json:"joinedAt"`
 	UpdatedAt   time.Time `json:"updatedAt"`
 }
+
+type LoginRequest struct {
+    Email    string `json:"email"`
+    Password string `json:"password"`
+}
