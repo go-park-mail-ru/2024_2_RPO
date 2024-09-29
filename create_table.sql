@@ -9,6 +9,7 @@ CREATE TABLE "User" (
 );
 CREATE TABLE Board (
     b_id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
     description VARCHAR(2048) NOT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     created_by INT,
