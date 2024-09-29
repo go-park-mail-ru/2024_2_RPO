@@ -1,9 +1,11 @@
 package database
 
 import (
+	"RPO_back/auth"
 	"database/sql"
 	"errors"
 	"fmt"
+	"net/http"
 	"sync"
 
 	_ "github.com/lib/pq"
@@ -16,6 +18,20 @@ var (
 	db     *sql.DB
 	mu     sync.Mutex
 )
+
+func GetUserId (w http.ResponseWriter, r *http.Request) (int, error) {
+	sessionCookie, err := r.Cookie("session_id")
+	if err != nil || sessionCookie.Value == "" {
+		http.Error(w, "not authorized", http.StatusUnauthorized)
+	}
+	
+	userId, err := auth.RetrieveUserIdFromSessionId(sessionCookie.Value)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusForbidden)
+	}
+
+	return userId, nil
+}
 
 func InitDBConnection(port_ int, user_ string, passwd_ string) error {
 	port = port_
