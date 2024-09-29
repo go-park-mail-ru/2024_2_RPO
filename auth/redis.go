@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strconv"
 	"sync"
 	"time"
 
@@ -48,4 +49,20 @@ func RegisterSessionRedis(cookie string, userID int) error {
 	}
 
 	return nil
+}
+
+func RetrieveUserIdFromSessionId(sessionId string) (userId int, err error) {
+	val, err := rdb.Get(ctx, sessionId).Result()
+	if err == redis.Nil {
+		return 0, fmt.Errorf("Session cookie is invalid or expired: %s", sessionId)
+	} else if err != nil {
+		return 0, err
+	}
+
+	intVal, err := strconv.Atoi(val)
+	if err != nil {
+		return 0, fmt.Errorf("Error converting value to int: %v", err)
+	}
+
+	return intVal, nil
 }

@@ -35,7 +35,7 @@ func main() {
 	logger.Printf("Server config: %#v", serverConfig)
 
 	// Подключаемся к базе
-	err2 := database.ConnectToDb(serverConfig.DbPort, serverConfig.DbUser, serverConfig.DbPasswd)
+	err2 := database.InitDBConnection(serverConfig.DbPort, serverConfig.DbUser, serverConfig.DbPasswd)
 	if err2 != nil {
 		log.Fatal(err2.Error())
 	}

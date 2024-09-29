@@ -9,41 +9,67 @@ import (
 	_ "github.com/lib/pq"
 )
 
-func HelloDatabase() {
-	fmt.Println("Hello Database")
-}
-
 var (
-	db   *sql.DB
-	once sync.Once
+	port   int
+	user   string
+	passwd string
+	db     *sql.DB
+	mu     sync.Mutex
 )
 
+func InitDBConnection(port_ int, user_ string, passwd_ string) error {
+	port = port_
+	user = user_
+	passwd = passwd_
+	err := ConnectToDb()
+	if err == nil {
+		fmt.Println("Successfully connected to Postgres!")
+	}
+	return err
+}
+
 // Устанавливает соединение с базой данных PostgreSQL.
-func ConnectToDb(port int, user string, passwd string) error {
+func ConnectToDb() error {
 	var err error
-	once.Do(func() {
-		connStr := fmt.Sprintf("host=localhost port=%d user=%s password=%s dbname=pumpkin sslmode=disable", port, user, passwd)
-		db, err = sql.Open("postgres", connStr)
-		if err != nil {
-			err = errors.New(fmt.Sprintf("Database connection error: %s", err.Error()))
-			return
-		}
-		err = db.Ping()
-		if err != nil {
-			err = errors.New(fmt.Sprintf("Database ping error: %s", err.Error()))
-		}
-	})
+	connStr := fmt.Sprintf("host=localhost port=%d user=%s password=%s dbname=pumpkin sslmode=disable", port, user, passwd)
+	db, err = sql.Open("postgres", connStr)
+	if err != nil {
+		return errors.New(fmt.Sprintf("Database connection error: %s", err.Error()))
+	}
+	err = db.Ping()
+	if err != nil {
+		return errors.New(fmt.Sprintf("Database ping error: %s", err.Error()))
+	}
+
 	return err
 }
 
 // GetDbConnection возвращает установленное соединение с базой данных.
-// Если соединение не установлено, возвращается ошибка.
+// Если соединение не установлено, происходит попытка переподключения. Если попытка неудачная, возвращается ошибка.
 func GetDbConnection() (*sql.DB, error) {
+	mu.Lock()
+	defer mu.Unlock()
+
+	// Если соединение еще не установлено, устанавливаем его
 	if db == nil {
-		return nil, fmt.Errorf("No DB connection")
+		var err error
+		err = ConnectToDb()
+		if err != nil {
+			return nil, fmt.Errorf("не удалось установить соединение с БД: %w", err)
+		}
+		return db, nil
 	}
-	if db.Ping() == nil {
-		return db, ConnectToDb(5432, "tarasovxx", "my_secure_password")
+
+	// Проверяем текущее состояние соединения
+	if err := db.Ping(); err != nil {
+		// Если соединение потеряно, пытаемся восстановить его
+		db.Close() // Закрываем старое соединение
+		var errReconnect error
+		errReconnect = ConnectToDb()
+		if errReconnect != nil {
+			return nil, fmt.Errorf("соединение с БД закрыто и восстановить его не удалось: %w", errReconnect)
+		}
 	}
+
 	return db, nil
 }
