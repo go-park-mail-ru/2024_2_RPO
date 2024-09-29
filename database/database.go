@@ -42,5 +42,8 @@ func GetDbConnection() (*sql.DB, error) {
 	if db == nil {
 		return nil, fmt.Errorf("No DB connection")
 	}
+	if db.Ping() == nil {
+		return db, ConnectToDb(5432, "tarasovxx", "my_secure_password")
+	}
 	return db, nil
 }

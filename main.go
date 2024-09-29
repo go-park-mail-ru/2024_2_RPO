@@ -9,6 +9,8 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+
+	"github.com/gorilla/mux"
 )
 
 // pingHandler обрабатывает запросы к /ping
@@ -45,19 +47,28 @@ func main() {
 	}
 
 	// Создаём новый маршрутизатор
-	mux := http.NewServeMux()
+	r := mux.NewRouter()
+
+	r.Use(loggingMiddleware)
 
 	// Регистрируем обработчики
-	mux.HandleFunc("/ping", user_handlers.GetUser)
-	mux.HandleFunc("/hello", helloHandler)
-	mux.HandleFunc("/auth/register", auth_handlers.RegisterUser)
+	r.HandleFunc("/hello", helloHandler).Methods("GET")
+	r.HandleFunc("/auth/register", auth_handlers.RegisterUser).Methods(("POST"))
+	r.HandleFunc("/users/me", user_handlers.GetMe).Methods("GET")
 
 	// Определяем адрес и порт для сервера
 	addr := fmt.Sprintf(":%d", serverConfig.ServerPort)
 	fmt.Printf("Сервер запущен на http://localhost%s\n", addr)
 
 	// Запускаем сервер
-	if err := http.ListenAndServe(addr, mux); err != nil {
+	if err := http.ListenAndServe(addr, r); err != nil {
 		log.Fatalf("Ошибка запуска сервера: %v", err)
 	}
+}
+
+func loggingMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		log.Printf("Запрос: %s %s", r.Method, r.RequestURI)
+		next.ServeHTTP(w, r)
+	})
 }

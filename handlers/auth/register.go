@@ -30,6 +30,8 @@ func RegisterUser(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Failed to hash password", http.StatusInternalServerError)
 		return
 	}
+	
+	database.ConnectToDb(5432, "tarasovxx", "my_secure_password")
 
 	db, err := database.GetDbConnection()
 	if err != nil {
@@ -63,6 +65,10 @@ func RegisterUser(w http.ResponseWriter, r *http.Request) {
 		HttpOnly: true,
 	}
 	http.SetCookie(w, &cookie)
+
+	w.WriteHeader(http.StatusOK)
+    w.Write([]byte("Кука установлена."))
+	
 
 	// 8. Редирект на /index.html
 	http.Redirect(w, r, "/index.html", http.StatusFound)
