@@ -4,7 +4,7 @@ import (
 	"RPO_back/database"
 	"RPO_back/models"
 	"encoding/json"
-	"log"
+	"fmt"
 	"net/http"
 )
 
@@ -40,11 +40,26 @@ func CreateBoardHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	defer db.Close()
 
-	query := `INSERT INTO boards (name, description, background, owner_id) VALUES ($1, $2, $3, $4) RETURNING id`
-	err = db.QueryRow(query, board.Name, board.Description, board.Background, board.OwnerID).Scan(&board.ID)
+	var boardId int
+	err = db.QueryRow(`
+		INSERT INTO Board (description, created_by, updated_at)
+		VALUES ($1, $2, CURRENT_TIMESTAMP)
+		RETURNING b_id`,
+		board.Description, board.OwnerID).Scan(&boardId)
 	if err != nil {
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-		log.Println("Error inserting board:", err)
+		http.Error(w, "Failed to insert board", http.StatusInternalServerError)
+		fmt.Println(err.Error())
+		return
+	}
+	board.ID = boardId
+
+	_, err = db.Exec(`
+		INSERT INTO User_to_Board (u_id, b_id, added_at, updated_at, can_edit, can_share, can_invite_members, is_admin, added_by, updated_by)
+		VALUES ($1, $2, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, TRUE, TRUE, TRUE, TRUE, NULL, NULL)`,
+		board.OwnerID, boardId)
+	if err != nil {
+		http.Error(w, "Failed to insert user to board", http.StatusInternalServerError)
+		fmt.Println(err.Error())
 		return
 	}
 

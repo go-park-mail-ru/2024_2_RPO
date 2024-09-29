@@ -56,7 +56,9 @@ func main() {
 	r.HandleFunc("/hello", helloHandler).Methods("GET")
 	r.HandleFunc("/auth/register", auth_handlers.RegisterUser).Methods(("POST"))
 	r.HandleFunc("/users/me", user_handlers.GetMe).Methods("GET")
+	r.HandleFunc("/boards/my", boards_handlers.GetMyBoardsHandler).Methods("GET")
 	r.HandleFunc("/boards", boards_handlers.CreateBoardHandler).Methods(("POST"))
+	r.HandleFunc("/boards/{boardId}", boards_handlers.DeleteBoardHandler).Methods(("DELETE"))
 
 	// Определяем адрес и порт для сервера
 	addr := fmt.Sprintf(":%d", serverConfig.ServerPort)
