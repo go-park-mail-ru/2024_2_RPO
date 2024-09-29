@@ -14,16 +14,6 @@ import (
 	"github.com/gorilla/mux"
 )
 
-// pingHandler обрабатывает запросы к /ping
-func pingHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintln(w, "Hello world")
-}
-
-// helloHandler обрабатывает запросы к /hello
-func helloHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintln(w, "Hello world")
-}
-
 func main() {
 	// Создаём логгер
 	logger := log.Default()
@@ -53,7 +43,6 @@ func main() {
 	r.Use(loggingMiddleware)
 
 	// Регистрируем обработчики
-	r.HandleFunc("/hello", helloHandler).Methods("GET")
 	r.HandleFunc("/auth/register", auth_handlers.RegisterUser).Methods(("POST"))
 	r.HandleFunc("/users/me", user_handlers.GetMe).Methods("GET")
 	r.HandleFunc("/boards/my", boards_handlers.GetMyBoardsHandler).Methods("GET")
