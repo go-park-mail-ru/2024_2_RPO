@@ -14,32 +14,33 @@ import (
 	"github.com/gorilla/mux"
 )
 
-func main() {
+// Инициализировать приложение
+// Возвращает мультиплексор, который можно тестировать, а можно запрячь для обработки запросов
+func initializeApp() (*mux.Router, error) {
 	// Создаём логгер
 	logger := log.Default()
 
 	// Обрабатываем файл .env
 	serverConfig, err := utils.LoadDotEnv()
 	if err != nil {
-		log.Fatalf(err.Error())
+		return nil, fmt.Errorf("ошибка загрузки .env: %w", err)
 	}
 	logger.Printf("Server config: %#v", serverConfig)
 
 	// Подключаемся к базе
-	err2 := database.InitDBConnection(serverConfig.DbPort, serverConfig.DbUser, serverConfig.DbPasswd)
-	if err2 != nil {
-		log.Fatal(err2.Error())
+	if err := database.InitDBConnection(serverConfig.DbPort, serverConfig.DbUser, serverConfig.DbPasswd); err != nil {
+		return nil, fmt.Errorf("ошибка подключения к базе данных: %w", err)
 	}
 
 	// Подключаемся к Redis
-	err3 := auth.ConnectToRedis(serverConfig.RedisPort, serverConfig.RedisUser, serverConfig.RedisPasswd)
-	if err3 != nil {
-		log.Fatal(err3.Error())
+	if err := auth.ConnectToRedis(serverConfig.RedisPort, serverConfig.RedisUser, serverConfig.RedisPasswd); err != nil {
+		return nil, fmt.Errorf("ошибка подключения к Redis: %w", err)
 	}
 
 	// Создаём новый маршрутизатор
 	r := mux.NewRouter()
 
+	// Применяем middleware
 	r.Use(loggingMiddleware)
 	r.Use(corsMiddleware)
 
@@ -52,12 +53,22 @@ func main() {
 	r.HandleFunc("/auth/login", auth_handlers.LoginUser).Methods("POST", "OPTIONS")
 	r.HandleFunc("/auth/logout", auth_handlers.LogoutUser).Methods("POST", "OPTIONS")
 
+	return r, nil
+}
+
+func main() {
+	router, err := initializeApp()
+	if err != nil {
+		log.Fatalf("Ошибка инициализации приложения: %v", err)
+	}
+
 	// Определяем адрес и порт для сервера
+	serverConfig, _ := utils.LoadDotEnv() // Предполагается, что ошибка уже проверена в initializeApp
 	addr := fmt.Sprintf(":%d", serverConfig.ServerPort)
 	fmt.Printf("Сервер запущен на http://localhost%s\n", addr)
 
 	// Запускаем сервер
-	if err := http.ListenAndServe(addr, r); err != nil {
+	if err := http.ListenAndServe(addr, router); err != nil {
 		log.Fatalf("Ошибка запуска сервера: %v", err)
 	}
 }
