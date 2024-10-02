@@ -371,6 +371,23 @@ paths:
         "404":
           description: Пользователь не найден
 
+  /users/me:
+    get:
+      summary: Получить информацию о себе
+      tags:
+        - Пользователи
+      security:
+        - SessionCookieAuth: []
+      responses:
+        "200":
+          description: Информация о пользователе
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "401":
+          description: Пользователь не авторизован
+
   /boards:
     post:
       summary: Создать новую доску
@@ -430,6 +447,7 @@ paths:
                 oneOf:
                   - $ref: "#/components/schemas/Board"
                   - $ref: "#/components/schemas/Error"
+
     patch:
       summary: Изменить имя, описание или фон доски
       tags:
@@ -488,6 +506,27 @@ paths:
           description: Доска успешно удалена
         "404":
           description: Доска не найдена
+
+  /boards/my:
+    get:
+      summary: Получить все доски, о которых знает пользователь
+      tags:
+        - Доски
+      security:
+        - SessionCookieAuth: []
+      responses:
+        "200":
+          description: Доски успешно получены
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Board"
+        "401":
+          description: Пользователь не авторизован
+        "404":
+          description: Доски не найдены
 
   /boards/{boardId}/userRights:
     get:
