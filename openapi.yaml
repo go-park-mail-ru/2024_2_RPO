@@ -236,10 +236,20 @@ components:
     AuthResponse:
       type: object
       properties:
-        token:
+        session_id:
           type: string
-          description: JWT токен для авторизации
+          description: Sesseion_id
           example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+    
+    LogoutResponse:
+      type: object
+      properties:
+        status:
+          type: integer
+          example: 301
+        text:
+          type: string
+          example: "Вы успешно вышли"
 
 paths:
   /auth/register:
@@ -262,6 +272,17 @@ paths:
                 $ref: "#/components/schemas/AuthResponse"
         "400":
           description: Некорректные данные
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "409":
+          description: Аккаунт с таким email уже зарегистрироован
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        
   /auth/login:
     post:
       summary: Авторизация пользователя
@@ -282,6 +303,10 @@ paths:
                 $ref: "#/components/schemas/AuthResponse"
         "401":
           description: Неверные учетные данные
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
   /auth/logout:
     post:
       summary: Выйти из системы
@@ -292,8 +317,16 @@ paths:
       responses:
         "301":
           description: "Удалось выйти"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LogoutResponse"
         "400":
           description: "Вы не залогинены"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
   /auth/changePassword:
     post:
       summary: Изменить пароль
@@ -304,10 +337,32 @@ paths:
       responses:
         "200":
           description: "Удалось изменить пароль"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties: 
+                  message:
+                    type: string
+                    example: "Пароль успешно изменен"
+        "400":
+          description: "Отсутствуют необходимые поля"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
         "403":
           description: "Старый пароль неправильный"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
         "411":
           description: "Новый пароль слишком слабый"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
 
   /users/{userId}:
     get:
