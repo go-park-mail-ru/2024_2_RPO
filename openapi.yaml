@@ -246,7 +246,7 @@ components:
       properties:
         status:
           type: integer
-          example: 301
+          example: 200
         text:
           type: string
           example: "Вы успешно вышли"
@@ -335,7 +335,7 @@ paths:
       tags:
         - Аутентификация
       responses:
-        "301":
+        "200":
           description: "Удалось выйти"
           content:
             application/json:
@@ -718,12 +718,6 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
-        "404":
-          description: Доски не найдены
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
 
   /boards/{boardId}/userRights:
     get:
@@ -882,7 +876,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/Error"
 
-  /boards/{boardId}/all_content:
+  /boards/{boardId}/allContent:
     get:
       summary: Получить все карточки на доске, а также все столбцы и теги
       tags:
@@ -916,7 +910,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/Error"
         "404":
-          description: Карточки, столбцы и теги на доске не найдены
+          description: Доска с таким ID не существует
           content:
             application/json:
               schema:
@@ -975,7 +969,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/Error"
         "404":
-          description: Доска не найдена
+          description: Доска с таким ID не существует
           content:
             application/json:
               schema:
@@ -1021,7 +1015,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/Error"
         "404":
-          description: Доска или карточка не найдены
+          description: Доска или карточка с таким ID не существует
           content:
             application/json:
               schema:
@@ -1087,7 +1081,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/Error"
         "404":
-          description: Доска или карточка не найдены
+          description: Доска или карточка с таким ID не существует
           content:
             application/json:
               schema:
@@ -1137,7 +1131,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/Error"
         "404":
-          description: Доска или карточка не найдены
+          description: Доска или карточка с таким ID не существует
           content:
             application/json:
               schema:
