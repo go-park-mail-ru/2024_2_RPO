@@ -27,8 +27,8 @@ components:
       type: object
       properties:
         id:
-          type: string
-          example: "user_123"
+          type: number
+          example: 123
         name:
           type: string
           example: "Иван Иванов"
