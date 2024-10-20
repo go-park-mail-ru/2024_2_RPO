@@ -1,0 +1,21 @@
+DROP TABLE IF EXISTS card_to_tag;
+
+DROP TABLE IF EXISTS check_list_field;
+
+DROP TABLE IF EXISTS card_update;
+
+DROP TABLE IF EXISTS card_pinned_file;
+
+DROP TABLE IF EXISTS card;
+
+DROP TABLE IF EXISTS "column";
+
+DROP TABLE IF EXISTS tag;
+
+DROP TABLE IF EXISTS notification;
+
+DROP TABLE IF EXISTS user_to_board;
+
+DROP TABLE IF EXISTS board;
+
+DROP TABLE IF EXISTS "user";
