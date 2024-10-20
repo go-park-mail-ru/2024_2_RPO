@@ -39,9 +39,9 @@ func checkEnv(envVars []string) error {
 
 // Загрузить файл .env и вытянуть оттуда данные
 func LoadDotEnv() (config *ServerConfig, err error) {
-	err2 := godotenv.Load()
+	err2 := godotenv.Load("../../.env")
 	if err2 != nil {
-		return nil, errors.New("Cant load .env file")
+		return nil, fmt.Errorf("Cant load .env file: %s", err2.Error())
 	}
 
 	err3 := checkEnv([]string{"DB_PASSWORD", "DB_USER", "DB_PORT", "SERVER_PORT", "REDIS_PORT", "REDIS_USER", "REDIS_PASSWORD"})

@@ -18,6 +18,7 @@ func CreateBoardHandler(w http.ResponseWriter, r *http.Request) {
 	var req models.CreateBoardRequest
 	err = json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
+		//TODO JSON
 		http.Error(w, "Bad Request", http.StatusBadRequest)
 		return
 	}
@@ -39,7 +40,6 @@ func CreateBoardHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Failed to connect to the database", http.StatusInternalServerError)
 		return
 	}
-	defer db.Close()
 
 	var boardId int
 	err = db.QueryRow(`

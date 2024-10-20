@@ -1,5 +1,4 @@
 #!/bin/bash
-# TODO сделать запуск тестов, определение тестового покрытия и генерацию html-ки с результатами анализа
 
 go build
 go test ./... -coverprofile=coverage.out

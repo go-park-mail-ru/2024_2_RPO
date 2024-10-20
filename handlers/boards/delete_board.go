@@ -39,10 +39,10 @@ func DeleteBoardHandler(w http.ResponseWriter, r *http.Request) {
 	// Проверяем, что пользователь имеет права на удаление доски
 	var isAdmin bool
 	err = db.QueryRow(`
-        SELECT is_admin
-        FROM User_to_Board
-        WHERE u_id = $1 AND b_id = $2
-    `, userId, boardId).Scan(&isAdmin)
+		SELECT is_admin
+		FROM User_to_Board
+		WHERE u_id = $1 AND b_id = $2
+	`, userId, boardId).Scan(&isAdmin)
 	if err != nil || !isAdmin {
 		http.Error(w, "Forbidden", http.StatusForbidden)
 		return
@@ -50,9 +50,9 @@ func DeleteBoardHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Удаляем записи в таблице User_to_Board
 	_, err = db.Exec(`
-        DELETE FROM User_to_Board
-        WHERE b_id = $1
-    `, boardId)
+		DELETE FROM User_to_Board
+		WHERE b_id = $1
+	`, boardId)
 	if err != nil {
 		http.Error(w, "Failed to delete related users", http.StatusInternalServerError)
 		return
@@ -60,9 +60,9 @@ func DeleteBoardHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Удаляем доску
 	_, err = db.Exec(`
-        DELETE FROM Board
-        WHERE b_id = $1
-    `, boardId)
+		DELETE FROM Board
+		WHERE b_id = $1
+	`, boardId)
 	if err != nil {
 		http.Error(w, "Failed to delete board", http.StatusInternalServerError)
 		return
