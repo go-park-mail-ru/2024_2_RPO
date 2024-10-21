@@ -5,6 +5,7 @@ import (
 	"RPO_back/database"
 	"RPO_back/logs"
 	"RPO_back/models"
+	"context"
 	"encoding/json"
 	"net/http"
 	"time"
@@ -41,7 +42,7 @@ func RegisterUser(w http.ResponseWriter, r *http.Request) {
 	var userID int
 	query := `INSERT INTO "User" (nickname, email, password_hash, description, joined_at, updated_at)
               VALUES ($1, $2, $3, $4, $5, $6) RETURNING u_id`
-	err = db.QueryRow(query, user.Name, user.Email, string(hashedPassword), "", time.Now(), time.Now()).Scan(&userID)
+	err = db.QueryRow(context.Background(), query, user.Name, user.Email, string(hashedPassword), "", time.Now(), time.Now()).Scan(&userID)
 	if err != nil {
 		http.Error(w, "Internal error", http.StatusInternalServerError)
 		logs.GetLogger().Printf("Error in RegisterUser: %s", err)

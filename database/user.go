@@ -2,6 +2,7 @@ package database
 
 import (
 	"RPO_back/models"
+	"context"
 	"database/sql"
 	"fmt"
 )
@@ -12,14 +13,14 @@ func GetUserByID(userID int) (*models.User, error) {
         FROM "User"
         WHERE u_id = $1
     `
-	conn, err0 := GetDbConnection()
-	if err0 != nil {
-		return nil, err0
+	conn, err := GetDbConnection()
+	if err != nil {
+		return nil, err
 	}
-	row := conn.QueryRow(query, userID)
+	row := conn.QueryRow(context.Background(), query, userID)
 
 	var user models.User
-	err := row.Scan(
+	err = row.Scan(
 		&user.ID,
 		&user.Name,
 		&user.Email,

@@ -4,6 +4,7 @@ import (
 	"RPO_back/auth"
 	"RPO_back/database"
 	"RPO_back/models"
+	"context"
 	"database/sql"
 	"encoding/json"
 	"net/http"
@@ -30,7 +31,7 @@ func LoginUser(w http.ResponseWriter, r *http.Request) {
 	}
 	defer db.Close()
 
-	err2 := db.QueryRow("SELECT u_id, nickname, email, description, joined_at, updated_at, password_hash FROM \"User\" WHERE email=$1", loginRequest.Email).Scan(
+	err2 := db.QueryRow(context.Background(), "SELECT u_id, nickname, email, description, joined_at, updated_at, password_hash FROM \"User\" WHERE email=$1", loginRequest.Email).Scan(
 		&user.ID,
 		&user.Name,
 		&user.Email,

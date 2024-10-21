@@ -2,6 +2,7 @@ package boards
 
 import (
 	"RPO_back/database"
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -38,7 +39,7 @@ func DeleteBoardHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Проверяем, что пользователь имеет права на удаление доски
 	var isAdmin bool
-	err = db.QueryRow(`
+	err = db.QueryRow(context.Background(), `
 		SELECT is_admin
 		FROM User_to_Board
 		WHERE u_id = $1 AND b_id = $2
@@ -49,7 +50,7 @@ func DeleteBoardHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Удаляем записи в таблице User_to_Board
-	_, err = db.Exec(`
+	_, err = db.Exec(context.Background(), `
 		DELETE FROM User_to_Board
 		WHERE b_id = $1
 	`, boardId)
@@ -59,7 +60,7 @@ func DeleteBoardHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Удаляем доску
-	_, err = db.Exec(`
+	_, err = db.Exec(context.Background(), `
 		DELETE FROM Board
 		WHERE b_id = $1
 	`, boardId)

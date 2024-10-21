@@ -3,6 +3,7 @@ package boards
 import (
 	"RPO_back/database"
 	"RPO_back/models"
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -22,7 +23,7 @@ func GetMyBoardsHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	defer db.Close()
 
-	rows, err := db.Query(`
+	rows, err := db.Query(context.Background(), `
         SELECT b.b_id, b.description, b.created_at, b.updated_at, b."name"
         FROM Board b
         INNER JOIN User_to_Board ub ON b.b_id = ub.b_id

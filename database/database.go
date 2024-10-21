@@ -2,20 +2,20 @@ package database
 
 import (
 	"RPO_back/auth"
-	"database/sql"
+	"context"
 	"errors"
 	"fmt"
 	"net/http"
 	"sync"
 
-	_ "github.com/lib/pq"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 var (
 	port   int
 	user   string
 	passwd string
-	db     *sql.DB
+	db     *pgxpool.Pool
 	mu     sync.Mutex
 )
 
@@ -48,22 +48,25 @@ func InitDBConnection(port_ int, user_ string, passwd_ string) error {
 // Устанавливает соединение с базой данных PostgreSQL.
 func ConnectToDb() error {
 	var err error
-	connStr := fmt.Sprintf("host=localhost port=%d user=%s password=%s dbname=pumpkin sslmode=disable", port, user, passwd)
-	db, err = sql.Open("postgres", connStr)
+	// urlExample := "postgres://username:password@localhost:5432/database_name"
+	databaseURL := fmt.Sprintf("postgres://%s:%s@localhost:%d/pumpkin", user, passwd, port)
+	db, err = pgxpool.New(context.Background(), databaseURL)
 	if err != nil {
 		return errors.New(fmt.Sprintf("Database connection error: %s", err.Error()))
 	}
-	err = db.Ping()
+
+	conn, err := db.Acquire(context.Background())
 	if err != nil {
 		return errors.New(fmt.Sprintf("Database ping error: %s", err.Error()))
 	}
+	defer conn.Release()
 
 	return err
 }
 
 // GetDbConnection возвращает установленное соединение с базой данных.
 // Если соединение не установлено, происходит попытка переподключения. Если попытка неудачная, возвращается ошибка.
-func GetDbConnection() (*sql.DB, error) {
+func GetDbConnection() (*pgxpool.Pool, error) {
 	mu.Lock()
 	defer mu.Unlock()
 
@@ -78,7 +81,7 @@ func GetDbConnection() (*sql.DB, error) {
 	}
 
 	// Проверяем текущее состояние соединения
-	if err := db.Ping(); err != nil {
+	if _, err := db.Acquire(context.Background()); err != nil {
 		// Если соединение потеряно, пытаемся восстановить его
 		db.Close() // Закрываем старое соединение
 		var errReconnect error

@@ -3,6 +3,7 @@ package boards
 import (
 	"RPO_back/database"
 	"RPO_back/models"
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -42,7 +43,7 @@ func CreateBoardHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var boardId int
-	err = db.QueryRow(`
+	err = db.QueryRow(context.Background(), `
 		INSERT INTO Board (description, name, created_by, updated_at)
 		VALUES ($1, $2, $3, CURRENT_TIMESTAMP)
 		RETURNING b_id`,
@@ -54,7 +55,7 @@ func CreateBoardHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	board.ID = boardId
 
-	_, err = db.Exec(`
+	_, err = db.Exec(context.Background(), `
 		INSERT INTO User_to_Board (u_id, b_id, added_at, updated_at, can_edit, can_share, can_invite_members, is_admin, added_by, updated_by)
 		VALUES ($1, $2, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, TRUE, TRUE, TRUE, TRUE, NULL, NULL)`,
 		board.OwnerID, boardId)
