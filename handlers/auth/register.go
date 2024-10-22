@@ -3,9 +3,9 @@ package auth
 import (
 	"RPO_back/auth"
 	"RPO_back/database"
-	"RPO_back/logs"
 	"RPO_back/models"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -44,7 +44,7 @@ func RegisterUser(w http.ResponseWriter, r *http.Request) {
 	err = db.QueryRow(query, user.Name, user.Email, string(hashedPassword), "", time.Now(), time.Now()).Scan(&userID)
 	if err != nil {
 		http.Error(w, "Internal error", http.StatusInternalServerError)
-		logs.GetLogger().Printf("Error in RegisterUser: %s", err)
+		fmt.Printf("Error in RegisterUser: %s", err)
 		return
 	}
 
@@ -53,7 +53,7 @@ func RegisterUser(w http.ResponseWriter, r *http.Request) {
 	err = auth.RegisterSessionRedis(sessionID, userID)
 	if err != nil {
 		http.Error(w, "Failed to register session", http.StatusInternalServerError)
-		logs.GetLogger().Printf("Error in RegisterSessionRedis: %s", err)
+		fmt.Printf("Error in RegisterSessionRedis: %s", err)
 		return
 	}
 
