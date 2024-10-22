@@ -1,8 +1,8 @@
 package boards
 
 import (
-	"RPO_back/database"
 	"RPO_back/internal/models"
+	"RPO_back/internal/pkg/auth/repository"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -10,13 +10,13 @@ import (
 )
 
 func GetMyBoardsHandler(w http.ResponseWriter, r *http.Request) {
-	userId, err := database.GetUserId(w, r)
+	userId, err := repository.GetUserId(w, r)
 	if err != nil {
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
 	}
 
-	db, err := database.GetDbConnection()
+	db, err := repository.GetDbConnection()
 	if err != nil {
 		http.Error(w, "Failed to connect to the database", http.StatusInternalServerError)
 		return

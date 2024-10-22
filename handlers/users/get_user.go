@@ -1,18 +1,18 @@
 package users
 
 import (
-	"RPO_back/database"
+	"RPO_back/internal/pkg/auth/repository"
 	"encoding/json"
 	"net/http"
 )
 
 func GetMe(w http.ResponseWriter, r *http.Request) {
-	userId, err := database.GetUserId(w, r)
+	userId, err := repository.GetUserId(w, r)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 
-	user, err2 := database.GetUserByID(userId)
+	user, err2 := repository.GetUserByID(userId)
 	if err2 != nil {
 		http.Error(w, err2.Error(), http.StatusInternalServerError)
 		return

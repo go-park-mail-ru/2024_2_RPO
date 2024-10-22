@@ -1,7 +1,7 @@
 package boards
 
 import (
-	"RPO_back/database"
+	"RPO_back/internal/pkg/auth/repository"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -12,7 +12,7 @@ import (
 )
 
 func DeleteBoardHandler(w http.ResponseWriter, r *http.Request) {
-	userId, err := database.GetUserId(w, r)
+	userId, err := repository.GetUserId(w, r)
 	if err != nil {
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
@@ -30,7 +30,7 @@ func DeleteBoardHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Printf("Board id: %s\n", boardId)
 	fmt.Printf("UserId id: %d\n", userId)
 
-	db, err := database.GetDbConnection()
+	db, err := repository.GetDbConnection()
 	if err != nil {
 		http.Error(w, "Failed to connect to the database", http.StatusInternalServerError)
 		return

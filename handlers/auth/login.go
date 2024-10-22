@@ -2,8 +2,8 @@ package auth
 
 import (
 	"RPO_back/auth"
-	"RPO_back/database"
 	"RPO_back/internal/models"
+	"RPO_back/internal/pkg/auth/repository"
 	"context"
 	"database/sql"
 	"encoding/json"
@@ -24,7 +24,7 @@ func LoginUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	db, err := database.GetDbConnection()
+	db, err := repository.GetDbConnection()
 	if err != nil {
 		http.Error(w, "Failed to connect to the database", http.StatusInternalServerError)
 		return

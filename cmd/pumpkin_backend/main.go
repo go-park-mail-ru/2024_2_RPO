@@ -2,10 +2,10 @@ package main
 
 import (
 	"RPO_back/auth"
-	"RPO_back/database"
 	auth_handlers "RPO_back/handlers/auth"
 	boards_handlers "RPO_back/handlers/boards"
 	user_handlers "RPO_back/handlers/users"
+	"RPO_back/internal/pkg/auth/repository"
 	"RPO_back/internal/pkg/utils"
 	"fmt"
 	"log"
@@ -28,7 +28,7 @@ func initializeApp() (*mux.Router, error) {
 	logger.Printf("Server config: %#v", serverConfig)
 
 	// Подключаемся к базе
-	if err := database.InitDBConnection(serverConfig.DbUrl); err != nil {
+	if err := repository.InitDBConnection(serverConfig.DbUrl); err != nil {
 		return nil, fmt.Errorf("ошибка подключения к базе данных: %w", err)
 	}
 
