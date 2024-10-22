@@ -6,7 +6,7 @@ import (
 	auth_handlers "RPO_back/handlers/auth"
 	boards_handlers "RPO_back/handlers/boards"
 	user_handlers "RPO_back/handlers/users"
-	"RPO_back/utils"
+	"RPO_back/internal/pkg/utils"
 	"fmt"
 	"log"
 	"net/http"
@@ -28,12 +28,12 @@ func initializeApp() (*mux.Router, error) {
 	logger.Printf("Server config: %#v", serverConfig)
 
 	// Подключаемся к базе
-	if err := database.InitDBConnection(serverConfig.DbPort, serverConfig.DbUser, serverConfig.DbPasswd); err != nil {
+	if err := database.InitDBConnection(serverConfig.DbUrl); err != nil {
 		return nil, fmt.Errorf("ошибка подключения к базе данных: %w", err)
 	}
 
 	// Подключаемся к Redis
-	if err := auth.ConnectToRedis(serverConfig.RedisPort, serverConfig.RedisUser, serverConfig.RedisPasswd); err != nil {
+	if err := auth.ConnectToRedis(serverConfig.RedisUrl); err != nil {
 		return nil, fmt.Errorf("ошибка подключения к Redis: %w", err)
 	}
 

@@ -12,9 +12,7 @@ import (
 )
 
 var (
-	port   int
-	user   string
-	passwd string
+	url 	string
 	db     *pgxpool.Pool
 	mu     sync.Mutex
 )
@@ -34,10 +32,8 @@ func GetUserId(w http.ResponseWriter, r *http.Request) (int, error) {
 	return userId, nil
 }
 
-func InitDBConnection(port_ int, user_ string, passwd_ string) error {
-	port = port_
-	user = user_
-	passwd = passwd_
+func InitDBConnection(url_ string) error {
+	url = url_
 	err := ConnectToDb()
 	if err == nil {
 		fmt.Println("Successfully connected to Postgres!")
@@ -48,9 +44,7 @@ func InitDBConnection(port_ int, user_ string, passwd_ string) error {
 // Устанавливает соединение с базой данных PostgreSQL.
 func ConnectToDb() error {
 	var err error
-	// urlExample := "postgres://username:password@localhost:5432/database_name"
-	databaseURL := fmt.Sprintf("postgres://%s:%s@localhost:%d/pumpkin", user, passwd, port)
-	db, err = pgxpool.New(context.Background(), databaseURL)
+	db, err = pgxpool.New(context.Background(), url)
 	if err != nil {
 		return errors.New(fmt.Sprintf("Database connection error: %s", err.Error()))
 	}

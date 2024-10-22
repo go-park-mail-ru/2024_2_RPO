@@ -2,7 +2,7 @@ package boards
 
 import (
 	"RPO_back/database"
-	"RPO_back/models"
+	"RPO_back/internal/models"
 	"context"
 	"encoding/json"
 	"fmt"

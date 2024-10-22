@@ -1,7 +1,7 @@
 package database
 
 import (
-	"RPO_back/models"
+	"RPO_back/internal/models"
 	"context"
 	"database/sql"
 	"fmt"
