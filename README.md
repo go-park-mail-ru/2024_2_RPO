@@ -25,18 +25,12 @@
 Затем надо оформить файл `.env`. Пример:
 
 ```
-DB_HOST=localhost
-DB_PORT=5432
-DB_USER=tarasovxx
-DB_PASSWORD=my_secure_password
-DB_DATABASE=pumpkin
+DB_URL = postgres://tarasovxx:my_secure_password@localhost:5432/pumpkin
 
 SERVER_PORT=8800
 
-REDIS_HOST=localhost
-REDIS_PORT=6379
-REDIS_USER=tarasovxx
-REDIS_PASSWORD=my_secure_password
+REDIS_URL = redis://:my_secure_password@localhost:6379
+
 ```
 
 Запуск: `make run`

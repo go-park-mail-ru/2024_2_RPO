@@ -13,8 +13,6 @@ SRC_DIR := ./cmd/pumpkin_backend
 GOFLAGS := # Может, когда-нибудь пригодятся
 LDFLAGS := -ldflags="-s -w" # Отключить дебаг-информацию
 
-DATABASE_URL="postgresql://$(DB_USER):$(DB_PASSWORD)@$(DB_HOST):$(DB_PORT)/$(DB_DATABASE)?sslmode=$(DB_SSLMODE)"
-
 # Цели Makefile, которые не привязываются к файлам
 .PHONY: all build test clean coverage run
 
@@ -47,11 +45,9 @@ docker-build:
 
 # Миграции для базы данных
 migrate-up:
-	@echo "Database URL: $(DATABASE_URL)"
 	@echo "==> Running migrations..."
-	@migrate -path ./database/migrations -database $(DATABASE_URL) up
+	@migrate -path ./database/migrations -database $(DB_URL) up
 
 migrate-down:
-	@echo "Database URL: $(DATABASE_URL)"
 	@echo "==> Reverting migrations..."
-	@migrate -path ./database/migrations -database $(DATABASE_URL) down
+	@migrate -path ./database/migrations -database $(DB_URL) down
