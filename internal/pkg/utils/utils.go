@@ -2,11 +2,9 @@ package utils
 
 import (
 	"RPO_back/internal/pkg/config"
-	"errors"
 	"fmt"
 	"os"
 	"strconv"
-	"strings"
 
 	"github.com/joho/godotenv"
 )
@@ -41,32 +39,14 @@ func LoadDotEnv() (config_ *config.ServerConfig, err_ error) {
 		return nil, err
 	}
 
-	dbPort_raw := strings.Split(strings.Split(strings.Split(os.Getenv("DB_URL"), "@")[1], ":")[1], "/")[0]
-	serverPort_raw := os.Getenv("SERVER_PORT")
-	redisPort_raw := strings.Split(strings.Split(os.Getenv("REDIS_URL"), "@")[1], ":")[1]
-	dbPort, err1 := strconv.ParseInt(dbPort_raw, 10, 64)
-	serverPort, err2 := strconv.ParseInt(serverPort_raw, 10, 64)
-	redisPort, err3 := strconv.ParseInt(redisPort_raw, 10, 64)
-
-	if err1 != nil || err2 != nil || err3 != nil {
-		return nil, errors.New("DB's port or server port cant be parsed")
+	port, err1 := strconv.ParseInt(os.Getenv("SERVER_PORT"), 10, 64)
+	if err1 != nil {
+		return nil, fmt.Errorf("error converting SERVER_PORT to int: %v", err1)
 	}
-	if dbPort < 0 || dbPort > 65535 {
-		return nil, errors.New("DB port is out of range")
-	}
-	if redisPort < 0 || redisPort > 65535 {
-		return nil, errors.New("redis port is out of range")
-	}
-	if serverPort < 0 || serverPort > 65535 {
-		return nil, errors.New("server port is out of range")
-	}
-	if serverPort < 1000 {
-		return nil, errors.New("server port should be less than 1000 because of no need to root")
-	}
-
+	
 	var ret config.ServerConfig
     ret.DbUrl = os.Getenv("DB_URL")
-    ret.ServerPort = int(serverPort)
+    ret.ServerPort = int(port)
     ret.RedisUrl = os.Getenv("REDIS_URL")
 
 	return &ret, nil

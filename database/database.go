@@ -21,7 +21,7 @@ func GetUserId(w http.ResponseWriter, r *http.Request) (int, error) {
 	sessionCookie, err := r.Cookie("session_id")
 	if err != nil || sessionCookie.Value == "" {
 		http.Error(w, "not authorized", http.StatusUnauthorized)
-		return 0, errors.New("No session cookie detected")
+		return 0, errors.New("no session cookie detected")
 	}
 
 	userId, err2 := auth.RetrieveUserIdFromSessionId(sessionCookie.Value)
@@ -46,12 +46,12 @@ func ConnectToDb() error {
 	var err error
 	db, err = pgxpool.New(context.Background(), url)
 	if err != nil {
-		return errors.New(fmt.Sprintf("Database connection error: %s", err.Error()))
+		return fmt.Errorf("database connection error: %s", err)
 	}
 
 	conn, err := db.Acquire(context.Background())
 	if err != nil {
-		return errors.New(fmt.Sprintf("Database ping error: %s", err.Error()))
+		return fmt.Errorf("database ping error: %s", err)
 	}
 	defer conn.Release()
 
@@ -66,8 +66,7 @@ func GetDbConnection() (*pgxpool.Pool, error) {
 
 	// Если соединение еще не установлено, устанавливаем его
 	if db == nil {
-		var err error
-		err = ConnectToDb()
+		err := ConnectToDb()
 		if err != nil {
 			return nil, fmt.Errorf("не удалось установить соединение с БД: %w", err)
 		}
@@ -78,8 +77,7 @@ func GetDbConnection() (*pgxpool.Pool, error) {
 	if _, err := db.Acquire(context.Background()); err != nil {
 		// Если соединение потеряно, пытаемся восстановить его
 		db.Close() // Закрываем старое соединение
-		var errReconnect error
-		errReconnect = ConnectToDb()
+		errReconnect := ConnectToDb()
 		if errReconnect != nil {
 			return nil, fmt.Errorf("соединение с БД закрыто и восстановить его не удалось: %w", errReconnect)
 		}

@@ -30,9 +30,9 @@ func GetUserByID(userID int) (*models.User, error) {
 	)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return nil, fmt.Errorf("User with ID %d not found", userID)
+			return nil, fmt.Errorf("user with ID %d not found", userID)
 		}
-		return nil, fmt.Errorf("Error while retrieving user: %w", err)
+		return nil, fmt.Errorf("error while retrieving user: %w", err)
 	}
 
 	return &user, nil
