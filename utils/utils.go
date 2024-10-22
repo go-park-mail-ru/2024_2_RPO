@@ -39,7 +39,7 @@ func checkEnv(envVars []string) error {
 
 // Загрузить файл .env и вытянуть оттуда данные
 func LoadDotEnv() (config *ServerConfig, err error) {
-	err2 := godotenv.Load("../../.env")
+	err2 := godotenv.Load(".env")
 	if err2 != nil {
 		return nil, fmt.Errorf("Cant load .env file: %s", err2.Error())
 	}

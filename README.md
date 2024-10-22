@@ -25,19 +25,22 @@
 Затем надо оформить файл `.env`. Пример:
 
 ```
-DB_PASSWORD=my_secure_password
-DB_USER=tarasovxx
+DB_HOST=localhost
 DB_PORT=5432
+DB_USER=tarasovxx
+DB_PASSWORD=my_secure_password
+DB_DATABASE=pumpkin
 
 SERVER_PORT=8800
 
+REDIS_HOST=localhost
 REDIS_PORT=6379
 REDIS_USER=tarasovxx
 REDIS_PASSWORD=my_secure_password
 ```
 
-Запуск: `go run main.go`
+Запуск: `make run`
 
 ### Запуск тестов
 
-Надо сделать всё, что нужно для запуска сервера, но вместо `go run main.go` запустить `./get_coverage_data.sh`
+Надо сделать всё, что нужно для запуска сервера, но вместо `make run` запустить `make test`. Чтобы получить информацию о покрытии, надо запустить `make coverage`

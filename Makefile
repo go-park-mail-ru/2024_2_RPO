@@ -1,30 +1,45 @@
+DB_SSLMODE := require
+
+# Подключаем .env файл
+ifneq (,$(wildcard ./.env))
+include .env
+export
+endif
+
 APP_NAME := pumpkin_backend
 BUILD_DIR := ./build
 SRC_DIR := ./cmd/pumpkin_backend
 
-# Определите стандартные флаги сборки
-GOFLAGS :=
+GOFLAGS := # Может, когда-нибудь пригодятся
 LDFLAGS := -ldflags="-s -w" # Отключить дебаг-информацию
 
+DATABASE_URL="postgresql://$(DB_USER):$(DB_PASSWORD)@$(DB_HOST):$(DB_PORT)/$(DB_DATABASE)?sslmode=$(DB_SSLMODE)"
+
 # Цели Makefile, которые не привязываются к файлам
-.PHONY: all build test clean coverage
+.PHONY: all build test clean coverage run
 
 all: build
 
 build:
 	@echo "==> Building the application..."
-	@GOOS=linux GOARCH=amd64 go build $(GOFLAGS) $(LDFLAGS) -o $(BUILD_DIR)/$(APP_NAME) $(SRC_DIR)
+	@go build $(GOFLAGS) $(LDFLAGS) -o $(BUILD_DIR)/$(APP_NAME) $(SRC_DIR)
 
 test:
 	@echo "==> Running tests..."
-	@go test $(GOFLAGS) -v ./...
+	@go test $(GOFLAGS) -coverprofile coverage.out -v ./...
 
-coverage:
+coverage: test
 	@echo "==> Calculating coverage..."
+	@go tool cover -html=coverage.out -o=coverage.html
+	@echo "==> Done! Check coverage.html file!"
+
 
 clean:
 	@echo "==> Cleaning up..."
 	@rm -rf $(BUILD_DIR)
+
+run:
+	@go run ${SRC_DIR}
 
 docker-build:
 	@echo "==> Building Docker image..."
@@ -32,9 +47,11 @@ docker-build:
 
 # Миграции для базы данных
 migrate-up:
+	@echo "Database URL: $(DATABASE_URL)"
 	@echo "==> Running migrations..."
-	@migrate -path ./migrations -database YOUR_DB_CONNECTION_URL up
+	@migrate -path ./database/migrations -database $(DATABASE_URL) up
 
 migrate-down:
+	@echo "Database URL: $(DATABASE_URL)"
 	@echo "==> Reverting migrations..."
-	@migrate -path ./migrations -database YOUR_DB_CONNECTION_URL down
+	@migrate -path ./database/migrations -database $(DATABASE_URL) down
