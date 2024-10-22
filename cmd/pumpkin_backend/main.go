@@ -23,7 +23,7 @@ func initializeApp() (*mux.Router, error) {
 	// Обрабатываем файл .env
 	serverConfig, err := utils.LoadDotEnv()
 	if err != nil {
-		return nil, fmt.Errorf("Error while load .env file: %w", err)
+		return nil, fmt.Errorf("error while load .env file: %w", err)
 	}
 	logger.Printf("Server config: %#v", serverConfig)
 
