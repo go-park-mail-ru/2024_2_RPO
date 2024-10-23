@@ -14,6 +14,11 @@
 
 [Ссылка на Swagger и `CREATE TABLE`](https://github.com/go-park-mail-ru/2024_2_RPO/tree/swagger_approved)
 
+### Стандарты разработки
+
+* Все комментарии на русском языке
+* Все логи на английском языке
+
 ### Запуск сервера
 
 Надо развернуть PostgreSQL и Redis
@@ -32,6 +37,8 @@ SERVER_PORT = 8800
 REDIS_URL = redis://:my_secure_password@localhost:6379
 
 CORS_ORIGIN = https://mysite.com
+
+LOGS_FILE = tarasovxx.json
 ```
 
 Запуск: `make run`

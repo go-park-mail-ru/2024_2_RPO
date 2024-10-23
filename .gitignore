@@ -4,3 +4,4 @@ coverage.out
 coverage.html
 **/*.exe
 build
+log.json
