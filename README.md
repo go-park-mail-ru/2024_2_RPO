@@ -27,10 +27,11 @@
 ```
 DB_URL = postgres://tarasovxx:my_secure_password@localhost:5432/pumpkin
 
-SERVER_PORT=8800
+SERVER_PORT = 8800
 
 REDIS_URL = redis://:my_secure_password@localhost:6379
 
+CORS_ORIGIN = https://mysite.com
 ```
 
 Запуск: `make run`
