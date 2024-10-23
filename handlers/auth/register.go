@@ -4,6 +4,7 @@ import (
 	"RPO_back/auth"
 	"RPO_back/internal/models"
 	"RPO_back/internal/pkg/auth/repository"
+	"RPO_back/internal/pkg/utils/responses"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -49,7 +50,7 @@ func RegisterUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	sessionID := auth.GenerateSessionID()
+	sessionID := responses.GenerateSessionID()
 
 	err = auth.RegisterSessionRedis(sessionID, userID)
 	if err != nil {

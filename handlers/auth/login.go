@@ -4,6 +4,7 @@ import (
 	"RPO_back/auth"
 	"RPO_back/internal/models"
 	"RPO_back/internal/pkg/auth/repository"
+	"RPO_back/internal/pkg/utils/responses"
 	"context"
 	"database/sql"
 	"encoding/json"
@@ -17,7 +18,7 @@ func LoginUser(w http.ResponseWriter, r *http.Request) {
 	var user models.User
 	var hashedPassword string
 
-	sessionID := auth.GenerateSessionID()
+	sessionID := responses.GenerateSessionID()
 
 	if err := json.NewDecoder(r.Body).Decode(&loginRequest); err != nil {
 		http.Error(w, "Invalid request payload", http.StatusBadRequest)
