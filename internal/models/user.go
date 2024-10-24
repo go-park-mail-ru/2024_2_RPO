@@ -16,7 +16,6 @@ type User struct {
 	JoinedAt     time.Time `json:"joinedAt"`
 	UpdatedAt    time.Time `json:"updatedAt"`
 	PasswordHash string    `json:"-"`
-	PasswordSalt string    `json:"-"`
 }
 
 type LoginRequest struct {

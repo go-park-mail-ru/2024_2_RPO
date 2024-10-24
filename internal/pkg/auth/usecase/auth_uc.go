@@ -6,7 +6,7 @@ import (
 	"RPO_back/internal/pkg/auth/repository"
 	"RPO_back/internal/pkg/utils/encrypt"
 	"errors"
-	"net/http"
+	"fmt"
 )
 
 type AuthUsecase struct {
@@ -24,7 +24,7 @@ func (this *AuthUsecase) LoginUser(email string, password string) (sessionId str
 	if err != nil {
 		return "", err
 	}
-	requestPasswordHash, err := encrypt.SaltAndHashPassword(password, []byte(user.PasswordSalt))
+	requestPasswordHash, err := encrypt.SaltAndHashPassword(password)
 	if err != nil {
 		return "", err
 	}
@@ -41,6 +41,10 @@ func (this *AuthUsecase) LoginUser(email string, password string) (sessionId str
 }
 
 func (this *AuthUsecase) RegisterUser(user *models.UserRegistration) (sessionId string, err error) {
+	err = this.authRepo.CheckUniqueCredentials(user.Name, user.Email)
+	if err != nil {
+		return "", err
+	}
 	hashedPassword, err := encrypt.SaltAndHashPassword(user.Password)
 	if err != nil {
 		return "", errors.New("Failed to hash password")
@@ -48,16 +52,18 @@ func (this *AuthUsecase) RegisterUser(user *models.UserRegistration) (sessionId 
 
 	newUser, err := this.authRepo.CreateUser(user, string(hashedPassword))
 	if err != nil {
-		return "", errors.New("Internal error")
+		return "", fmt.Errorf("Internal error: %w", err)
 	}
 
-	sessionId, err = this.authRepo.RegisterSessionRedis(userID, newUser.Id)
+	sessionId = encrypt.GenerateSessionID()
+	err = this.authRepo.RegisterSessionRedis(sessionId, newUser.Id)
 	if err != nil {
 		return "", errors.New("Failed to register session")
 	}
 
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte("Session cookie is set"))
+	return sessionId, nil
+}
 
-	return nil
+func (this *AuthUsecase) LogoutUser(sessionId string) error {
+	return this.authRepo.KillSessionRedis(sessionId)
 }

@@ -43,6 +43,16 @@ func (this *AuthRepository) RegisterSessionRedis(cookie string, userID int) erro
 	return nil
 }
 
+// Регистрирует сессионную куку в Redis
+func (this *AuthRepository) KillSessionRedis(sessionId string) error {
+	redisConn := this.redisDb.Conn(this.redisDb.Context())
+	defer redisConn.Close()
+	if err := redisConn.Del(this.redisDb.Context(), sessionId).Err(); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (this *AuthRepository) retrieveUserIdFromSessionId(sessionId string) (userId int, err error) {
 	redisConn := this.redisDb.Conn(this.redisDb.Context())
 	defer redisConn.Close()
@@ -94,7 +104,7 @@ func (this *AuthRepository) SessionMiddleware(next http.Handler) http.Handler {
 
 func (this *AuthRepository) GetUserByEmail(email string) (user *models.User, err error) {
 	user = &models.User{}
-	selectError := this.db.QueryRow(context.Background(), "SELECT u_id, nickname, email, description, joined_at, updated_at, password_hash, salt FROM \"User\" WHERE email=$1", email).Scan(
+	selectError := this.db.QueryRow(context.Background(), "SELECT u_id, nickname, email, description, joined_at, updated_at, password_hash FROM \"User\" WHERE email=$1", email).Scan(
 		&user.Id,
 		&user.Name,
 		&user.Email,
@@ -102,7 +112,6 @@ func (this *AuthRepository) GetUserByEmail(email string) (user *models.User, err
 		&user.JoinedAt,
 		&user.UpdatedAt,
 		&user.PasswordHash,
-		&user.PasswordSalt,
 	)
 	if selectError != nil {
 		if errors.Is(selectError, pgx.ErrNoRows) {
@@ -114,32 +123,40 @@ func (this *AuthRepository) GetUserByEmail(email string) (user *models.User, err
 	return user, nil
 }
 
-func (this *AuthRepository) CreateUser(user *models.UserRegistration, hashedPassword string) (*models.User, error) {
-	var userID int
-	query := `INSERT INTO "User" (nickname, email, password_hash, description, joined_at, updated_at)
-              VALUES ($1, $2, $3, $4, $5, $6) RETURNING u_id`
+func (this *AuthRepository) CreateUser(user *models.UserRegistration, hashedPassword string) (newUser *models.User, err error) {
+	newUser = &models.User{}
+	query := `INSERT INTO "user" (nickname, email, password_hash, description, joined_at, updated_at)
+              VALUES ($1, $2, $3, $4, $5, $6) RETURNING u_id, nickname, email, password_hash, description, joined_at, updated_at`
 
-	err := this.db.QueryRow(context.Background(), query, user.Name, user.Email, hashedPassword, "", time.Now(), time.Now()).Scan(&userID)
-	return userID, err
+	err = this.db.QueryRow(context.Background(), query, user.Name, user.Email, hashedPassword, "", time.Now(), time.Now()).Scan(
+		&newUser.Id,
+		&newUser.Name,
+		&newUser.Email,
+		&newUser.PasswordHash,
+		&newUser.Description,
+		&newUser.JoinedAt,
+		&newUser.UpdatedAt,
+	)
+	return newUser, err
 }
 
 func (this *AuthRepository) CheckUniqueCredentials(nickname string, email string) error {
-	query1 := `SELECT COUNT(*) FROM "User" WHERE nickname = $1`
-	query2 := `SELECT COUNT(*) FROM "User" WHERE email = $1`
+	query1 := `SELECT COUNT(*) FROM "user" WHERE nickname = $1`
+	query2 := `SELECT COUNT(*) FROM "user" WHERE email = $1`
 	var count int
 	err := this.db.QueryRow(context.Background(), query1, nickname).Scan(&count)
 	if err != nil {
-		return err
+		return fmt.Errorf("AuthRepository CheckUniqueCredentials: %w", err)
 	}
 	if count > 0 {
-		return auth.ErrBusyNickname
+		return fmt.Errorf("AuthRepository CheckUniqueCredentials: %w", auth.ErrBusyNickname)
 	}
-	err = this.db.QueryRow(context.Background(), query2).Scan(&count)
+	err = this.db.QueryRow(context.Background(), query2, email).Scan(&count)
 	if err != nil {
-		return err
+		return fmt.Errorf("AuthRepository CheckUniqueCredentials: %w", err)
 	}
 	if count > 0 {
-		return auth.ErrBusyNickname
+		return fmt.Errorf("AuthRepository CheckUniqueCredentials: %w", auth.ErrBusyEmail)
 	}
 	return nil
 }

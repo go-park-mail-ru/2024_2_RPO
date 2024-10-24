@@ -1,7 +1,6 @@
 package cors
 
 import (
-	"fmt"
 	"net/http"
 	"os"
 )
@@ -11,7 +10,6 @@ const csp = "default-src 'none'; script-src 'self'; connect-src 'self'; img-src 
 // Middleware для CORS
 func CorsMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		fmt.Print("Cors mware")
 		w.Header().Set("Access-Control-Allow-Origin", os.Getenv("CORS_ORIGIN"))
 		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS, PUT, PATCH, DELETE")
 		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")

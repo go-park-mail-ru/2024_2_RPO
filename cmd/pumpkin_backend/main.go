@@ -1,9 +1,6 @@
 package main
 
 import (
-	auth_handlers "RPO_back/handlers/auth"
-	boards_handlers "RPO_back/handlers/boards"
-	user_handlers "RPO_back/handlers/users"
 	authDelivery "RPO_back/internal/pkg/auth/delivery"
 	authRepository "RPO_back/internal/pkg/auth/repository"
 	authUsecase "RPO_back/internal/pkg/auth/usecase"
@@ -98,13 +95,13 @@ func main() {
 	router.Use(logging_middleware.LoggingMiddleware)
 
 	// Регистрируем обработчики
-	router.HandleFunc("/auth/register", auth_handlers.RegisterUser).Methods("POST", "OPTIONS")
-	router.HandleFunc("/users/me", user_handlers.GetMe).Methods("GET", "OPTIONS")
-	router.HandleFunc("/boards/my", boards_handlers.GetMyBoardsHandler).Methods("GET", "OPTIONS")
-	router.HandleFunc("/boards", boards_handlers.CreateBoardHandler).Methods("POST", "OPTIONS")
-	router.HandleFunc("/boards/{boardId}", boards_handlers.DeleteBoardHandler).Methods("DELETE", "OPTIONS")
+	router.HandleFunc("/auth/register", authDelivery.RegisterUser).Methods("POST", "OPTIONS")
+	//router.HandleFunc("/users/me", user_handlers.GetMe).Methods("GET", "OPTIONS")
+	// router.HandleFunc("/boards/my", boards_handlers.GetMyBoardsHandler).Methods("GET", "OPTIONS")
+	// router.HandleFunc("/boards", boards_handlers.CreateBoardHandler).Methods("POST", "OPTIONS")
+	// router.HandleFunc("/boards/{boardId}", boards_handlers.DeleteBoardHandler).Methods("DELETE", "OPTIONS")
 	router.HandleFunc("/auth/login", authDelivery.LoginUser).Methods("POST", "OPTIONS")
-	router.HandleFunc("/auth/logout", auth_handlers.LogoutUser).Methods("POST", "OPTIONS")
+	router.HandleFunc("/auth/logout", authDelivery.LogoutUser).Methods("POST", "OPTIONS")
 
 	// Запускаем сервер
 	addr := fmt.Sprintf(":%s", os.Getenv("SERVER_PORT"))

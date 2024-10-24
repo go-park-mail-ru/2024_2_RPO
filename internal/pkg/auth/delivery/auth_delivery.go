@@ -8,9 +8,10 @@ import (
 	"RPO_back/internal/pkg/utils/responses"
 	"RPO_back/internal/pkg/utils/validate"
 	"errors"
-	"fmt"
 	"net/http"
 	"time"
+
+	log "github.com/sirupsen/logrus"
 )
 
 const sessionIdCookieName string = "session_id"
@@ -52,37 +53,40 @@ func (this *AuthDelivery) LoginUser(w http.ResponseWriter, r *http.Request) {
 	}
 	http.SetCookie(w, &cookie)
 
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte("Session cookie is set"))
-	http.Redirect(w, r, "/app", http.StatusFound)
+	responses.DoEmptyOkResponce(w)
 }
 
 func (this *AuthDelivery) RegisterUser(w http.ResponseWriter, r *http.Request) {
 	var user models.UserRegistration
 	err := requests.GetRequestData(r, &user)
 	if err != nil {
+		log.Error("AuthDelivery Parsing JSON: ", err)
 		responses.DoBadResponse(w, http.StatusBadRequest, "Bad request")
 		return
 	}
 
-	err = validate.Validate(&user)
+	err = validate.Validate(user)
 	if err != nil {
+		log.Error("AuthDelivery Validating: ", err)
 		responses.DoBadResponse(w, http.StatusBadRequest, "Validation error")
 		return
 	}
 
 	sessionId, err := this.authUsecase.RegisterUser(&user)
 	if err != nil {
+		log.Error("Auth: ", err)
 		if errors.Is(err, auth.ErrBusyEmail) {
 			responses.DoBadResponse(w, http.StatusConflict, "Email is busy")
 		} else if errors.Is(err, auth.ErrBusyNickname) {
 			responses.DoBadResponse(w, http.StatusConflict, "Nickname is busy")
+		} else {
+			responses.DoBadResponse(w, http.StatusInternalServerError, "Internal server error")
 		}
 		return
 	}
 
 	cookie := http.Cookie{
-		Name:     ,
+		Name:     sessionIdCookieName,
 		Value:    sessionId,
 		Path:     "/",
 		HttpOnly: true,
@@ -90,11 +94,11 @@ func (this *AuthDelivery) RegisterUser(w http.ResponseWriter, r *http.Request) {
 	}
 	http.SetCookie(w, &cookie)
 
-	w.WriteHeader(http.StatusOK)
+	responses.DoEmptyOkResponce(w)
 }
 
 func (this *AuthDelivery) LogoutUser(w http.ResponseWriter, r *http.Request) {
-	cookie, err := r.Cookie("session_id")
+	cookie, err := r.Cookie(sessionIdCookieName)
 	if err != nil {
 		responses.DoBadResponse(w, http.StatusBadRequest, "You are not logged in")
 		return
@@ -102,19 +106,18 @@ func (this *AuthDelivery) LogoutUser(w http.ResponseWriter, r *http.Request) {
 
 	sessionID := cookie.Value
 
-	rdb := auth.GetRedisConnection()
-
-	if err := rdb.Del(ctx, sessionID).Err(); err != nil {
-		http.Error(w, fmt.Sprintf("Failed to log out: %v", err), http.StatusInternalServerError)
-		return
-	}
+	err = this.authUsecase.LogoutUser(sessionID)
 
 	http.SetCookie(w, &http.Cookie{
-		Name:   "session_id",
+		Name:   sessionIdCookieName,
 		Value:  "",
 		Path:   "/",
 		MaxAge: -1,
 	})
 
-	w.WriteHeader(http.StatusOK)
+	if err != nil {
+		responses.DoBadResponse(w, 500, "Internal server error")
+	} else {
+		responses.DoEmptyOkResponce(w)
+	}
 }
