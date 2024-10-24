@@ -1,87 +1,44 @@
 package repository
 
 import (
-	"RPO_back/auth"
-	"context"
-	"errors"
 	"fmt"
-	"net/http"
+	"strconv"
 	"sync"
+	"time"
 
+	"github.com/go-redis/redis/v8"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 var (
-	url 	string
-	db     *pgxpool.Pool
-	mu     sync.Mutex
+	url string
+	db  *pgxpool.Pool
+	mu  sync.Mutex
 )
 
-func GetUserId(w http.ResponseWriter, r *http.Request) (int, error) {
-	sessionCookie, err := r.Cookie("session_id")
-	if err != nil || sessionCookie.Value == "" {
-		http.Error(w, "not authorized", http.StatusUnauthorized)
-		return 0, errors.New("no session cookie detected")
-	}
-
-	userId, err2 := auth.RetrieveUserIdFromSessionId(sessionCookie.Value)
-	if err2 != nil {
-		http.Error(w, err2.Error(), http.StatusForbidden)
-	}
-
-	return userId, nil
-}
-
-func InitDBConnection(url_ string) error {
-	url = url_
-	err := ConnectToDb()
-	if err == nil {
-		fmt.Println("Successfully connected to Postgres!")
-	}
-	return err
-}
-
-// Устанавливает соединение с базой данных PostgreSQL.
-func ConnectToDb() error {
-	var err error
-	db, err = pgxpool.New(context.Background(), url)
+// Регистрирует сессионную куку в Redis
+func RegisterSessionRedis(cookie string, userID int) error {
+	ttl := 7 * 24 * time.Hour
+	err := GetRedisConnection().Set(ctx, cookie, userID, ttl).Err()
 	if err != nil {
-		return fmt.Errorf("database connection error: %s", err)
+		return fmt.Errorf("unable to set session in Redis: %v", err)
 	}
 
-	conn, err := db.Acquire(context.Background())
-	if err != nil {
-		return fmt.Errorf("database ping error: %s", err)
-	}
-	defer conn.Release()
-
-	return err
+	return nil
 }
 
-// GetDbConnection возвращает установленное соединение с базой данных.
-// Если соединение не установлено, происходит попытка переподключения. Если попытка неудачная, возвращается ошибка.
-func GetDbConnection() (*pgxpool.Pool, error) {
-	mu.Lock()
-	defer mu.Unlock()
-
-	// Если соединение еще не установлено, устанавливаем его
-	if db == nil {
-		err := ConnectToDb()
-		if err != nil {
-			return nil, fmt.Errorf("не удалось установить соединение с БД: %w", err)
-		}
-		return db, nil
+func RetrieveUserIdFromSessionId(sessionId string) (userId int, err error) {
+	val, err := rdb.Get(ctx, sessionId).Result()
+	if err == redis.Nil {
+		return 0, fmt.Errorf("session cookie is invalid or expired: %s", sessionId)
+	} else if err != nil {
+		return 0, err
 	}
 
-	// Проверяем текущее состояние соединения
-	if _, err := db.Acquire(context.Background()); err != nil {
-		// Если соединение потеряно, пытаемся восстановить его
-		db.Close() // Закрываем старое соединение
-		errReconnect := ConnectToDb()
-		if errReconnect != nil {
-			return nil, fmt.Errorf("соединение с БД закрыто и восстановить его не удалось: %w", errReconnect)
-		}
+	intVal, err := strconv.Atoi(val)
+	if err != nil {
+		return 0, fmt.Errorf("error converting value to int: %v", err)
 	}
 
-	return db, nil
+	return intVal, nil
 }

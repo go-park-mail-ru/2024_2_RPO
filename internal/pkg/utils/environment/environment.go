@@ -1,7 +1,7 @@
 package environment
 
 import (
-	"RPO_back/internal/pkg/config"
+	"errors"
 	"fmt"
 	"os"
 	"strconv"
@@ -28,20 +28,17 @@ func checkEnv(envVars []string) error {
 // Удостовериться, что в env лежат все необходимые для работы приложения переменные
 func ValidateEnv() error {
 
-	err := checkEnv([]string{"DB_URL", "SERVER_PORT", "REDIS_URL"})
+	err := checkEnv([]string{"DATABASE_URL",
+		"SERVER_PORT",
+		"REDIS_URL",
+		"CORS_ORIGIN"})
 	if err != nil {
 		return err
 	}
 
-	port, err1 := strconv.ParseInt(os.Getenv("SERVER_PORT"), 10, 64)
-	if err1 != nil {
-		return fmt.Errorf("error converting SERVER_PORT to int: %v", err1)
+	if _, err = strconv.ParseInt(os.Getenv("SERVER_PORT"), 10, 64); err != nil {
+		return errors.New("SERVER_PORT env variable is invalid")
 	}
-
-	var ret config.ServerConfig
-	ret.DbUrl = os.Getenv("DB_URL")
-	ret.ServerPort = int(port)
-	ret.RedisUrl = os.Getenv("REDIS_URL")
 
 	return nil
 }
