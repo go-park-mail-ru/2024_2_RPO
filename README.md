@@ -14,6 +14,12 @@
 
 [Ссылка на Swagger и `CREATE TABLE`](https://github.com/go-park-mail-ru/2024_2_RPO/tree/swagger_approved)
 
+### Стандарты разработки
+
+* Все комментарии на русском языке
+* Все логи на английском языке
+* У аббревиатур большая только первая буква: ~~`sessionID`~~ `sessionId`
+
 ### Запуск сервера
 
 Надо развернуть PostgreSQL и Redis
@@ -25,19 +31,19 @@
 Затем надо оформить файл `.env`. Пример:
 
 ```
-DB_PASSWORD=my_secure_password
-DB_USER=tarasovxx
-DB_PORT=5432
+DATABASE_URL = postgres://tarasovxx:my_secure_password@localhost:5432/pumpkin
 
-SERVER_PORT=8800
+SERVER_PORT = 8800
 
-REDIS_PORT=6379
-REDIS_USER=tarasovxx
-REDIS_PASSWORD=my_secure_password
+REDIS_URL = redis://:my_secure_password@localhost:6379
+
+CORS_ORIGIN = https://mysite.com
+
+LOGS_FILE = tarasovxx.json
 ```
 
-Запуск: `go run main.go`
+Запуск: `make run`
 
 ### Запуск тестов
 
-Надо сделать всё, что нужно для запуска сервера, но вместо `go run main.go` запустить `./get_coverage_data.sh`
+Надо сделать всё, что нужно для запуска сервера, но вместо `make run` запустить `make test`. Чтобы получить информацию о покрытии, надо запустить `make coverage`

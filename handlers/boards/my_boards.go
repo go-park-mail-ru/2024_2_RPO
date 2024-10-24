@@ -1,28 +1,29 @@
 package boards
 
 import (
-	"RPO_back/database"
-	"RPO_back/models"
+	"RPO_back/internal/models"
+	"RPO_back/internal/pkg/auth/repository"
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
 )
 
 func GetMyBoardsHandler(w http.ResponseWriter, r *http.Request) {
-	userId, err := database.GetUserId(w, r)
+	userId, err := repository.GetUserId(w, r)
 	if err != nil {
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
 	}
 
-	db, err := database.GetDbConnection()
+	db, err := repository.GetDbConnection()
 	if err != nil {
 		http.Error(w, "Failed to connect to the database", http.StatusInternalServerError)
 		return
 	}
 	defer db.Close()
 
-	rows, err := db.Query(`
+	rows, err := db.Query(context.Background(), `
         SELECT b.b_id, b.description, b.created_at, b.updated_at, b."name"
         FROM Board b
         INNER JOIN User_to_Board ub ON b.b_id = ub.b_id

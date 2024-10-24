@@ -1,15 +1,16 @@
 package boards
 
 import (
-	"RPO_back/database"
-	"RPO_back/models"
+	"RPO_back/internal/models"
+	"RPO_back/internal/pkg/auth/repository"
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
 )
 
 func CreateBoardHandler(w http.ResponseWriter, r *http.Request) {
-	userId, err := database.GetUserId(w, r)
+	userId, err := repository.GetUserId(w, r)
 	if err != nil {
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
@@ -18,6 +19,7 @@ func CreateBoardHandler(w http.ResponseWriter, r *http.Request) {
 	var req models.CreateBoardRequest
 	err = json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
+		//TODO JSON
 		http.Error(w, "Bad Request", http.StatusBadRequest)
 		return
 	}
@@ -34,15 +36,14 @@ func CreateBoardHandler(w http.ResponseWriter, r *http.Request) {
 	board.Background = "red" //TODO пересмотреть
 	board.OwnerID = userId
 
-	db, err := database.GetDbConnection()
+	db, err := repository.GetDbConnection()
 	if err != nil {
 		http.Error(w, "Failed to connect to the database", http.StatusInternalServerError)
 		return
 	}
-	defer db.Close()
 
 	var boardId int
-	err = db.QueryRow(`
+	err = db.QueryRow(context.Background(), `
 		INSERT INTO Board (description, name, created_by, updated_at)
 		VALUES ($1, $2, $3, CURRENT_TIMESTAMP)
 		RETURNING b_id`,
@@ -54,7 +55,7 @@ func CreateBoardHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	board.ID = boardId
 
-	_, err = db.Exec(`
+	_, err = db.Exec(context.Background(), `
 		INSERT INTO User_to_Board (u_id, b_id, added_at, updated_at, can_edit, can_share, can_invite_members, is_admin, added_by, updated_by)
 		VALUES ($1, $2, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, TRUE, TRUE, TRUE, TRUE, NULL, NULL)`,
 		board.OwnerID, boardId)
