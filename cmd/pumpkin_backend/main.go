@@ -4,7 +4,9 @@ import (
 	auth_handlers "RPO_back/handlers/auth"
 	boards_handlers "RPO_back/handlers/boards"
 	user_handlers "RPO_back/handlers/users"
-	auth "RPO_back/internal/pkg/auth/repository"
+	authDelivery "RPO_back/internal/pkg/auth/delivery"
+	authRepository "RPO_back/internal/pkg/auth/repository"
+	authUsecase "RPO_back/internal/pkg/auth/usecase"
 	"RPO_back/internal/pkg/middleware/cors"
 	"RPO_back/internal/pkg/middleware/logging_middleware"
 	"RPO_back/internal/pkg/utils/environment"
@@ -84,7 +86,9 @@ func main() {
 	}
 
 	// Auth
-	authRepo := auth.CreateAuthRepository(postgresDb, redisDb)
+	authRepo := authRepository.CreateAuthRepository(postgresDb, redisDb)
+	authUsecase := authUsecase.CreateAuthUsecase(authRepo)
+	authDelivery := authDelivery.CreateAuthDelivery(authUsecase)
 
 	// Создаём новый маршрутизатор
 	router := mux.NewRouter()
@@ -99,7 +103,7 @@ func main() {
 	router.HandleFunc("/boards/my", boards_handlers.GetMyBoardsHandler).Methods("GET", "OPTIONS")
 	router.HandleFunc("/boards", boards_handlers.CreateBoardHandler).Methods("POST", "OPTIONS")
 	router.HandleFunc("/boards/{boardId}", boards_handlers.DeleteBoardHandler).Methods("DELETE", "OPTIONS")
-	router.HandleFunc("/auth/login", auth_handlers.LoginUser).Methods("POST", "OPTIONS")
+	router.HandleFunc("/auth/login", authDelivery.LoginUser).Methods("POST", "OPTIONS")
 	router.HandleFunc("/auth/logout", auth_handlers.LogoutUser).Methods("POST", "OPTIONS")
 
 	// Запускаем сервер

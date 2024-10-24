@@ -1,4 +1,4 @@
-package responses
+package encrypt
 
 import (
 	"crypto/rand"

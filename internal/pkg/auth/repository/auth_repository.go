@@ -1,13 +1,16 @@
 package repository
 
 import (
+	"RPO_back/internal/models"
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 	"strconv"
 	"time"
 
 	"github.com/go-redis/redis/v8"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -15,6 +18,8 @@ const (
 	userIDContextKey    string = "userId"
 	sessionIdCookieName string = "session_id"
 )
+
+var ErrWrongCredentials = fmt.Errorf("Wrong credentials")
 
 type AuthRepository struct {
 	postgresDb *pgxpool.Pool
@@ -87,4 +92,25 @@ func (this *AuthRepository) SessionMiddleware(next http.Handler) http.Handler {
 		r = r.WithContext(ctx)
 		next.ServeHTTP(w, r)
 	})
+}
+
+func (this *AuthRepository) GetUserByEmail(email string) (user *models.User, err error) {
+	user = &models.User{}
+	selectError := this.postgresDb.QueryRow(context.Background(), "SELECT u_id, nickname, email, description, joined_at, updated_at, password_hash FROM \"User\" WHERE email=$1", email).Scan(
+		&user.Id,
+		&user.Name,
+		&user.Email,
+		&user.Description,
+		&user.JoinedAt,
+		&user.UpdatedAt,
+		&user.PasswordHash,
+	)
+	if selectError != nil {
+		if errors.Is(selectError, pgx.ErrNoRows) {
+			return nil, ErrWrongCredentials
+
+		}
+		return nil, selectError
+	}
+	return user, nil
 }

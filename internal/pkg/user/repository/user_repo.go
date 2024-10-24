@@ -23,7 +23,7 @@ func (this *UserRepository) GetUserByID(userID int) (*models.User, error) {
 
 	var user models.User
 	err := row.Scan(
-		&user.ID,
+		&user.Id,
 		&user.Name,
 		&user.Email,
 		&user.Description,

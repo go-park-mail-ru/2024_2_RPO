@@ -3,67 +3,41 @@ package delivery
 import (
 	"RPO_back/internal/models"
 	"RPO_back/internal/pkg/auth/usecase"
+	"RPO_back/internal/pkg/utils/requests"
 	"RPO_back/internal/pkg/utils/responses"
-	"context"
-	"database/sql"
-	"encoding/json"
 	"net/http"
-
-	"golang.org/x/crypto/bcrypt"
 )
 
 type AuthDelivery struct {
 	authUsecase *usecase.AuthUsecase
 }
 
-// Проверить лог/пасс
-// Создать сессию
-// Установить сессионную куку
-func LoginUser(w http.ResponseWriter, r *http.Request) {
+func CreateAuthDelivery(uc *usecase.AuthUsecase) *AuthDelivery {
+	return &AuthDelivery{
+		authUsecase: uc,
+	}
+}
+
+func (this *AuthDelivery) LoginUser(w http.ResponseWriter, r *http.Request) {
+	// Получить данные из запроса
 	var loginRequest models.LoginRequest
-	var user models.User
-	var hashedPassword string
-
-	sessionID := responses.GenerateSessionID()
-
-	if err := json.NewDecoder(r.Body).Decode(&loginRequest); err != nil {
-		http.Error(w, "Invalid request payload", http.StatusBadRequest)
+	err := requests.GetRequestData(r, &loginRequest)
+	if err != nil {
+		responses.DoBadResponse(w, 400, "Invalid request")
 		return
 	}
 
-	err2 := db.QueryRow(context.Background(), "SELECT u_id, nickname, email, description, joined_at, updated_at, password_hash FROM \"User\" WHERE email=$1", loginRequest.Email).Scan(
-		&user.ID,
-		&user.Name,
-		&user.Email,
-		&user.Description,
-		&user.JoinedAt,
-		&user.UpdatedAt,
-		&hashedPassword,
-	)
-
-	if err2 != nil {
-		if err2 == sql.ErrNoRows {
-			http.Error(w, "Email not found", http.StatusUnauthorized)
-		} else {
-			http.Error(w, "Database error", http.StatusInternalServerError)
-		}
-		return
-	}
-
-	if err := bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(loginRequest.Password)); err != nil {
-		http.Error(w, "Invalid password", http.StatusUnauthorized)
-		return
-	}
+	// Получить ID сессии
+	sessionId, err := this.authUsecase.LoginUser(loginRequest.Email, loginRequest.Password)
 
 	cookie := http.Cookie{
 		Name:     "session_id",
-		Value:    sessionID,
+		Value:    sessionId,
 		Path:     "/",
 		HttpOnly: true,
 		MaxAge:   10000,
 	}
 	http.SetCookie(w, &cookie)
-	auth.RegisterSessionRedis(sessionID, user.ID)
 
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte("Session cookie is set"))
