@@ -1,9 +1,8 @@
-package auth
+package delivery
 
 import (
-	"RPO_back/auth"
 	"RPO_back/internal/models"
-	"RPO_back/internal/pkg/auth/repository"
+	"RPO_back/internal/pkg/auth/usecase"
 	"RPO_back/internal/pkg/utils/responses"
 	"context"
 	"database/sql"
@@ -13,6 +12,13 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+type AuthDelivery struct {
+	authUsecase *usecase.AuthUsecase
+}
+
+// Проверить лог/пасс
+// Создать сессию
+// Установить сессионную куку
 func LoginUser(w http.ResponseWriter, r *http.Request) {
 	var loginRequest models.LoginRequest
 	var user models.User
@@ -24,13 +30,6 @@ func LoginUser(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Invalid request payload", http.StatusBadRequest)
 		return
 	}
-
-	db, err := repository.GetDbConnection()
-	if err != nil {
-		http.Error(w, "Failed to connect to the database", http.StatusInternalServerError)
-		return
-	}
-	defer db.Close()
 
 	err2 := db.QueryRow(context.Background(), "SELECT u_id, nickname, email, description, joined_at, updated_at, password_hash FROM \"User\" WHERE email=$1", loginRequest.Email).Scan(
 		&user.ID,

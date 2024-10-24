@@ -4,6 +4,7 @@ import (
 	auth_handlers "RPO_back/handlers/auth"
 	boards_handlers "RPO_back/handlers/boards"
 	user_handlers "RPO_back/handlers/users"
+	auth "RPO_back/internal/pkg/auth/repository"
 	"RPO_back/internal/pkg/middleware/cors"
 	"RPO_back/internal/pkg/middleware/logging_middleware"
 	"RPO_back/internal/pkg/utils/environment"
@@ -19,29 +20,6 @@ import (
 	"github.com/joho/godotenv"
 	log "github.com/sirupsen/logrus"
 )
-
-// Инициализировать приложение
-// Возвращает мультиплексор, который можно тестировать, а можно запрячь для обработки запросов
-func initializeApp() http.Handler {
-
-	// Создаём новый маршрутизатор
-	r := mux.NewRouter()
-
-	// Применяем middleware
-	r.Use(cors.CorsMiddleware)
-	r.Use(logging_middleware.LoggingMiddleware)
-
-	// Регистрируем обработчики
-	r.HandleFunc("/auth/register", auth_handlers.RegisterUser).Methods("POST", "OPTIONS")
-	r.HandleFunc("/users/me", user_handlers.GetMe).Methods("GET", "OPTIONS")
-	r.HandleFunc("/boards/my", boards_handlers.GetMyBoardsHandler).Methods("GET", "OPTIONS")
-	r.HandleFunc("/boards", boards_handlers.CreateBoardHandler).Methods("POST", "OPTIONS")
-	r.HandleFunc("/boards/{boardId}", boards_handlers.DeleteBoardHandler).Methods("DELETE", "OPTIONS")
-	r.HandleFunc("/auth/login", auth_handlers.LoginUser).Methods("POST", "OPTIONS")
-	r.HandleFunc("/auth/logout", auth_handlers.LogoutUser).Methods("POST", "OPTIONS")
-
-	return r
-}
 
 func main() {
 	// Настройка движка логов
@@ -96,7 +74,6 @@ func main() {
 	defer redisDb.Close()
 
 	// Проверка подключения к Redis
-
 	if pingStatus := redisDb.Ping(redisDb.Context()); pingStatus == nil || pingStatus.Err() != nil {
 		if pingStatus != nil {
 			log.Fatal("error while pinging Redis: ", pingStatus.Err())
@@ -106,14 +83,29 @@ func main() {
 		return
 	}
 
-	router := initializeApp()
+	// Auth
+	authRepo := auth.CreateAuthRepository(postgresDb, redisDb)
 
-	// Определяем адрес и порт для сервера
-	addr := fmt.Sprintf(":%s", os.Getenv("SERVER_PORT"))
-	log.Infof("server started at http://localhost%s", addr)
+	// Создаём новый маршрутизатор
+	router := mux.NewRouter()
+
+	// Применяем middleware
+	router.Use(cors.CorsMiddleware)
+	router.Use(logging_middleware.LoggingMiddleware)
+
+	// Регистрируем обработчики
+	router.HandleFunc("/auth/register", auth_handlers.RegisterUser).Methods("POST", "OPTIONS")
+	router.HandleFunc("/users/me", user_handlers.GetMe).Methods("GET", "OPTIONS")
+	router.HandleFunc("/boards/my", boards_handlers.GetMyBoardsHandler).Methods("GET", "OPTIONS")
+	router.HandleFunc("/boards", boards_handlers.CreateBoardHandler).Methods("POST", "OPTIONS")
+	router.HandleFunc("/boards/{boardId}", boards_handlers.DeleteBoardHandler).Methods("DELETE", "OPTIONS")
+	router.HandleFunc("/auth/login", auth_handlers.LoginUser).Methods("POST", "OPTIONS")
+	router.HandleFunc("/auth/logout", auth_handlers.LogoutUser).Methods("POST", "OPTIONS")
 
 	// Запускаем сервер
+	addr := fmt.Sprintf(":%s", os.Getenv("SERVER_PORT"))
+	log.Infof("server started at http://localhost%s", addr)
 	if err := http.ListenAndServe(addr, router); err != nil {
-		log.Fatalf("error whie starting server: %v", err)
+		log.Fatalf("error while starting server: %v", err)
 	}
 }

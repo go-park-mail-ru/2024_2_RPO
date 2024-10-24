@@ -5,22 +5,24 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-func GetUserByID(userID int) (*models.User, error) {
+type UserRepository struct {
+	postgresDb *pgxpool.Pool
+}
+
+func (this *UserRepository) GetUserByID(userID int) (*models.User, error) {
 	query := `
         SELECT u_id, nickname, email, description, joined_at, updated_at
         FROM "User"
         WHERE u_id = $1
     `
-	conn, err := GetDbConnection()
-	if err != nil {
-		return nil, err
-	}
-	row := conn.QueryRow(context.Background(), query, userID)
+	row := this.postgresDb.QueryRow(context.Background(), query, userID)
 
 	var user models.User
-	err = row.Scan(
+	err := row.Scan(
 		&user.ID,
 		&user.Name,
 		&user.Email,
