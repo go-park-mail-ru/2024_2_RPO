@@ -31,7 +31,7 @@
 Затем надо оформить файл `.env`. Пример:
 
 ```
-DB_URL = postgres://tarasovxx:my_secure_password@localhost:5432/pumpkin
+DATABASE_URL = postgres://tarasovxx:my_secure_password@localhost:5432/pumpkin
 
 SERVER_PORT = 8800
 

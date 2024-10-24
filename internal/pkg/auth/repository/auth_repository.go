@@ -2,6 +2,7 @@ package repository
 
 import (
 	"RPO_back/internal/models"
+	"RPO_back/internal/pkg/auth"
 	"context"
 	"errors"
 	"fmt"
@@ -15,20 +16,17 @@ import (
 )
 
 const (
-	userIDContextKey    string = "userId"
-	sessionIdCookieName string = "session_id"
+	userIDContextKey string = "userId"
 )
 
-var ErrWrongCredentials = fmt.Errorf("Wrong credentials")
-
 type AuthRepository struct {
-	postgresDb *pgxpool.Pool
-	redisDb    *redis.Client
+	db      *pgxpool.Pool
+	redisDb *redis.Client
 }
 
 func CreateAuthRepository(postgresDb *pgxpool.Pool, redisDb *redis.Client) *AuthRepository {
 	return &AuthRepository{
-		postgresDb: postgresDb, redisDb: redisDb,
+		db: postgresDb, redisDb: redisDb,
 	}
 }
 
@@ -96,7 +94,7 @@ func (this *AuthRepository) SessionMiddleware(next http.Handler) http.Handler {
 
 func (this *AuthRepository) GetUserByEmail(email string) (user *models.User, err error) {
 	user = &models.User{}
-	selectError := this.postgresDb.QueryRow(context.Background(), "SELECT u_id, nickname, email, description, joined_at, updated_at, password_hash FROM \"User\" WHERE email=$1", email).Scan(
+	selectError := this.db.QueryRow(context.Background(), "SELECT u_id, nickname, email, description, joined_at, updated_at, password_hash, salt FROM \"User\" WHERE email=$1", email).Scan(
 		&user.Id,
 		&user.Name,
 		&user.Email,
@@ -104,13 +102,44 @@ func (this *AuthRepository) GetUserByEmail(email string) (user *models.User, err
 		&user.JoinedAt,
 		&user.UpdatedAt,
 		&user.PasswordHash,
+		&user.PasswordSalt,
 	)
 	if selectError != nil {
 		if errors.Is(selectError, pgx.ErrNoRows) {
-			return nil, ErrWrongCredentials
+			return nil, auth.ErrWrongCredentials
 
 		}
 		return nil, selectError
 	}
 	return user, nil
+}
+
+func (this *AuthRepository) CreateUser(user *models.UserRegistration, hashedPassword string) (*models.User, error) {
+	var userID int
+	query := `INSERT INTO "User" (nickname, email, password_hash, description, joined_at, updated_at)
+              VALUES ($1, $2, $3, $4, $5, $6) RETURNING u_id`
+
+	err := this.db.QueryRow(context.Background(), query, user.Name, user.Email, hashedPassword, "", time.Now(), time.Now()).Scan(&userID)
+	return userID, err
+}
+
+func (this *AuthRepository) CheckUniqueCredentials(nickname string, email string) error {
+	query1 := `SELECT COUNT(*) FROM "User" WHERE nickname = $1`
+	query2 := `SELECT COUNT(*) FROM "User" WHERE email = $1`
+	var count int
+	err := this.db.QueryRow(context.Background(), query1, nickname).Scan(&count)
+	if err != nil {
+		return err
+	}
+	if count > 0 {
+		return auth.ErrBusyNickname
+	}
+	err = this.db.QueryRow(context.Background(), query2).Scan(&count)
+	if err != nil {
+		return err
+	}
+	if count > 0 {
+		return auth.ErrBusyNickname
+	}
+	return nil
 }

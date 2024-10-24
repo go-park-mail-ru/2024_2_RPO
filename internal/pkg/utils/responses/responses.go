@@ -24,3 +24,9 @@ func DoBadResponse(w http.ResponseWriter, statusCode int, message string) {
 
 	w.Write(jsonResponse)
 }
+
+func DoEmptyOkResponce(w http.ResponseWriter) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte("{\"status\":200,\"text\":\"success\"}"))
+}

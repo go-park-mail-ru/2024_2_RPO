@@ -46,8 +46,8 @@ docker-build:
 # Миграции для базы данных
 migrate-up:
 	@echo "==> Running migrations..."
-	@migrate -path ./database/migrations -database $(DB_URL) up
+	@migrate -path ./database/migrations -database $(DATABASE_URL) up
 
 migrate-down:
 	@echo "==> Reverting migrations..."
-	@migrate -path ./database/migrations -database $(DB_URL) down
+	@migrate -path ./database/migrations -database $(DATABASE_URL) down
