@@ -6,7 +6,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"net/http"
 	"strconv"
 	"time"
 
@@ -15,8 +14,10 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
+type contextKey string
+
 const (
-	userIDContextKey string = "userId"
+	UserIDContextKey contextKey = "userId"
 )
 
 type AuthRepository struct {
@@ -31,11 +32,11 @@ func CreateAuthRepository(postgresDb *pgxpool.Pool, redisDb *redis.Client) *Auth
 }
 
 // Регистрирует сессионную куку в Redis
-func (this *AuthRepository) RegisterSessionRedis(cookie string, userID int) error {
-	redisConn := this.redisDb.Conn(this.redisDb.Context())
+func (repo *AuthRepository) RegisterSessionRedis(cookie string, userID int) error {
+	redisConn := repo.redisDb.Conn(repo.redisDb.Context())
 	defer redisConn.Close()
 	ttl := 7 * 24 * time.Hour
-	err := redisConn.Set(this.redisDb.Context(), cookie, userID, ttl).Err()
+	err := redisConn.Set(repo.redisDb.Context(), cookie, userID, ttl).Err()
 	if err != nil {
 		return fmt.Errorf("unable to set session in Redis: %v", err)
 	}
@@ -43,21 +44,21 @@ func (this *AuthRepository) RegisterSessionRedis(cookie string, userID int) erro
 	return nil
 }
 
-// Регистрирует сессионную куку в Redis
-func (this *AuthRepository) KillSessionRedis(sessionId string) error {
-	redisConn := this.redisDb.Conn(this.redisDb.Context())
+// Удаляет сессию из Redis
+func (repo *AuthRepository) KillSessionRedis(sessionId string) error {
+	redisConn := repo.redisDb.Conn(repo.redisDb.Context())
 	defer redisConn.Close()
-	if err := redisConn.Del(this.redisDb.Context(), sessionId).Err(); err != nil {
+	if err := redisConn.Del(repo.redisDb.Context(), sessionId).Err(); err != nil {
 		return err
 	}
 	return nil
 }
 
-func (this *AuthRepository) retrieveUserIdFromSessionId(sessionId string) (userId int, err error) {
-	redisConn := this.redisDb.Conn(this.redisDb.Context())
+func (repo *AuthRepository) RetrieveUserIdFromSessionId(sessionId string) (userId int, err error) {
+	redisConn := repo.redisDb.Conn(repo.redisDb.Context())
 	defer redisConn.Close()
 
-	val, err := redisConn.Get(this.redisDb.Context(), sessionId).Result()
+	val, err := redisConn.Get(repo.redisDb.Context(), sessionId).Result()
 	if err == redis.Nil {
 		return 0, fmt.Errorf("session cookie is invalid or expired: %s", sessionId)
 	} else if err != nil {
@@ -74,37 +75,13 @@ func (this *AuthRepository) retrieveUserIdFromSessionId(sessionId string) (userI
 
 // Function to retrieve user ID from request context
 func UserIDFromContext(ctx context.Context) (string, bool) {
-	userID, ok := ctx.Value(userIDContextKey).(string)
+	userID, ok := ctx.Value(UserIDContextKey).(string)
 	return userID, ok
 }
 
-func (this *AuthRepository) SessionMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		cookie, err := r.Cookie("session")
-		if err != nil {
-			next.ServeHTTP(w, r)
-			return
-		}
-
-		userID, err := this.retrieveUserIdFromSessionId(cookie.Value)
-		if err != nil {
-			http.SetCookie(w, &http.Cookie{
-				Name:   "session",
-				MaxAge: -1,
-			})
-			next.ServeHTTP(w, r)
-			return
-		}
-
-		ctx := context.WithValue(r.Context(), userIDContextKey, userID)
-		r = r.WithContext(ctx)
-		next.ServeHTTP(w, r)
-	})
-}
-
-func (this *AuthRepository) GetUserByEmail(email string) (user *models.User, err error) {
+func (repo *AuthRepository) GetUserByEmail(email string) (user *models.User, err error) {
 	user = &models.User{}
-	selectError := this.db.QueryRow(context.Background(), "SELECT u_id, nickname, email, description, joined_at, updated_at, password_hash FROM \"User\" WHERE email=$1", email).Scan(
+	selectError := repo.db.QueryRow(context.Background(), "SELECT u_id, nickname, email, description, joined_at, updated_at, password_hash FROM \"User\" WHERE email=$1", email).Scan(
 		&user.Id,
 		&user.Name,
 		&user.Email,
@@ -123,12 +100,12 @@ func (this *AuthRepository) GetUserByEmail(email string) (user *models.User, err
 	return user, nil
 }
 
-func (this *AuthRepository) CreateUser(user *models.UserRegistration, hashedPassword string) (newUser *models.User, err error) {
+func (repo *AuthRepository) CreateUser(user *models.UserRegistration, hashedPassword string) (newUser *models.User, err error) {
 	newUser = &models.User{}
 	query := `INSERT INTO "user" (nickname, email, password_hash, description, joined_at, updated_at)
               VALUES ($1, $2, $3, $4, $5, $6) RETURNING u_id, nickname, email, password_hash, description, joined_at, updated_at`
 
-	err = this.db.QueryRow(context.Background(), query, user.Name, user.Email, hashedPassword, "", time.Now(), time.Now()).Scan(
+	err = repo.db.QueryRow(context.Background(), query, user.Name, user.Email, hashedPassword, "", time.Now(), time.Now()).Scan(
 		&newUser.Id,
 		&newUser.Name,
 		&newUser.Email,
@@ -140,18 +117,18 @@ func (this *AuthRepository) CreateUser(user *models.UserRegistration, hashedPass
 	return newUser, err
 }
 
-func (this *AuthRepository) CheckUniqueCredentials(nickname string, email string) error {
+func (repo *AuthRepository) CheckUniqueCredentials(nickname string, email string) error {
 	query1 := `SELECT COUNT(*) FROM "user" WHERE nickname = $1`
 	query2 := `SELECT COUNT(*) FROM "user" WHERE email = $1`
 	var count int
-	err := this.db.QueryRow(context.Background(), query1, nickname).Scan(&count)
+	err := repo.db.QueryRow(context.Background(), query1, nickname).Scan(&count)
 	if err != nil {
 		return fmt.Errorf("AuthRepository CheckUniqueCredentials: %w", err)
 	}
 	if count > 0 {
 		return fmt.Errorf("AuthRepository CheckUniqueCredentials: %w", auth.ErrBusyNickname)
 	}
-	err = this.db.QueryRow(context.Background(), query2, email).Scan(&count)
+	err = repo.db.QueryRow(context.Background(), query2, email).Scan(&count)
 	if err != nil {
 		return fmt.Errorf("AuthRepository CheckUniqueCredentials: %w", err)
 	}
