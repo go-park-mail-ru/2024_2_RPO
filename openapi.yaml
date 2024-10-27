@@ -256,16 +256,13 @@ components:
         canEdit:
           type: boolean
           example: true
-        canModify:
-          type: boolean
-          example: true
         canShare:
           type: boolean
           example: true
         canInviteMembers:
           type: boolean
           example: true
-        canAdmin:
+        isAdmin:
           type: boolean
           example: true
         updatedAt:
@@ -281,16 +278,13 @@ components:
         canEdit:
           type: boolean
           example: true
-        canModify:
-          type: boolean
-          example: true
         canShare:
           type: boolean
           example: true
         canInviteMembers:
           type: boolean
           example: true
-        canAdmin:
+        isAdmin:
           type: boolean
           example: true
 
@@ -342,6 +336,14 @@ components:
           type: string
           format: password
           example: "securepassword123"
+
+    Image:
+      type: object
+      properties:
+        pathToImage:
+          type: string
+          format: pathToImage
+          example: "/static/backgroundImage.png"
 
 paths:
   /auth/register:
@@ -525,6 +527,60 @@ paths:
         "404":
           $ref: "#/components/responses/NotFoundResponse"
 
+  /users/me/avatarImage:
+    put:
+      summary: Сменить аватарку
+      tags:
+        - Пользователи
+      security:
+        - SessionCookieAuth: []
+      responses:
+        "201":
+          description: URL для загрузки изображения
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  uploadUrl:
+                    type: string
+                    description: URL для загрузки аватарки
+                    example: "https://example.com/upload-url"
+                  status:
+                    type: integer
+                    description: enum[201]
+                    example: 201
+        "400":
+          $ref: "#/components/responses/BadRequestResponse"
+        "401":
+          $ref: "#/components/responses/NoAuthResponse"
+        "403":
+          $ref: "#/components/responses/ForbiddenResponse"
+        "404":
+          $ref: "#/components/responses/NotFoundResponse"
+        "413":
+          description: Загружаемое изображение превышает допустимый лимит по размеру
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: integer
+                    description: enum[413]
+                    example: 413
+        "415":
+          description: Загружаемый файл имеет неподдерживаемый формат
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: integer
+                    description: enum[415]
+                    example: 415
+
   /boards:
     post:
       summary: Создать новую доску
@@ -545,12 +601,6 @@ paths:
                 name:
                   type: string
                   example: "Новая доска"
-                description:
-                  type: string
-                  example: "Описание новой доски"
-                background:
-                  type: string
-                  example: "#FF5733"
       responses:
         "200":
           description: Доска успешно создана
