@@ -38,7 +38,7 @@ func GetMyBoardsHandler(w http.ResponseWriter, r *http.Request) {
 	var boards []models.Board = make([]models.Board, 0)
 	for rows.Next() {
 		var board models.Board
-		if err := rows.Scan(&board.ID, &board.Description, &board.CreatedAt, &board.UpdatedAt, &board.Name); err != nil {
+		if err := rows.Scan(&board.Id, &board.Description, &board.CreatedAt, &board.UpdatedAt, &board.Name); err != nil {
 			http.Error(w, "Failed to parse board data", http.StatusInternalServerError)
 			fmt.Printf("Failed to parse board data: %s", err.Error())
 			return

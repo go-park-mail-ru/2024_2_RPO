@@ -12,7 +12,7 @@
 
 [Ссылка на деплой](http://109.120.180.70:8002)
 
-[Ссылка на Swagger и `CREATE TABLE`](https://github.com/go-park-mail-ru/2024_2_RPO/tree/swagger_approved)
+[Ссылка на Swagger](https://dedxyk594.github.io/swagger_ui_RPO/index.html)
 
 ### Стандарты разработки
 
