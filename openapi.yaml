@@ -77,6 +77,13 @@ components:
       schema:
         type: string
         example: "card_789"
+    userId:
+      name: userId
+      in: path
+      required: true
+      schema:
+        type: string
+        example: "user_343"
 
   schemas:
     EmptyOkResponse:
@@ -106,6 +113,25 @@ components:
         id:
           type: number
           example: 123
+        name:
+          type: string
+          example: "Tarasovxx"
+        email:
+          type: string
+          format: email
+          example: "tarasovxx@example.com"
+        createdAt:
+          type: string
+          format: date-time
+          example: "2023-10-01T12:34:56Z"
+
+    UserPatch:
+      type: object
+      required:
+        - name
+        - email
+        - createdAt
+      properties:
         name:
           type: string
           example: "Tarasovxx"
@@ -450,51 +476,6 @@ paths:
           $ref: "#/components/responses/NoAuthResponse"
         "404":
           $ref: "#/components/responses/NotFoundResponse"
-    put:
-      summary: Обновить информацию о пользователе
-      tags:
-        - Пользователи
-      security:
-        - SessionCookieAuth: []
-      parameters:
-        - $ref: "#/components/parameters/userId"
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                name:
-                  type: string
-                  example: "Иван Иванов"
-                email:
-                  type: string
-                  format: email
-                  example: "ivan_new@example.com"
-      responses:
-        "200":
-          description: Информация о пользователе обновлена
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/User"
-        "400":
-          description: Некорректные данные
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/BadResponse"
-        "401":
-          $ref: "#/components/responses/NoAuthResponse"
-        "403":
-          description: Пользователь не имеет прав на обновление информации
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/BadResponse"
-        "404":
-          $ref: "#/components/responses/NotFoundResponse"
 
   /users/me:
     get:
@@ -512,6 +493,36 @@ paths:
                 $ref: "#/components/schemas/User"
         "401":
           $ref: "#/components/responses/NoAuthResponse"
+    put:
+      summary: Обновить информацию о себе
+      tags:
+        - Пользователи
+      security:
+        - SessionCookieAuth: []
+      parameters:
+        - $ref: "#/components/parameters/userId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserPatch"
+      responses:
+        "200":
+          $ref: "#/components/responses/EmptyOkResponse"
+        "400":
+          description: Некорректные данные
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BadResponse"
+        "401":
+          $ref: "#/components/responses/NoAuthResponse"
+        "403":
+          $ref: "#/components/responses/ForbiddenResponse"
+        "404":
+          $ref: "#/components/responses/NotFoundResponse"
+
 
   /boards:
     post:
