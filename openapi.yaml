@@ -540,17 +540,10 @@ paths:
               type: object
               required:
                 - name
-                - description
               properties:
                 name:
                   type: string
                   example: "Новая доска"
-                description:
-                  type: string
-                  example: "Описание новой доски"
-                background:
-                  type: string
-                  example: "#FF5733"
       responses:
         "200":
           description: Доска успешно создана
