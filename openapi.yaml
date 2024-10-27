@@ -36,6 +36,47 @@ components:
         application/json:
           schema:
             $ref: "#/components/schemas/EmptyOkResponse"
+    NotFoundResponse:
+      description: "Такой элемент не найден"
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              status:
+                type: integer
+                example: 404
+              text:
+                type: string
+                example: "not found"
+    ForbiddenResponse:
+      description: "Нет прав на действие"
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              status:
+                type: integer
+                example: 403
+              text:
+                type: string
+                example: "not authorized"
+  parameters:
+    boardId:
+      name: boardId
+      in: path
+      required: true
+      schema:
+        type: string
+        example: "board_456"
+    cardId:
+      name: cardId
+      in: path
+      required: true
+      schema:
+        type: string
+        example: "card_789"
 
   schemas:
     EmptyOkResponse:
@@ -54,10 +95,10 @@ components:
       properties:
         status:
           type: integer
-          example: 404
+          example: 403
         text:
           type: string
-          example: "Item with such id not found"
+          example: "not authorized"
 
     User:
       type: object
@@ -397,12 +438,7 @@ paths:
       security:
         - SessionCookieAuth: []
       parameters:
-        - name: userId
-          in: path
-          required: true
-          schema:
-            type: string
-            example: "user_123"
+        - $ref: "#/components/parameters/userId"
       responses:
         "200":
           description: "Информация о пользователе"
@@ -413,11 +449,7 @@ paths:
         "401":
           $ref: "#/components/responses/NoAuthResponse"
         "404":
-          description: Пользователь не найден
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/BadResponse"
+          $ref: "#/components/responses/NotFoundResponse"
     put:
       summary: Обновить информацию о пользователе
       tags:
@@ -425,12 +457,7 @@ paths:
       security:
         - SessionCookieAuth: []
       parameters:
-        - name: userId
-          in: path
-          required: true
-          schema:
-            type: string
-            example: "user_123"
+        - $ref: "#/components/parameters/userId"
       requestBody:
         required: true
         content:
@@ -467,11 +494,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/BadResponse"
         "404":
-          description: Пользователь не найден
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/BadResponse"
+          $ref: "#/components/responses/NotFoundResponse"
 
   /users/me:
     get:
@@ -540,12 +563,7 @@ paths:
       security:
         - SessionCookieAuth: []
       parameters:
-        - name: boardId
-          in: path
-          required: true
-          schema:
-            type: string
-            example: "board_456"
+        - $ref: "#/components/parameters/boardId"
       responses:
         "200":
           description: Информация о доске
@@ -564,17 +582,9 @@ paths:
         "401":
           $ref: "#/components/responses/NoAuthResponse"
         "403":
-          description: Пользователь не имеет прав на эту доску
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/BadResponse"
+          $ref: "#/components/responses/ForbiddenResponse"
         "404":
-          description: Доска не найдена
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/BadResponse"
+          $ref: "#/components/responses/NotFoundResponse"
 
     patch:
       summary: "Изменить имя, описание или фон доски"
@@ -621,17 +631,9 @@ paths:
         "401":
           $ref: "#/components/responses/NoAuthResponse"
         "403":
-          description: Пользователь не имеет прав обновление информации о доске
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/BadResponse"
+          $ref: "#/components/responses/ForbiddenResponse"
         "404":
-          description: Доска не найдена
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/BadResponse"
+          $ref: "#/components/responses/NotFoundResponse"
     delete:
       summary: Удалить доску
       tags:
@@ -639,29 +641,16 @@ paths:
       security:
         - SessionCookieAuth: []
       parameters:
-        - name: boardId
-          in: path
-          required: true
-          schema:
-            type: string
-            example: "board_456"
+        - $ref: "#/components/parameters/boardId"
       responses:
         "200":
           $ref: "#/components/responses/EmptyOkResponse"
         "401":
           $ref: "#/components/responses/NoAuthResponse"
         "403":
-          description: Пользователь не имеет прав на удаление этой доски
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/BadResponse"
+          $ref: "#/components/responses/ForbiddenResponse"
         "404":
-          description: Доска не найдена
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/BadResponse"
+          $ref: "#/components/responses/NotFoundResponse"
 
   /boards/my:
     get:
@@ -690,12 +679,7 @@ paths:
       security:
         - SessionCookieAuth: []
       parameters:
-        - name: boardId
-          in: path
-          required: true
-          schema:
-            type: string
-            example: "board_456"
+        - $ref: "#/components/parameters/boardId"
       responses:
         "200":
           description: "Список прав пользователей"
@@ -708,17 +692,9 @@ paths:
         "401":
           $ref: "#/components/responses/NoAuthResponse"
         "403":
-          description: "Пользователь не имеет доступа к доске"
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/BadResponse"
+          $ref: "#/components/responses/ForbiddenResponse"
         "404":
-          description: "Доска не найдена"
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/BadResponse"
+          $ref: "#/components/responses/NotFoundResponse"
 
   /userPermissions/{boardId}/{userId}:
     patch:
@@ -728,18 +704,8 @@ paths:
       security:
         - SessionCookieAuth: []
       parameters:
-        - name: boardId
-          in: path
-          required: true
-          schema:
-            type: string
-            example: "board_456"
-        - name: userId
-          in: path
-          required: true
-          schema:
-            type: string
-            example: "tarasovxx"
+        - $ref: "#/components/parameters/boardId"
+        - $ref: "#/components/parameters/userId"
       requestBody:
         required: true
         content:
@@ -762,17 +728,9 @@ paths:
         "401":
           $ref: "#/components/responses/NoAuthResponse"
         "403":
-          description: "У Вас недостаточно прав"
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/BadResponse"
+          $ref: "#/components/responses/ForbiddenResponse"
         "404":
-          description: "Доска или пользователь не найдены"
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/BadResponse"
+          $ref: "#/components/responses/NotFoundResponse"
     delete:
       summary: "Выгнать пользователя"
       tags:
@@ -780,18 +738,8 @@ paths:
       security:
         - SessionCookieAuth: []
       parameters:
-        - name: boardId
-          in: path
-          required: true
-          schema:
-            type: string
-            example: "board_456"
-        - name: userId
-          in: path
-          required: true
-          schema:
-            type: string
-            example: "tarasovxx"
+        - $ref: "#/components/parameters/boardId"
+        - $ref: "#/components/parameters/userId"
 
       responses:
         "200":
@@ -811,17 +759,9 @@ paths:
         "401":
           $ref: "#/components/responses/NoAuthResponse"
         "403":
-          description: "У Вас недостаточно прав для администрирования"
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/BadResponse"
+          $ref: "#/components/responses/ForbiddenResponse"
         "404":
-          description: "Доска или пользователь не найдены"
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/BadResponse"
+          $ref: "#/components/responses/NotFoundResponse"
 
   /cards/{boardId}/allContent:
     get:
@@ -831,12 +771,7 @@ paths:
       security:
         - SessionCookieAuth: []
       parameters:
-        - name: boardId
-          in: path
-          required: true
-          schema:
-            type: string
-            example: "board_456"
+        - $ref: "#/components/parameters/boardId"
       responses:
         "200":
           description: "Список карточек"
@@ -847,17 +782,9 @@ paths:
         "401":
           $ref: "#/components/responses/NoAuthResponse"
         "403":
-          description: "У Вас недостаточно прав для получения карточек, столбцов и тегов на доске"
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/BadResponse"
+          $ref: "#/components/responses/ForbiddenResponse"
         "404":
-          description: "Доска с таким ID не существует"
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/BadResponse"
+          $ref: "#/components/responses/NotFoundResponse"
 
   /cards/{boardId}/cards:
     post:
@@ -867,12 +794,7 @@ paths:
       security:
         - SessionCookieAuth: []
       parameters:
-        - name: boardId
-          in: path
-          required: true
-          schema:
-            type: string
-            example: "board_456"
+        - $ref: "#/components/parameters/boardId"
       requestBody:
         required: true
         content:
@@ -907,58 +829,12 @@ paths:
                 $ref: "#/components/schemas/BadResponse"
         "401":
           $ref: "#/components/responses/NoAuthResponse"
+        "403":
+          $ref: "#/components/responses/ForbiddenResponse"
         "404":
-          description: "Доска с таким ID не существует"
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/BadResponse"
+          $ref: "#/components/responses/NotFoundResponse"
 
   /cards/{boardId}/cards/{cardId}:
-    # get:
-    #   summary: "Получить информацию о карточке"
-    #   tags:
-    #     - Карточки
-    #   security:
-    #     - SessionCookieAuth: []
-    #   parameters:
-    #     - name: boardId
-    #       in: path
-    #       required: true
-    #       schema:
-    #         type: string
-    #         example: "board_456"
-    #     - name: cardId
-    #       in: path
-    #       required: true
-    #       schema:
-    #         type: string
-    #         example: "card_789"
-    #   responses:
-    #     "200":
-    #       description: "Информация о карточке"
-    #       content:
-    #         application/json:
-    #           schema:
-    #             $ref: "#/components/schemas/Card"
-    #     "401":
-    #       description: "Вы не авторизованы"
-    #       content:
-    #         application/json:
-    #           schema:
-    #             $ref: "#/components/schemas/BadResponse"
-    #     "403":
-    #       description: "У Вас недостаточно прав для получения информации о карточке"
-    #       content:
-    #         application/json:
-    #           schema:
-    #             $ref: "#/components/schemas/BadResponse"
-    #     "404":
-    #       description: "Доска или карточка с таким ID не существует"
-    #       content:
-    #         application/json:
-    #           schema:
-    #             $ref: "#/components/schemas/BadResponse"
     patch:
       summary: Обновить карточку
       tags:
@@ -966,18 +842,8 @@ paths:
       security:
         - SessionCookieAuth: []
       parameters:
-        - name: boardId
-          in: path
-          required: true
-          schema:
-            type: string
-            example: "board_456"
-        - name: cardId
-          in: path
-          required: true
-          schema:
-            type: string
-            example: "card_789"
+        - $ref: "#/components/parameters/boardId"
+        - $ref: "#/components/parameters/cardId"
       requestBody:
         required: true
         content:
@@ -1010,17 +876,9 @@ paths:
         "401":
           $ref: "#/components/responses/NoAuthResponse"
         "403":
-          description: "У Вас недостаточно прав для обновления карточки"
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/BadResponse"
+          $ref: "#/components/responses/ForbiddenResponse"
         "404":
-          description: "Доска или карточка с таким ID не существует"
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/BadResponse"
+          $ref: "#/components/responses/NotFoundResponse"
     delete:
       summary: Удалить карточку
       tags:
@@ -1028,18 +886,8 @@ paths:
       security:
         - SessionCookieAuth: []
       parameters:
-        - name: boardId
-          in: path
-          required: true
-          schema:
-            type: string
-            example: "board_456"
-        - name: cardId
-          in: path
-          required: true
-          schema:
-            type: string
-            example: "card_789"
+        - $ref: "#/components/parameters/boardId"
+        - $ref: "#/components/parameters/cardId"
       responses:
         "200":
           $ref: "#/components/responses/EmptyOkResponse"
@@ -1052,17 +900,9 @@ paths:
         "401":
           $ref: "#/components/responses/NoAuthResponse"
         "403":
-          description: "У Вас недостаточно прав для удаления карточки"
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/BadResponse"
+          $ref: "#/components/responses/ForbiddenResponse"
         "404":
-          description: "Доска или карточка с таким ID не существует"
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/BadResponse"
+          $ref: "#/components/responses/NotFoundResponse"
 
 security:
   - SessionCookieAuth: []
