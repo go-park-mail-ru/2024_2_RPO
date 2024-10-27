@@ -177,6 +177,19 @@ components:
           format: date-time
           example: "2023-10-01T12:34:56Z"
 
+    BoardPut:
+      type: object
+      required:
+        - name
+        - description
+      properties:
+        name:
+          type: string
+          example: "Любимый проект"
+        description:
+          type: string
+          example: "На этой доске размещены задачи любимого проекта! <3"
+
     BoardContent:
       type: object
       properties:
@@ -190,6 +203,7 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/Card"
+
     Card:
       type: object
       properties:
@@ -254,7 +268,6 @@ components:
         canAdmin:
           type: boolean
           example: true
-
         updatedAt:
           type: string
           format: date-time
@@ -499,7 +512,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/UserPatch"
+              $ref: "#/components/schemas/UserPut"
       responses:
         "200":
           $ref: "#/components/responses/EmptyOkResponse"
@@ -551,61 +564,20 @@ paths:
           $ref: "#/components/responses/NoAuthResponse"
 
   /boards/{boardId}:
-    get:
-      summary: Получить информацию о доске
+    put:
+      summary: "Изменить имя или описание доски"
       tags:
         - Доски
       security:
         - SessionCookieAuth: []
       parameters:
         - $ref: "#/components/parameters/boardId"
-      responses:
-        "200":
-          description: Информация о доске
-          content:
-            application/json:
-              schema:
-                oneOf:
-                  - $ref: "#/components/schemas/Board"
-                  - $ref: "#/components/schemas/BadResponse"
-        "400":
-          $ref: "#/components/responses/BadRequestResponse"
-        "401":
-          $ref: "#/components/responses/NoAuthResponse"
-        "403":
-          $ref: "#/components/responses/ForbiddenResponse"
-        "404":
-          $ref: "#/components/responses/NotFoundResponse"
-
-    patch:
-      summary: "Изменить имя, описание или фон доски"
-      tags:
-        - Доски
-      security:
-        - SessionCookieAuth: []
-      parameters:
-        - name: boardId
-          in: path
-          required: true
-          schema:
-            type: string
-            example: "board_456"
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                name:
-                  type: string
-                  example: "Обновленное имя доски"
-                description:
-                  type: string
-                  example: "Обновленное описание доски"
-                backgroundImageUrl:
-                  type: string
-                  example: "/images/3432432423432234.png"
+              $ref: "#/components/schemas/BoardPut"
       responses:
         "200":
           description: "Доска успешно обновлена"
@@ -726,7 +698,7 @@ paths:
 
       responses:
         "200":
-          $ref: "#/components/responses/EmptyOkResponse"\
+          $ref: "#/components/responses/EmptyOkResponse"
         "400":
           $ref: "#/components/responses/BadRequestResponse"
         "401":
