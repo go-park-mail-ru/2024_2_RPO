@@ -31,11 +31,18 @@
 Затем надо оформить файл `.env`. Пример:
 
 ```
-DATABASE_URL = postgres://tarasovxx:my_secure_password@localhost:5432/pumpkin
+POSTGRES_HOST = localhost
+POSTGRES_PORT = 5432
+POSTGRES_LOGIN = tarasovxx
+POSTGRES_PASSWORD = my_secure_password
+POSTGRES_DB = pumpkin
+POSTGRES_SSLMODE = require
 
 SERVER_PORT = 8800
 
-REDIS_URL = redis://:my_secure_password@localhost:6379
+REDIS_HOST = localhost
+REDIS_PORT = 6379
+REDIS_PASSWORD = my_secure_password
 
 CORS_ORIGIN = https://mysite.com
 

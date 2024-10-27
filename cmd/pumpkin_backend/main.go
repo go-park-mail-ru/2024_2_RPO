@@ -96,7 +96,7 @@ func main() {
 
 	// Регистрируем обработчики
 	router.HandleFunc("/auth/register", authDelivery.RegisterUser).Methods("POST", "OPTIONS")
-	//router.HandleFunc("/users/me", user_handlers.GetMe).Methods("GET", "OPTIONS")
+	// router.HandleFunc("/users/me", user_handlers.GetMe).Methods("GET", "OPTIONS")
 	// router.HandleFunc("/boards/my", boards_handlers.GetMyBoardsHandler).Methods("GET", "OPTIONS")
 	// router.HandleFunc("/boards", boards_handlers.CreateBoardHandler).Methods("POST", "OPTIONS")
 	// router.HandleFunc("/boards/{boardId}", boards_handlers.DeleteBoardHandler).Methods("DELETE", "OPTIONS")
