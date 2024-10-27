@@ -3,20 +3,22 @@ package models
 import "time"
 
 type CreateBoardRequest struct {
-	Name        string `json:"name"`
-	Description string `json:"description"`
-}
-
-type DeleteBoardRequest struct {
-	ID int `json:"id"`
+	Name string `json:"name"`
 }
 
 type Board struct {
-	ID          int       `json:"id"`
+	Id          int       `json:"id"`
 	Name        string    `json:"name"`
 	Description string    `json:"description"`
 	Background  string    `json:"background,omitempty"`
-	OwnerID     int       `json:"owner_id"`
-	CreatedAt   time.Time `json:"created_at"`
-	UpdatedAt   time.Time `json:"updated_at"`
+	OwnerUserId int       `json:"ownerId"`
+	CreatedAt   time.Time `json:"createdAt"`
+	UpdatedAt   time.Time `json:"updatedAt"`
+}
+
+type UserPermissions struct {
+	CanEdit          bool `json:"canEdit"`
+	CanShare         bool `json:"canShare"`
+	CanInviteMembers bool `json:"canInviteMembers"`
+	IsAdmin          bool `json:"isAdmin"`
 }
