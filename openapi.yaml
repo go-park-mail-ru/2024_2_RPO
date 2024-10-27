@@ -15,6 +15,25 @@ components:
       name: session_id
 
   responses:
+    EmptyOkResponse:
+      description: "Успех"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/EmptyOkResponse"
+    BadRequestResponse:
+      description: "В запросе нет нужных полей или они не прошли валидацию или ошибка в query-параметрах"
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              status:
+                type: integer
+                example: 400
+              text:
+                type: string
+                example: "bad request"
     NoAuthResponse:
       description: "Вы не авторизованы"
       content:
@@ -24,31 +43,10 @@ components:
             properties:
               status:
                 type: integer
-                enum: [401]
                 example: 401
               text:
                 type: string
-                enum: ["Not authorized"]
-                example: "Not authorized"
-    EmptyOkResponse:
-      description: "Успех"
-      content:
-        application/json:
-          schema:
-            $ref: "#/components/schemas/EmptyOkResponse"
-    NotFoundResponse:
-      description: "Такой элемент не найден"
-      content:
-        application/json:
-          schema:
-            type: object
-            properties:
-              status:
-                type: integer
-                example: 404
-              text:
-                type: string
-                example: "not found"
+                example: "not authentified"
     ForbiddenResponse:
       description: "Нет прав на действие"
       content:
@@ -62,6 +60,19 @@ components:
               text:
                 type: string
                 example: "not authorized"
+    NotFoundResponse:
+      description: "Такой элемент не найден"
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              status:
+                type: integer
+                example: 404
+              text:
+                type: string
+                example: "not found"
   parameters:
     boardId:
       name: boardId
@@ -124,13 +135,15 @@ components:
           type: string
           format: date-time
           example: "2023-10-01T12:34:56Z"
+        avatarImageUrl:
+          type: string
+          example: "/images/avatars/23423432432423.png"
 
-    UserPatch:
+    UserPut:
       type: object
       required:
         - name
         - email
-        - createdAt
       properties:
         name:
           type: string
@@ -139,10 +152,6 @@ components:
           type: string
           format: email
           example: "tarasovxx@example.com"
-        createdAt:
-          type: string
-          format: date-time
-          example: "2023-10-01T12:34:56Z"
 
     Board:
       type: object
@@ -168,13 +177,6 @@ components:
           format: date-time
           example: "2023-10-01T12:34:56Z"
 
-    # Tag:
-    #   type: object
-    #   properties:
-    #     title:
-    #       type: string
-    #       example: "Дизайн"
-
     BoardContent:
       type: object
       properties:
@@ -188,11 +190,6 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/Card"
-        # allTags:
-        #   type: array
-        #   items:
-        #     $ref: "#/components/schemas/Tag"
-
     Card:
       type: object
       properties:
@@ -209,6 +206,10 @@ components:
           type: string
           example: "col_228"
         createdAt:
+          type: string
+          format: date-time
+          example: "2023-10-01T12:34:56Z"
+        updatedAt:
           type: string
           format: date-time
           example: "2023-10-01T12:34:56Z"
@@ -259,9 +260,7 @@ components:
           format: date-time
           example: "2023-10-01T12:34:56Z"
         updatedBy:
-          type: string
-          format: date-time
-          example: "2023-10-01T12:34:56Z"
+          $ref: "#/components/schemas/User"
 
     UserPermissionsPatch:
       type: object
@@ -344,7 +343,7 @@ paths:
             schema:
               $ref: "#/components/schemas/RegisterRequest"
       responses:
-        "201":
+        "200":
           description: "Пользователь успешно зарегистрирован"
           headers:
             Set-Cookie:
@@ -356,11 +355,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/EmptyOkResponse"
         "400":
-          description: "Некорректные данные"
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/BadResponse"
+          $ref: "#/components/responses/BadRequestResponse"
         "409":
           description: "Аккаунт с таким email/login уже зарегистрирован. Набор сообщений об ошибке фиксированный, см. схему"
           content:
@@ -444,11 +439,7 @@ paths:
         "200":
           $ref: "#/components/responses/EmptyOkResponse"
         "400":
-          description: "Отсутствуют необходимые поля или пароль слишком слабый"
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/BadResponse"
+          $ref: "#/components/responses/BadRequestResponse"
         "403":
           description: "Старый пароль неправильный"
           content:
@@ -472,6 +463,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/User"
+        "400":
+          $ref: "#/components/responses/BadRequestResponse"
         "401":
           $ref: "#/components/responses/NoAuthResponse"
         "404":
@@ -511,18 +504,13 @@ paths:
         "200":
           $ref: "#/components/responses/EmptyOkResponse"
         "400":
-          description: Некорректные данные
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/BadResponse"
+          $ref: "#/components/responses/BadRequestResponse"
         "401":
           $ref: "#/components/responses/NoAuthResponse"
         "403":
           $ref: "#/components/responses/ForbiddenResponse"
         "404":
           $ref: "#/components/responses/NotFoundResponse"
-
 
   /boards:
     post:
@@ -551,18 +539,14 @@ paths:
                   type: string
                   example: "#FF5733"
       responses:
-        "201":
+        "200":
           description: Доска успешно создана
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/Board"
         "400":
-          description: Некорректные данные
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/BadResponse"
+          $ref: "#/components/responses/BadRequestResponse"
         "401":
           $ref: "#/components/responses/NoAuthResponse"
 
@@ -585,11 +569,7 @@ paths:
                   - $ref: "#/components/schemas/Board"
                   - $ref: "#/components/schemas/BadResponse"
         "400":
-          description: Некорректные данные
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/BadResponse"
+          $ref: "#/components/responses/BadRequestResponse"
         "401":
           $ref: "#/components/responses/NoAuthResponse"
         "403":
@@ -634,11 +614,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/Board"
         "400":
-          description: Некорректные данные
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/BadResponse"
+          $ref: "#/components/responses/BadRequestResponse"
         "401":
           $ref: "#/components/responses/NoAuthResponse"
         "403":
@@ -700,6 +676,8 @@ paths:
                 type: "array"
                 items:
                   $ref: "#/components/schemas/UserPermissions"
+        "400":
+          $ref: "#/components/responses/BadRequestResponse"
         "401":
           $ref: "#/components/responses/NoAuthResponse"
         "403":
@@ -728,6 +706,8 @@ paths:
       responses:
         "200":
           $ref: "#/components/responses/EmptyOkResponse"
+        "400":
+          $ref: "#/components/responses/BadRequestResponse"
         "401":
           $ref: "#/components/responses/NoAuthResponse"
         "403":
@@ -746,7 +726,9 @@ paths:
 
       responses:
         "200":
-          $ref: "#/components/responses/EmptyOkResponse"
+          $ref: "#/components/responses/EmptyOkResponse"\
+        "400":
+          $ref: "#/components/responses/BadRequestResponse"
         "401":
           $ref: "#/components/responses/NoAuthResponse"
         "403":
@@ -770,6 +752,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/BoardContent"
+        "400":
+          $ref: "#/components/responses/BadRequestResponse"
         "401":
           $ref: "#/components/responses/NoAuthResponse"
         "403":
@@ -806,18 +790,14 @@ paths:
                   type: string
                   example: "To Do"
       responses:
-        "201":
+        "200":
           description: "Карточка успешно создана"
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/Card"
         "400":
-          description: "Некорректные данные"
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/BadResponse"
+          $ref: "#/components/responses/BadRequestResponse"
         "401":
           $ref: "#/components/responses/NoAuthResponse"
         "403":
@@ -859,11 +839,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/Card"
         "400":
-          description: "Некорректные данные"
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/BadResponse"
+          $ref: "#/components/responses/BadRequestResponse"
         "401":
           $ref: "#/components/responses/NoAuthResponse"
         "403":
@@ -883,11 +859,7 @@ paths:
         "200":
           $ref: "#/components/responses/EmptyOkResponse"
         "400":
-          description: "Некорректные данные"
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/BadResponse"
+          $ref: "#/components/responses/BadRequestResponse"
         "401":
           $ref: "#/components/responses/NoAuthResponse"
         "403":
