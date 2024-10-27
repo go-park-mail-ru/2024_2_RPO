@@ -16,6 +16,7 @@ components:
 
   schemas:
     BadResponse:
+      type: object
       properties:
         status:
           type: integer
@@ -23,6 +24,17 @@ components:
         text:
           type: string
           example: "Item with such id not found"
+
+    EmptyOkResponse:
+      type: object
+      properties:
+        status:
+          type: integer
+          enum: [200]
+          example: 200
+        text:
+          type: string
+          example: "ok"
 
     User:
       type: object
@@ -270,7 +282,7 @@ components:
 paths:
   /auth/register:
     post:
-      summary: Регистрация нового пользователя
+      summary: "Регистрация нового пользователя"
       tags:
         - Аутентификация
       requestBody:
@@ -281,23 +293,32 @@ paths:
               $ref: "#/components/schemas/RegisterRequest"
       responses:
         "201":
-          description: Пользователь успешно зарегистрирован
+          description: "Пользователь успешно зарегистрирован"
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/AuthResponse"
         "400":
-          description: Некорректные данные
+          description: "Некорректные данные"
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/BadResponse"
         "409":
-          description: Аккаунт с таким email уже зарегистрироован
+          description: "Аккаунт с таким email/login уже зарегистрирован. Набор сообщений об ошибке фиксированный, см. схему"
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/BadResponse"
+                type: object
+                properties:
+                  status:
+                    type: integer
+                    example: 409
+                    enum: [409]
+                  text:
+                    type: string
+                    example: "Email is busy"
+                    enum: ["Email is busy","Login is busy","Email and login are busy"]
 
   /auth/login:
     post:
@@ -821,7 +842,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/BadResponse"
     delete:
-      summary: Забрать у пользователя все права
+      summary: "Выгнать пользователя"
       tags:
         - Разрешения пользователей
       security:
@@ -842,13 +863,17 @@ paths:
 
       responses:
         "200":
-          description: "Успешно изменены права"
+          description: "Успешно выгнали"
           content:
             application/json:
               schema:
                 type: object
                 properties:
-                  message:
+                  status:
+                    type: integer
+                    enum: [200]
+                    example: 200
+                  text:
                     type: string
                     example: "Права пользователя успешно изменены"
         "401":
@@ -870,7 +895,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/BadResponse"
 
-  /boards/{boardId}/allContent:
+  /cards/{boardId}/allContent:
     get:
       summary: "Получить все карточки на доске, а также все столбцы (и в будущем - теги)"
       tags:
@@ -910,7 +935,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/BadResponse"
 
-  /boards/{boardId}/cards:
+  /cards/{boardId}/cards:
     post:
       summary: Создать новую карточку на доске
       tags:
@@ -969,7 +994,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/BadResponse"
 
-  /boards/{boardId}/cards/{cardId}:
+  /cards/{boardId}/cards/{cardId}:
     # get:
     #   summary: "Получить информацию о карточке"
     #   tags:
@@ -1081,7 +1106,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/BadResponse"
     delete:
-      summary: Удалить карточку
+      summary: "Удалить карточку"
       tags:
         - Карточки
       security:
@@ -1101,7 +1126,7 @@ paths:
             example: "card_789"
       responses:
         "204":
-          description: Карточка успешно удалена
+          description: "Карточка успешно удалена"
           content:
             application/json:
               schema:
