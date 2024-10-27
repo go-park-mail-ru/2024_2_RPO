@@ -727,15 +727,7 @@ paths:
                 $ref: "#/components/schemas/UserPermissionsPatch"
       responses:
         "200":
-          description: "Успешно изменены права"
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    example: "Права пользователя успешно изменены"
+          $ref: "#/components/responses/EmptyOkResponse"
         "401":
           $ref: "#/components/responses/NoAuthResponse"
         "403":
@@ -754,19 +746,7 @@ paths:
 
       responses:
         "200":
-          description: "Успешно выгнали"
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  status:
-                    type: integer
-                    enum: [200]
-                    example: 200
-                  text:
-                    type: string
-                    example: "Права пользователя успешно изменены"
+          $ref: "#/components/responses/EmptyOkResponse"
         "401":
           $ref: "#/components/responses/NoAuthResponse"
         "403":
