@@ -15,14 +15,15 @@ components:
       name: session_id
 
   schemas:
-    Error:
+    BadResponse:
       properties:
         status:
           type: integer
           example: 404
         text:
           type: string
-          example: "Board with such id not found"
+          example: "Item with such id not found"
+
     User:
       type: object
       properties:
@@ -31,7 +32,7 @@ components:
           example: 123
         name:
           type: string
-          example: "Иван Иванов"
+          example: "Tarasovxx"
         email:
           type: string
           format: email
@@ -53,10 +54,9 @@ components:
         description:
           type: string
           example: "На этой доске размещены задачи любимого проекта! <3"
-        background:
-          oneOf:
-            - type: string
-              example: "#ffaaff"
+        backgroundImageUrl:
+          type: string
+          example: "/static/backgroundImage.png"
         createdAt:
           type: string
           format: date-time
@@ -66,12 +66,12 @@ components:
           format: date-time
           example: "2023-10-01T12:34:56Z"
 
-    Tag:
-      type: object
-      properties:
-        title:
-          type: string
-          example: "Дизайн"
+    # Tag:
+    #   type: object
+    #   properties:
+    #     title:
+    #       type: string
+    #       example: "Дизайн"
 
     BoardContent:
       type: object
@@ -81,25 +81,22 @@ components:
         allColumns:
           type: array
           items:
-            type: object
             $ref: "#/components/schemas/Column"
         allCards:
           type: array
           items:
-            type: object
             $ref: "#/components/schemas/Card"
-        allTags:
-          type: array
-          items:
-            type: object
-            $ref: "#/components/schemas/Tag"
+        # allTags:
+        #   type: array
+        #   items:
+        #     $ref: "#/components/schemas/Tag"
 
     Card:
       type: object
       properties:
         id:
-          type: string
-          example: "card_789"
+          type: integer
+          example: 789
         title:
           type: string
           example: "Задача 1"
@@ -118,13 +115,13 @@ components:
       type: object
       properties:
         id:
-          type: string
-          example: "col_228"
+          type: integer
+          example: 228
         title:
           type: string
           example: "Backlog"
 
-    UserRights:
+    UserPermissions:
       type: object
       properties:
         user:
@@ -138,8 +135,7 @@ components:
           oneOf:
             - type: string
               enum: ["creator_itself"]
-            - type: object
-              $ref: "#/components/schemas/User"
+            - $ref: "#/components/schemas/User"
         canEdit:
           type: boolean
           example: true
@@ -165,7 +161,7 @@ components:
           format: date-time
           example: "2023-10-01T12:34:56Z"
 
-    UserRightsPatch:
+    UserPermissionsPatch:
       type: object
       properties:
         canEdit:
@@ -238,7 +234,7 @@ components:
       properties:
         cookie:
           type: string
-          description: Sesseion_id
+          description: session_id
           example: "803074ec54da1ced30d63d4fd9c92..."
 
     LogoutResponse:
@@ -295,13 +291,13 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Error"
+                $ref: "#/components/schemas/BadResponse"
         "409":
           description: Аккаунт с таким email уже зарегистрироован
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Error"
+                $ref: "#/components/schemas/BadResponse"
 
   /auth/login:
     post:
@@ -326,7 +322,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Error"
+                $ref: "#/components/schemas/BadResponse"
   /auth/logout:
     post:
       summary: Выйти из системы
@@ -346,7 +342,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Error"
+                $ref: "#/components/schemas/BadResponse"
   /auth/changePassword:
     post:
       summary: Изменить пароль
@@ -370,19 +366,19 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Error"
+                $ref: "#/components/schemas/BadResponse"
         "403":
           description: "Старый пароль неправильный"
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Error"
+                $ref: "#/components/schemas/BadResponse"
         "411":
           description: "Новый пароль слишком слабый"
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Error"
+                $ref: "#/components/schemas/BadResponse"
 
   /users/{userId}:
     get:
@@ -410,19 +406,19 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Error"
+                $ref: "#/components/schemas/BadResponse"
         "401":
           description: Пользователь не авторизован
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Error"
+                $ref: "#/components/schemas/BadResponse"
         "404":
           description: Пользователь не найден
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Error"
+                $ref: "#/components/schemas/BadResponse"
     put:
       summary: Обновить информацию о пользователе
       tags:
@@ -462,25 +458,25 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Error"
+                $ref: "#/components/schemas/BadResponse"
         "401":
           description: Пользователь не авторизован
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Error"
+                $ref: "#/components/schemas/BadResponse"
         "403":
           description: Пользователь не имеет прав на обновление информации
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Error"
+                $ref: "#/components/schemas/BadResponse"
         "404":
           description: Пользователь не найден
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Error"
+                $ref: "#/components/schemas/BadResponse"
 
   /users/me:
     get:
@@ -501,7 +497,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Error"
+                $ref: "#/components/schemas/BadResponse"
 
   /boards:
     post:
@@ -541,13 +537,13 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Error"
+                $ref: "#/components/schemas/BadResponse"
         "401":
           description: Пользователь не авторизован
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Error"
+                $ref: "#/components/schemas/BadResponse"
 
   /boards/{boardId}:
     get:
@@ -571,34 +567,34 @@ paths:
               schema:
                 oneOf:
                   - $ref: "#/components/schemas/Board"
-                  - $ref: "#/components/schemas/Error"
+                  - $ref: "#/components/schemas/BadResponse"
         "400":
           description: Некорректные данные
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Error"
+                $ref: "#/components/schemas/BadResponse"
         "401":
           description: Пользователь не авторизован
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Error"
+                $ref: "#/components/schemas/BadResponse"
         "403":
           description: Пользователь не имеет прав на эту доску
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Error"
+                $ref: "#/components/schemas/BadResponse"
         "404":
           description: Доска не найдена
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Error"
+                $ref: "#/components/schemas/BadResponse"
 
     patch:
-      summary: Изменить имя, описание или фон доски
+      summary: "Изменить имя, описание или фон доски"
       tags:
         - Доски
       security:
@@ -623,12 +619,12 @@ paths:
                 description:
                   type: string
                   example: "Обновленное описание доски"
-                background:
+                backgroundImageUrl:
                   type: string
-                  example: "#33FF57"
+                  example: "/images/3432432423432234.png"
       responses:
         "200":
-          description: Доска успешно обновлена
+          description: "Доска успешно обновлена"
           content:
             application/json:
               schema:
@@ -638,25 +634,25 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Error"
+                $ref: "#/components/schemas/BadResponse"
         "401":
           description: Пользователь не авторизован
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Error"
+                $ref: "#/components/schemas/BadResponse"
         "403":
           description: Пользователь не имеет прав обновление информации о доске
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Error"
+                $ref: "#/components/schemas/BadResponse"
         "404":
           description: Доска не найдена
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Error"
+                $ref: "#/components/schemas/BadResponse"
     delete:
       summary: Удалить доску
       tags:
@@ -682,19 +678,19 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Error"
+                $ref: "#/components/schemas/BadResponse"
         "403":
           description: Пользователь не имеет прав на удаление этой доски
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Error"
+                $ref: "#/components/schemas/BadResponse"
         "404":
           description: Доска не найдена
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Error"
+                $ref: "#/components/schemas/BadResponse"
 
   /boards/my:
     get:
@@ -717,9 +713,9 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Error"
+                $ref: "#/components/schemas/BadResponse"
 
-  /boards/{boardId}/userRights:
+  /userPermissions/{boardId}:
     get:
       summary: Получить информацию о правах всех пользователей на этой доске
       tags:
@@ -741,34 +737,33 @@ paths:
               schema:
                 type: "array"
                 items:
-                  type: "object"
-                  $ref: "#/components/schemas/UserRights"
+                  $ref: "#/components/schemas/UserPermissions"
         "400":
           description: Неверный формат данных
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Error"
+                $ref: "#/components/schemas/BadResponse"
         "401":
           description: Пользователь не авторизован
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Error"
+                $ref: "#/components/schemas/BadResponse"
         "403":
           description: Пользователю не разрешено просматривать права пользователей на этой доске из-за отсутствия соответствующих прав доступа
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Error"
+                $ref: "#/components/schemas/BadResponse"
         "404":
           description: Доска не найдена
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Error"
+                $ref: "#/components/schemas/BadResponse"
 
-  /boards/{boardId}/userRights/{userId}:
+  /userPermissions/{boardId}/{userId}:
     patch:
       summary: Изменить права пользователя
       tags:
@@ -795,8 +790,7 @@ paths:
             schema:
               type: "array"
               items:
-                type: "object"
-                $ref: "#/components/schemas/UserRightsPatch"
+                $ref: "#/components/schemas/UserPermissionsPatch"
       responses:
         "200":
           description: "Успешно изменены права"
@@ -813,19 +807,19 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Error"
+                $ref: "#/components/schemas/BadResponse"
         "403":
           description: "У Вас недостаточно прав для администрирования"
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Error"
+                $ref: "#/components/schemas/BadResponse"
         "404":
           description: "Доска или пользователь не найдены"
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Error"
+                $ref: "#/components/schemas/BadResponse"
     delete:
       summary: Забрать у пользователя все права
       tags:
@@ -862,23 +856,23 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Error"
+                $ref: "#/components/schemas/BadResponse"
         "403":
           description: "У Вас недостаточно прав для администрирования"
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Error"
+                $ref: "#/components/schemas/BadResponse"
         "404":
           description: "Доска или пользователь не найдены"
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Error"
+                $ref: "#/components/schemas/BadResponse"
 
   /boards/{boardId}/allContent:
     get:
-      summary: Получить все карточки на доске, а также все столбцы и теги
+      summary: "Получить все карточки на доске, а также все столбцы (и в будущем - теги)"
       tags:
         - Карточки
       security:
@@ -892,29 +886,29 @@ paths:
             example: "board_456"
       responses:
         "200":
-          description: Список карточек
+          description: "Список карточек"
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/BoardContent"
         "401":
-          description: Пользователь не авторизован
+          description: "Пользователь не авторизован"
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Error"
+                $ref: "#/components/schemas/BadResponse"
         "403":
           description: "У Вас недостаточно прав для получения карточек, столбцов и тегов на доске"
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Error"
+                $ref: "#/components/schemas/BadResponse"
         "404":
-          description: Доска с таким ID не существует
+          description: "Доска с таким ID не существует"
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Error"
+                $ref: "#/components/schemas/BadResponse"
 
   /boards/{boardId}/cards:
     post:
@@ -951,75 +945,75 @@ paths:
                   example: "To Do"
       responses:
         "201":
-          description: Карточка успешно создана
+          description: "Карточка успешно создана"
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/Card"
         "400":
-          description: Некорректные данные
+          description: "Некорректные данные"
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Error"
+                $ref: "#/components/schemas/BadResponse"
         "401":
-          description: Пользователь не авторизован
+          description: "Пользователь не авторизован"
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Error"
+                $ref: "#/components/schemas/BadResponse"
         "404":
-          description: Доска с таким ID не существует
+          description: "Доска с таким ID не существует"
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Error"
+                $ref: "#/components/schemas/BadResponse"
 
   /boards/{boardId}/cards/{cardId}:
-    get:
-      summary: Получить информацию о карточке
-      tags:
-        - Карточки
-      security:
-        - SessionCookieAuth: []
-      parameters:
-        - name: boardId
-          in: path
-          required: true
-          schema:
-            type: string
-            example: "board_456"
-        - name: cardId
-          in: path
-          required: true
-          schema:
-            type: string
-            example: "card_789"
-      responses:
-        "200":
-          description: Информация о карточке
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Card"
-        "401":
-          description: Пользователь не авторизован
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
-        "403":
-          description: "У Вас недостаточно прав для получения информации о карточке"
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
-        "404":
-          description: Доска или карточка с таким ID не существует
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
+    # get:
+    #   summary: "Получить информацию о карточке"
+    #   tags:
+    #     - Карточки
+    #   security:
+    #     - SessionCookieAuth: []
+    #   parameters:
+    #     - name: boardId
+    #       in: path
+    #       required: true
+    #       schema:
+    #         type: string
+    #         example: "board_456"
+    #     - name: cardId
+    #       in: path
+    #       required: true
+    #       schema:
+    #         type: string
+    #         example: "card_789"
+    #   responses:
+    #     "200":
+    #       description: "Информация о карточке"
+    #       content:
+    #         application/json:
+    #           schema:
+    #             $ref: "#/components/schemas/Card"
+    #     "401":
+    #       description: "Пользователь не авторизован"
+    #       content:
+    #         application/json:
+    #           schema:
+    #             $ref: "#/components/schemas/BadResponse"
+    #     "403":
+    #       description: "У Вас недостаточно прав для получения информации о карточке"
+    #       content:
+    #         application/json:
+    #           schema:
+    #             $ref: "#/components/schemas/BadResponse"
+    #     "404":
+    #       description: "Доска или карточка с таким ID не существует"
+    #       content:
+    #         application/json:
+    #           schema:
+    #             $ref: "#/components/schemas/BadResponse"
     patch:
       summary: Обновить карточку
       tags:
@@ -1057,39 +1051,39 @@ paths:
                   example: "In Progress"
       responses:
         "200":
-          description: Карточка успешно обновлена
+          description: "Карточка успешно обновлена"
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/Card"
         "400":
-          description: Некорректные данные
+          description: "Некорректные данные"
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Error"
+                $ref: "#/components/schemas/BadResponse"
         "401":
-          description: Пользователь не авторизован
+          description: "Пользователь не авторизован"
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Error"
+                $ref: "#/components/schemas/BadResponse"
         "403":
           description: "У Вас недостаточно прав для обновления карточки"
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Error"
+                $ref: "#/components/schemas/BadResponse"
         "404":
-          description: Доска или карточка с таким ID не существует
+          description: "Доска или карточка с таким ID не существует"
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Error"
+                $ref: "#/components/schemas/BadResponse"
     delete:
       summary: Удалить карточку
       tags:
-        - Карточкиs
+        - Карточки
       security:
         - SessionCookieAuth: []
       parameters:
@@ -1113,29 +1107,29 @@ paths:
               schema:
                 $ref: "#/components/schemas/DeleteCardResponse"
         "400":
-          description: Некорректные данные
+          description: "Некорректные данные"
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Error"
+                $ref: "#/components/schemas/BadResponse"
         "401":
-          description: Пользователь не авторизован
+          description: "Пользователь не авторизован"
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Error"
+                $ref: "#/components/schemas/BadResponse"
         "403":
           description: "У Вас недостаточно прав для удаления карточки"
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Error"
+                $ref: "#/components/schemas/BadResponse"
         "404":
-          description: Доска или карточка с таким ID не существует
+          description: "Доска или карточка с таким ID не существует"
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Error"
+                $ref: "#/components/schemas/BadResponse"
 
 security:
   - SessionCookieAuth: []
