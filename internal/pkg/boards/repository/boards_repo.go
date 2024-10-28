@@ -56,7 +56,7 @@ func (r *BoardRepository) CreateBoard(name string, createdBy int64) (*Board, err
 // GetBoard retrieves a board by its ID.
 func (r *BoardRepository) GetBoard(boardID int64) (*Board, error) {
 	query := `
-		SELECT b_id, name, description, backgroundImageUrl, created_at, created_by, updated_at
+		SELECT b_id, name, description, created_at, created_by, updated_at
 		FROM board
 		WHERE b_id = $1
 	`
@@ -84,20 +84,18 @@ func (r *BoardRepository) UpdateBoard(boardID int64, data *boards.BoardPutReques
 	query := `
 		UPDATE board
 		SET name=$1, description=$2, updated_at = CURRENT_TIMESTAMP
-		WHERE b_id = $%d
-		RETURNING b_id
+		WHERE b_id = $3;
 	`
 
-	var boardId int
-	row := r.db.QueryRow(context.Background(), query, data.NewName, data.NewDescription)
-	err := row.Scan(
-		&boardId,
-	)
+	tag, err := r.db.Exec(context.Background(), query, data.NewName, data.NewDescription, boardID)
 	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return nil
+		if errors.Is(err, pgx.ErrNoRows) { // Может ли эта ошибка появиться?
+			return fmt.Errorf("UpdateBoard: %w", boards.ErrNotFound)
 		}
 		return fmt.Errorf("UpdateBoard: %w", err)
+	}
+	if tag.RowsAffected() == 0 {
+		return fmt.Errorf("UpdateBoard: %w", boards.ErrNotFound)
 	}
 	return nil
 }
@@ -110,6 +108,9 @@ func (r *BoardRepository) DeleteBoard(boardId int64) error {
 	`
 	tag, err := r.db.Exec(context.Background(), query, boardId)
 	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return fmt.Errorf("DeleteBoard: %w", boards.ErrNotFound)
+		}
 		return fmt.Errorf("DeleteBoard: %w", err)
 	}
 	if tag.RowsAffected() == 0 {
