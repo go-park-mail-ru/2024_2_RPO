@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"RPO_back/internal/models"
 	"RPO_back/internal/pkg/boards"
 	"context"
 	"errors"
@@ -10,16 +11,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-// Board represents the board entity.
-type Board struct {
-	ID                 int64  `json:"id"`
-	Name               string `json:"name"`
-	Description        string `json:"description"`
-	BackgroundImageURL string `json:"backgroundImageUrl,omitempty"`
-	CreatedAt          string `json:"created_at"`
-	CreatedBy          int64  `json:"created_by,omitempty"`
-	UpdatedAt          string `json:"updated_at"`
-}
+const defaultImageUrl = "/static/img/backgroundImage.png"
 
 type BoardRepository struct {
 	db *pgxpool.Pool
@@ -31,15 +23,15 @@ func NewBoardRepository(db *pgxpool.Pool) *BoardRepository {
 }
 
 // CreateBoard creates a new board in the database.
-func (r *BoardRepository) CreateBoard(name string, createdBy int64) (*Board, error) {
+func (r *BoardRepository) CreateBoard(name string, createdBy int64) (*models.Board, error) {
 	query := `
 		INSERT INTO board (name, description, created_by)
 		VALUES ($1, $2, $3)
 		RETURNING b_id, name, description, created_at, created_by, updated_at
 	`
-	var board Board
+	var board models.Board
 	err := r.db.QueryRow(context.Background(), query, name, "", createdBy).Scan(
-		&board.ID,
+		&board.Id,
 		&board.Name,
 		&board.Description,
 		&board.BackgroundImageURL,
@@ -60,9 +52,9 @@ func (r *BoardRepository) GetBoard(boardID int64) (*Board, error) {
 		FROM board
 		WHERE b_id = $1
 	`
-	var board Board
+	var board models.Board
 	err := r.db.QueryRow(context.Background(), query, boardID).Scan(
-		&board.ID,
+		&board.Id,
 		&board.Name,
 		&board.Description,
 		&board.BackgroundImageURL,
@@ -120,7 +112,7 @@ func (r *BoardRepository) DeleteBoard(boardId int64) error {
 }
 
 // GetBoardsForUser возвращает все доски, к которым пользователь имеет доступ
-func (r *BoardRepository) GetBoardsForUser(userID int64) (boardArray []Board, err error) {
+func (r *BoardRepository) GetBoardsForUser(userID int64) (boardArray []models.Board, err error) {
 	query := `
 		SELECT b.b_id, b.name, b.description, b.backgroundImageUrl, b.created_at, b.created_by, b.updated_at
 		FROM board b
@@ -133,11 +125,11 @@ func (r *BoardRepository) GetBoardsForUser(userID int64) (boardArray []Board, er
 	}
 	defer rows.Close()
 
-	boardArray = []Board{}
+	boardArray = []models.Board{}
 	for rows.Next() {
-		var board Board
+		var board models.Board
 		err := rows.Scan(
-			&board.ID,
+			&board.Id,
 			&board.Name,
 			&board.Description,
 			&board.BackgroundImageURL,

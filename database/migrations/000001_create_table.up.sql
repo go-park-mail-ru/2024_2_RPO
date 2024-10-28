@@ -9,7 +9,33 @@ CREATE TABLE IF NOT EXISTS "user" (
     updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     password_hash TEXT NOT NULL,
     email CITEXT UNIQUE NOT NULL
+    -- avatar_file_uuid UUID,
+    -- FOREIGN KEY (avatar_file_uuid) REFERENCES user_uploaded_file(file_uuid)
+    -- ON UPDATE CASCADE ON DELETE SET NULL
 );
+
+CREATE TYPE IF NOT EXISTS FILE_TYPE AS ENUM
+(
+    "avatar",
+    "background_image",
+    "card_cover_image",
+    "file"
+);
+
+CREATE TABLE IF NOT EXISTS user_uploaded_file(
+    file_uuid UUID PRIMARY KEY NOT NULL DEFAULT uuid_generate_v4(),
+    file_extension TEXT,
+    "size" INTEGER NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    created_by BIGINT,
+    "type" FILE_TYPE NOT NULL,
+    FOREIGN KEY (created_by) REFERENCES "user"(u_id) ON UPDATE CASCADE ON DELETE SET NULL
+);
+
+ALTER TABLE "user" ADD COLUMN avatar_file_uuid UUID;
+
+ALTER TABLE "user" ADD CONSTRAINT FOREIGN KEY (avatar_file_uuid) REFERENCES user_uploaded_file(file_uuid)
+    ON UPDATE CASCADE ON DELETE SET NULL;
 
 CREATE TABLE IF NOT EXISTS board (
     board_id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
@@ -17,9 +43,12 @@ CREATE TABLE IF NOT EXISTS board (
     description TEXT NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     created_by INT,
+    background_image_uuid UUID,
     updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (created_by) REFERENCES "user"(u_id) ON UPDATE CASCADE ON DELETE
-    SET NULL
+    SET NULL,
+    FOREIGN KEY (background_file_uuid) REFERENCES user_uploaded_file(file_uuid)
+    ON UPDATE CASCADE ON DELETE SET NULL
 );
 
 CREATE TABLE IF NOT EXISTS user_to_board (
@@ -61,7 +90,10 @@ CREATE TABLE IF NOT EXISTS "card" (
     order_index INT, -- Порядковый номер карточки в колонке
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (col_id) REFERENCES kanban_column(col_id) ON UPDATE CASCADE ON DELETE RESTRICT
+    cover_file_uuid UUID,
+    FOREIGN KEY (col_id) REFERENCES kanban_column(col_id) ON UPDATE CASCADE ON DELETE RESTRICT,
+    FOREIGN KEY (cover_file_uuid) REFERENCES user_uploaded_file(file_uuid)
+    ON UPDATE CASCADE ON DELETE SET NULL
 );
 
 CREATE TABLE IF NOT EXISTS tag (
@@ -90,8 +122,11 @@ CREATE TABLE IF NOT EXISTS card_update (
     created_by INT NOT NULL,
     "type" TEXT,
     "text" TEXT,
+    attached_file_uuid UUID,
     FOREIGN KEY (crd_id) REFERENCES Card(crd_id) ON UPDATE CASCADE ON DELETE CASCADE,
-    FOREIGN KEY (created_by) REFERENCES "user"(u_id) ON UPDATE CASCADE ON DELETE CASCADE
+    FOREIGN KEY (created_by) REFERENCES "user"(u_id) ON UPDATE CASCADE ON DELETE CASCADE,
+    FOREIGN KEY (cover_file_uuid) REFERENCES user_uploaded_file(file_uuid)
+    ON UPDATE CASCADE ON DELETE SET NULL
 );
 
 CREATE TABLE IF NOT EXISTS "notification" (
@@ -113,22 +148,4 @@ CREATE TABLE IF NOT EXISTS check_list_field (
     title TEXT NOT NULL,
     is_done BOOLEAN DEFAULT FALSE,
     FOREIGN KEY (crd_id) REFERENCES card(crd_id) ON UPDATE CASCADE ON DELETE CASCADE
-);
-
-CREATE TYPE IF NOT EXISTS FILE_TYPE AS ENUM
-(
-    "avatar",
-    "background_image",
-    "card_cover_image",
-    "file"
-);
-
-CREATE TABLE IF NOT EXISTS user_uploaded_file(
-    file_uuid UUID PRIMARY KEY NOT NULL DEFAULT uuid_generate_v4(),
-    file_extension TEXT,
-    "size" INTEGER NOT NULL,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    created_by BIGINT,
-    "type" FILE_TYPE NOT NULL,
-    FOREIGN KEY (created_by) REFERENCES "user"(u_id) ON UPDATE CASCADE ON DELETE SET NULL
 );
