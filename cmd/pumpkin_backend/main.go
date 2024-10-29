@@ -59,6 +59,11 @@ func main() {
 		os.Getenv("POSTGRES_DB"),
 		os.Getenv("POSTGRES_SSLMODE"),
 	))
+	os.Setenv("REDIS_URL", fmt.Sprintf("redis://:%s@%s:%s",
+		os.Getenv("REDIS_PASSWORD"),
+		os.Getenv("REDIS_HOST"),
+		os.Getenv("REDIS_PORT"),
+	))
 
 	// Подключение к PostgreSQL
 	postgresDb, err := pgxpool.New(context.Background(), os.Getenv("DATABASE_URL"))
