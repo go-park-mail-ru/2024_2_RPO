@@ -1,7 +1,7 @@
 CREATE EXTENSION IF NOT EXISTS "citext";
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
-CREATE TABLE IF NOT EXISTS "user" (
+CREATE TABLE "user" (
     u_id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     nickname TEXT NOT NULL UNIQUE,
     "description" TEXT NOT NULL,
@@ -14,15 +14,15 @@ CREATE TABLE IF NOT EXISTS "user" (
     -- ON UPDATE CASCADE ON DELETE SET NULL
 );
 
-CREATE TYPE IF NOT EXISTS FILE_TYPE AS ENUM
+CREATE TYPE FILE_TYPE AS ENUM
 (
-    "avatar",
-    "background_image",
-    "card_cover_image",
-    "file"
+    'avatar',
+    'background_image',
+    'card_cover_image',
+    'file'
 );
 
-CREATE TABLE IF NOT EXISTS user_uploaded_file(
+CREATE TABLE user_uploaded_file(
     file_uuid UUID PRIMARY KEY NOT NULL DEFAULT uuid_generate_v4(),
     file_extension TEXT,
     "size" INTEGER NOT NULL,
@@ -34,32 +34,32 @@ CREATE TABLE IF NOT EXISTS user_uploaded_file(
 
 ALTER TABLE "user" ADD COLUMN avatar_file_uuid UUID;
 
-ALTER TABLE "user" ADD CONSTRAINT FOREIGN KEY (avatar_file_uuid) REFERENCES user_uploaded_file(file_uuid)
+ALTER TABLE "user" ADD CONSTRAINT fk_avatar_file_uuid FOREIGN KEY (avatar_file_uuid) REFERENCES user_uploaded_file(file_uuid)
     ON UPDATE CASCADE ON DELETE SET NULL;
 
-CREATE TABLE IF NOT EXISTS board (
+CREATE TABLE board (
     board_id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     name TEXT NOT NULL,
     description TEXT NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    created_by INT,
+    created_by BIGINT,
     background_image_uuid UUID,
     updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (created_by) REFERENCES "user"(u_id) ON UPDATE CASCADE ON DELETE
     SET NULL,
-    FOREIGN KEY (background_file_uuid) REFERENCES user_uploaded_file(file_uuid)
+    FOREIGN KEY (background_image_uuid) REFERENCES user_uploaded_file(file_uuid)
     ON UPDATE CASCADE ON DELETE SET NULL
 );
 
-CREATE TABLE IF NOT EXISTS user_to_board (
-    ub_id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+CREATE TABLE user_to_board (
+    user_to_board_id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     u_id BIGINT NOT NULL,
     board_id BIGINT NOT NULL,
     added_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     last_visit_at TIMESTAMPTZ,
-    added_by INT,
-    updated_by INT,
+    added_by BIGINT,
+    updated_by BIGINT,
     can_edit BOOLEAN DEFAULT FALSE,
     can_share BOOLEAN DEFAULT FALSE,
     can_invite_members BOOLEAN DEFAULT FALSE,
@@ -73,7 +73,7 @@ CREATE TABLE IF NOT EXISTS user_to_board (
     SET NULL
 );
 
-CREATE TABLE IF NOT EXISTS kanban_column (
+CREATE TABLE kanban_column (
     col_id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     board_id BIGINT NOT NULL,
     title TEXT NOT NULL,
@@ -83,8 +83,8 @@ CREATE TABLE IF NOT EXISTS kanban_column (
     FOREIGN KEY (board_id) REFERENCES board(board_id) ON UPDATE CASCADE ON DELETE CASCADE
 );
 
-CREATE TABLE IF NOT EXISTS "card" (
-    crd_id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+CREATE TABLE "card" (
+    card_id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     col_id BIGINT NOT NULL,
     title TEXT NOT NULL,
     order_index INT, -- Порядковый номер карточки в колонке
@@ -96,8 +96,8 @@ CREATE TABLE IF NOT EXISTS "card" (
     ON UPDATE CASCADE ON DELETE SET NULL
 );
 
-CREATE TABLE IF NOT EXISTS tag (
-    t_id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+CREATE TABLE tag (
+    tag_id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     board_id BIGINT NOT NULL,
     title TEXT NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -105,47 +105,48 @@ CREATE TABLE IF NOT EXISTS tag (
     FOREIGN KEY (board_id) REFERENCES board(board_id) ON UPDATE CASCADE ON DELETE CASCADE
 );
 
-CREATE TABLE IF NOT EXISTS card_to_tag (
-    ct_id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    crd_id BIGINT NOT NULL,
-    t_id BIGINT NOT NULL,
+CREATE TABLE tag_to_card (
+    tag_to_card_id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    card_id BIGINT NOT NULL,
+    tag_id BIGINT NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (crd_id) REFERENCES Card(crd_id) ON UPDATE CASCADE ON DELETE CASCADE,
-    FOREIGN KEY (t_id) REFERENCES tag(t_id) ON UPDATE CASCADE ON DELETE CASCADE
+    FOREIGN KEY (card_id) REFERENCES Card(card_id) ON UPDATE CASCADE ON DELETE CASCADE,
+    FOREIGN KEY (tag_id) REFERENCES tag(tag_id) ON UPDATE CASCADE ON DELETE CASCADE
 );
 
-CREATE TABLE IF NOT EXISTS card_update (
-    cu_id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    crd_id BIGINT NOT NULL,
+CREATE TABLE card_update (
+    card_update_id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    card_id BIGINT NOT NULL,
     is_visible BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    created_by INT NOT NULL,
+    created_by BIGINT,
+    assigned_to BIGINT,
     "type" TEXT,
     "text" TEXT,
     attached_file_uuid UUID,
-    FOREIGN KEY (crd_id) REFERENCES Card(crd_id) ON UPDATE CASCADE ON DELETE CASCADE,
-    FOREIGN KEY (created_by) REFERENCES "user"(u_id) ON UPDATE CASCADE ON DELETE CASCADE,
-    FOREIGN KEY (cover_file_uuid) REFERENCES user_uploaded_file(file_uuid)
+    FOREIGN KEY (card_id) REFERENCES Card(card_id) ON UPDATE CASCADE ON DELETE CASCADE,
+    FOREIGN KEY (created_by) REFERENCES "user"(u_id) ON UPDATE CASCADE ON DELETE SET NULL,
+    FOREIGN KEY (attached_file_uuid) REFERENCES user_uploaded_file(file_uuid)
     ON UPDATE CASCADE ON DELETE SET NULL
 );
 
-CREATE TABLE IF NOT EXISTS "notification" (
-    n_id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+CREATE TABLE "notification" (
+    notification_id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     u_id BIGINT NOT NULL,
     board_id BIGINT NOT NULL,
     notification_type TEXT,
     content TEXT,
-    is_read BOOLEAN DEFAULT FALSE,
+    is_dismissed BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (u_id) REFERENCES "user"(u_id) ON UPDATE CASCADE ON DELETE CASCADE,
     FOREIGN KEY (board_id) REFERENCES board(board_id) ON UPDATE CASCADE ON DELETE CASCADE
 );
 
-CREATE TABLE IF NOT EXISTS check_list_field (
-    cls_id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    crd_id BIGINT NOT NULL,
+CREATE TABLE checklist_field (
+    checklist_field_id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    card_id BIGINT NOT NULL,
     order_index INT NOT NULL, -- Порядковый номер в чеклисте
     title TEXT NOT NULL,
     is_done BOOLEAN DEFAULT FALSE,
-    FOREIGN KEY (crd_id) REFERENCES card(crd_id) ON UPDATE CASCADE ON DELETE CASCADE
+    FOREIGN KEY (card_id) REFERENCES "card"(card_id) ON UPDATE CASCADE ON DELETE CASCADE
 );
