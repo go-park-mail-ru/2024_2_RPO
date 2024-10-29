@@ -46,7 +46,7 @@
 
 `{checklist_field_id} -> {card_id, order_index, title, is_done}`
 
-```mermaidjs
+```mermaid
 erDiagram
     USER {
         BIGINT u_id PK
