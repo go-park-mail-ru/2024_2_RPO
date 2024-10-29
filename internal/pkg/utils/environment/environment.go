@@ -28,10 +28,19 @@ func checkEnv(envVars []string) error {
 // Удостовериться, что в env лежат все необходимые для работы приложения переменные
 func ValidateEnv() error {
 
-	err := checkEnv([]string{"DATABASE_URL",
+	err := checkEnv([]string{"POSTGRES_HOST",
+		"POSTGRES_PORT",
+		"POSTGRES_USER",
+		"POSTGRES_PASSWORD",
+		"POSTGRES_DB",
+		"POSTGRES_SSLMODE",
 		"SERVER_PORT",
-		"REDIS_URL",
-		"CORS_ORIGIN"})
+		"REDIS_HOST",
+		"REDIS_PORT",
+		"REDIS_PASSWORD",
+		"CORS_ORIGIN",
+		"LOGS_FILE",
+	})
 	if err != nil {
 		return err
 	}

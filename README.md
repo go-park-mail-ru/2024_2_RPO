@@ -33,7 +33,7 @@
 ```
 POSTGRES_HOST = localhost
 POSTGRES_PORT = 5432
-POSTGRES_LOGIN = tarasovxx
+POSTGRES_USER = tarasovxx
 POSTGRES_PASSWORD = my_secure_password
 POSTGRES_DB = pumpkin
 POSTGRES_SSLMODE = require
@@ -46,7 +46,7 @@ REDIS_PASSWORD = my_secure_password
 
 CORS_ORIGIN = https://mysite.com
 
-LOGS_FILE = tarasovxx.json
+LOGS_FILE = log.json
 ```
 
 Запуск: `make run`

@@ -13,19 +13,10 @@ services:
         condition: service_started
     restart: always
     ports:
-      - "8080:8080"
+      - "127.0.0.1:8080:8080"
     networks:
       - Pumpkin-network
-    volumes:
-      - type: bind
-        source: /var/log/
-        target: /var/log/
-      - type: bind
-        source: /opt/images/
-        target: /opt/images/
-      - type: bind
-        source: /opt/attaches/
-        target: /opt/attaches/
+
   postgres:
     env_file:
       - .env
@@ -36,7 +27,7 @@ services:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     ports:
-      - "127.0.0.1:5432:5432"
+      - "${POSTGRES_PORT}:5432"
     networks:
       - Pumpkin-network
     volumes:
@@ -53,7 +44,7 @@ services:
       - pumpkin-redis-data:/var/lib/redis/data
       - ./redis.conf:/usr/local/etc/redis/redis.conf
     ports:
-      - "127.0.0.1:6379:6379"
+      - "${REDIS_PORT}:6379"
     env_file:
       - .env
     networks:

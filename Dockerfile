@@ -1,8 +1,11 @@
 # 1 шаг - сборка
 FROM golang:1.23-alpine AS build_stage
 RUN apk add make
-COPY . /go/src/pumpkin
+COPY ./go.mod /go/src/pumpkin/
+COPY ./go.sum /go/src/pumpkin/
 WORKDIR /go/src/pumpkin
+RUN go mod download
+COPY . /go/src/pumpkin
 RUN make build
 
 # 2 шаг

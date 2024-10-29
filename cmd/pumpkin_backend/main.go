@@ -50,6 +50,16 @@ func main() {
 		return
 	}
 
+	//Составление URL подключения
+	os.Setenv("DATABASE_URL", fmt.Sprintf("postgresql://%s:%s@%s:%s/%s?sslmode=%s",
+		os.Getenv("POSTGRES_USER"),
+		os.Getenv("POSTGRES_PASSWORD"),
+		os.Getenv("POSTGRES_HOST"),
+		os.Getenv("POSTGRES_PORT"),
+		os.Getenv("POSTGRES_DB"),
+		os.Getenv("POSTGRES_SSLMODE"),
+	))
+
 	// Подключение к PostgreSQL
 	postgresDb, err := pgxpool.New(context.Background(), os.Getenv("DATABASE_URL"))
 	if err != nil {
