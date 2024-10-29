@@ -34,7 +34,7 @@ func CreateBoardHandler(w http.ResponseWriter, r *http.Request) {
 	board.Name = req.Name
 	board.Description = req.Description
 	board.Background = "red" //TODO пересмотреть
-	board.OwnerUserId = userId
+	board.CreatedById = userId
 
 	db, err := repository.GetDbConnection()
 	if err != nil {
@@ -47,7 +47,7 @@ func CreateBoardHandler(w http.ResponseWriter, r *http.Request) {
 		INSERT INTO Board (description, name, created_by, updated_at)
 		VALUES ($1, $2, $3, CURRENT_TIMESTAMP)
 		RETURNING b_id`,
-		board.Description, board.Name, board.OwnerUserId).Scan(&boardId)
+		board.Description, board.Name, board.CreatedById).Scan(&boardId)
 	if err != nil {
 		http.Error(w, "Failed to insert board", http.StatusInternalServerError)
 		fmt.Println(err.Error())
@@ -58,7 +58,7 @@ func CreateBoardHandler(w http.ResponseWriter, r *http.Request) {
 	_, err = db.Exec(context.Background(), `
 		INSERT INTO User_to_Board (u_id, b_id, added_at, updated_at, can_edit, can_share, can_invite_members, is_admin, added_by, updated_by)
 		VALUES ($1, $2, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, TRUE, TRUE, TRUE, TRUE, NULL, NULL)`,
-		board.OwnerUserId, boardId)
+		board.CreatedById, boardId)
 	if err != nil {
 		http.Error(w, "Failed to insert user to board", http.StatusInternalServerError)
 		fmt.Println(err.Error())

@@ -11,7 +11,6 @@ type Board struct {
 	Name        string    `json:"name"`
 	Description string    `json:"description"`
 	Background  string    `json:"background,omitempty"`
-	OwnerUserId int       `json:"ownerId"`
 	CreatedAt   time.Time `json:"createdAt"`
 	UpdatedAt   time.Time `json:"updatedAt"`
 }

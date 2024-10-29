@@ -34,9 +34,8 @@ func (r *BoardRepository) CreateBoard(name string, createdBy int64) (*models.Boa
 		&board.Id,
 		&board.Name,
 		&board.Description,
-		&board.BackgroundImageURL,
 		&board.CreatedAt,
-		&board.CreatedBy,
+		&board.CreatedById,
 		&board.UpdatedAt,
 	)
 	if err != nil {
@@ -46,20 +45,22 @@ func (r *BoardRepository) CreateBoard(name string, createdBy int64) (*models.Boa
 }
 
 // GetBoard retrieves a board by its ID.
-func (r *BoardRepository) GetBoard(boardID int64) (*Board, error) {
+func (r *BoardRepository) GetBoard(boardID int64) (*models.Board, error) {
 	query := `
-		SELECT b_id, name, description, created_at, created_by, updated_at
-		FROM board
-		WHERE b_id = $1
+		SELECT
+		b.b_id, b.name,
+		b.description, b.created_at, b.updated_at,
+		file.file_uuid, file.file_extension
+		FROM board AS b
+		LEFT JOIN user_uploaded_file AS file ON file.file_uuid=b.avatar_file_uuid
+		WHERE b.b_id = $1;
 	`
 	var board models.Board
 	err := r.db.QueryRow(context.Background(), query, boardID).Scan(
 		&board.Id,
 		&board.Name,
 		&board.Description,
-		&board.BackgroundImageURL,
 		&board.CreatedAt,
-		&board.CreatedBy,
 		&board.UpdatedAt,
 	)
 	if err != nil {
