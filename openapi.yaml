@@ -224,8 +224,8 @@ components:
           type: string
           example: "Описание задачи 1"
         columnId:
-          type: string
-          example: "col_228"
+          type: integer
+          example: 228
         createdAt:
           type: string
           format: date-time
