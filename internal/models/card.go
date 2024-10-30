@@ -14,6 +14,7 @@ type Card struct {
 type CardPatchRequest struct {
 	NewTitle       string `json:"title"`
 	NewDescription string `json:"description"`
+	ColumnId       int    `json:"columnId"`
 }
 
 type Column struct {
