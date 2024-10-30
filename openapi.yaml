@@ -95,6 +95,13 @@ components:
       schema:
         type: string
         example: "user_343"
+    columnId:
+      name: columnId
+      in: path
+      required: true
+      schema:
+        type: string
+        example: "column_228"
 
   schemas:
     EmptyOkResponse:
@@ -250,6 +257,15 @@ components:
           type: string
           example: "Backlog"
 
+    ColumnRequest:
+      type: object
+      required:
+        - title
+      properties:
+        title:
+          type: string
+          example: "Backlog"
+
     UserPermissions:
       type: object
       properties:
@@ -259,52 +275,28 @@ components:
           type: string
           format: date-time
           example: "2023-10-01T12:34:56Z"
-        addedBy:
-          example: "creator_itself"
-          oneOf:
-            - type: string
-              enum: ["creator_itself"]
-            - $ref: "#/components/schemas/User"
-        canEdit:
-          type: boolean
-          example: true
-        canModify:
-          type: boolean
-          example: true
-        canShare:
-          type: boolean
-          example: true
-        canInviteMembers:
-          type: boolean
-          example: true
-        canAdmin:
-          type: boolean
-          example: true
+        role:
+          type: string
+          enum: ["viewer","editor","editor_chief","admin"]
+          example: "viewer"
         updatedAt:
           type: string
           format: date-time
           example: "2023-10-01T12:34:56Z"
+        addedBy:
+          $ref: "#/components/schemas/User"
         updatedBy:
           $ref: "#/components/schemas/User"
 
-    UserPermissionsPatch:
+    UserPermissionsPut:
       type: object
+      required:
+        - newRole
       properties:
-        canEdit:
-          type: boolean
-          example: true
-        canModify:
-          type: boolean
-          example: true
-        canShare:
-          type: boolean
-          example: true
-        canInviteMembers:
-          type: boolean
-          example: true
-        canAdmin:
-          type: boolean
-          example: true
+        newRole:
+          type: string
+          enum: ["viewer", "editor", "editor_chief", "admin"]
+          example: "viewer"
 
     RegisterRequest:
       type: object
@@ -315,7 +307,7 @@ components:
       properties:
         name:
           type: string
-          example: "Иван Иванов"
+          example: "Tarasov_Artem"
         email:
           type: string
           format: email
@@ -509,10 +501,6 @@ paths:
           $ref: "#/components/responses/BadRequestResponse"
         "401":
           $ref: "#/components/responses/NoAuthResponse"
-        "403":
-          $ref: "#/components/responses/ForbiddenResponse"
-        "404":
-          $ref: "#/components/responses/NotFoundResponse"
 
   /boards:
     post:
@@ -534,8 +522,8 @@ paths:
                   type: string
                   example: "Новая доска"
       responses:
-        "200":
-          description: Доска успешно создана
+        "201":
+          description: "Доска успешно создана"
           content:
             application/json:
               schema:
@@ -640,7 +628,7 @@ paths:
           $ref: "#/components/responses/NotFoundResponse"
 
   /userPermissions/{boardId}/{userId}:
-    patch:
+    put:
       summary: "Изменить права пользователя"
       tags:
         - Разрешения пользователей
@@ -656,10 +644,14 @@ paths:
             schema:
               type: "array"
               items:
-                $ref: "#/components/schemas/UserPermissionsPatch"
+                $ref: "#/components/schemas/UserPermissionsPut"
       responses:
         "200":
-          $ref: "#/components/responses/EmptyOkResponse"
+          description: "Успех"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserPermissions"
         "400":
           $ref: "#/components/responses/BadRequestResponse"
         "401":
@@ -715,9 +707,9 @@ paths:
         "404":
           $ref: "#/components/responses/NotFoundResponse"
 
-  /cards/{boardId}/cards:
+  /cards/{boardId}:
     post:
-      summary: Создать новую карточку на доске
+      summary: "Создать новую карточку на доске"
       tags:
         - Карточки
       security:
@@ -746,7 +738,7 @@ paths:
         "404":
           $ref: "#/components/responses/NotFoundResponse"
 
-  /cards/{boardId}/cards/{cardId}:
+  /cards/{boardId}/{cardId}:
     patch:
       summary: Обновить карточку
       tags:
@@ -788,7 +780,7 @@ paths:
         "404":
           $ref: "#/components/responses/NotFoundResponse"
     delete:
-      summary: Удалить карточку
+      summary: "Удалить карточку"
       tags:
         - Карточки
       security:
@@ -796,6 +788,88 @@ paths:
       parameters:
         - $ref: "#/components/parameters/boardId"
         - $ref: "#/components/parameters/cardId"
+      responses:
+        "200":
+          $ref: "#/components/responses/EmptyOkResponse"
+        "400":
+          $ref: "#/components/responses/BadRequestResponse"
+        "401":
+          $ref: "#/components/responses/NoAuthResponse"
+        "403":
+          $ref: "#/components/responses/ForbiddenResponse"
+        "404":
+          $ref: "#/components/responses/NotFoundResponse"
+
+  /columns/{boardId}:
+    post:
+      summary: "Добавить новую колонку"
+      tags:
+        - Колонки
+      security:
+        - SessionCookieAuth: []
+      parameters:
+        - $ref: "#/components/parameters/boardId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ColumnRequest"
+      responses:
+        "201":
+          description: "Колонка успешно создана"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Column"
+        "400":
+          $ref: "#/components/responses/BadRequestResponse"
+        "401":
+          $ref: "#/components/responses/NoAuthResponse"
+        "403":
+          $ref: "#/components/responses/ForbiddenResponse"
+        "404":
+          $ref: "#/components/responses/NotFoundResponse"
+  /columns/{boardId}/{columnId}:
+    put:
+      summary: "Изменить колонку"
+      tags:
+        - Колонки
+      security:
+        - SessionCookieAuth: []
+      parameters:
+        - $ref: "#/components/parameters/boardId"
+        - $ref: "#/components/parameters/columnId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ColumnRequest"
+      responses:
+        "201":
+          description: "Колонка успешно создана"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Column"
+        "400":
+          $ref: "#/components/responses/BadRequestResponse"
+        "401":
+          $ref: "#/components/responses/NoAuthResponse"
+        "403":
+          $ref: "#/components/responses/ForbiddenResponse"
+        "404":
+          $ref: "#/components/responses/NotFoundResponse"
+    delete:
+      summary: "Удалить колонку"
+      tags:
+        - Колонки
+      security:
+        - SessionCookieAuth: []
+      parameters:
+        - $ref: "#/components/parameters/boardId"
+        - $ref: "#/components/parameters/columnId"
       responses:
         "200":
           $ref: "#/components/responses/EmptyOkResponse"
