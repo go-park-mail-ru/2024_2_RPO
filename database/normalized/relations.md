@@ -16,7 +16,7 @@
 
 Отношение "Пользователь на доске"
 
-`{user_to_board_id} -> {u_id, board_id, added_at, updated_at, last_visit_at, added_by, updated_by, can_edit, can_share, can_invite_members, is_admin, notification_level}`
+`{user_to_board_id} -> {u_id, board_id, added_at, updated_at, last_visit_at, added_by, updated_by, role}`
 
 Отношение "Колонка канбана"
 
@@ -26,25 +26,6 @@
 
 `{card_id} -> {col_id, title, order_index, created_at, updated_at, cover_file_uuid}`
 
-Отношение "Тег"
-
-`{tag_id} -> {board_id, title, created_at, updated_at}`
-
-Отношение "Тег к карточке"
-
-`{tag_to_card_id} -> {card_id, tag_id, created_at}`
-
-Отношение "Обновление карточки"
-
-`{card_update_id} -> {card_id, is_visible, created_at, created_by, assigned_to, text, type, attached_file_uuid}`
-
-Отношение "Уведомление"
-
-`{notification_id} -> {u_id, board_id, notification_type, content, is_dismissed, created_at}`
-
-Отношение "Поле чек-листа"
-
-`{checklist_field_id} -> {card_id, order_index, title, is_done}`
 
 ## Нормализация модели
 
@@ -66,11 +47,9 @@
 
 У нас нет массивов, поэтому это требование соблюдается.
 
-Но есть непроработанные отношения (e.g. `notification`), в которых может возникнуть такое нарушение при развитии продукта
-
 5) *Все столбцы являются обычными*
 
-Это свойство Postgres'а как реляционной СУБД. А, например, для Kassandra это утверждение не было бы справедливо
+Это свойство Postgres'а как реляционной СУБД. А, например, для Cassandra это утверждение не было бы справедливо
 
 ### 2 Н.Ф.
 
@@ -82,11 +61,17 @@
 
 *Переменная отношения R находится в третьей нормальной форме тогда и только тогда, когда ни один неключевой атрибут R не находится в транзитивной функциональной зависимости от потенциального ключа R*
 
-Если не смотреть на таблицу `user_to_board`, наша модель находится в третьей нормальной форме
+Наша модель находится в третьей нормальной форме
+
+### НФБК
+
+*Переменная отношения находится в НФБК тогда и только тогда, когда каждая её нетривиальная и неприводимая слева функциональная зависимость имеет в качестве своего детерминанта некоторый потенциальный ключ*
+
+## ERD-диаграмма
 
 ```mermaid
 erDiagram
-    USER {
+        USER {
         BIGINT u_id PK
         TEXT nickname
         TEXT description
@@ -118,23 +103,19 @@ erDiagram
 
     USER_TO_BOARD {
         BIGINT user_to_board_id PK
-        BIGINT u_id
-        BIGINT board_id
+        BIGINT u_id FK
+        BIGINT board_id FK
         TIMESTAMPTZ added_at
         TIMESTAMPTZ updated_at
         TIMESTAMPTZ last_visit_at
-        BIGINT added_by
-        BIGINT updated_by
-        BOOLEAN can_edit
-        BOOLEAN can_share
-        BOOLEAN can_invite_members
-        BOOLEAN is_admin
-        INT notification_level
+        BIGINT added_by FK
+        BIGINT updated_by FK
+        USER_ROLE role
     }
 
     KANBAN_COLUMN {
         BIGINT col_id PK
-        BIGINT board_id
+        BIGINT board_id FK
         TEXT title
         TIMESTAMPTZ created_at
         TIMESTAMPTZ updated_at
@@ -143,76 +124,39 @@ erDiagram
 
     CARD {
         BIGINT card_id PK
-        BIGINT col_id
+        BIGINT col_id FK
         TEXT title
         INT order_index
         TIMESTAMPTZ created_at
         TIMESTAMPTZ updated_at
-        UUID cover_file_uuid
+        UUID cover_file_uuid FK
     }
 
-    TAG {
-        BIGINT tag_id PK
-        BIGINT board_id
-        TEXT title
-        TIMESTAMPTZ created_at
-        TIMESTAMPTZ updated_at
+    %% Типы ENUM
+    FILE_TYPE_ENUM {
+        FILE_TYPE avatar
+        FILE_TYPE background_image
+        FILE_TYPE card_cover_image
+        FILE_TYPE pinned_file
     }
 
-    TAG_TO_CARD {
-        BIGINT tag_to_card_id PK
-        BIGINT card_id
-        BIGINT tag_id
-        TIMESTAMPTZ created_at
-    }
-
-    CARD_UPDATE {
-        BIGINT card_update_id PK
-        BIGINT card_id
-        BOOLEAN is_visible
-        TIMESTAMPTZ created_at
-        BIGINT created_by
-        BIGINT assigned_to
-        TEXT type
-        TEXT text
-        UUID attached_file_uuid
-    }
-
-    NOTIFICATION {
-        BIGINT notification_id PK
-        BIGINT u_id
-        BIGINT board_id
-        TEXT notification_type
-        TEXT content
-        BOOLEAN is_dismissed
-        TIMESTAMPTZ created_at
-    }
-
-    CHECKLIST_FIELD {
-        BIGINT checklist_field_id PK
-        BIGINT card_id
-        INT order_index
-        TEXT title
-        BOOLEAN is_done
+    USER_ROLE_ENUM {
+        USER_ROLE viewer
+        USER_ROLE editor
+        USER_ROLE editor_chief
+        USER_ROLE admin
     }
 
     %% Связи
-
-    USER ||--o{ USER_UPLOADED_FILE : "создал"
-    USER ||--o{ BOARD : "создал"
-    USER ||--o{ USER_TO_BOARD : "участвует в"
-    USER_UPLOADED_FILE ||--o{ USER : "поставлен на аву"
-    BOARD ||--o{ USER_TO_BOARD : "содержит"
-    BOARD ||--o{ KANBAN_COLUMN : "содержит"
-    BOARD ||--o{ TAG : "содержит"
-    BOARD ||--o{ NOTIFICATION : "относятся к"
-    USER_UPLOADED_FILE ||--o{ BOARD : "фон"
-    USER_UPLOADED_FILE ||--o{ CARD : "обложка"
-    KANBAN_COLUMN ||--o{ CARD : "содержит"
-    CARD ||--o{ TAG_TO_CARD : "имеет"
-    TAG ||--o{ TAG_TO_CARD : "присоединен к"
-    CARD ||--o{ CARD_UPDATE : "обновления"
-    CARD ||--o{ CHECKLIST_FIELD : "содержит"
-    USER ||--o{ CARD_UPDATE : "создал"
-    USER ||--o{ NOTIFICATION : "получает"
+    USER ||--o{ USER_UPLOADED_FILE : "created files"
+    USER_UPLOADED_FILE ||--|| USER : "avatar_file_uuid"
+    USER ||--o{ BOARD : "created boards"
+    BOARD ||--o{ USER_UPLOADED_FILE : "background_image"
+    USER ||--o{ USER_TO_BOARD : "boards membership"
+    BOARD ||--o{ USER_TO_BOARD : "members"
+    BOARD ||--o{ KANBAN_COLUMN : "columns"
+    KANBAN_COLUMN ||--o{ CARD : "cards"
+    USER_TO_BOARD }|..|{ USER : "added by"
+    USER_TO_BOARD }|..|{ USER : "updated by"
+    CARD ||--|| USER_UPLOADED_FILE : "cover file"
 ```
