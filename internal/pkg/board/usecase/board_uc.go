@@ -60,7 +60,7 @@ func (uc *BoardUsecase) RemoveMember(userID int, boardID int, memberID int) erro
 
 // GetBoardContent получает все карточки и колонки с доски, а также информацию о доске
 func (uc *BoardUsecase) GetBoardContent(userID int, boardID int) (content *models.BoardContent, err error) {
-	userPermissions, err := uc.boardRepository.GetMemberPermissions(boardID, userID)
+	userPermissions, err := uc.boardRepository.GetMemberPermissions(boardID, userID, false)
 	if err != nil {
 		if errors.Is(err, errs.ErrNotPermitted) {
 			return nil, fmt.Errorf("GetBoardContent: %w", errs.ErrNotPermitted)
@@ -96,7 +96,7 @@ func (uc *BoardUsecase) GetBoardContent(userID int, boardID int) (content *model
 
 // CreateNewCard создаёт новую карточку и возвращает её
 func (uc *BoardUsecase) CreateNewCard(userID int, boardID int, data *models.CardPatchRequest) (newCard *models.Card, err error) {
-	_, err = uc.boardRepository.GetMemberPermissions(boardID, userID)
+	_, err = uc.boardRepository.GetMemberPermissions(boardID, userID, false)
 	if err != nil {
 		if errors.Is(err, errs.ErrNotPermitted) {
 			return nil, fmt.Errorf("CreateNewCard: %w", err)
@@ -124,7 +124,7 @@ func (uc *BoardUsecase) CreateNewCard(userID int, boardID int, data *models.Card
 
 // UpdateCard обновляет карточку и возвращает обновлённую версию
 func (uc *BoardUsecase) UpdateCard(userID int, boardID int, cardID int, data *models.CardPatchRequest) (updatedCard *models.Card, err error) {
-	_, err = uc.boardRepository.GetMemberPermissions(boardID, userID)
+	_, err = uc.boardRepository.GetMemberPermissions(boardID, userID, false)
 	if err != nil {
 		if errors.Is(err, errs.ErrNotPermitted) {
 			return nil, fmt.Errorf("UpdateCard: %w", err)
@@ -152,7 +152,7 @@ func (uc *BoardUsecase) UpdateCard(userID int, boardID int, cardID int, data *mo
 
 // DeleteCard удаляет карточку
 func (uc *BoardUsecase) DeleteCard(userID int, boardID int, cardID int) (err error) {
-	_, err = uc.boardRepository.GetMemberPermissions(boardID, userID)
+	_, err = uc.boardRepository.GetMemberPermissions(boardID, userID, false)
 	if err != nil {
 		if errors.Is(err, errs.ErrNotPermitted) {
 			return err
@@ -173,7 +173,7 @@ func (uc *BoardUsecase) DeleteCard(userID int, boardID int, cardID int) (err err
 
 // CreateColumn создаёт колонку канбана на доске и возвращает её
 func (uc *BoardUsecase) CreateColumn(userID int, boardID int, data *models.ColumnRequest) (newCol *models.Column, err error) {
-	_, err = uc.boardRepository.GetMemberPermissions(boardID, userID)
+	_, err = uc.boardRepository.GetMemberPermissions(boardID, userID, false)
 	if err != nil {
 		if errors.Is(err, errs.ErrNotPermitted) {
 			return nil, fmt.Errorf("CreateColumn: %w", err)
@@ -197,7 +197,7 @@ func (uc *BoardUsecase) CreateColumn(userID int, boardID int, data *models.Colum
 
 // UpdateColumn изменяет колонку и возвращает её обновлённую версию
 func (uc *BoardUsecase) UpdateColumn(userID int, boardID int, columnID int, data *models.ColumnRequest) (updatedCol *models.Column, err error) {
-	_, err = uc.boardRepository.GetMemberPermissions(boardID, userID)
+	_, err = uc.boardRepository.GetMemberPermissions(boardID, userID, false)
 	if err != nil {
 		if errors.Is(err, errs.ErrNotPermitted) {
 			return nil, fmt.Errorf("UpdateColumn: %w", err)
@@ -221,7 +221,7 @@ func (uc *BoardUsecase) UpdateColumn(userID int, boardID int, columnID int, data
 
 // DeleteColumn удаляет колонку
 func (uc *BoardUsecase) DeleteColumn(userID int, boardID int, columnID int) (err error) {
-	_, err = uc.boardRepository.GetMemberPermissions(boardID, userID)
+	_, err = uc.boardRepository.GetMemberPermissions(boardID, userID, false)
 	if err != nil {
 		if errors.Is(err, errs.ErrNotPermitted) {
 			return err
