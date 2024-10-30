@@ -59,7 +59,7 @@ components:
                 example: 403
               text:
                 type: string
-                example: "not authorized"
+                example: "forbidden"
     NotFoundResponse:
       description: "Такой элемент не найден"
       content:
@@ -227,6 +227,18 @@ components:
           type: string
           format: date-time
           example: "2023-10-01T12:34:56Z"
+
+    CardPostRequest:
+      type: object
+      required:
+        - title
+      properties:
+        title:
+          type: string
+          example: "Новая задача"
+        columnId:
+          type: integer
+          example: 3
 
     Column:
       type: object
@@ -459,29 +471,6 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/BadResponse"
-
-  /users/{userId}:
-    get:
-      summary: Получить информацию о пользователе
-      tags:
-        - Пользователи
-      security:
-        - SessionCookieAuth: []
-      parameters:
-        - $ref: "#/components/parameters/userId"
-      responses:
-        "200":
-          description: "Информация о пользователе"
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/User"
-        "400":
-          $ref: "#/components/responses/BadRequestResponse"
-        "401":
-          $ref: "#/components/responses/NoAuthResponse"
-        "404":
-          $ref: "#/components/responses/NotFoundResponse"
 
   /users/me:
     get:
@@ -740,20 +729,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              required:
-                - title
-                - description
-              properties:
-                title:
-                  type: string
-                  example: "Новая задача"
-                description:
-                  type: string
-                  example: "Описание новой задачи"
-                status:
-                  type: string
-                  example: "To Do"
+              $ref: "#/components/schemas/CardPostRequest"
       responses:
         "200":
           description: "Карточка успешно создана"
