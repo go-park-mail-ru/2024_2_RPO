@@ -1,7 +1,10 @@
 package delivery
 
 import (
+	"RPO_back/internal/models"
 	"RPO_back/internal/pkg/board/usecase"
+	"RPO_back/internal/pkg/utils/requests"
+	"RPO_back/internal/pkg/utils/responses"
 	"net/http"
 )
 
@@ -55,7 +58,12 @@ func (d *BoardDelivery) RemoveMember(w http.ResponseWriter, r *http.Request) {
 
 // GetBoardContent получает все карточки и колонки с доски, а также информацию о доске
 func (d *BoardDelivery) GetBoardContent(w http.ResponseWriter, r *http.Request) {
-	panic("Not implemented")
+	var getBoardContentRequest models.BoardContent
+	err := requests.GetRequestData(r, &getBoardContentRequest)
+	if err != nil {
+		responses.DoBadResponse(w, http.StatusBadRequest, "Invalid request")
+		return
+	}
 }
 
 // CreateNewCard создаёт новую карточку и возвращает её
