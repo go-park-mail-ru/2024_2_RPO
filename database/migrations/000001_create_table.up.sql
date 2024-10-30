@@ -39,8 +39,8 @@ ALTER TABLE "user" ADD CONSTRAINT fk_avatar_file_uuid FOREIGN KEY (avatar_file_u
 
 CREATE TABLE board (
     board_id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    name TEXT NOT NULL,
-    description TEXT NOT NULL,
+    "name" TEXT NOT NULL,
+    "description" TEXT NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     created_by BIGINT,
     background_image_uuid UUID,
@@ -70,7 +70,8 @@ CREATE TABLE user_to_board (
     FOREIGN KEY (added_by) REFERENCES "user"(u_id) ON UPDATE CASCADE ON DELETE
     SET NULL,
         FOREIGN KEY (updated_by) REFERENCES "user"(u_id) ON UPDATE CASCADE ON DELETE
-    SET NULL
+    SET NULL,
+    UNIQUE(u_id, board_id)
 );
 
 CREATE TABLE kanban_column (
@@ -111,7 +112,8 @@ CREATE TABLE tag_to_card (
     tag_id BIGINT NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (card_id) REFERENCES Card(card_id) ON UPDATE CASCADE ON DELETE CASCADE,
-    FOREIGN KEY (tag_id) REFERENCES tag(tag_id) ON UPDATE CASCADE ON DELETE CASCADE
+    FOREIGN KEY (tag_id) REFERENCES tag(tag_id) ON UPDATE CASCADE ON DELETE CASCADE,
+    UNIQUE(card_id, tag_id)
 );
 
 CREATE TABLE card_update (
