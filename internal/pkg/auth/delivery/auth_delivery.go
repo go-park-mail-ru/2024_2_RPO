@@ -26,6 +26,7 @@ func CreateAuthDelivery(uc *usecase.AuthUsecase) *AuthDelivery {
 	}
 }
 
+// LoginUser обеспечивает вход в сервис
 func (this *AuthDelivery) LoginUser(w http.ResponseWriter, r *http.Request) {
 	// Получить данные из запроса
 	var loginRequest models.LoginRequest
@@ -56,6 +57,7 @@ func (this *AuthDelivery) LoginUser(w http.ResponseWriter, r *http.Request) {
 	responses.DoEmptyOkResponce(w)
 }
 
+// RegisterUser регистрирует пользователя
 func (this *AuthDelivery) RegisterUser(w http.ResponseWriter, r *http.Request) {
 	var user models.UserRegistration
 	err := requests.GetRequestData(r, &user)
@@ -97,6 +99,7 @@ func (this *AuthDelivery) RegisterUser(w http.ResponseWriter, r *http.Request) {
 	responses.DoEmptyOkResponce(w)
 }
 
+// LogoutUser разлогинивает пользователя
 func (this *AuthDelivery) LogoutUser(w http.ResponseWriter, r *http.Request) {
 	cookie, err := r.Cookie(sessionIdCookieName)
 	if err != nil {
@@ -120,4 +123,9 @@ func (this *AuthDelivery) LogoutUser(w http.ResponseWriter, r *http.Request) {
 	} else {
 		responses.DoEmptyOkResponce(w)
 	}
+}
+
+// ChangePassword отвечает за смену пароля
+func (d *AuthDelivery) ChangePassword(w http.ResponseWriter, r *http.Request) {
+	panic("Not implemented")
 }

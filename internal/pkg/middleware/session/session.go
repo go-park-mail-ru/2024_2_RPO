@@ -6,7 +6,17 @@ import (
 	"net/http"
 )
 
-func SessionMiddleware(repo *repository.AuthRepository, next http.Handler) http.Handler {
+type SessionMiddleware struct {
+	authRepo *repository.AuthRepository
+}
+
+func CreateSessionMiddleware(authRepo *repository.AuthRepository) *SessionMiddleware {
+	return &SessionMiddleware{
+		authRepo: authRepo,
+	}
+}
+
+func (mw *SessionMiddleware) Middleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		cookie, err := r.Cookie("session")
 		if err != nil {
@@ -14,7 +24,7 @@ func SessionMiddleware(repo *repository.AuthRepository, next http.Handler) http.
 			return
 		}
 
-		userID, err := repo.RetrieveUserIdFromSessionId(cookie.Value)
+		userID, err := mw.authRepo.RetrieveUserIdFromSessionId(cookie.Value)
 		if err != nil {
 			http.SetCookie(w, &http.Cookie{
 				Name:   "session",

@@ -1,8 +1,8 @@
 package repository
 
 import (
+	"RPO_back/internal/errs"
 	"RPO_back/internal/models"
-	"RPO_back/internal/pkg/utils/errs"
 	"context"
 	"errors"
 	"fmt"
@@ -18,8 +18,7 @@ type BoardRepository struct {
 	db *pgxpool.Pool
 }
 
-// NewBoardRepository creates a new instance of BoardRepository.
-func NewBoardRepository(db *pgxpool.Pool) *BoardRepository {
+func CreateBoardRepository(db *pgxpool.Pool) *BoardRepository {
 	return &BoardRepository{db: db}
 }
 
@@ -38,7 +37,7 @@ func (r *BoardRepository) CreateBoard(name string, createdBy int64) (*models.Boa
 		&board.CreatedAt,
 		&board.UpdatedAt,
 	)
-	board.Background = defaultImageUrl
+	board.BackgroundImageUrl = defaultImageUrl
 	if err != nil {
 		return nil, fmt.Errorf("CreateBoard: %w", err)
 	}
@@ -69,9 +68,9 @@ func (r *BoardRepository) GetBoard(boardID int64) (*models.Board, error) {
 		&fileExtension,
 	)
 	if fileUuid == "" {
-		board.Background = defaultImageUrl
+		board.BackgroundImageUrl = defaultImageUrl
 	} else {
-		board.Background = fmt.Sprintf("%s%s.%s", os.Getenv("USER_UPLOADS_URL"), fileUuid, fileExtension)
+		board.BackgroundImageUrl = fmt.Sprintf("%s%s.%s", os.Getenv("USER_UPLOADS_URL"), fileUuid, fileExtension)
 	}
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {

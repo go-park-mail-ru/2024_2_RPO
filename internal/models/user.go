@@ -8,7 +8,7 @@ type UserRegistration struct {
 	Password string `json:"password" validate:"required,min=8,max=50"`
 }
 
-type User struct {
+type UserProfile struct {
 	Id           int       `json:"id"`
 	Name         string    `json:"name"`
 	Email        string    `json:"email"`
@@ -16,6 +16,11 @@ type User struct {
 	JoinedAt     time.Time `json:"joinedAt"`
 	UpdatedAt    time.Time `json:"updatedAt"`
 	PasswordHash string    `json:"-"`
+}
+
+type UserProfileUpdate struct {
+	NewName string `json:"name"`
+	Email   string `json:"email"`
 }
 
 type LoginRequest struct {

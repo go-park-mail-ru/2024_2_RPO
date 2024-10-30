@@ -1,13 +1,18 @@
 package main
 
 import (
-	authDelivery "RPO_back/internal/pkg/auth/delivery"
-	authRepository "RPO_back/internal/pkg/auth/repository"
-	authUsecase "RPO_back/internal/pkg/auth/usecase"
-	boardRepository "RPO_back/internal/pkg/board/repository"
+	AuthDelivery "RPO_back/internal/pkg/auth/delivery"
+	AuthRepository "RPO_back/internal/pkg/auth/repository"
+	AuthUsecase "RPO_back/internal/pkg/auth/usecase"
+	BoardDelivery "RPO_back/internal/pkg/board/delivery"
+	BoardRepository "RPO_back/internal/pkg/board/repository"
+	BoardUsecase "RPO_back/internal/pkg/board/usecase"
 	"RPO_back/internal/pkg/middleware/cors"
 	"RPO_back/internal/pkg/middleware/logging_middleware"
-	userRepository "RPO_back/internal/pkg/user/repository"
+	sessionMiddleware "RPO_back/internal/pkg/middleware/session"
+	UserDelivery "RPO_back/internal/pkg/user/delivery"
+	UserRepository "RPO_back/internal/pkg/user/repository"
+	UserUsecase "RPO_back/internal/pkg/user/usecase"
 	"RPO_back/internal/pkg/utils/environment"
 	"RPO_back/internal/pkg/utils/logging"
 	"context"
@@ -100,17 +105,19 @@ func main() {
 	}
 
 	// Auth
-	authRepo := authRepository.CreateAuthRepository(postgresDb, redisDb)
-	authUsecase := authUsecase.CreateAuthUsecase(authRepo)
-	authDelivery := authDelivery.CreateAuthDelivery(authUsecase)
+	authRepository := AuthRepository.CreateAuthRepository(postgresDb, redisDb)
+	authUsecase := AuthUsecase.CreateAuthUsecase(authRepository)
+	authDelivery := AuthDelivery.CreateAuthDelivery(authUsecase)
 
 	//Board
-	boardRepo := boardRepository.NewBoardRepository(postgresDb)
-	fmt.Printf("%v\n", boardRepo) //TODO убрать эту строку
+	boardRepository := BoardRepository.CreateBoardRepository(postgresDb)
+	boardUsecase := BoardUsecase.CreateBoardUsecase(boardRepository)
+	boardDelivery := BoardDelivery.CreateBoardDelivery(boardUsecase)
 
 	//User
-	userRepo := userRepository.NewUserRepository(postgresDb)
-	fmt.Printf("%v\n", userRepo) //TODO убрать эту строку
+	userRepository := UserRepository.CreateUserRepository(postgresDb)
+	userUsecase := UserUsecase.CreateUserUsecase(userRepository)
+	userDelivery := UserDelivery.CreateUserDelivery(userUsecase)
 
 	// Создаём новый маршрутизатор
 	router := mux.NewRouter()
@@ -118,15 +125,31 @@ func main() {
 	// Применяем middleware
 	router.Use(cors.CorsMiddleware)
 	router.Use(logging_middleware.LoggingMiddleware)
+	sessionMWare := sessionMiddleware.CreateSessionMiddleware(authRepository)
+	router.Use(sessionMWare.Middleware)
 
 	// Регистрируем обработчики
 	router.HandleFunc("/auth/register", authDelivery.RegisterUser).Methods("POST", "OPTIONS")
-	// router.HandleFunc("/users/me", user_handlers.GetMe).Methods("GET", "OPTIONS")
-	// router.HandleFunc("/boards/my", boards_handlers.GetMyBoardsHandler).Methods("GET", "OPTIONS")
-	// router.HandleFunc("/boards", boards_handlers.CreateBoardHandler).Methods("POST", "OPTIONS")
-	// router.HandleFunc("/boards/{boardId}", boards_handlers.DeleteBoardHandler).Methods("DELETE", "OPTIONS")
 	router.HandleFunc("/auth/login", authDelivery.LoginUser).Methods("POST", "OPTIONS")
 	router.HandleFunc("/auth/logout", authDelivery.LogoutUser).Methods("POST", "OPTIONS")
+	router.HandleFunc("/auth/changePassword", authDelivery.ChangePassword).Methods("POST", "OPTIONS")
+	router.HandleFunc("/users/me", userDelivery.GetMyProfile).Methods("GET", "OPTIONS")
+	router.HandleFunc("/users/me", userDelivery.UpdateMyProfile).Methods("POST", "OPTIONS")
+	router.HandleFunc("/boards/my", boardDelivery.GetMyBoards).Methods("GET", "OPTIONS")
+	router.HandleFunc("/boards", boardDelivery.CreateNewBoard).Methods("POST", "OPTIONS")
+	router.HandleFunc("/boards/{boardId}", boardDelivery.DeleteBoard).Methods("DELETE", "OPTIONS")
+	router.HandleFunc("/boards/my", boardDelivery.GetMyBoards).Methods("GET", "OPTIONS")
+	router.HandleFunc("/userPermissions/{boardId}", boardDelivery.GetMembersPermissions).Methods("GET", "OPTIONS")
+	router.HandleFunc("/userPermissions/{boardId}", boardDelivery.AddMember).Methods("POST", "OPTIONS")
+	router.HandleFunc("/userPermissions/{boardId}/{userId}", boardDelivery.UpdateMemberRole).Methods("PUT", "OPTIONS")
+	router.HandleFunc("/userPermissions/{boardId}/{userId}", boardDelivery.RemoveMember).Methods("DELETE", "OPTIONS")
+	router.HandleFunc("/cards/{boardId}/allContent", boardDelivery.GetBoardContent).Methods("GET", "OPTIONS")
+	router.HandleFunc("/cards/{boardId}", boardDelivery.CreateNewCard).Methods("POST", "OPTIONS")
+	router.HandleFunc("/cards/{boardId}/{cardId}", boardDelivery.UpdateCard).Methods("PATCH", "OPTIONS")
+	router.HandleFunc("/cards/{boardId}/{cardId}", boardDelivery.DeleteCard).Methods("DELETE", "OPTIONS")
+	router.HandleFunc("/columns/{boardId}", boardDelivery.CreateColumn).Methods("POST", "OPTIONS")
+	router.HandleFunc("/columns/{boardId}/{columnId}", boardDelivery.UpdateColumn).Methods("PUT", "OPTIONS")
+	router.HandleFunc("/columns/{boardId}/{columnId}", boardDelivery.DeleteColumn).Methods("DELETE", "OPTIONS")
 
 	// Запускаем сервер
 	addr := fmt.Sprintf(":%s", os.Getenv("SERVER_PORT"))
