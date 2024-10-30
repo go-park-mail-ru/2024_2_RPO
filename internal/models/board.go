@@ -21,3 +21,8 @@ type UserPermissions struct {
 	CanInviteMembers bool `json:"canInviteMembers"`
 	IsAdmin          bool `json:"isAdmin"`
 }
+
+type BoardPutRequest struct {
+	NewName        string `json:"name"`
+	NewDescription string `json:"description"`
+}

@@ -2,10 +2,11 @@ package repository
 
 import (
 	"RPO_back/internal/models"
-	"RPO_back/internal/pkg/boards"
+	"RPO_back/internal/pkg/utils/errs"
 	"context"
 	"errors"
 	"fmt"
+	"os"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -27,7 +28,7 @@ func (r *BoardRepository) CreateBoard(name string, createdBy int64) (*models.Boa
 	query := `
 		INSERT INTO board (name, description, created_by)
 		VALUES ($1, $2, $3)
-		RETURNING b_id, name, description, created_at, created_by, updated_at
+		RETURNING b_id, name, description, created_at, updated_at
 	`
 	var board models.Board
 	err := r.db.QueryRow(context.Background(), query, name, "", createdBy).Scan(
@@ -35,9 +36,9 @@ func (r *BoardRepository) CreateBoard(name string, createdBy int64) (*models.Boa
 		&board.Name,
 		&board.Description,
 		&board.CreatedAt,
-		&board.CreatedById,
 		&board.UpdatedAt,
 	)
+	board.Background = defaultImageUrl
 	if err != nil {
 		return nil, fmt.Errorf("CreateBoard: %w", err)
 	}
@@ -56,16 +57,25 @@ func (r *BoardRepository) GetBoard(boardID int64) (*models.Board, error) {
 		WHERE b.b_id = $1;
 	`
 	var board models.Board
+	var fileUuid string
+	var fileExtension string
 	err := r.db.QueryRow(context.Background(), query, boardID).Scan(
 		&board.Id,
 		&board.Name,
 		&board.Description,
 		&board.CreatedAt,
 		&board.UpdatedAt,
+		&fileUuid,
+		&fileExtension,
 	)
+	if fileUuid == "" {
+		board.Background = defaultImageUrl
+	} else {
+		board.Background = fmt.Sprintf("%s%s.%s", os.Getenv("USER_UPLOADS_URL"), fileUuid, fileExtension)
+	}
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, fmt.Errorf("GetBoard: %w", boards.ErrNotFound)
+			return nil, fmt.Errorf("GetBoard: %w", errs.ErrNotFound)
 		}
 		return nil, err
 	}
@@ -73,7 +83,7 @@ func (r *BoardRepository) GetBoard(boardID int64) (*models.Board, error) {
 }
 
 // UpdateBoard updates the specified fields of a board.
-func (r *BoardRepository) UpdateBoard(boardID int64, data *boards.BoardPutRequest) error {
+func (r *BoardRepository) UpdateBoard(boardID int64, data *models.BoardPutRequest) error {
 	query := `
 		UPDATE board
 		SET name=$1, description=$2, updated_at = CURRENT_TIMESTAMP
@@ -83,12 +93,12 @@ func (r *BoardRepository) UpdateBoard(boardID int64, data *boards.BoardPutReques
 	tag, err := r.db.Exec(context.Background(), query, data.NewName, data.NewDescription, boardID)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) { // Может ли эта ошибка появиться?
-			return fmt.Errorf("UpdateBoard: %w", boards.ErrNotFound)
+			return fmt.Errorf("UpdateBoard: %w", errs.ErrNotFound)
 		}
 		return fmt.Errorf("UpdateBoard: %w", err)
 	}
 	if tag.RowsAffected() == 0 {
-		return fmt.Errorf("UpdateBoard: %w", boards.ErrNotFound)
+		return fmt.Errorf("UpdateBoard: %w", errs.ErrNotFound)
 	}
 	return nil
 }
@@ -102,12 +112,12 @@ func (r *BoardRepository) DeleteBoard(boardId int64) error {
 	tag, err := r.db.Exec(context.Background(), query, boardId)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return fmt.Errorf("DeleteBoard: %w", boards.ErrNotFound)
+			return fmt.Errorf("DeleteBoard: %w", errs.ErrNotFound)
 		}
 		return fmt.Errorf("DeleteBoard: %w", err)
 	}
 	if tag.RowsAffected() == 0 {
-		return fmt.Errorf("DeleteBoard: %w", boards.ErrNotFound)
+		return fmt.Errorf("DeleteBoard: %w", errs.ErrNotFound)
 	}
 	return nil
 }
@@ -115,9 +125,12 @@ func (r *BoardRepository) DeleteBoard(boardId int64) error {
 // GetBoardsForUser возвращает все доски, к которым пользователь имеет доступ
 func (r *BoardRepository) GetBoardsForUser(userID int64) (boardArray []models.Board, err error) {
 	query := `
-		SELECT b.b_id, b.name, b.description, b.backgroundImageUrl, b.created_at, b.created_by, b.updated_at
-		FROM board b
-		JOIN user_to_board ub ON b.b_id = ub.b_id
+		SELECT b.b_id, b.name, b.description,
+		b.created_at, b.updated_at,
+		f.file_uuid, f.file_extension
+		FROM board AS b
+		JOIN user_to_board AS ub ON b.b_id = ub.b_id
+		LEFT JOIN user_uploaded_file AS f ON f.file_uuid=b.background_image_uuid
 		WHERE ub.u_id = $1
 	`
 	rows, err := r.db.Query(context.Background(), query, userID)
@@ -129,18 +142,19 @@ func (r *BoardRepository) GetBoardsForUser(userID int64) (boardArray []models.Bo
 	boardArray = []models.Board{}
 	for rows.Next() {
 		var board models.Board
+		var fileUuid, fileExtension string
 		err := rows.Scan(
 			&board.Id,
 			&board.Name,
 			&board.Description,
-			&board.BackgroundImageURL,
 			&board.CreatedAt,
-			&board.CreatedBy,
 			&board.UpdatedAt,
+			&fileUuid,
+			&fileExtension,
 		)
 		if err != nil {
 			if errors.Is(err, pgx.ErrNoRows) {
-				return nil, fmt.Errorf("GetBoardsForUser: %w", boards.ErrNotFound)
+				return nil, fmt.Errorf("GetBoardsForUser: %w", errs.ErrNotFound)
 			}
 			return nil, fmt.Errorf("GetBoardsForUser: %w", err)
 		}
