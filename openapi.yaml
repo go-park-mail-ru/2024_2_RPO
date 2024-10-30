@@ -210,6 +210,10 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/Card"
+        myRole:
+          type: string
+          enum: ["viewer","editor","editor_chief","admin"]
+          example: "viewer"
 
     Card:
       type: object
@@ -720,6 +724,20 @@ paths:
           $ref: "#/components/responses/ForbiddenResponse"
         "404":
           $ref: "#/components/responses/NotFoundResponse"
+        "409":
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: integer
+                    enum: [409]
+                    example: 409
+                  text:
+                    type: string
+                    enum: ["user already at board"]
+                    example: "user already at board"
 
   /userPermissions/{boardId}/{userId}:
     put:
