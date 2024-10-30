@@ -25,7 +25,7 @@ type MemberPermissions struct {
 
 // MemberWithPermissions - пользователь с правами (в контексте доски)
 type MemberWithPermissions struct {
-	User              UserProfile       `json:"user"`
+	User              *UserProfile      `json:"user"`
 	MemberPermissions MemberPermissions `json:"-"`
 	Role              string            `json:"role"`
 	AddedAt           time.Time         `json:"addedAt"`

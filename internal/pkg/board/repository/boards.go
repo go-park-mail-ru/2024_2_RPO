@@ -134,6 +134,9 @@ func (r *BoardRepository) GetBoardsForUser(userID int64) (boardArray []models.Bo
 	`
 	rows, err := r.db.Query(context.Background(), query, userID)
 	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, nil
+		}
 		return nil, fmt.Errorf("GetBoardsForUser: %w", err)
 	}
 	defer rows.Close()
@@ -152,10 +155,7 @@ func (r *BoardRepository) GetBoardsForUser(userID int64) (boardArray []models.Bo
 			&fileExtension,
 		)
 		if err != nil {
-			if errors.Is(err, pgx.ErrNoRows) {
-				return nil, fmt.Errorf("GetBoardsForUser: %w", errs.ErrNotFound)
-			}
-			return nil, fmt.Errorf("GetBoardsForUser: %w", err)
+			return nil, fmt.Errorf("GetBoardsForUser (for rows): %w", err)
 		}
 		boardArray = append(boardArray, board)
 	}

@@ -32,13 +32,3 @@ func SaltAndHashPassword(password string) (string, error) {
 	}
 	return string(hash), nil
 }
-
-// GenerateSalt генерирует случайную соль заданной длины.
-func GenerateSalt(length int) ([]byte, error) {
-	salt := make([]byte, length)
-	_, err := rand.Read(salt)
-	if err != nil {
-		return nil, err
-	}
-	return salt, nil
-}
