@@ -15,12 +15,6 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-type contextKey string
-
-const (
-	UserIDContextKey contextKey = "userId"
-)
-
 type AuthRepository struct {
 	db      *pgxpool.Pool
 	redisDb *redis.Client
@@ -73,12 +67,6 @@ func (repo *AuthRepository) RetrieveUserIdFromSessionId(sessionId string) (userI
 	}
 
 	return intVal, nil
-}
-
-// UserIDFromContext получает userID из контекста запроса
-func UserIDFromContext(ctx context.Context) (string, bool) {
-	userID, ok := ctx.Value(UserIDContextKey).(string)
-	return userID, ok
 }
 
 // GetUserByEmail получает данные пользователя из базы по email
