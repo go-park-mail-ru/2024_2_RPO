@@ -502,6 +502,33 @@ paths:
         "401":
           $ref: "#/components/responses/NoAuthResponse"
 
+  /users/me/avatar:
+    put:
+      summary: "Установить пользователю аватарку"
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                avatar:
+                  type: string
+                  format: binary
+                  description: "Файл изображения аватарки"
+      responses:
+        "200":
+          description: "Успешно обновлена аватарка"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "400":
+          $ref: "#/components/responses/BadRequestResponse"
+        "401":
+          $ref: "#/components/responses/NoAuthResponse"
+
+
   /boards:
     post:
       summary: Создать новую доску
@@ -580,6 +607,32 @@ paths:
           $ref: "#/components/responses/ForbiddenResponse"
         "404":
           $ref: "#/components/responses/NotFoundResponse"
+
+  /boards/{boardId}/backgroundImage:
+    put:
+      summary: "Установить на доску изображение заднего фона"
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                background:
+                  type: string
+                  format: binary
+                  description: "Файл изображения заднего фона"
+      responses:
+        "200":
+          description: "Успешно обновлён задний фон"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Board"
+        "400":
+          $ref: "#/components/responses/BadRequestResponse"
+        "401":
+          $ref: "#/components/responses/NoAuthResponse"
 
   /boards/my:
     get:
