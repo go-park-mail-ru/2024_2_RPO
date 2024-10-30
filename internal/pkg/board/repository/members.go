@@ -135,20 +135,60 @@ func (r *BoardRepository) GetMembersWithPermissions(boardID int) (members []mode
 		return nil, fmt.Errorf("GetMembersWithPermissions (main query): %w", err)
 	}
 	for rows.Next() {
-		err := rows.Scan()
+		field := models.MemberWithPermissions{}
+		field.User = &models.UserProfile{}
+		field.AddedBy = &models.UserProfile{}
+		field.UpdatedBy = &models.UserProfile{}
+		err := rows.Scan(
+			&field.User.Id,
+			&field.User.Name,
+			&field.User.Email,
+			&field.User.Description,
+			&field.User.JoinedAt,
+			&field.User.UpdatedAt,
+
+			&field.Role, &field.AddedAt, &field.UpdatedAt,
+
+			&field.AddedBy.Id,
+			&field.AddedBy.Name,
+			&field.AddedBy.Email,
+			&field.AddedBy.Description,
+			&field.AddedBy.JoinedAt,
+			&field.AddedBy.UpdatedAt,
+
+			&field.UpdatedBy.Id,
+			&field.UpdatedBy.Name,
+			&field.UpdatedBy.Email,
+			&field.UpdatedBy.Description,
+			&field.UpdatedBy.JoinedAt,
+			&field.UpdatedBy.UpdatedAt,
+		)
 		if err != nil {
 			if errors.Is(err, pgx.ErrNoRows) {
 				return nil, fmt.Errorf("GetMembersWithPermissions: %w", errs.ErrNotFound)
 			}
 			return nil, fmt.Errorf("GetMembersWithPermissions: %w", err)
 		}
+		if field.AddedBy.Id == -1 {
+			field.AddedBy = nil
+		}
+		if field.UpdatedBy.Id == -1 {
+			field.UpdatedBy = nil
+		}
+		members = append(members, field)
 	}
-
+	return members, nil
 }
 
 // SetMemberRole устанавливает существующему участнику права (роль)
 func (r *BoardRepository) SetMemberRole(boardID int, memberUserID int, newRole string) (member *models.MemberWithPermissions, err error) {
-	panic("Not implemented")
+	query := `
+	UPDATE user_to_board
+	SET role=$1
+	WHERE u_id=$2
+	AND board_id=$3;
+	`
+	row := r.db.QueryRow(context.Background(), query, newRole)
 }
 
 // RemoveMember удаляет участника с доски

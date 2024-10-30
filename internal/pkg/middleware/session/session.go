@@ -47,7 +47,8 @@ func (mw *SessionMiddleware) Middleware(next http.Handler) http.Handler {
 }
 
 // UserIDFromContext получает userID из контекста запроса
-func UserIDFromContext(ctx context.Context) (string, bool) {
-	userID, ok := ctx.Value(UserIDContextKey).(string)
+func UserIDFromContext(ctx context.Context) (int, bool) {
+	userID, ok := ctx.Value(UserIDContextKey).(int)
+
 	return userID, ok
 }
