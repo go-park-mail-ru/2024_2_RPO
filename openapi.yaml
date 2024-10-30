@@ -505,6 +505,8 @@ paths:
   /users/me/avatar:
     put:
       summary: "Установить пользователю аватарку"
+      tags:
+        - Доски
       requestBody:
         required: true
         content:
@@ -611,6 +613,8 @@ paths:
   /boards/{boardId}/backgroundImage:
     put:
       summary: "Установить на доску изображение заднего фона"
+      tags:
+        - Доски
       requestBody:
         required: true
         content:
