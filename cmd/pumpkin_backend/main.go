@@ -4,8 +4,10 @@ import (
 	authDelivery "RPO_back/internal/pkg/auth/delivery"
 	authRepository "RPO_back/internal/pkg/auth/repository"
 	authUsecase "RPO_back/internal/pkg/auth/usecase"
+	boardRepository "RPO_back/internal/pkg/board/repository"
 	"RPO_back/internal/pkg/middleware/cors"
 	"RPO_back/internal/pkg/middleware/logging_middleware"
+	userRepository "RPO_back/internal/pkg/user/repository"
 	"RPO_back/internal/pkg/utils/environment"
 	"RPO_back/internal/pkg/utils/logging"
 	"context"
@@ -101,6 +103,14 @@ func main() {
 	authRepo := authRepository.CreateAuthRepository(postgresDb, redisDb)
 	authUsecase := authUsecase.CreateAuthUsecase(authRepo)
 	authDelivery := authDelivery.CreateAuthDelivery(authUsecase)
+
+	//Board
+	boardRepo := boardRepository.NewBoardRepository(postgresDb)
+	fmt.Printf("%v\n", boardRepo) //TODO убрать эту строку
+
+	//User
+	userRepo := userRepository.NewUserRepository(postgresDb)
+	fmt.Printf("%v\n", userRepo) //TODO убрать эту строку
 
 	// Создаём новый маршрутизатор
 	router := mux.NewRouter()

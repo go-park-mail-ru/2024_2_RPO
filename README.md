@@ -47,6 +47,9 @@ REDIS_PASSWORD = my_secure_password
 CORS_ORIGIN = https://mysite.com
 
 LOGS_FILE = log.json
+
+USER_UPLOADS_DIR = /opt/uploads
+USER_UPLOADS_URL = /files
 ```
 
 Запуск: `make run`

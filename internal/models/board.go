@@ -15,9 +15,15 @@ type Board struct {
 	UpdatedAt   time.Time `json:"updatedAt"`
 }
 
+// UserPermissions нужна для внутренней логики
 type UserPermissions struct {
-	CanEdit          bool `json:"canEdit"`
-	CanShare         bool `json:"canShare"`
-	CanInviteMembers bool `json:"canInviteMembers"`
-	IsAdmin          bool `json:"isAdmin"`
+	CanEdit          bool
+	CanShare         bool
+	CanInviteMembers bool
+	IsAdmin          bool
+}
+
+type BoardPutRequest struct {
+	NewName        string `json:"name"`
+	NewDescription string `json:"description"`
 }
