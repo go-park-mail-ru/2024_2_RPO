@@ -506,7 +506,7 @@ paths:
     put:
       summary: "Установить пользователю аватарку"
       tags:
-        - Доски
+        - Пользователи
       requestBody:
         required: true
         content:
