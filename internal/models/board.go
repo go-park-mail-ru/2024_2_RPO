@@ -52,3 +52,10 @@ type BoardPutRequest struct {
 	NewName        string `json:"name"`
 	NewDescription string `json:"description"`
 }
+
+type BoardContent struct {
+	MyRole    string   `json:"myRole"`
+	Cards     []Card   `json:"allCards"`
+	Columns   []Column `json:"allColumns"`
+	BoardInfo *Board   `json:"boardInfo"`
+}

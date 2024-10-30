@@ -26,6 +26,7 @@ func (this *UserDelivery) UpdateMyProfile(w http.ResponseWriter, r *http.Request
 
 // SetMyAvatar принимает у пользователя файл изображения, сохраняет его,
 // устанавливает как аватарку и возвращает обновлённый профиль
+// Самый низкий приоритет
 func (this *UserDelivery) SetMyAvatar(w http.ResponseWriter, r *http.Request) {
 	responses.DoBadResponse(w, 501, "not implemented")
 }

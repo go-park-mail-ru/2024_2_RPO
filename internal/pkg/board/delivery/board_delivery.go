@@ -38,12 +38,12 @@ func (d *BoardDelivery) GetMembersPermissions(w http.ResponseWriter, r *http.Req
 	panic("Not implemented")
 }
 
-// AddMember добавляет участника на доску
+// AddMember добавляет участника на доску с правами "viewer" и возвращает его права
 func (d *BoardDelivery) AddMember(w http.ResponseWriter, r *http.Request) {
 	panic("Not implemented")
 }
 
-// UpdateMemberRole обновляет роль участника
+// UpdateMemberRole обновляет роль участника и возвращает обновлённые права
 func (d *BoardDelivery) UpdateMemberRole(w http.ResponseWriter, r *http.Request) {
 	panic("Not implemented")
 }
@@ -58,12 +58,12 @@ func (d *BoardDelivery) GetBoardContent(w http.ResponseWriter, r *http.Request) 
 	panic("Not implemented")
 }
 
-// CreateNewCard создаёт новую карточку
+// CreateNewCard создаёт новую карточку и возвращает её
 func (d *BoardDelivery) CreateNewCard(w http.ResponseWriter, r *http.Request) {
 	panic("Not implemented")
 }
 
-// UpdateCard обновляет карточку
+// UpdateCard обновляет карточку и возвращает обновлённую версию
 func (d *BoardDelivery) UpdateCard(w http.ResponseWriter, r *http.Request) {
 	panic("Not implemented")
 }
@@ -73,12 +73,12 @@ func (d *BoardDelivery) DeleteCard(w http.ResponseWriter, r *http.Request) {
 	panic("Not implemented")
 }
 
-// CreateColumn создаёт колонку канбана на доске
+// CreateColumn создаёт колонку канбана на доске и возвращает её
 func (d *BoardDelivery) CreateColumn(w http.ResponseWriter, r *http.Request) {
 	panic("Not implemented")
 }
 
-// UpdateColumn изменяет колонку
+// UpdateColumn изменяет колонку и возвращает её обновлённую версию
 func (d *BoardDelivery) UpdateColumn(w http.ResponseWriter, r *http.Request) {
 	panic("Not implemented")
 }
