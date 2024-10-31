@@ -315,3 +315,8 @@ func (uc *BoardUsecase) DeleteColumn(userID int, boardID int, columnID int) (err
 
 	return nil
 }
+
+// ReplaceBackground заменяет задний фон доски и возвращает обновлённую доску
+func (uc *BoardUsecase) ReplaceBackground(userID int, originalFileName string) (updatedBoard models.Board, fileName string, err error) {
+
+}
