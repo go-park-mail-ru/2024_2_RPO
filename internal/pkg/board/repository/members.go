@@ -3,6 +3,7 @@ package repository
 import (
 	"RPO_back/internal/errs"
 	"RPO_back/internal/models"
+	"RPO_back/internal/pkg/auth"
 	"context"
 	"errors"
 	"fmt"
@@ -35,6 +36,7 @@ func (r *BoardRepository) GetUserProfile(userID int) (user *models.UserProfile, 
 
 // GetMemberPermissions (предназначено для внутреннего использования)
 // Возвращает информацию о правах участника на конкретной доске
+// Если пользователя нет на доске, возвращает errs.ErrNotPermitted
 //
 // getAdderInfo - если равен true, запрос получит профили пригласившего
 // пользователя и пользователя, внёсшего последнее изменение. false -
@@ -95,6 +97,7 @@ func (r *BoardRepository) GetMemberPermissions(boardID int, memberUserID int, ge
 			member.UpdatedBy = updater
 		}
 	}
+	member.SetFlags()
 	return member, nil
 }
 
@@ -184,19 +187,87 @@ func (r *BoardRepository) GetMembersWithPermissions(boardID int) (members []mode
 func (r *BoardRepository) SetMemberRole(boardID int, memberUserID int, newRole string) (member *models.MemberWithPermissions, err error) {
 	query := `
 	UPDATE user_to_board
-	SET role=$1
+	SET role=$1::USER_ROLE
+	updated_at=CURRENT_TIMESTAMP
 	WHERE u_id=$2
 	AND board_id=$3;
 	`
-	row := r.db.QueryRow(context.Background(), query, newRole)
+	tag, err := r.db.Exec(context.Background(), query, newRole, memberUserID, boardID)
+	if tag.RowsAffected() == 0 {
+		return nil, fmt.Errorf("SetMemberRole (update): %w", errs.ErrNotFound)
+	}
+	if err != nil {
+		return nil, fmt.Errorf("SetMemberRole (update): %w", err)
+	}
+	member, err = r.GetMemberPermissions(boardID, memberUserID, false)
+	if err != nil {
+		return nil, fmt.Errorf("SetMemberRole (get updated perms): %w", err)
+	}
+	return member, nil
 }
 
 // RemoveMember удаляет участника с доски
 func (r *BoardRepository) RemoveMember(boardID int, memberUserID int) (err error) {
-	panic("Not implemented")
+	query := `
+	DELETE FROM user_to_board
+	WHERE board_id=$1
+	AND u_id=$2;
+	`
+	tag, err := r.db.Exec(context.Background(), query, boardID, memberUserID)
+	if tag.RowsAffected() == 0 {
+		return fmt.Errorf("RemoveMember: %w", errs.ErrNotFound)
+	}
+	if err != nil {
+		return fmt.Errorf("RemoveMember: %w", err)
+	}
+	return nil
 }
 
 // AddMember добавляет участника на доску с правами "viewer"
-func (r *BoardRepository) AddMember(boardID int, memberUserID int) (member *models.MemberWithPermissions, err error) {
-	panic("Not implemented")
+func (r *BoardRepository) AddMember(boardID int, adderID int, memberUserID int) (member *models.MemberWithPermissions, err error) {
+	query := `
+	INSERT INTO user_to_board (u_id, board_id, added_at, updated_at,
+	last_visit_at, added_by, updated_by, "role") VALUES (
+	$1, $2, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP,
+	$3, $3, "viewer"::USER_ROLE
+	);
+	`
+	member, err = r.GetMemberPermissions(boardID, memberUserID, false)
+
+	if (err != nil) && (!errors.Is(err, errs.ErrNotFound)) {
+		return nil, fmt.Errorf("AddMember (get member): %w", err)
+	}
+	if err == nil {
+		return nil, fmt.Errorf("AddMember (get member): %w", errs.ErrAlreadyExists)
+	}
+	_, err = r.db.Exec(context.Background(), query, memberUserID, boardID, adderID)
+	if err != nil {
+		return nil, fmt.Errorf("AddMember (insert): %w", err)
+	}
+	member, err = r.GetMemberPermissions(boardID, memberUserID, false)
+	return member, nil
+}
+
+// GetUserByNickname получает данные пользователя из базы по email
+func (r *BoardRepository) GetUserByNickname(email string) (user *models.UserProfile, err error) {
+	query := `SELECT u_id, nickname, email, description, joined_at, updated_at
+	FROM "user"
+	WHERE nickname=$1;`
+	user = &models.UserProfile{}
+	selectError := r.db.QueryRow(context.Background(), query, email).Scan(
+		&user.Id,
+		&user.Name,
+		&user.Email,
+		&user.Description,
+		&user.JoinedAt,
+		&user.UpdatedAt,
+	)
+	if selectError != nil {
+		if errors.Is(selectError, pgx.ErrNoRows) {
+			return nil, auth.ErrWrongCredentials
+
+		}
+		return nil, selectError
+	}
+	return user, nil
 }

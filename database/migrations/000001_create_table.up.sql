@@ -57,7 +57,7 @@ CREATE TABLE user_to_board (
     board_id BIGINT NOT NULL,
     added_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    last_visit_at TIMESTAMPTZ,
+    last_visit_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     added_by BIGINT,
     updated_by BIGINT,
     "role" USER_ROLE NOT NULL DEFAULT 'viewer',
