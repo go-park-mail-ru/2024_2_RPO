@@ -9,6 +9,7 @@ import (
 	"RPO_back/internal/pkg/utils/responses"
 	"errors"
 	"net/http"
+	"slices"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -49,6 +50,25 @@ func (d *BoardDelivery) UpdateBoard(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
+
+	boardID, err := requests.GetIDFromRequest(r, "boardId", "board_")
+	if err != nil {
+		responses.DoBadResponse(w, http.StatusBadRequest, "bad request")
+		return
+	}
+
+	data := models.BoardPutRequest{}
+	err = requests.GetRequestData(r, &data)
+	if err == nil {
+		responses.DoBadResponse(w, http.StatusBadRequest, "bad request")
+		return
+	}
+	newBoard, err := d.boardUsecase.UpdateBoard(userID, boardID, data)
+	if err != nil {
+		responses.ResponseErrorAndLog(w, err, "UpdateBoard")
+		return
+	}
+	responses.DoJSONResponce(w, newBoard, http.StatusOK)
 }
 
 // DeleteBoard удаляет доску
@@ -57,6 +77,18 @@ func (d *BoardDelivery) DeleteBoard(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
+
+	boardID, err := requests.GetIDFromRequest(r, "boardId", "board_")
+	if err != nil {
+		responses.DoBadResponse(w, http.StatusBadRequest, "bad request")
+		return
+	}
+	err = d.boardUsecase.DeleteBoard(userID, boardID)
+	if err != nil {
+		responses.ResponseErrorAndLog(w, err, "DeleteBoard")
+		return
+	}
+	responses.DoEmptyOkResponce(w)
 }
 
 // GetMyBoards получает все доски для пользователя
@@ -69,9 +101,6 @@ func (d *BoardDelivery) GetMyBoards(w http.ResponseWriter, r *http.Request) {
 	myBoards, err := d.boardUsecase.GetMyBoards(userID)
 	if err != nil {
 		responses.ResponseErrorAndLog(w, err, "GetMyBoards")
-	}
-	if err != nil {
-		responses.ResponseErrorAndLog(w, err, "GetMembersPermissions")
 		return
 	}
 	responses.DoJSONResponce(w, myBoards, http.StatusOK)
@@ -103,9 +132,25 @@ func (d *BoardDelivery) AddMember(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
+
+	boardID, err := requests.GetIDFromRequest(r, "boardId", "board_")
+	if err != nil {
+		responses.DoBadResponse(w, http.StatusBadRequest, "bad request")
+		return
+	}
+
 	data := models.AddMemberRequest{}
-	requests.GetRequestData(r, &data)
-	newMember, err := d.boardUsecase.AddMember(userID, boardID)
+	err = requests.GetRequestData(r, &data)
+	if err != nil {
+		responses.DoBadResponse(w, http.StatusBadRequest, "bad request")
+	}
+
+	newMember, err := d.boardUsecase.AddMember(userID, boardID, &data)
+	if err != nil {
+		responses.ResponseErrorAndLog(w, err, "AddMember")
+		return
+	}
+	responses.DoJSONResponce(w, newMember, 200)
 }
 
 // UpdateMemberRole обновляет роль участника и возвращает обновлённые права
@@ -114,12 +159,44 @@ func (d *BoardDelivery) UpdateMemberRole(w http.ResponseWriter, r *http.Request)
 	if !ok {
 		return
 	}
+	boardID, err := requests.GetIDFromRequest(r, "boardId", "board_")
+	if err != nil {
+		responses.DoBadResponse(w, http.StatusBadRequest, "bad request")
+		return
+	}
+	memberID, err := requests.GetIDFromRequest(r, "userId", "user_")
+	if err != nil {
+		responses.DoBadResponse(w, http.StatusBadRequest, "bad request")
+		return
+	}
+	data := models.UpdateMemberRequest{}
+	err = requests.GetRequestData(r, &data)
+	if err != nil {
+		responses.DoBadResponse(w, http.StatusBadRequest, "bad request")
+		return
+	}
+	if !slices.Contains([]string{"viewer", "editor", "editor_chief", "admin"}, data.NewRole) {
+		responses.DoBadResponse(w, http.StatusBadRequest, "bad request")
+		return
+	}
+
+	updatedMember, err := d.boardUsecase.UpdateMemberRole(userID, boardID, memberID, data.NewRole)
+	if err != nil {
+		responses.ResponseErrorAndLog(w, err, "UpdateMemberRole")
+		return
+	}
+	responses.DoJSONResponce(w, updatedMember, 200)
 }
 
 // RemoveMember удаляет участника с доски
 func (d *BoardDelivery) RemoveMember(w http.ResponseWriter, r *http.Request) {
 	userID, ok := requests.GetUserIDOrFail(w, r, "RemoveMember")
 	if !ok {
+		return
+	}
+	boardID, err := requests.GetIDFromRequest(r, "boardId", "board_")
+	if err != nil {
+		responses.DoBadResponse(w, http.StatusBadRequest, "bad request")
 		return
 	}
 }

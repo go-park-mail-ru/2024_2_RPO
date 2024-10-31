@@ -73,7 +73,7 @@ func (uc *BoardUsecase) AddMember(userID int, boardID int, addRequest *models.Ad
 	if err != nil {
 		return nil, fmt.Errorf("GetMembersPermissions (get new user ID): %w", err)
 	}
-	newMember, err = uc.boardRepository.AddMember(boardID, userID, newMemberProfile.Id)
+	newMember, err = uc.boardRepository.AddMember(boardID, userID, newMemberProfile.ID)
 	if err != nil {
 		return nil, fmt.Errorf("GetMembersPermissions (action): %w", err)
 	}

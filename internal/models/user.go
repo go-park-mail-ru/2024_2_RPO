@@ -9,7 +9,7 @@ type UserRegistration struct {
 }
 
 type UserProfile struct {
-	Id           int       `json:"id"`
+	ID           int       `json:"id"`
 	Name         string    `json:"name"`
 	Email        string    `json:"email"`
 	Description  string    `json:"description"`

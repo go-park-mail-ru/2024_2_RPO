@@ -73,7 +73,7 @@ func (repo *AuthRepository) RetrieveUserIdFromSessionId(sessionId string) (userI
 func (repo *AuthRepository) GetUserByEmail(email string) (user *models.UserProfile, err error) {
 	user = &models.UserProfile{}
 	selectError := repo.db.QueryRow(context.Background(), "SELECT u_id, nickname, email, description, joined_at, updated_at, password_hash FROM \"User\" WHERE email=$1", email).Scan(
-		&user.Id,
+		&user.ID,
 		&user.Name,
 		&user.Email,
 		&user.Description,
@@ -98,7 +98,7 @@ func (repo *AuthRepository) CreateUser(user *models.UserRegistration, hashedPass
               VALUES ($1, $2, $3, $4, $5, $6) RETURNING u_id, nickname, email, password_hash, description, joined_at, updated_at`
 
 	err = repo.db.QueryRow(context.Background(), query, user.Name, user.Email, hashedPassword, "", time.Now(), time.Now()).Scan(
-		&newUser.Id,
+		&newUser.ID,
 		&newUser.Name,
 		&newUser.Email,
 		&newUser.PasswordHash,

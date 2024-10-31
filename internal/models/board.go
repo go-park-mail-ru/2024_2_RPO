@@ -7,7 +7,7 @@ type CreateBoardRequest struct {
 }
 
 type Board struct {
-	Id                 int       `json:"id"`
+	ID                 int       `json:"id"`
 	Name               string    `json:"name"`
 	Description        string    `json:"description"`
 	BackgroundImageUrl string    `json:"background,omitempty"`
@@ -62,4 +62,8 @@ type BoardContent struct {
 
 type AddMemberRequest struct {
 	MemberNickname string `json:"name"`
+}
+
+type UpdateMemberRequest struct {
+	NewRole string `json:"newRole"`
 }

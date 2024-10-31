@@ -33,7 +33,7 @@ func (r *UserRepository) GetUserProfile(userID int) (profile *models.UserProfile
 
 	var user models.UserProfile
 	err = row.Scan(
-		&user.Id,
+		&user.ID,
 		&user.Name,
 		&user.Email,
 		&user.Description,

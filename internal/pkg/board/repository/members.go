@@ -19,7 +19,7 @@ func (r *BoardRepository) GetUserProfile(userID int) (user *models.UserProfile, 
 	`
 	rows := r.db.QueryRow(context.Background(), query, userID)
 	user = &models.UserProfile{}
-	err = rows.Scan(&user.Id, &user.Name, &user.Email,
+	err = rows.Scan(&user.ID, &user.Name, &user.Email,
 		&user.Description,
 		&user.JoinedAt,
 		&user.UpdatedAt,
@@ -142,7 +142,7 @@ func (r *BoardRepository) GetMembersWithPermissions(boardID int) (members []mode
 		field.AddedBy = &models.UserProfile{}
 		field.UpdatedBy = &models.UserProfile{}
 		err := rows.Scan(
-			&field.User.Id,
+			&field.User.ID,
 			&field.User.Name,
 			&field.User.Email,
 			&field.User.Description,
@@ -151,14 +151,14 @@ func (r *BoardRepository) GetMembersWithPermissions(boardID int) (members []mode
 
 			&field.Role, &field.AddedAt, &field.UpdatedAt,
 
-			&field.AddedBy.Id,
+			&field.AddedBy.ID,
 			&field.AddedBy.Name,
 			&field.AddedBy.Email,
 			&field.AddedBy.Description,
 			&field.AddedBy.JoinedAt,
 			&field.AddedBy.UpdatedAt,
 
-			&field.UpdatedBy.Id,
+			&field.UpdatedBy.ID,
 			&field.UpdatedBy.Name,
 			&field.UpdatedBy.Email,
 			&field.UpdatedBy.Description,
@@ -171,10 +171,10 @@ func (r *BoardRepository) GetMembersWithPermissions(boardID int) (members []mode
 			}
 			return nil, fmt.Errorf("GetMembersWithPermissions: %w", err)
 		}
-		if field.AddedBy.Id == -1 {
+		if field.AddedBy.ID == -1 {
 			field.AddedBy = nil
 		}
-		if field.UpdatedBy.Id == -1 {
+		if field.UpdatedBy.ID == -1 {
 			field.UpdatedBy = nil
 		}
 		members = append(members, field)
@@ -254,7 +254,7 @@ func (r *BoardRepository) GetUserByNickname(nickname string) (user *models.UserP
 	WHERE nickname=$1;`
 	user = &models.UserProfile{}
 	err = r.db.QueryRow(context.Background(), query, nickname).Scan(
-		&user.Id,
+		&user.ID,
 		&user.Name,
 		&user.Email,
 		&user.Description,

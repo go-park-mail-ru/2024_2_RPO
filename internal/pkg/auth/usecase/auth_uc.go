@@ -33,7 +33,7 @@ func (this *AuthUsecase) LoginUser(email string, password string) (sessionId str
 	}
 
 	sessionID := encrypt.GenerateSessionID()
-	err = this.authRepo.RegisterSessionRedis(sessionID, user.Id)
+	err = this.authRepo.RegisterSessionRedis(sessionID, user.ID)
 	if err != nil {
 		return "", err
 	}
@@ -56,7 +56,7 @@ func (this *AuthUsecase) RegisterUser(user *models.UserRegistration) (sessionId 
 	}
 
 	sessionId = encrypt.GenerateSessionID()
-	err = this.authRepo.RegisterSessionRedis(sessionId, newUser.Id)
+	err = this.authRepo.RegisterSessionRedis(sessionId, newUser.ID)
 	if err != nil {
 		return "", errors.New("Failed to register session")
 	}

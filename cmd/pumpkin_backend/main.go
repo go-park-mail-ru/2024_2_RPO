@@ -8,6 +8,7 @@ import (
 	BoardRepository "RPO_back/internal/pkg/board/repository"
 	BoardUsecase "RPO_back/internal/pkg/board/usecase"
 	"RPO_back/internal/pkg/middleware/cors"
+	"RPO_back/internal/pkg/middleware/csrf"
 	"RPO_back/internal/pkg/middleware/logging_middleware"
 	sessionMiddleware "RPO_back/internal/pkg/middleware/session"
 	UserDelivery "RPO_back/internal/pkg/user/delivery"
@@ -123,6 +124,7 @@ func main() {
 	router := mux.NewRouter()
 
 	// Применяем middleware
+	router.Use(csrf.CreateCSRFMiddleware())
 	router.Use(cors.CorsMiddleware)
 	router.Use(logging_middleware.LoggingMiddleware)
 	sessionMWare := sessionMiddleware.CreateSessionMiddleware(authRepository)

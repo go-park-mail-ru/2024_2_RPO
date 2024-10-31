@@ -31,7 +31,7 @@ func (r *BoardRepository) CreateBoard(name string, createdBy int64) (*models.Boa
 	`
 	var board models.Board
 	err := r.db.QueryRow(context.Background(), query, name, "", createdBy).Scan(
-		&board.Id,
+		&board.ID,
 		&board.Name,
 		&board.Description,
 		&board.CreatedAt,
@@ -59,7 +59,7 @@ func (r *BoardRepository) GetBoard(boardID int64) (*models.Board, error) {
 	var fileUuid string
 	var fileExtension string
 	err := r.db.QueryRow(context.Background(), query, boardID).Scan(
-		&board.Id,
+		&board.ID,
 		&board.Name,
 		&board.Description,
 		&board.CreatedAt,
@@ -146,7 +146,7 @@ func (r *BoardRepository) GetBoardsForUser(userID int64) (boardArray []models.Bo
 		var board models.Board
 		var fileUuid, fileExtension string
 		err := rows.Scan(
-			&board.Id,
+			&board.ID,
 			&board.Name,
 			&board.Description,
 			&board.CreatedAt,
