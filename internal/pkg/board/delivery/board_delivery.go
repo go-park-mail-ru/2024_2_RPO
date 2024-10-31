@@ -9,6 +9,8 @@ import (
 	"RPO_back/internal/pkg/utils/responses"
 	"errors"
 	"net/http"
+
+	log "github.com/sirupsen/logrus"
 )
 
 type BoardDelivery struct {
@@ -21,42 +23,105 @@ func CreateBoardDelivery(boardUsecase *usecase.BoardUsecase) *BoardDelivery {
 
 // CreateNewBoard создаёт новую доску и возвращает информацию о ней
 func (d *BoardDelivery) CreateNewBoard(w http.ResponseWriter, r *http.Request) {
-	panic("Not implemented")
+	userID, ok := requests.GetUserIDOrFail(w, r, "CreateNewBoard")
+	if !ok {
+		return
+	}
+
+	data := models.CreateBoardRequest{}
+	err := requests.GetRequestData(r, &data)
+	if err != nil {
+		responses.DoBadResponse(w, http.StatusBadRequest, "bad request")
+		log.Warn("CreateNewBoard: ", err)
+		return
+	}
+
+	newBoard, err := d.boardUsecase.CreateNewBoard(userID, data)
+	if err != nil {
+		responses.ResponseErrorAndLog(w, err, "CreateNewBoard")
+	}
+	responses.DoJSONResponce(w, newBoard, http.StatusCreated)
 }
 
 // UpdateBoard обновляет информацию о доске и возвращает обновлённую информацию
 func (d *BoardDelivery) UpdateBoard(w http.ResponseWriter, r *http.Request) {
-	panic("Not implemented")
+	userID, ok := requests.GetUserIDOrFail(w, r, "UpdateBoard")
+	if !ok {
+		return
+	}
 }
 
 // DeleteBoard удаляет доску
 func (d *BoardDelivery) DeleteBoard(w http.ResponseWriter, r *http.Request) {
-	panic("Not implemented")
+	userID, ok := requests.GetUserIDOrFail(w, r, "DeleteBoard")
+	if !ok {
+		return
+	}
 }
 
 // GetMyBoards получает все доски для пользователя
 func (d *BoardDelivery) GetMyBoards(w http.ResponseWriter, r *http.Request) {
-	panic("Not implemented")
+	userID, ok := requests.GetUserIDOrFail(w, r, "GetMyBoards")
+	if !ok {
+		return
+	}
+
+	myBoards, err := d.boardUsecase.GetMyBoards(userID)
+	if err != nil {
+		responses.ResponseErrorAndLog(w, err, "GetMyBoards")
+	}
+	if err != nil {
+		responses.ResponseErrorAndLog(w, err, "GetMembersPermissions")
+		return
+	}
+	responses.DoJSONResponce(w, myBoards, http.StatusOK)
 }
 
 // GetMembersPermissions получает информацию о ролях всех участников доски
 func (d *BoardDelivery) GetMembersPermissions(w http.ResponseWriter, r *http.Request) {
-	panic("Not implemented")
+	userID, ok := requests.GetUserIDOrFail(w, r, "GetMembersPermissions")
+	if !ok {
+		return
+	}
+
+	boardID, err := requests.GetIDFromRequest(r, "boardId", "board_")
+	if err != nil {
+		responses.DoBadResponse(w, http.StatusBadRequest, "bad request")
+		return
+	}
+	memberPermissions, err := d.boardUsecase.GetMembersPermissions(userID, boardID)
+	if err != nil {
+		responses.ResponseErrorAndLog(w, err, "GetMembersPermissions")
+		return
+	}
+	responses.DoJSONResponce(w, memberPermissions, http.StatusOK)
 }
 
 // AddMember добавляет участника на доску с правами "viewer" и возвращает его права
 func (d *BoardDelivery) AddMember(w http.ResponseWriter, r *http.Request) {
-	panic("Not implemented")
+	userID, ok := requests.GetUserIDOrFail(w, r, "AddMember")
+	if !ok {
+		return
+	}
+	data := models.AddMemberRequest{}
+	requests.GetRequestData(r, &data)
+	newMember, err := d.boardUsecase.AddMember(userID, boardID)
 }
 
 // UpdateMemberRole обновляет роль участника и возвращает обновлённые права
 func (d *BoardDelivery) UpdateMemberRole(w http.ResponseWriter, r *http.Request) {
-	panic("Not implemented")
+	userID, ok := requests.GetUserIDOrFail(w, r, "UpdateMemberRole")
+	if !ok {
+		return
+	}
 }
 
 // RemoveMember удаляет участника с доски
 func (d *BoardDelivery) RemoveMember(w http.ResponseWriter, r *http.Request) {
-	panic("Not implemented")
+	userID, ok := requests.GetUserIDOrFail(w, r, "RemoveMember")
+	if !ok {
+		return
+	}
 }
 
 // GetBoardContent получает все карточки и колонки с доски, а также информацию о доске
@@ -67,7 +132,7 @@ func (d *BoardDelivery) GetBoardContent(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	boardID, err := requests.GetIdFromRequest(r, "boardId", "board_")
+	boardID, err := requests.GetIDFromRequest(r, "boardId", "board_")
 	if err != nil {
 		responses.DoBadResponse(w, http.StatusBadRequest, "bad request")
 		return
@@ -98,7 +163,7 @@ func (d *BoardDelivery) CreateNewCard(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	boardID, err := requests.GetIdFromRequest(r, "boardId", "board_")
+	boardID, err := requests.GetIDFromRequest(r, "boardId", "board_")
 	if err != nil {
 		responses.DoBadResponse(w, http.StatusBadRequest, "bad request")
 		return
@@ -135,13 +200,13 @@ func (d *BoardDelivery) UpdateCard(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	boardID, err := requests.GetIdFromRequest(r, "boardId", "board_")
+	boardID, err := requests.GetIDFromRequest(r, "boardId", "board_")
 	if err != nil {
 		responses.DoBadResponse(w, http.StatusBadRequest, "bad request")
 		return
 	}
 
-	cardID, err := requests.GetIdFromRequest(r, "cardId", "card_")
+	cardID, err := requests.GetIDFromRequest(r, "cardId", "card_")
 	if err != nil {
 		responses.DoBadResponse(w, http.StatusBadRequest, "bad request")
 		return
@@ -179,13 +244,13 @@ func (d *BoardDelivery) DeleteCard(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	boardID, err := requests.GetIdFromRequest(r, "boardId", "board_")
+	boardID, err := requests.GetIDFromRequest(r, "boardId", "board_")
 	if err != nil {
 		responses.DoBadResponse(w, http.StatusBadRequest, "bad request")
 		return
 	}
 
-	cardID, err := requests.GetIdFromRequest(r, "cardId", "card_")
+	cardID, err := requests.GetIDFromRequest(r, "cardId", "card_")
 	if err != nil {
 		responses.DoBadResponse(w, http.StatusBadRequest, "bad request")
 		return
@@ -216,7 +281,7 @@ func (d *BoardDelivery) CreateColumn(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	boardID, err := requests.GetIdFromRequest(r, "boardId", "board_")
+	boardID, err := requests.GetIDFromRequest(r, "boardId", "board_")
 	if err != nil {
 		responses.DoBadResponse(w, http.StatusBadRequest, "bad request")
 		return
@@ -254,13 +319,13 @@ func (d *BoardDelivery) UpdateColumn(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	boardID, err := requests.GetIdFromRequest(r, "boardId", "board_")
+	boardID, err := requests.GetIDFromRequest(r, "boardId", "board_")
 	if err != nil {
 		responses.DoBadResponse(w, http.StatusBadRequest, "bad request")
 		return
 	}
 
-	cardID, err := requests.GetIdFromRequest(r, "cardId", "card_")
+	cardID, err := requests.GetIDFromRequest(r, "cardId", "card_")
 	if err != nil {
 		responses.DoBadResponse(w, http.StatusBadRequest, "bad request")
 		return
@@ -298,13 +363,13 @@ func (d *BoardDelivery) DeleteColumn(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	boardID, err := requests.GetIdFromRequest(r, "boardId", "board_")
+	boardID, err := requests.GetIDFromRequest(r, "boardId", "board_")
 	if err != nil {
 		responses.DoBadResponse(w, http.StatusBadRequest, "bad request")
 		return
 	}
 
-	columnID, err := requests.GetIdFromRequest(r, "columnId", "column_")
+	columnID, err := requests.GetIDFromRequest(r, "columnId", "column_")
 	if err != nil {
 		responses.DoBadResponse(w, http.StatusBadRequest, "bad request")
 		return

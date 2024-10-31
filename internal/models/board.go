@@ -59,3 +59,7 @@ type BoardContent struct {
 	Columns   []Column `json:"allColumns"`
 	BoardInfo *Board   `json:"boardInfo"`
 }
+
+type AddMemberRequest struct {
+	MemberNickname string `json:"name"`
+}

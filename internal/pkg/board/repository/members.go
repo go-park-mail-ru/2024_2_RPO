@@ -3,7 +3,6 @@ package repository
 import (
 	"RPO_back/internal/errs"
 	"RPO_back/internal/models"
-	"RPO_back/internal/pkg/auth"
 	"context"
 	"errors"
 	"fmt"
@@ -248,13 +247,13 @@ func (r *BoardRepository) AddMember(boardID int, adderID int, memberUserID int) 
 	return member, nil
 }
 
-// GetUserByNickname получает данные пользователя из базы по email
-func (r *BoardRepository) GetUserByNickname(email string) (user *models.UserProfile, err error) {
+// GetUserByNickname получает данные пользователя из базы по имени
+func (r *BoardRepository) GetUserByNickname(nickname string) (user *models.UserProfile, err error) {
 	query := `SELECT u_id, nickname, email, description, joined_at, updated_at
 	FROM "user"
 	WHERE nickname=$1;`
 	user = &models.UserProfile{}
-	selectError := r.db.QueryRow(context.Background(), query, email).Scan(
+	err = r.db.QueryRow(context.Background(), query, nickname).Scan(
 		&user.Id,
 		&user.Name,
 		&user.Email,
@@ -262,12 +261,11 @@ func (r *BoardRepository) GetUserByNickname(email string) (user *models.UserProf
 		&user.JoinedAt,
 		&user.UpdatedAt,
 	)
-	if selectError != nil {
-		if errors.Is(selectError, pgx.ErrNoRows) {
-			return nil, auth.ErrWrongCredentials
-
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, fmt.Errorf("GetUserByNickname (query): %w", errs.ErrNotFound)
 		}
-		return nil, selectError
+		return nil, fmt.Errorf("GetUserByNickname (query): %w", err)
 	}
 	return user, nil
 }

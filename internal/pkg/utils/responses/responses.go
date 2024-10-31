@@ -1,11 +1,15 @@
 package responses
 
 import (
+	"RPO_back/internal/errs"
 	"RPO_back/internal/models"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"strconv"
+
+	log "github.com/sirupsen/logrus"
 )
 
 // Вернуть ответ с указанным статусом
@@ -46,4 +50,27 @@ func DoJSONResponce(w http.ResponseWriter, responseData interface{}, successStat
 	_, _ = w.Write(body)
 
 	return nil
+}
+
+// ResponseErrorAndLog принимает ошибку, которая пришла из usecase, и делает ответ
+// в соответствии с типом ошибки. Также он делает запись в log с типом WARN, если
+// ошибка стандартная, и ERRO, если это 500.
+//
+// Типичная запись в логе: `UserToBoard: Not found`.
+// В данном случае префикс - `UserToBoard`, двоеточие мы поставим сами.
+//
+// Поддерживаемые типы ошибок: 404, 403, 500
+func ResponseErrorAndLog(w http.ResponseWriter, err error, prefix string) {
+	if errors.Is(err, errs.ErrNotFound) {
+		DoBadResponse(w, http.StatusNotFound, "not found")
+		log.Warn(prefix, ": ", err)
+		return
+	}
+	if errors.Is(err, errs.ErrNotPermitted) {
+		DoBadResponse(w, http.StatusForbidden, "forbidden")
+		log.Warn(prefix, ": ", err)
+		return
+	}
+	log.Error(prefix, ": ", err)
+	DoBadResponse(w, http.StatusInternalServerError, "internal error")
 }

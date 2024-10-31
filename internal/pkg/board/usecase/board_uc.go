@@ -8,13 +8,13 @@ import (
 	"fmt"
 )
 
-var permissiveTable = make(map[string]int)
+var roleLevels = make(map[string]int)
 
 func init() {
-	permissiveTable["viewer"] = 0
-	permissiveTable["editor"] = 1
-	permissiveTable["editor_chief"] = 2
-	permissiveTable["admin"] = 3
+	roleLevels["viewer"] = 0
+	roleLevels["editor"] = 1
+	roleLevels["editor_chief"] = 2
+	roleLevels["admin"] = 3
 }
 
 type BoardUsecase struct {
@@ -61,7 +61,7 @@ func (uc *BoardUsecase) GetMembersPermissions(userID int, boardID int) (data []m
 }
 
 // AddMember добавляет участника на доску с правами "viewer" и возвращает его права
-func (uc *BoardUsecase) AddMember(userID int, boardID int, newMemberID int) (newMember *models.MemberWithPermissions, err error) {
+func (uc *BoardUsecase) AddMember(userID int, boardID int, addRequest *models.AddMemberRequest) (newMember *models.MemberWithPermissions, err error) {
 	adderMember, err := uc.boardRepository.GetMemberPermissions(boardID, userID, false)
 	if err != nil {
 		return nil, fmt.Errorf("GetMembersPermissions (permissions): %w", err)
@@ -69,7 +69,11 @@ func (uc *BoardUsecase) AddMember(userID int, boardID int, newMemberID int) (new
 	if (adderMember.Role != "admin") && (adderMember.Role != "editor_chief") {
 		return nil, fmt.Errorf("GetMembersPermissions (permissions): %w", errs.ErrNotPermitted)
 	}
-	newMember, err = uc.boardRepository.AddMember(boardID, userID, newMemberID)
+	newMemberProfile, err := uc.boardRepository.GetUserByNickname(addRequest.MemberNickname)
+	if err != nil {
+		return nil, fmt.Errorf("GetMembersPermissions (get new user ID): %w", err)
+	}
+	newMember, err = uc.boardRepository.AddMember(boardID, userID, newMemberProfile.Id)
 	if err != nil {
 		return nil, fmt.Errorf("GetMembersPermissions (action): %w", err)
 	}
@@ -90,10 +94,10 @@ func (uc *BoardUsecase) UpdateMemberRole(userID int, boardID int, memberID int, 
 		if (updaterMember.Role != "admin") && (updaterMember.Role != "editor_chief") {
 			return nil, fmt.Errorf("UpdateMemberRole (check): %w", errs.ErrNotPermitted)
 		}
-		if permissiveTable[updaterMember.Role] <= permissiveTable[newRole] {
+		if roleLevels[updaterMember.Role] <= roleLevels[newRole] {
 			return nil, fmt.Errorf("UpdateMemberRole (check): %w", errs.ErrNotPermitted)
 		}
-		if permissiveTable[updaterMember.Role] <= permissiveTable[memberToUpdate.Role] {
+		if roleLevels[updaterMember.Role] <= roleLevels[memberToUpdate.Role] {
 			return nil, fmt.Errorf("UpdateMemberRole (check): %w", errs.ErrNotPermitted)
 		}
 	}
@@ -108,24 +112,24 @@ func (uc *BoardUsecase) UpdateMemberRole(userID int, boardID int, memberID int, 
 func (uc *BoardUsecase) RemoveMember(userID int, boardID int, memberID int) error {
 	removerMember, err := uc.boardRepository.GetMemberPermissions(boardID, userID, false)
 	if err != nil {
-		fmt.Errorf("RemoveMember (remover permissions): %w", err)
+		return fmt.Errorf("RemoveMember (remover permissions): %w", err)
 	}
 	memberToUpdate, err := uc.boardRepository.GetMemberPermissions(boardID, userID, false)
 	if err != nil {
-		fmt.Errorf("RemoveMember (member permissions): %w", err)
+		return fmt.Errorf("RemoveMember (member permissions): %w", err)
 	}
 	if removerMember.Role != "admin" {
 		if (removerMember.Role != "admin") && (removerMember.Role != "editor_chief") {
 			return fmt.Errorf("RemoveMember (check): %w", errs.ErrNotPermitted)
 		}
 
-		if permissiveTable[removerMember.Role] <= permissiveTable[memberToUpdate.Role] {
-			fmt.Errorf("RemoveMember (check): %w", errs.ErrNotPermitted)
+		if roleLevels[removerMember.Role] <= roleLevels[memberToUpdate.Role] {
+			return fmt.Errorf("RemoveMember (check): %w", errs.ErrNotPermitted)
 		}
 	}
 	err = uc.boardRepository.RemoveMember(boardID, memberID)
 	if err != nil {
-		fmt.Errorf("UpdateMemberRole (action): %w", err)
+		return fmt.Errorf("UpdateMemberRole (action): %w", err)
 	}
 	return nil
 }

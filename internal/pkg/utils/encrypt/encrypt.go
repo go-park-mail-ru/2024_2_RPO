@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"io"
 
+	"github.com/satori/uuid"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -31,4 +32,9 @@ func SaltAndHashPassword(password string) (string, error) {
 		return "", err
 	}
 	return string(hash), nil
+}
+
+// GenerateCSRFToken генерирует безопасный CSRF-токен
+func GenerateCSRFToken() string {
+	return uuid.NewV4().String()
 }

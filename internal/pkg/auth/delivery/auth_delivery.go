@@ -90,6 +90,7 @@ func (this *AuthDelivery) RegisterUser(w http.ResponseWriter, r *http.Request) {
 	cookie := http.Cookie{
 		Name:     sessionIdCookieName,
 		Value:    sessionId,
+		SameSite: http.SameSiteStrictMode,
 		Path:     "/",
 		HttpOnly: true,
 		MaxAge:   10000,
@@ -119,7 +120,7 @@ func (this *AuthDelivery) LogoutUser(w http.ResponseWriter, r *http.Request) {
 	})
 
 	if err != nil {
-		responses.DoBadResponse(w, 500, "Internal server error")
+		responses.ResponseErrorAndLog(w, err, "LogoutUser")
 	} else {
 		responses.DoEmptyOkResponce(w)
 	}
