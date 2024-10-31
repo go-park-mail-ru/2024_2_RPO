@@ -199,6 +199,12 @@ func (d *BoardDelivery) RemoveMember(w http.ResponseWriter, r *http.Request) {
 		responses.DoBadResponse(w, http.StatusBadRequest, "bad request")
 		return
 	}
+	memberID, err := requests.GetIDFromRequest(r, "userId", "user_")
+	if err != nil {
+		responses.DoBadResponse(w, http.StatusBadRequest, "bad request")
+		return
+	}
+	err = d.boardUsecase.RemoveMember(userID, boardID, memberID)
 }
 
 // GetBoardContent получает все карточки и колонки с доски, а также информацию о доске

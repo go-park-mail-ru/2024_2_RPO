@@ -10,6 +10,7 @@ import (
 	"RPO_back/internal/pkg/middleware/cors"
 	"RPO_back/internal/pkg/middleware/csrf"
 	"RPO_back/internal/pkg/middleware/logging_middleware"
+	"RPO_back/internal/pkg/middleware/no_panic"
 	sessionMiddleware "RPO_back/internal/pkg/middleware/session"
 	UserDelivery "RPO_back/internal/pkg/user/delivery"
 	UserRepository "RPO_back/internal/pkg/user/repository"
@@ -124,9 +125,10 @@ func main() {
 	router := mux.NewRouter()
 
 	// Применяем middleware
-	router.Use(csrf.CreateCSRFMiddleware())
-	router.Use(cors.CorsMiddleware)
+	router.Use(no_panic.PanicMiddleware)
 	router.Use(logging_middleware.LoggingMiddleware)
+	router.Use(csrf.CSRFMiddleware)
+	router.Use(cors.CorsMiddleware)
 	sessionMWare := sessionMiddleware.CreateSessionMiddleware(authRepository)
 	router.Use(sessionMWare.Middleware)
 

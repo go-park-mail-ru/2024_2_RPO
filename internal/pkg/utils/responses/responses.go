@@ -24,11 +24,11 @@ func DoBadResponse(w http.ResponseWriter, statusCode int, message string) {
 
 	jsonResponse, err := json.Marshal(response)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, "unknown error", http.StatusInternalServerError)
 		return
 	}
-
 	w.Write(jsonResponse)
+
 }
 
 func DoEmptyOkResponce(w http.ResponseWriter) {

@@ -46,20 +46,18 @@ func SetCSRFToken(w http.ResponseWriter) {
 	w.Header().Set("X-Csrf-Token", csrfToken)
 }
 
-func CreateCSRFMiddleware() func(next http.Handler) http.Handler {
-	return func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			if (r.Method == http.MethodPatch) || (r.Method == http.MethodPost) ||
-				(r.Method == http.MethodPut) || (r.Method == http.MethodDelete) {
+func CSRFMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if (r.Method == http.MethodPatch) || (r.Method == http.MethodPost) ||
+			(r.Method == http.MethodPut) || (r.Method == http.MethodDelete) {
 
-				if !checkCSRFToken(w, r) {
-					return
-				}
+			if !checkCSRFToken(w, r) {
+				return
 			}
-			SetCSRFToken(w)
+		}
+		SetCSRFToken(w)
 
-			log.Info("success")
-			next.ServeHTTP(w, r)
-		})
-	}
+		log.Info("CSRF check PASS")
+		next.ServeHTTP(w, r)
+	})
 }

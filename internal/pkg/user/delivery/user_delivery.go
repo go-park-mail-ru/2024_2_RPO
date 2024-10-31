@@ -16,7 +16,7 @@ func CreateUserDelivery(userUC *usecase.UserUsecase) *UserDelivery {
 
 // GetMyProfile возвращает пользователю его профиль
 func (this *UserDelivery) GetMyProfile(w http.ResponseWriter, r *http.Request) {
-	panic("Not implemented")
+	panic("GetMyProfile Not implemented")
 }
 
 // UpdateMyProfile обновляет профиль пользователя и возвращает обновлённый профиль
