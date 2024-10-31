@@ -1,6 +1,7 @@
 package usecase
 
 import (
+	"RPO_back/internal/models"
 	"RPO_back/internal/pkg/user/repository"
 )
 
@@ -15,11 +16,13 @@ func CreateUserUsecase(userRepo *repository.UserRepository) *UserUsecase {
 }
 
 // GetMyProfile возвращает пользователю его профиль
-func (uc *UserUsecase) GetMyProfile() {
-	panic("Not implemented")
+func (uc *UserUsecase) GetMyProfile(userID int) (profile *models.UserProfile, err error) {
+	profile, err = uc.userRepo.GetUserProfile(userID)
+	return
 }
 
 // UpdateMyProfile обновляет профиль пользователя и возвращает обновлённый профиль
-func (uc *UserUsecase) UpdateMyProfile() {
-	panic("Not implemented")
+func (uc *UserUsecase) UpdateMyProfile(userID int, data *models.UserProfileUpdate) (updatedProfile *models.UserProfile, err error) {
+	updatedProfile, err = uc.userRepo.UpdateUserProfile(userID, *data)
+	return
 }
