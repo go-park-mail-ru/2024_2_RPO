@@ -1,8 +1,8 @@
 package delivery
 
 import (
+	"RPO_back/internal/errs"
 	"RPO_back/internal/models"
-	"RPO_back/internal/pkg/auth"
 	"RPO_back/internal/pkg/auth/usecase"
 	"RPO_back/internal/pkg/utils/requests"
 	"RPO_back/internal/pkg/utils/responses"
@@ -39,7 +39,7 @@ func (this *AuthDelivery) LoginUser(w http.ResponseWriter, r *http.Request) {
 
 	sessionId, err := this.authUsecase.LoginUser(loginRequest.Email, loginRequest.Password)
 	if err != nil {
-		if errors.Is(err, auth.ErrWrongCredentials) {
+		if errors.Is(err, errs.ErrWrongCredentials) {
 			responses.DoBadResponse(w, 401, "Wrong credentials")
 			log.Warn("LoginUser (checking credentials): ", err)
 			return
@@ -81,11 +81,11 @@ func (this *AuthDelivery) RegisterUser(w http.ResponseWriter, r *http.Request) {
 	sessionId, err := this.authUsecase.RegisterUser(&user)
 	if err != nil {
 		log.Error("Auth: ", err)
-		if errors.Is(err, auth.ErrBusyEmail) && errors.Is(err, auth.ErrBusyNickname) {
+		if errors.Is(err, errs.ErrBusyEmail) && errors.Is(err, errs.ErrBusyNickname) {
 			responses.DoBadResponse(w, http.StatusConflict, "Email and nickname are busy")
-		} else if errors.Is(err, auth.ErrBusyEmail) {
+		} else if errors.Is(err, errs.ErrBusyEmail) {
 			responses.DoBadResponse(w, http.StatusConflict, "Email is busy")
-		} else if errors.Is(err, auth.ErrBusyNickname) {
+		} else if errors.Is(err, errs.ErrBusyNickname) {
 			responses.DoBadResponse(w, http.StatusConflict, "Nickname is busy")
 		} else {
 			responses.DoBadResponse(w, http.StatusInternalServerError, "Internal server error")

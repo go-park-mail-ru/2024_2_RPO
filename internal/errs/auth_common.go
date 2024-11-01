@@ -1,4 +1,4 @@
-package auth
+package errs
 
 import "fmt"
 

@@ -3,7 +3,6 @@ package repository
 import (
 	"RPO_back/internal/errs"
 	"RPO_back/internal/models"
-	"RPO_back/internal/pkg/auth"
 	"context"
 	"errors"
 	"fmt"
@@ -30,7 +29,9 @@ func CreateAuthRepository(postgresDb *pgxpool.Pool, redisDb *redis.Client) *Auth
 func (repo *AuthRepository) RegisterSessionRedis(cookie string, userID int) error {
 	redisConn := repo.redisDb.Conn(repo.redisDb.Context())
 	defer redisConn.Close()
+
 	ttl := 7 * 24 * time.Hour
+
 	err := redisConn.Set(repo.redisDb.Context(), cookie, userID, ttl).Err()
 	if err != nil {
 		return fmt.Errorf("unable to set session in Redis: %v", err)
@@ -43,9 +44,11 @@ func (repo *AuthRepository) RegisterSessionRedis(cookie string, userID int) erro
 func (repo *AuthRepository) KillSessionRedis(sessionId string) error {
 	redisConn := repo.redisDb.Conn(repo.redisDb.Context())
 	defer redisConn.Close()
+
 	if err := redisConn.Del(repo.redisDb.Context(), sessionId).Err(); err != nil {
 		return err
 	}
+
 	return nil
 }
 
@@ -88,7 +91,7 @@ func (repo *AuthRepository) GetUserByEmail(email string) (user *models.UserProfi
 	)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, auth.ErrWrongCredentials
+			return nil, errs.ErrWrongCredentials
 		}
 		return nil, err
 	}
@@ -127,11 +130,11 @@ func (repo *AuthRepository) CheckUniqueCredentials(nickname string, email string
 		return fmt.Errorf("AuthRepository CheckUniqueCredentials (query2): %w", err)
 	}
 	if count1 > 0 && count2 > 0 {
-		return fmt.Errorf("AuthRepository CheckUniqueCredentials: %w %w", auth.ErrBusyNickname, auth.ErrBusyEmail)
+		return fmt.Errorf("AuthRepository CheckUniqueCredentials: %w %w", errs.ErrBusyNickname, errs.ErrBusyEmail)
 	} else if count1 > 0 {
-		return fmt.Errorf("AuthRepository CheckUniqueCredentials: %w", auth.ErrBusyNickname)
+		return fmt.Errorf("AuthRepository CheckUniqueCredentials: %w", errs.ErrBusyNickname)
 	} else if count1 > 0 {
-		return fmt.Errorf("AuthRepository CheckUniqueCredentials: %w", auth.ErrBusyEmail)
+		return fmt.Errorf("AuthRepository CheckUniqueCredentials: %w", errs.ErrBusyEmail)
 	}
 	return nil
 }
