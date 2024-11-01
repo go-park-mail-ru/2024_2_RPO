@@ -7,7 +7,7 @@ CREATE TABLE "user" (
     joined_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     password_hash TEXT NOT NULL,
-    email CITEXT UNIQUE NOT NULL -- avatar_file_uuid UUID,
+    email TEXT UNIQUE NOT NULL -- avatar_file_uuid UUID,
     -- FOREIGN KEY (avatar_file_uuid) REFERENCES user_uploaded_file(file_uuid)
     -- ON UPDATE CASCADE ON DELETE SET NULL
 );
