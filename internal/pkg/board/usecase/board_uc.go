@@ -29,22 +29,54 @@ func CreateBoardUsecase(boardRepository *repository.BoardRepository) *BoardUseca
 
 // CreateNewBoard создаёт новую доску и возвращает информацию о ней
 func (uc *BoardUsecase) CreateNewBoard(userID int, data models.CreateBoardRequest) (newBoard *models.Board, err error) {
-	panic("Not implemented")
+	newBoard, err = uc.boardRepository.CreateBoard(data.Name, userID)
+	if err != nil {
+		return nil, err
+	}
+	_, err = uc.boardRepository.AddMember(newBoard.ID, userID, userID)
+	if err != nil {
+		return nil, err
+	}
+	_, err = uc.boardRepository.SetMemberRole(newBoard.ID, userID, "admin")
+	if err != nil {
+		return nil, err
+	}
+	return newBoard, nil
 }
 
 // UpdateBoard обновляет информацию о доске и возвращает обновлённую информацию
 func (uc *BoardUsecase) UpdateBoard(userID int, boardID int, data models.BoardPutRequest) (updatedBoard *models.Board, err error) {
-	panic("Not implemented")
+	deleterMember, err := uc.boardRepository.GetMemberPermissions(boardID, userID, false)
+	if err != nil {
+		return nil, fmt.Errorf("GetMembersPermissions (getting editor perm-s): %w", err)
+	}
+	if deleterMember.Role != "admin" && deleterMember.Role != "editor_chief" {
+		return nil, fmt.Errorf("GetMembersPermissions (checking): %w", errs.ErrNotPermitted)
+	}
+	updatedBoard, err = uc.UpdateBoard(userID, boardID, data)
+	return
 }
 
 // DeleteBoard удаляет доску
 func (uc *BoardUsecase) DeleteBoard(userID int, boardID int) error {
-	panic("Not implemented")
+	deleterMember, err := uc.boardRepository.GetMemberPermissions(boardID, userID, false)
+	if err != nil {
+		return fmt.Errorf("GetMembersPermissions (getting deleter perm-s): %w", err)
+	}
+	if deleterMember.Role != "admin" {
+		return fmt.Errorf("GetMembersPermissions (checking): %w", errs.ErrNotPermitted)
+	}
+	err = uc.boardRepository.DeleteBoard(boardID)
+	if err != nil {
+		return fmt.Errorf("GetMembersPermissions (action): %w", err)
+	}
+	return nil
 }
 
 // GetMyBoards получает все доски для пользователя
 func (uc *BoardUsecase) GetMyBoards(userID int) (boards []models.Board, err error) {
-	panic("Not implemented")
+	boards, err = uc.boardRepository.GetBoardsForUser(userID)
+	return
 }
 
 // GetMembersPermissions получает информацию о ролях всех участников доски
@@ -157,7 +189,7 @@ func (uc *BoardUsecase) GetBoardContent(userID int, boardID int) (content *model
 		return nil, fmt.Errorf("GetBoardContent (add GetColumnsForBoard): %w", err)
 	}
 
-	info, err := uc.boardRepository.GetBoard(int64(boardID))
+	info, err := uc.boardRepository.GetBoard(boardID)
 	if err != nil {
 		return nil, fmt.Errorf("GetBoardContent (add GetBoard): %w", err)
 	}

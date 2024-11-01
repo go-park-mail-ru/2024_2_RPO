@@ -33,6 +33,7 @@ func (this *AuthDelivery) LoginUser(w http.ResponseWriter, r *http.Request) {
 	err := requests.GetRequestData(r, &loginRequest)
 	if err != nil {
 		responses.DoBadResponse(w, http.StatusBadRequest, "Invalid request")
+		log.Warn("LoginUser (getting data): ", err)
 		return
 	}
 
@@ -40,9 +41,12 @@ func (this *AuthDelivery) LoginUser(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		if errors.Is(err, auth.ErrWrongCredentials) {
 			responses.DoBadResponse(w, 401, "Wrong credentials")
+			log.Warn("LoginUser (checking credentials): ", err)
 			return
 		}
 		responses.DoBadResponse(w, 500, "Internal Server Error")
+		log.Error("LoginUser (checking credentials): ", err)
+		return
 	}
 
 	cookie := http.Cookie{
@@ -77,7 +81,9 @@ func (this *AuthDelivery) RegisterUser(w http.ResponseWriter, r *http.Request) {
 	sessionId, err := this.authUsecase.RegisterUser(&user)
 	if err != nil {
 		log.Error("Auth: ", err)
-		if errors.Is(err, auth.ErrBusyEmail) {
+		if errors.Is(err, auth.ErrBusyEmail) && errors.Is(err, auth.ErrBusyNickname) {
+			responses.DoBadResponse(w, http.StatusConflict, "Email and nickname are busy")
+		} else if errors.Is(err, auth.ErrBusyEmail) {
 			responses.DoBadResponse(w, http.StatusConflict, "Email is busy")
 		} else if errors.Is(err, auth.ErrBusyNickname) {
 			responses.DoBadResponse(w, http.StatusConflict, "Nickname is busy")

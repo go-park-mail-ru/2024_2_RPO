@@ -71,8 +71,13 @@ func (repo *AuthRepository) RetrieveUserIdFromSessionId(sessionId string) (userI
 
 // GetUserByEmail получает данные пользователя из базы по email
 func (repo *AuthRepository) GetUserByEmail(email string) (user *models.UserProfile, err error) {
+	query := `
+	SELECT u_id, nickname, email, description,
+	joined_at, updated_at, password_hash
+	FROM "user"
+	WHERE email=$1;`
 	user = &models.UserProfile{}
-	selectError := repo.db.QueryRow(context.Background(), "SELECT u_id, nickname, email, description, joined_at, updated_at, password_hash FROM \"User\" WHERE email=$1", email).Scan(
+	err = repo.db.QueryRow(context.Background(), query, email).Scan(
 		&user.ID,
 		&user.Name,
 		&user.Email,
@@ -81,12 +86,11 @@ func (repo *AuthRepository) GetUserByEmail(email string) (user *models.UserProfi
 		&user.UpdatedAt,
 		&user.PasswordHash,
 	)
-	if selectError != nil {
-		if errors.Is(selectError, pgx.ErrNoRows) {
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, auth.ErrWrongCredentials
-
 		}
-		return nil, selectError
+		return nil, err
 	}
 	return user, nil
 }
@@ -113,19 +117,20 @@ func (repo *AuthRepository) CreateUser(user *models.UserRegistration, hashedPass
 func (repo *AuthRepository) CheckUniqueCredentials(nickname string, email string) error {
 	query1 := `SELECT COUNT(*) FROM "user" WHERE nickname = $1`
 	query2 := `SELECT COUNT(*) FROM "user" WHERE email = $1`
-	var count int
-	err := repo.db.QueryRow(context.Background(), query1, nickname).Scan(&count)
+	var count1, count2 int
+	err := repo.db.QueryRow(context.Background(), query1, nickname).Scan(&count1)
 	if err != nil {
-		return fmt.Errorf("AuthRepository CheckUniqueCredentials: %w", err)
+		return fmt.Errorf("AuthRepository CheckUniqueCredentials (query1): %w", err)
 	}
-	if count > 0 {
+	err = repo.db.QueryRow(context.Background(), query2, email).Scan(&count2)
+	if err != nil {
+		return fmt.Errorf("AuthRepository CheckUniqueCredentials (query2): %w", err)
+	}
+	if count1 > 0 && count2 > 0 {
+		return fmt.Errorf("AuthRepository CheckUniqueCredentials: %w %w", auth.ErrBusyNickname, auth.ErrBusyEmail)
+	} else if count1 > 0 {
 		return fmt.Errorf("AuthRepository CheckUniqueCredentials: %w", auth.ErrBusyNickname)
-	}
-	err = repo.db.QueryRow(context.Background(), query2, email).Scan(&count)
-	if err != nil {
-		return fmt.Errorf("AuthRepository CheckUniqueCredentials: %w", err)
-	}
-	if count > 0 {
+	} else if count1 > 0 {
 		return fmt.Errorf("AuthRepository CheckUniqueCredentials: %w", auth.ErrBusyEmail)
 	}
 	return nil

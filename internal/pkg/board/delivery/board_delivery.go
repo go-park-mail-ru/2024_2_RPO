@@ -40,6 +40,7 @@ func (d *BoardDelivery) CreateNewBoard(w http.ResponseWriter, r *http.Request) {
 	newBoard, err := d.boardUsecase.CreateNewBoard(userID, data)
 	if err != nil {
 		responses.ResponseErrorAndLog(w, err, "CreateNewBoard")
+		return
 	}
 	responses.DoJSONResponce(w, newBoard, http.StatusCreated)
 }

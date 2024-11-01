@@ -7,6 +7,8 @@ import (
 	"RPO_back/internal/pkg/utils/encrypt"
 	"errors"
 	"fmt"
+
+	log "github.com/sirupsen/logrus"
 )
 
 type AuthUsecase struct {
@@ -24,12 +26,10 @@ func (this *AuthUsecase) LoginUser(email string, password string) (sessionId str
 	if err != nil {
 		return "", err
 	}
-	requestPasswordHash, err := encrypt.SaltAndHashPassword(password)
-	if err != nil {
-		return "", err
-	}
-	if requestPasswordHash != user.PasswordHash {
-		return "", auth.ErrWrongCredentials
+
+	ok := encrypt.CheckPassword(password, user.PasswordHash)
+	if !ok {
+		return "", fmt.Errorf("LoginUser: passwords not match: %w", auth.ErrWrongCredentials)
 	}
 
 	sessionID := encrypt.GenerateSessionID()
@@ -49,6 +49,7 @@ func (this *AuthUsecase) RegisterUser(user *models.UserRegistration) (sessionId 
 	if err != nil {
 		return "", errors.New("Failed to hash password")
 	}
+	log.Info("Password hash: ", hashedPassword)
 
 	newUser, err := this.authRepo.CreateUser(user, string(hashedPassword))
 	if err != nil {

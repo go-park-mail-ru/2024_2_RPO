@@ -6,6 +6,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"slices"
 
 	"github.com/jackc/pgx/v5"
 )
@@ -48,7 +49,7 @@ func (r *BoardRepository) GetMemberPermissions(boardID int, memberUserID int, ge
 	ub.role
 	ub.added_at,
 	ub.updated_at,
-	COALESCE(ub.added_by, -1)
+	COALESCE(ub.added_by, -1),
 	COALESCE(ub.updated_by, -1)
 	FROM user_to_board AS ub
 	WHERE ub.u_id=$1
@@ -61,14 +62,15 @@ func (r *BoardRepository) GetMemberPermissions(boardID int, memberUserID int, ge
 		return nil, fmt.Errorf("GetMemberPermissions (getting user profile): %w", err)
 	}
 	// Проверка на то, что доска существует
-	_, err = r.GetBoard(int64(boardID))
+	_, err = r.GetBoard(boardID)
 	if err != nil {
 		return nil, fmt.Errorf("GetMemberPermissions (getting board): %w", err)
 	}
 	member.User = userProfile
 	var addedByID, updatedByID int
 	rows := r.db.QueryRow(context.Background(), query, memberUserID, boardID)
-	err = rows.Scan(&member.Role,
+	err = rows.Scan(
+		&member.Role,
 		&member.AddedAt,
 		&member.UpdatedAt,
 		&addedByID,
@@ -125,7 +127,7 @@ func (r *BoardRepository) GetMembersWithPermissions(boardID int) (members []mode
 	LEFT JOIN "user" AS updater ON updater.u_id=ub.updated_by
 	WHERE ub.b_id=$1;
 	`
-	_, err = r.GetBoard(int64(boardID))
+	_, err = r.GetBoard(boardID)
 	if err != nil {
 		return nil, fmt.Errorf("GetMembersWithPermissions (getting board): %w", errs.ErrNotFound)
 	}
@@ -186,12 +188,19 @@ func (r *BoardRepository) GetMembersWithPermissions(boardID int) (members []mode
 func (r *BoardRepository) SetMemberRole(boardID int, memberUserID int, newRole string) (member *models.MemberWithPermissions, err error) {
 	query := `
 	UPDATE user_to_board
-	SET role=$1::USER_ROLE
+	SET role='%s',
 	updated_at=CURRENT_TIMESTAMP
-	WHERE u_id=$2
-	AND board_id=$3;
+	WHERE u_id=$1
+	AND board_id=$2;
 	`
-	tag, err := r.db.Exec(context.Background(), query, newRole, memberUserID, boardID)
+
+	// Дополнительная проверка для защиты от SQL-инъекций
+	if !slices.Contains([]string{"viewer", "editor", "editor_chief", "admin"}, newRole) {
+		return nil, fmt.Errorf("Unknown role: %s", newRole)
+	}
+	query = fmt.Sprintf(query, newRole)
+
+	tag, err := r.db.Exec(context.Background(), query, memberUserID, boardID)
 	if tag.RowsAffected() == 0 {
 		return nil, fmt.Errorf("SetMemberRole (update): %w", errs.ErrNotFound)
 	}
@@ -228,7 +237,7 @@ func (r *BoardRepository) AddMember(boardID int, adderID int, memberUserID int) 
 	INSERT INTO user_to_board (u_id, board_id, added_at, updated_at,
 	last_visit_at, added_by, updated_by, "role") VALUES (
 	$1, $2, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP,
-	$3, $3, "viewer"::USER_ROLE
+	$3, $3, 'viewer'
 	);
 	`
 	member, err = r.GetMemberPermissions(boardID, memberUserID, false)

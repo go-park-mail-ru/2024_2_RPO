@@ -37,10 +37,12 @@ func DoEmptyOkResponce(w http.ResponseWriter) {
 	w.Write([]byte("{\"status\":200,\"text\":\"success\"}"))
 }
 
-func DoJSONResponce(w http.ResponseWriter, responseData interface{}, successStatusCode int) error {
+func DoJSONResponce(w http.ResponseWriter, responseData interface{}, successStatusCode int) {
 	body, err := json.Marshal(responseData)
 	if err != nil {
-		return fmt.Errorf("error in marshalling response body: %w", err)
+		DoBadResponse(w, 500, "error serializing response")
+		log.Error(fmt.Errorf("error in marshalling response body: %w", err))
+		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -48,8 +50,6 @@ func DoJSONResponce(w http.ResponseWriter, responseData interface{}, successStat
 
 	w.WriteHeader(successStatusCode)
 	_, _ = w.Write(body)
-
-	return nil
 }
 
 // ResponseErrorAndLog принимает ошибку, которая пришла из usecase, и делает ответ

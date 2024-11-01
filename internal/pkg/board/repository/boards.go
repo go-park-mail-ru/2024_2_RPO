@@ -23,14 +23,14 @@ func CreateBoardRepository(db *pgxpool.Pool) *BoardRepository {
 }
 
 // CreateBoard creates a new board in the database.
-func (r *BoardRepository) CreateBoard(name string, createdBy int64) (*models.Board, error) {
+func (r *BoardRepository) CreateBoard(name string, userID int) (*models.Board, error) {
 	query := `
 		INSERT INTO board (name, description, created_by)
 		VALUES ($1, $2, $3)
-		RETURNING b_id, name, description, created_at, updated_at
+		RETURNING board_id, name, description, created_at, updated_at
 	`
 	var board models.Board
-	err := r.db.QueryRow(context.Background(), query, name, "", createdBy).Scan(
+	err := r.db.QueryRow(context.Background(), query, name, "", userID).Scan(
 		&board.ID,
 		&board.Name,
 		&board.Description,
@@ -45,15 +45,19 @@ func (r *BoardRepository) CreateBoard(name string, createdBy int64) (*models.Boa
 }
 
 // GetBoard retrieves a board by its ID.
-func (r *BoardRepository) GetBoard(boardID int64) (*models.Board, error) {
+func (r *BoardRepository) GetBoard(boardID int) (*models.Board, error) {
 	query := `
 		SELECT
-		b.b_id, b.name,
-		b.description, b.created_at, b.updated_at,
-		file.file_uuid, file.file_extension
+			b.board_id,
+			b.name,
+			b.description,
+			b.created_at,
+			b.updated_at,
+			COALESCE(file.file_uuid::text,''),
+			COALESCE(file.file_extension,'')
 		FROM board AS b
-		LEFT JOIN user_uploaded_file AS file ON file.file_uuid=b.avatar_file_uuid
-		WHERE b.b_id = $1;
+		LEFT JOIN user_uploaded_file AS file ON file.file_uuid=b.background_image_uuid
+		WHERE b.board_id = $1;
 	`
 	var board models.Board
 	var fileUuid string
@@ -82,11 +86,11 @@ func (r *BoardRepository) GetBoard(boardID int64) (*models.Board, error) {
 }
 
 // UpdateBoard updates the specified fields of a board.
-func (r *BoardRepository) UpdateBoard(boardID int64, data *models.BoardPutRequest) error {
+func (r *BoardRepository) UpdateBoard(boardID int, data *models.BoardPutRequest) error {
 	query := `
 		UPDATE board
 		SET name=$1, description=$2, updated_at = CURRENT_TIMESTAMP
-		WHERE b_id = $3;
+		WHERE board_id = $3;
 	`
 
 	tag, err := r.db.Exec(context.Background(), query, data.NewName, data.NewDescription, boardID)
@@ -103,10 +107,10 @@ func (r *BoardRepository) UpdateBoard(boardID int64, data *models.BoardPutReques
 }
 
 // DeleteBoard удаляет доску по Id
-func (r *BoardRepository) DeleteBoard(boardId int64) error {
+func (r *BoardRepository) DeleteBoard(boardId int) error {
 	query := `
 		DELETE FROM board
-		WHERE b_id = $1
+		WHERE board_id = $1
 	`
 	tag, err := r.db.Exec(context.Background(), query, boardId)
 	if err != nil {
@@ -122,13 +126,13 @@ func (r *BoardRepository) DeleteBoard(boardId int64) error {
 }
 
 // GetBoardsForUser возвращает все доски, к которым пользователь имеет доступ
-func (r *BoardRepository) GetBoardsForUser(userID int64) (boardArray []models.Board, err error) {
+func (r *BoardRepository) GetBoardsForUser(userID int) (boardArray []models.Board, err error) {
 	query := `
-		SELECT b.b_id, b.name, b.description,
+		SELECT b.board_id, b.name, b.description,
 		b.created_at, b.updated_at,
 		f.file_uuid, f.file_extension
-		FROM board AS b
-		JOIN user_to_board AS ub ON b.b_id = ub.b_id
+		FROM user_to_board AS ub
+		JOIN board AS b ON b.board_id = ub.board_id
 		LEFT JOIN user_uploaded_file AS f ON f.file_uuid=b.background_image_uuid
 		WHERE ub.u_id = $1
 	`
