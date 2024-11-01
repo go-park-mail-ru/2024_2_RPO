@@ -52,7 +52,6 @@ CREATE TABLE board (
     SET NULL
 );
 CREATE TABLE user_to_board (
-    user_to_board_id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     u_id BIGINT NOT NULL,
     board_id BIGINT NOT NULL,
     added_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -67,7 +66,8 @@ CREATE TABLE user_to_board (
     SET NULL,
         FOREIGN KEY (updated_by) REFERENCES "user"(u_id) ON UPDATE CASCADE ON DELETE
     SET NULL,
-        UNIQUE(u_id, board_id)
+        UNIQUE(u_id, board_id),
+    PRIMARY KEY (u_id, board_id)
 );
 CREATE TABLE kanban_column (
     col_id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
