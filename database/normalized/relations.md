@@ -127,8 +127,8 @@ erDiagram
     }
 
     USER_TO_BOARD {
-        BIGINT u_id FK PK
-        BIGINT board_id FK PK
+        BIGINT u_id PK
+        BIGINT board_id PK
         TIMESTAMPTZ added_at
         TIMESTAMPTZ updated_at
         TIMESTAMPTZ last_visit_at
