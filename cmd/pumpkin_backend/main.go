@@ -127,8 +127,8 @@ func main() {
 	// Применяем middleware
 	router.Use(no_panic.PanicMiddleware)
 	router.Use(logging_middleware.LoggingMiddleware)
-	router.Use(csrf.CSRFMiddleware)
 	router.Use(cors.CorsMiddleware)
+	router.Use(csrf.CSRFMiddleware)
 	sessionMWare := sessionMiddleware.CreateSessionMiddleware(authRepository)
 	router.Use(sessionMWare.Middleware)
 

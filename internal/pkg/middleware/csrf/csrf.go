@@ -43,7 +43,7 @@ func SetCSRFToken(w http.ResponseWriter) {
 		Path:     "/",
 		SameSite: http.SameSiteStrictMode,
 	})
-	w.Header().Set("X-Csrf-Token", csrfToken)
+	w.Header().Set("X-CSRF-Token", csrfToken)
 }
 
 func CSRFMiddleware(next http.Handler) http.Handler {

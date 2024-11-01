@@ -13,6 +13,8 @@ SRC_DIR := ./cmd/pumpkin_backend
 GOFLAGS := # Может, когда-нибудь пригодятся
 LDFLAGS := -ldflags="-s -w" # Отключить дебаг-информацию
 
+DATABASE_URL="postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}?sslmode=${POSTGRES_SSLMODE}"
+
 # Цели Makefile, которые не привязываются к файлам
 .PHONY: all build test clean coverage run
 
