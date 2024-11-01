@@ -12,7 +12,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-const defaultImageUrl = "/static/img/backgroundImage.png"
+const defaultImageUrl = "/static/img/backgroundPicture.png"
 
 type BoardRepository struct {
 	db *pgxpool.Pool
@@ -37,7 +37,7 @@ func (r *BoardRepository) CreateBoard(name string, userID int) (*models.Board, e
 		&board.CreatedAt,
 		&board.UpdatedAt,
 	)
-	board.BackgroundImageUrl = defaultImageUrl
+	board.BackgroundImageURL = defaultImageUrl
 	if err != nil {
 		return nil, fmt.Errorf("CreateBoard: %w", err)
 	}
@@ -72,9 +72,9 @@ func (r *BoardRepository) GetBoard(boardID int) (*models.Board, error) {
 		&fileExtension,
 	)
 	if fileUuid == "" {
-		board.BackgroundImageUrl = defaultImageUrl
+		board.BackgroundImageURL = defaultImageUrl
 	} else {
-		board.BackgroundImageUrl = fmt.Sprintf("%s%s.%s", os.Getenv("USER_UPLOADS_URL"), fileUuid, fileExtension)
+		board.BackgroundImageURL = fmt.Sprintf("%s%s.%s", os.Getenv("USER_UPLOADS_URL"), fileUuid, fileExtension)
 	}
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -130,7 +130,8 @@ func (r *BoardRepository) GetBoardsForUser(userID int) (boardArray []models.Boar
 	query := `
 		SELECT b.board_id, b.name, b.description,
 		b.created_at, b.updated_at,
-		f.file_uuid, f.file_extension
+		COALESCE(f.file_uuid::text, ''),
+		COALESCE(f.file_extension, '')
 		FROM user_to_board AS ub
 		JOIN board AS b ON b.board_id = ub.board_id
 		LEFT JOIN user_uploaded_file AS f ON f.file_uuid=b.background_image_uuid
@@ -160,6 +161,11 @@ func (r *BoardRepository) GetBoardsForUser(userID int) (boardArray []models.Boar
 		)
 		if err != nil {
 			return nil, fmt.Errorf("GetBoardsForUser (for rows): %w", err)
+		}
+		if fileUuid != "" {
+			board.BackgroundImageURL = fmt.Sprintf("%s.%s", fileUuid, fileExtension)
+		} else {
+			board.BackgroundImageURL = defaultImageUrl
 		}
 		boardArray = append(boardArray, board)
 	}
