@@ -1,8 +1,10 @@
 package repository
 
 import (
+	"RPO_back/internal/errs"
 	"RPO_back/internal/models"
 	"context"
+	"fmt"
 )
 
 // CreateColumn создаёт колонку на канбане
@@ -45,15 +47,19 @@ func (r *BoardRepository) UpdateColumn(boardId int, columnId int, data models.Co
 }
 
 // DeleteColumn убирает колонку с канбана
-func (r *BoardRepository) DeleteColumn(boardId int, columnId int) (err error) {
+func (r *BoardRepository) DeleteColumn(boardID int, columnID int) (err error) {
+	fmt.Printf("%d %d\n", boardID, columnID)
 	query := `
 		DELETE FROM kanban_column
 		WHERE col_id = $1 AND board_id = $2;
 	`
 
-	_, err = r.db.Exec(context.Background(), query, boardId, columnId)
+	tag, err := r.db.Exec(context.Background(), query, columnID, boardID)
 	if err != nil {
 		return err
+	}
+	if tag.RowsAffected() == 0 {
+		return fmt.Errorf("DeleteColumn (query): %w", errs.ErrNotFound)
 	}
 
 	return nil
