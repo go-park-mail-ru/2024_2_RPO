@@ -44,10 +44,6 @@
 
 #### Транзитивные отношения (справедливые не для любых кортежей)
 
-`{user.avatar_file_uuid} -> {user_uploaded_file.type}` (только для некоторых файлов)
-
-`{board.background_file_uuid} -> {user_uploaded_file.type}` (только для некоторых файлов)
-
 `{user_to_board.added_by, user_to_board.u_id, user_to_board.created_by -> {board.created_by}` (только для кортежа user_to_board, где пользователь сам создал доску и на ней присутствует)
 
 ## Нормализация модели
@@ -113,7 +109,6 @@ erDiagram
         INTEGER size
         TIMESTAMPTZ created_at
         BIGINT created_by
-        FILE_TYPE type
     }
 
     BOARD {
@@ -156,13 +151,7 @@ erDiagram
         UUID cover_file_uuid FK
     }
 
-    %% Типы ENUM
-    FILE_TYPE_ENUM {
-        FILE_TYPE avatar
-        FILE_TYPE background_image
-        FILE_TYPE card_cover_image
-        FILE_TYPE pinned_file
-    }
+    %% Тип ENUM
 
     USER_ROLE_ENUM {
         USER_ROLE viewer

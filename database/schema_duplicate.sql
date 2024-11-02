@@ -29,7 +29,6 @@ CREATE TABLE user_uploaded_file(
     "size" INTEGER NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     created_by BIGINT,
-    "type" FILE_TYPE NOT NULL,
     FOREIGN KEY (created_by) REFERENCES "user"(u_id) ON UPDATE CASCADE ON DELETE
     SET NULL
 );
