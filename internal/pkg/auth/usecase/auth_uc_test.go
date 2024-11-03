@@ -6,79 +6,87 @@ import (
 	mocks "RPO_back/internal/pkg/auth/mocks"
 	"RPO_back/internal/pkg/utils/encrypt"
 	"errors"
-	"fmt"
 	"testing"
 
-	"github.com/golang/mock/gomock"
+	AuthUsecase "RPO_back/internal/pkg/auth/usecase"
+
+	gomock "github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 )
+
+func isStringLengthMoreThan10(s string) bool {
+	return len(s) > 10
+}
 
 func TestAuthUsecase_LoginUser(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
 	mockAuthRepo := mocks.NewMockAuthRepo(ctrl)
-	authUsecase := mocks.NewMockAuthUsecase(ctrl)
+	authUsecase := AuthUsecase.CreateAuthUsecase(mockAuthRepo)
 
 	tests := []struct {
-		name           string
-		email          string
-		password       string
-		setupMock      func()
-		expectedError  error
-		expectedResult string
+		name                  string
+		email                 string
+		password              string
+		setupMock             func()
+		expectedError         bool
+		expectedResultChecker func(string) bool
 	}{
 		{
-			name:    "successful login",
-			email:   "test@example.com",
-			password: "correctpassword",
+			name:     "successful login",
+			email:    "test@example.com",
+			password: "11111111",
 			setupMock: func() {
+				pHash, _ := encrypt.SaltAndHashPassword("11111111")
 				mockAuthRepo.EXPECT().GetUserByEmail("test@example.com").Return(&models.UserProfile{
-					ID:          123,
-					PasswordHash: "dpksdkfposkfo1341",
+					ID:           123,
+					PasswordHash: pHash,
 				}, nil)
 
-				mockAuthRepo.EXPECT().RegisterSessionRedis(gomock.Any(), "1").Return(nil)
+				mockAuthRepo.EXPECT().RegisterSessionRedis(gomock.Any(), 123).Return(nil)
 			},
-			expectedError:  nil,
-			expectedResult: "valid-session-id",
+			expectedError:         false,
+			expectedResultChecker: isStringLengthMoreThan10,
 		},
 		{
-			name:    "user not found",
-			email:   "notfound@example.com",
+			name:     "user not found",
+			email:    "notfound@example.com",
 			password: "any-password",
 			setupMock: func() {
-				mockAuthRepo.EXPECT().GetUserByEmail("notfound@example.com").Return(nil, fmt.Errorf("user not found"))
+				mockAuthRepo.EXPECT().GetUserByEmail("notfound@example.com").Return(nil, errs.ErrWrongCredentials)
 			},
-			expectedError:  fmt.Errorf("user not found"),
-			expectedResult: "",
+			expectedError:         true,
+			expectedResultChecker: func(value string) bool { return value == "" },
 		},
 		{
-			name:    "wrong password",
-			email:   "test@example.com",
+			name:     "wrong password",
+			email:    "test@example.com",
 			password: "wrongpassword",
 			setupMock: func() {
+				hash, _ := encrypt.SaltAndHashPassword("11111111")
 				mockAuthRepo.EXPECT().GetUserByEmail("test@example.com").Return(&models.UserProfile{
-					ID:          123,
-					PasswordHash: "dpksdkfposkfo1341",
+					ID:           123,
+					PasswordHash: hash,
 				}, nil)
 			},
-			expectedError:  fmt.Errorf("LoginUser: passwords not match: %w", errs.ErrWrongCredentials),
-			expectedResult: "",
+			expectedError:         true,
+			expectedResultChecker: func(value string) bool { return value == "" },
 		},
 		{
-			name:    "redis session registration fails",
-			email:   "test@example.com",
-			password: "correctpassword",
+			name:     "redis session registration fails",
+			email:    "test@example.com",
+			password: "11111111",
 			setupMock: func() {
+				hash, _ := encrypt.SaltAndHashPassword("11111111")
 				mockAuthRepo.EXPECT().GetUserByEmail("test@example.com").Return(&models.UserProfile{
-					ID:          123,
-					PasswordHash: "dpksdkfposkfo1341",
+					ID:           123,
+					PasswordHash: hash,
 				}, nil)
-				mockAuthRepo.EXPECT().RegisterSessionRedis(gomock.Any(), "1").Return(errors.New("redis error"))
+				mockAuthRepo.EXPECT().RegisterSessionRedis(gomock.Any(), 123).Return(errors.New("redis error"))
 			},
-			expectedError:  errors.New("redis error"),
-			expectedResult: "",
+			expectedError:         true,
+			expectedResultChecker: func(value string) bool { return value == "" },
 		},
 	}
 
@@ -89,8 +97,8 @@ func TestAuthUsecase_LoginUser(t *testing.T) {
 			tt.setupMock()
 
 			result, err := authUsecase.LoginUser(tt.email, tt.password)
-			assert.Equal(t, tt.expectedError, err)
-			assert.Equal(t, tt.expectedResult, result)
+			assert.Equal(t, err != nil, tt.expectedError)
+			assert.Equal(t, tt.expectedResultChecker(result), true)
 		})
 	}
 }

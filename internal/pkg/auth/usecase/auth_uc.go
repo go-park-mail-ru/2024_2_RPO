@@ -3,7 +3,7 @@ package usecase
 import (
 	"RPO_back/internal/errs"
 	"RPO_back/internal/models"
-	"RPO_back/internal/pkg/auth/repository"
+	"RPO_back/internal/pkg/auth"
 	"RPO_back/internal/pkg/utils/encrypt"
 	"errors"
 	"fmt"
@@ -12,10 +12,10 @@ import (
 )
 
 type AuthUsecase struct {
-	authRepo *repository.AuthRepository
+	authRepo auth.AuthRepo
 }
 
-func CreateAuthUsecase(repo *repository.AuthRepository) *AuthUsecase {
+func CreateAuthUsecase(repo auth.AuthRepo) *AuthUsecase {
 	return &AuthUsecase{
 		authRepo: repo,
 	}
