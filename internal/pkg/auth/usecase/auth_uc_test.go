@@ -188,3 +188,44 @@ func TestAuthUsecase_RegisterUser(t *testing.T) {
 		})
 	}
 }
+
+func TestAuthUsecase_LogoutUser(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockAuthRepo := mocks.NewMockAuthRepo(ctrl)
+	authUsecase := AuthUsecase.CreateAuthUsecase(mockAuthRepo)
+
+	tests := []struct {
+		name          string
+		sessionId     string
+		setupMock     func()
+		expectedError bool
+	}{
+		{
+			name:      "successful logout",
+			sessionId: "valid-session-id",
+			setupMock: func() {
+				mockAuthRepo.EXPECT().KillSessionRedis("valid-session-id").Return(nil)
+			},
+			expectedError: false,
+		},
+		{
+			name:      "session not found",
+			sessionId: "invalid-session-id",
+			setupMock: func() {
+				mockAuthRepo.EXPECT().KillSessionRedis("invalid-session-id").Return(errors.New("session not found"))
+			},
+			expectedError: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tt.setupMock()
+
+			err := authUsecase.LogoutUser(tt.sessionId)
+			assert.Equal(t, err != nil, tt.expectedError)
+		})
+	}
+}
