@@ -145,6 +145,21 @@ func (mr *MockAuthRepoMockRecorder) GetUserByEmail(email interface{}) *gomock.Ca
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUserByEmail", reflect.TypeOf((*MockAuthRepo)(nil).GetUserByEmail), email)
 }
 
+// GetUserByID mocks base method.
+func (m *MockAuthRepo) GetUserByID(userID int) (*models.UserProfile, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetUserByID", userID)
+	ret0, _ := ret[0].(*models.UserProfile)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetUserByID indicates an expected call of GetUserByID.
+func (mr *MockAuthRepoMockRecorder) GetUserByID(userID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUserByID", reflect.TypeOf((*MockAuthRepo)(nil).GetUserByID), userID)
+}
+
 // KillSessionRedis mocks base method.
 func (m *MockAuthRepo) KillSessionRedis(sessionId string) error {
 	m.ctrl.T.Helper()
@@ -189,9 +204,11 @@ func (mr *MockAuthRepoMockRecorder) RetrieveUserIdFromSessionId(sessionId interf
 }
 
 // SetNewPasswordHash mocks base method.
-func (m *MockAuthRepo) SetNewPasswordHash(userID int, newPasswordHash string) {
+func (m *MockAuthRepo) SetNewPasswordHash(userID int, newPasswordHash string) error {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "SetNewPasswordHash", userID, newPasswordHash)
+	ret := m.ctrl.Call(m, "SetNewPasswordHash", userID, newPasswordHash)
+	ret0, _ := ret[0].(error)
+	return ret0
 }
 
 // SetNewPasswordHash indicates an expected call of SetNewPasswordHash.
