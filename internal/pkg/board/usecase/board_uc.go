@@ -3,7 +3,7 @@ package usecase
 import (
 	"RPO_back/internal/errs"
 	"RPO_back/internal/models"
-	"RPO_back/internal/pkg/board/repository"
+	"RPO_back/internal/pkg/board"
 	"errors"
 	"fmt"
 )
@@ -18,10 +18,10 @@ func init() {
 }
 
 type BoardUsecase struct {
-	boardRepository *repository.BoardRepository
+	boardRepository board.BoardRepo
 }
 
-func CreateBoardUsecase(boardRepository *repository.BoardRepository) *BoardUsecase {
+func CreateBoardUsecase(boardRepository board.BoardRepo) *BoardUsecase {
 	return &BoardUsecase{
 		boardRepository: boardRepository,
 	}
