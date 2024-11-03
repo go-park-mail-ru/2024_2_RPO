@@ -6,7 +6,6 @@ import (
 	"RPO_back/internal/pkg/auth/usecase"
 	"RPO_back/internal/pkg/utils/requests"
 	"RPO_back/internal/pkg/utils/responses"
-	"RPO_back/internal/pkg/utils/validate"
 	"errors"
 	"net/http"
 	"time"
@@ -69,13 +68,6 @@ func (this *AuthDelivery) RegisterUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = validate.Validate(user)
-	if err != nil {
-		log.Error("AuthDelivery Validating: ", err)
-		responses.DoBadResponse(w, http.StatusBadRequest, "Validation error")
-		return
-	}
-
 	sessionID, err := this.authUsecase.RegisterUser(&user)
 	if err != nil {
 		log.Error("Auth: ", err)
@@ -132,5 +124,21 @@ func (this *AuthDelivery) LogoutUser(w http.ResponseWriter, r *http.Request) {
 
 // ChangePassword отвечает за смену пароля
 func (d *AuthDelivery) ChangePassword(w http.ResponseWriter, r *http.Request) {
-	panic("Not implemented")
+	funcName := "ChangePassword"
+	userID, ok := requests.GetUserIDOrFail(w, r, funcName)
+	if !ok {
+		return
+	}
+	data := models.ChangePasswordRequest{}
+	err := requests.GetRequestData(r, &data)
+	if err != nil {
+		responses.DoBadResponse(w, http.StatusBadRequest, "bad request")
+		return
+	}
+	err = d.authUsecase.ChangePassword(userID, data.OldPassword, data.NewPassword)
+	if err != nil {
+		responses.DoBadResponse(w, 500, "internal error")
+		return
+	}
+	responses.DoEmptyOkResponce(w)
 }

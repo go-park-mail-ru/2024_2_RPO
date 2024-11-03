@@ -98,6 +98,32 @@ func (repo *AuthRepository) GetUserByEmail(email string) (user *models.UserProfi
 	return user, nil
 }
 
+// GetUserByID получает данные пользователя из базы по id
+func (repo *AuthRepository) GetUserByID(userID int) (user *models.UserProfile, err error) {
+	query := `
+	SELECT u_id, nickname, email, description,
+	joined_at, updated_at, password_hash
+	FROM "user"
+	WHERE u_id=$1;`
+	user = &models.UserProfile{}
+	err = repo.db.QueryRow(context.Background(), query, userID).Scan(
+		&user.ID,
+		&user.Name,
+		&user.Email,
+		&user.Description,
+		&user.JoinedAt,
+		&user.UpdatedAt,
+		&user.PasswordHash,
+	)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, auth.ErrWrongCredentials
+		}
+		return nil, fmt.Errorf("GetUserByID: %w", err)
+	}
+	return user, nil
+}
+
 // CreateUser создаёт пользователя (или не создаёт, если повторяются креды)
 func (repo *AuthRepository) CreateUser(user *models.UserRegistration, hashedPassword string) (newUser *models.UserProfile, err error) {
 	newUser = &models.UserProfile{}
@@ -140,6 +166,18 @@ func (repo *AuthRepository) CheckUniqueCredentials(nickname string, email string
 }
 
 // SetNewPasswordHash устанавливает пользователю новый хеш пароля
-func (repo *AuthRepository) SetNewPasswordHash(userID int, newPasswordHash string) {
-	panic("Not implemented")
+func (repo *AuthRepository) SetNewPasswordHash(userID int, newPasswordHash string) error {
+	query := `
+	UPDATE "user"
+	SET password_hash=$1
+	WHERE u_id=$2;
+	`
+	tag, err := repo.db.Exec(context.Background(), query, newPasswordHash, userID)
+	if err != nil {
+		return fmt.Errorf("SetNewPasswordHash: %w", err)
+	}
+	if tag.RowsAffected() == 0 {
+		return fmt.Errorf("SetNewPasswordHash: No password change done")
+	}
+	return nil
 }
