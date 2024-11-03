@@ -28,3 +28,8 @@ type LoginRequest struct {
 	Email    string `json:"email"`
 	Password string `json:"password"`
 }
+
+type ChangePasswordRequest struct {
+	NewPassword string `json:"newPassword" validate:"required,min=8,max=50"`
+	OldPassword string `json:"oldPassword"`
+}

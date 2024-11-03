@@ -3,8 +3,10 @@ package requests
 import (
 	"RPO_back/internal/pkg/middleware/session"
 	"RPO_back/internal/pkg/utils/responses"
+	"RPO_back/internal/pkg/utils/validate"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
 	"strconv"
@@ -23,6 +25,12 @@ func GetRequestData(r *http.Request, requestData interface{}) error {
 	defer r.Body.Close()
 
 	if err := json.Unmarshal(body, &requestData); err != nil {
+		return err
+	}
+
+	err = validate.Validate(requestData)
+	if err != nil {
+		fmt.Println(err)
 		return err
 	}
 
