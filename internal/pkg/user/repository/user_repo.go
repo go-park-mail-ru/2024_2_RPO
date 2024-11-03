@@ -3,12 +3,18 @@ package repository
 import (
 	"RPO_back/internal/errs"
 	"RPO_back/internal/models"
+	"RPO_back/internal/pkg/auth"
+	"RPO_back/internal/pkg/utils/uploads"
 	"context"
 	"errors"
 	"fmt"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
+)
+
+const (
+	defaultUserAvatar string = "/static/img/KarlMarks.jpg"
 )
 
 type UserRepository struct {
@@ -24,14 +30,23 @@ func CreateUserRepository(db *pgxpool.Pool) *UserRepository {
 // GetUserProfile возвращает профиль пользователя
 func (r *UserRepository) GetUserProfile(userID int) (profile *models.UserProfile, err error) {
 	query := `
-        SELECT u.u_id, u.nickname, u.email, u.description, u.joined_at, u.updated_at
+        SELECT
+		u.u_id,
+		u.nickname,
+		u.email,
+		u.description,
+		u.joined_at,
+		u.updated_at,
+		COALESCE(f.file_uuid::text, ''),
+		COALESCE(f.file_extension, '')
         FROM "user" AS u
 		LEFT JOIN user_uploaded_file AS f ON u.avatar_file_uuid=f.file_uuid
-        WHERE u_id = $1
+        WHERE u_id = $1;
     `
 	row := r.db.QueryRow(context.Background(), query, userID)
 
 	var user models.UserProfile
+	var fileUUID, fileExt string
 	err = row.Scan(
 		&user.ID,
 		&user.Name,
@@ -39,6 +54,8 @@ func (r *UserRepository) GetUserProfile(userID int) (profile *models.UserProfile
 		&user.Description,
 		&user.JoinedAt,
 		&user.UpdatedAt,
+		&fileUUID,
+		&fileExt,
 	)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -46,13 +63,48 @@ func (r *UserRepository) GetUserProfile(userID int) (profile *models.UserProfile
 		}
 		return nil, fmt.Errorf("GetUserById: %w", err)
 	}
+	user.AvatarImageURL = uploads.JoinFileName(fileUUID, fileExt, defaultUserAvatar)
 
 	return &user, nil
 }
 
 // UpdateUserProfile обновляет профиль пользователя
 func (r *UserRepository) UpdateUserProfile(userID int, data models.UserProfileUpdate) (newProfile *models.UserProfile, err error) {
-	panic("Not implemented")
+	query1 := `SELECT COUNT(*) FROM "user" WHERE email=$1 AND u_id!=$2;`
+	query2 := `SELECT COUNT(*) FROM "user" WHERE nickname=$1 AND u_id!=$2;`
+	query3 := `
+	UPDATE "user"
+	SET email=$1, nickname=$2
+	WHERE u_id=$3;`
+	var nicknameCount, emailCount int
+	row := r.db.QueryRow(context.Background(), query1, data.Email, userID)
+	err = row.Scan(&emailCount)
+	if err != nil {
+		return nil, fmt.Errorf("UpdateUserProfile (check unique email): %w", err)
+	}
+	row = r.db.QueryRow(context.Background(), query2, data.NewName, userID)
+	err = row.Scan(&nicknameCount)
+	if err != nil {
+		return nil, fmt.Errorf("UpdateUserProfile (check unique nick): %w", err)
+	}
+	if nicknameCount != 0 && emailCount != 0 {
+		return nil, fmt.Errorf("UpdateUserProfile (check unique): %w %w", auth.ErrBusyEmail, auth.ErrBusyNickname)
+	}
+	if nicknameCount != 0 {
+		return nil, fmt.Errorf("UpdateUserProfile (check unique): %w", auth.ErrBusyNickname)
+	}
+	if emailCount != 0 {
+		return nil, fmt.Errorf("UpdateUserProfile (check unique): %w", auth.ErrBusyEmail)
+	}
+	tag, err := r.db.Exec(context.Background(), query3, data.Email, data.NewName, userID)
+	if err != nil {
+		return nil, fmt.Errorf("UpdateUserProfile (action): %w", err)
+	}
+	if tag.RowsAffected() == 0 {
+		return nil, fmt.Errorf("UpdateUserProfile (action): UPDATE made no changes")
+	}
+	newProfile, err = r.GetUserProfile(userID)
+	return
 }
 
 // TODO загрузка аватарки

@@ -3,12 +3,13 @@ package models
 import "time"
 
 type Card struct {
-	Id          int       `json:"id"`
-	Title       string    `json:"title"`
-	Description string    `json:"description"`
-	ColumnId    int       `json:"columnId"`
-	CreatedAt   time.Time `json:"createdAt"`
-	UpdatedAt   time.Time `json:"updatedAt"`
+	ID                 int       `json:"id"`
+	Title              string    `json:"title"`
+	Description        string    `json:"description"`
+	ColumnID           int       `json:"columnId"`
+	CreatedAt          time.Time `json:"createdAt"`
+	UpdatedAt          time.Time `json:"updatedAt"`
+	BackgroundImageURL string    `json:"backgroundImageUrl,omitempty"`
 }
 
 type CardPatchRequest struct {

@@ -378,10 +378,10 @@ func (d *BoardDelivery) UpdateColumn(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	columnID, err := requests.GetIDFromRequest(r, "columnID", "column_")
+	columnID, err := requests.GetIDFromRequest(r, "columnId", "column_")
 	if err != nil {
 		responses.DoBadResponse(w, http.StatusBadRequest, "bad request")
-		log.Warn("boardID is invalid")
+		log.Warn("columnID is invalid")
 		return
 	}
 
@@ -398,7 +398,7 @@ func (d *BoardDelivery) UpdateColumn(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	responses.DoJSONResponce(w, updatedCol, http.StatusCreated)
+	responses.DoJSONResponce(w, updatedCol, http.StatusOK)
 }
 
 // DeleteColumn удаляет колонку

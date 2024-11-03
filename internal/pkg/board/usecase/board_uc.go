@@ -221,10 +221,10 @@ func (uc *BoardUsecase) CreateNewCard(userID int, boardID int, data *models.Card
 	}
 
 	return &models.Card{
-		Id:          card.Id,
+		ID:          card.ID,
 		Title:       card.Title,
 		Description: card.Description,
-		ColumnId:    card.ColumnId,
+		ColumnID:    card.ColumnID,
 		CreatedAt:   card.CreatedAt,
 		UpdatedAt:   card.UpdatedAt,
 	}, nil
@@ -249,10 +249,10 @@ func (uc *BoardUsecase) UpdateCard(userID int, boardID int, cardID int, data *mo
 	}
 
 	return &models.Card{
-		Id:          updatedCard.Id,
+		ID:          updatedCard.ID,
 		Title:       updatedCard.Title,
 		Description: updatedCard.Description,
-		ColumnId:    updatedCard.ColumnId,
+		ColumnID:    updatedCard.ColumnID,
 		CreatedAt:   updatedCard.CreatedAt,
 		UpdatedAt:   updatedCard.UpdatedAt,
 	}, nil

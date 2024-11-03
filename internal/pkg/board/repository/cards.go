@@ -15,10 +15,8 @@ func (r *BoardRepository) GetCardsForBoard(boardID int) (cards []models.Card, er
 		c.card_id,
 		c.col_id,
 		c.title,
-		c.order_index,
 		c.created_at,
-		c.updated_at,
-		c.cover_file_uuid
+		c.updated_at
 	FROM card c
 	JOIN kanban_column kc ON c.col_id = kc.col_id
 	WHERE kc.board_id = $1;
@@ -37,14 +35,14 @@ func (r *BoardRepository) GetCardsForBoard(boardID int) (cards []models.Card, er
 
 	for rows.Next() {
 		var card models.Card
-		if err := rows.Scan(
-			&card.Id,
+		err := rows.Scan(
+			&card.ID,
+			&card.ColumnID,
 			&card.Title,
-			&card.Description,
-			&card.ColumnId,
 			&card.CreatedAt,
 			&card.UpdatedAt,
-		); err != nil {
+		)
+		if err != nil {
 			return nil, err
 		}
 		cards = append(cards, card)
@@ -101,18 +99,15 @@ func (r *BoardRepository) CreateNewCard(boardID int, columnID int, title string)
 		WHERE col_id = $2 AND board_id = $1
 	)
 	INSERT INTO card (col_id, title, created_at, updated_at, order_index)
-	SELECT $2, $3, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, COALESCE(MAX(order_index), 0) + 1
-	FROM card
-	WHERE col_id = $2
-	RETURNING card_id, col_id, title, created_at, updated_at, order_index;
+	VALUES ($2, $3, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0) -- Временное решение, TODO для drag-n-drop сделать подзапрос
+	RETURNING card_id, col_id, title, created_at, updated_at;
 	`
 
 	newCard = &models.Card{}
 	if err = r.db.QueryRow(context.Background(), query, boardID, columnID, title).Scan(
-		&newCard.Id,
+		&newCard.ID,
+		&newCard.ColumnID,
 		&newCard.Title,
-		&newCard.Description,
-		&newCard.ColumnId,
 		&newCard.CreatedAt,
 		&newCard.UpdatedAt,
 	); err != nil {
@@ -140,10 +135,10 @@ func (r *BoardRepository) UpdateCard(boardID int, cardID int, data models.CardPa
 	updateCard = &models.Card{}
 
 	if err := r.db.QueryRow(context.Background(), query, data.NewTitle, data.NewDescription, data.ColumnId, boardID, cardID).Scan(
-		&updateCard.Id,
+		&updateCard.ID,
 		&updateCard.Title,
 		&updateCard.Description,
-		&updateCard.ColumnId,
+		&updateCard.ColumnID,
 		&updateCard.CreatedAt,
 		&updateCard.UpdatedAt,
 	); err != nil {

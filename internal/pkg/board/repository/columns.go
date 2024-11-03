@@ -27,7 +27,7 @@ func (r *BoardRepository) CreateColumn(boardId int, title string) (newColumn *mo
 }
 
 // UpdateColumn обновляет колонку на канбане
-func (r *BoardRepository) UpdateColumn(boardId int, columnId int, data models.ColumnRequest) (updateColumn *models.Column, err error) {
+func (r *BoardRepository) UpdateColumn(boardID int, columnID int, data models.ColumnRequest) (updateColumn *models.Column, err error) {
 	query := `
 		UPDATE kanban_column
 		SET title = $1, updated_at = CURRENT_TIMESTAMP
@@ -36,7 +36,7 @@ func (r *BoardRepository) UpdateColumn(boardId int, columnId int, data models.Co
 	`
 
 	updateColumn = &models.Column{}
-	if err = r.db.QueryRow(context.Background(), query, data.NewTitle, boardId, columnId).Scan(
+	if err = r.db.QueryRow(context.Background(), query, data.NewTitle, columnID, boardID).Scan(
 		&updateColumn.Id,
 		&updateColumn.Title,
 	); err != nil {
@@ -48,7 +48,6 @@ func (r *BoardRepository) UpdateColumn(boardId int, columnId int, data models.Co
 
 // DeleteColumn убирает колонку с канбана
 func (r *BoardRepository) DeleteColumn(boardID int, columnID int) (err error) {
-	fmt.Printf("%d %d\n", boardID, columnID)
 	query := `
 		DELETE FROM kanban_column
 		WHERE col_id = $1 AND board_id = $2;
@@ -56,11 +55,12 @@ func (r *BoardRepository) DeleteColumn(boardID int, columnID int) (err error) {
 
 	tag, err := r.db.Exec(context.Background(), query, columnID, boardID)
 	if err != nil {
-		return err
+		return fmt.Errorf("DeleteColumn (query): %w", err)
 	}
 	if tag.RowsAffected() == 0 {
 		return fmt.Errorf("DeleteColumn (query): %w", errs.ErrNotFound)
 	}
+	// Лишние карточки удалятся каскадно (за счёт ограничения FOREIGN KEY)
 
 	return nil
 }

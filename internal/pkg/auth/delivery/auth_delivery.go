@@ -14,8 +14,6 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-const sessionIdCookieName string = "session_id"
-
 type AuthDelivery struct {
 	authUsecase *usecase.AuthUsecase
 }
@@ -37,7 +35,7 @@ func (this *AuthDelivery) LoginUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	sessionId, err := this.authUsecase.LoginUser(loginRequest.Email, loginRequest.Password)
+	sessionID, err := this.authUsecase.LoginUser(loginRequest.Email, loginRequest.Password)
 	if err != nil {
 		if errors.Is(err, auth.ErrWrongCredentials) {
 			responses.DoBadResponse(w, 401, "Wrong credentials")
@@ -50,8 +48,8 @@ func (this *AuthDelivery) LoginUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	cookie := http.Cookie{
-		Name:     "session_id",
-		Value:    sessionId,
+		Name:     auth.SessionCookieName,
+		Value:    sessionID,
 		Path:     "/",
 		HttpOnly: true,
 		MaxAge:   int((7 * 24 * time.Hour).Seconds()),
@@ -78,7 +76,7 @@ func (this *AuthDelivery) RegisterUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	sessionId, err := this.authUsecase.RegisterUser(&user)
+	sessionID, err := this.authUsecase.RegisterUser(&user)
 	if err != nil {
 		log.Error("Auth: ", err)
 		if errors.Is(err, auth.ErrBusyEmail) && errors.Is(err, auth.ErrBusyNickname) {
@@ -94,8 +92,8 @@ func (this *AuthDelivery) RegisterUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	cookie := http.Cookie{
-		Name:     sessionIdCookieName,
-		Value:    sessionId,
+		Name:     auth.SessionCookieName,
+		Value:    sessionID,
 		SameSite: http.SameSiteStrictMode,
 		Path:     "/",
 		HttpOnly: true,
@@ -108,7 +106,7 @@ func (this *AuthDelivery) RegisterUser(w http.ResponseWriter, r *http.Request) {
 
 // LogoutUser разлогинивает пользователя
 func (this *AuthDelivery) LogoutUser(w http.ResponseWriter, r *http.Request) {
-	cookie, err := r.Cookie(sessionIdCookieName)
+	cookie, err := r.Cookie(auth.SessionCookieName)
 	if err != nil {
 		responses.DoBadResponse(w, http.StatusBadRequest, "You are not logged in")
 		return
@@ -119,7 +117,7 @@ func (this *AuthDelivery) LogoutUser(w http.ResponseWriter, r *http.Request) {
 	err = this.authUsecase.LogoutUser(sessionID)
 
 	http.SetCookie(w, &http.Cookie{
-		Name:   sessionIdCookieName,
+		Name:   auth.SessionCookieName,
 		Value:  "",
 		Path:   "/",
 		MaxAge: -1,

@@ -1,6 +1,7 @@
 package session
 
 import (
+	auth "RPO_back/internal/pkg/auth"
 	"RPO_back/internal/pkg/auth/repository"
 	"context"
 	"net/http"
@@ -24,7 +25,7 @@ func CreateSessionMiddleware(authRepo *repository.AuthRepository) *SessionMiddle
 
 func (mw *SessionMiddleware) Middleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		cookie, err := r.Cookie("session_id")
+		cookie, err := r.Cookie(auth.SessionCookieName)
 		if err != nil {
 			next.ServeHTTP(w, r)
 			return
@@ -33,7 +34,7 @@ func (mw *SessionMiddleware) Middleware(next http.Handler) http.Handler {
 		userID, err := mw.authRepo.RetrieveUserIdFromSessionId(cookie.Value)
 		if err != nil {
 			http.SetCookie(w, &http.Cookie{
-				Name:   "session_id",
+				Name:   auth.SessionCookieName,
 				MaxAge: -1,
 			})
 			next.ServeHTTP(w, r)

@@ -22,13 +22,14 @@ func CreateUserDelivery(userUC *usecase.UserUsecase) *UserDelivery {
 
 // GetMyProfile возвращает пользователю его профиль
 func (d *UserDelivery) GetMyProfile(w http.ResponseWriter, r *http.Request) {
-	userID, ok := requests.GetUserIDOrFail(w, r, "GetMyProfile")
+	funcName := "GetMyProfile"
+	userID, ok := requests.GetUserIDOrFail(w, r, funcName)
 	if !ok {
 		return
 	}
 	profile, err := d.userUC.GetMyProfile(userID)
 	if err != nil {
-		responses.ResponseErrorAndLog(w, err, "GetMyProfile")
+		responses.ResponseErrorAndLog(w, err, funcName)
 		return
 	}
 	responses.DoJSONResponce(w, profile, 200)
@@ -36,7 +37,8 @@ func (d *UserDelivery) GetMyProfile(w http.ResponseWriter, r *http.Request) {
 
 // UpdateMyProfile обновляет профиль пользователя и возвращает обновлённый профиль
 func (d *UserDelivery) UpdateMyProfile(w http.ResponseWriter, r *http.Request) {
-	userID, ok := requests.GetUserIDOrFail(w, r, "UpdateMyProfile")
+	funcName := "UpdateMyProfile"
+	userID, ok := requests.GetUserIDOrFail(w, r, funcName)
 	if !ok {
 		return
 	}
@@ -44,10 +46,11 @@ func (d *UserDelivery) UpdateMyProfile(w http.ResponseWriter, r *http.Request) {
 	err := requests.GetRequestData(r, &data)
 	if err != nil {
 		responses.DoBadResponse(w, 400, "bad request")
+		return
 	}
 	newProfile, err := d.userUC.UpdateMyProfile(userID, &data)
 	if err != nil {
-		responses.ResponseErrorAndLog(w, err, "UpdateMyProfile")
+		responses.ResponseErrorAndLog(w, err, funcName)
 		return
 	}
 	responses.DoJSONResponce(w, newProfile, 200)
