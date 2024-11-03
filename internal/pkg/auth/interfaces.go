@@ -6,6 +6,7 @@ import (
 
 //go:generate mockgen -source=interfaces.go -destination=mocks/mock.go
 
+
 type AuthUsecase interface {
 	LoginUser(email string, password string) (sessionId string, err error)
 	RegisterUser(user *models.UserRegistration) (sessionId string, err error)
