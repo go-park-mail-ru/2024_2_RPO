@@ -46,7 +46,7 @@ func (r *BoardRepository) GetUserProfile(userID int) (user *models.UserProfile, 
 func (r *BoardRepository) GetMemberPermissions(boardID int, memberUserID int, getAdderInfo bool) (member *models.MemberWithPermissions, err error) {
 	query := `
 	SELECT
-	ub.role
+	ub.role,
 	ub.added_at,
 	ub.updated_at,
 	COALESCE(ub.added_by, -1),
@@ -242,7 +242,7 @@ func (r *BoardRepository) AddMember(boardID int, adderID int, memberUserID int) 
 	`
 	member, err = r.GetMemberPermissions(boardID, memberUserID, false)
 
-	if (err != nil) && (!errors.Is(err, errs.ErrNotFound)) {
+	if (err != nil) && (!errors.Is(err, errs.ErrNotPermitted)) {
 		return nil, fmt.Errorf("AddMember (get member): %w", err)
 	}
 	if err == nil {

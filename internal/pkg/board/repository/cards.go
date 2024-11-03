@@ -11,7 +11,7 @@ import (
 // GetCardsForBoard возвращает все карточки, размещённые на доске
 func (r *BoardRepository) GetCardsForBoard(boardID int) (cards []models.Card, err error) {
 	query := `
-	SELECT 
+	SELECT
 		c.card_id,
 		c.col_id,
 		c.title,
@@ -32,6 +32,8 @@ func (r *BoardRepository) GetCardsForBoard(boardID int) (cards []models.Card, er
 	}
 
 	defer rows.Close()
+
+	cards = make([]models.Card, 0)
 
 	for rows.Next() {
 		var card models.Card
@@ -54,15 +56,11 @@ func (r *BoardRepository) GetCardsForBoard(boardID int) (cards []models.Card, er
 // GetColumnsForBoard возвращает все колонки, которые есть на доске
 func (r *BoardRepository) GetColumnsForBoard(boardID int) (columns []models.Column, err error) {
 	query := `
-	SELECT 
-		col_id
-		board_id
+	SELECT
+		col_id,
 		title
-		created_at
-		updated_at
-		order_index
 	FROM kanban_column
-	WHERE board_id = $1
+	WHERE board_id = $1;
 	`
 	rows, err := r.db.Query(context.Background(), query, boardID)
 	if err != nil {
@@ -73,6 +71,8 @@ func (r *BoardRepository) GetColumnsForBoard(boardID int) (columns []models.Colu
 	}
 
 	defer rows.Close()
+
+	columns = make([]models.Column, 0)
 
 	for rows.Next() {
 		var column models.Column
@@ -126,15 +126,15 @@ func (r *BoardRepository) CreateNewCard(boardID int, columnID int, title string)
 func (r *BoardRepository) UpdateCard(boardID int, cardID int, data models.CardPatchRequest) (updateCard *models.Card, err error) {
 	query := `
 	UPDATE card
-	SET 
+	SET
 		title = COALESCE(NULLIF($1, ''), title),
 		description = COALESCE(NULLIF($2, ''), description),
 		updated_at = CURRENT_TIMESTAMP
 	FROM kanban_column
-	WHERE card.col_id = kanban_column.col_id 
+	WHERE card.col_id = kanban_column.col_id
 		AND kanban_column.board_id = $3
 		AND card.card_id = $4
-	RETURNING 
+	RETURNING
 		card.card_id, card.title, card.description, card.col_id, card.created_at, card.updated_at
 	`
 	updateCard = &models.Card{}

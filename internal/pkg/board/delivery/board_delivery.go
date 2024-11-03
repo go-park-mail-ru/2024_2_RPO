@@ -1,13 +1,10 @@
 package delivery
 
 import (
-	"RPO_back/internal/errs"
 	"RPO_back/internal/models"
 	"RPO_back/internal/pkg/board/usecase"
-	"RPO_back/internal/pkg/middleware/session"
 	"RPO_back/internal/pkg/utils/requests"
 	"RPO_back/internal/pkg/utils/responses"
-	"errors"
 	"net/http"
 	"slices"
 
@@ -24,7 +21,8 @@ func CreateBoardDelivery(boardUsecase *usecase.BoardUsecase) *BoardDelivery {
 
 // CreateNewBoard создаёт новую доску и возвращает информацию о ней
 func (d *BoardDelivery) CreateNewBoard(w http.ResponseWriter, r *http.Request) {
-	userID, ok := requests.GetUserIDOrFail(w, r, "CreateNewBoard")
+	funcName := "CreateNewBoard"
+	userID, ok := requests.GetUserIDOrFail(w, r, funcName)
 	if !ok {
 		return
 	}
@@ -33,13 +31,13 @@ func (d *BoardDelivery) CreateNewBoard(w http.ResponseWriter, r *http.Request) {
 	err := requests.GetRequestData(r, &data)
 	if err != nil {
 		responses.DoBadResponse(w, http.StatusBadRequest, "bad request")
-		log.Warn("CreateNewBoard: ", err)
+		log.Warn(funcName, ": ", err)
 		return
 	}
 
 	newBoard, err := d.boardUsecase.CreateNewBoard(userID, data)
 	if err != nil {
-		responses.ResponseErrorAndLog(w, err, "CreateNewBoard")
+		responses.ResponseErrorAndLog(w, err, funcName)
 		return
 	}
 	responses.DoJSONResponce(w, newBoard, http.StatusCreated)
@@ -144,6 +142,7 @@ func (d *BoardDelivery) AddMember(w http.ResponseWriter, r *http.Request) {
 	err = requests.GetRequestData(r, &data)
 	if err != nil {
 		responses.DoBadResponse(w, http.StatusBadRequest, "bad request")
+		return
 	}
 
 	newMember, err := d.boardUsecase.AddMember(userID, boardID, &data)
@@ -191,28 +190,37 @@ func (d *BoardDelivery) UpdateMemberRole(w http.ResponseWriter, r *http.Request)
 
 // RemoveMember удаляет участника с доски
 func (d *BoardDelivery) RemoveMember(w http.ResponseWriter, r *http.Request) {
-	userID, ok := requests.GetUserIDOrFail(w, r, "RemoveMember")
+	funcName := "RemoveMember"
+	userID, ok := requests.GetUserIDOrFail(w, r, funcName)
 	if !ok {
 		return
 	}
+
 	boardID, err := requests.GetIDFromRequest(r, "boardId", "board_")
 	if err != nil {
 		responses.DoBadResponse(w, http.StatusBadRequest, "bad request")
 		return
 	}
+
 	memberID, err := requests.GetIDFromRequest(r, "userId", "user_")
 	if err != nil {
 		responses.DoBadResponse(w, http.StatusBadRequest, "bad request")
 		return
 	}
+
 	err = d.boardUsecase.RemoveMember(userID, boardID, memberID)
+	if err != nil {
+		responses.ResponseErrorAndLog(w, err, funcName)
+		return
+	}
+	responses.DoEmptyOkResponce(w)
 }
 
 // GetBoardContent получает все карточки и колонки с доски, а также информацию о доске
 func (d *BoardDelivery) GetBoardContent(w http.ResponseWriter, r *http.Request) {
-	userID, hasUserID := session.UserIDFromContext(r.Context())
-	if !hasUserID {
-		responses.DoBadResponse(w, http.StatusUnauthorized, "unauthorized")
+	funcName := "GetBoardContent"
+	userID, ok := requests.GetUserIDOrFail(w, r, funcName)
+	if !ok {
 		return
 	}
 
@@ -224,15 +232,7 @@ func (d *BoardDelivery) GetBoardContent(w http.ResponseWriter, r *http.Request) 
 
 	content, err := d.boardUsecase.GetBoardContent(userID, boardID)
 	if err != nil {
-		if errors.Is(err, errs.ErrNotPermitted) {
-			responses.DoBadResponse(w, http.StatusForbidden, "No rights to act")
-			return
-		}
-		if errors.Is(err, errs.ErrNotFound) {
-			responses.DoBadResponse(w, http.StatusNotFound, "No such element was found")
-			return
-		}
-		responses.DoBadResponse(w, http.StatusInternalServerError, "Internal Server Error")
+		responses.ResponseErrorAndLog(w, err, funcName)
 		return
 	}
 
@@ -241,9 +241,9 @@ func (d *BoardDelivery) GetBoardContent(w http.ResponseWriter, r *http.Request) 
 
 // CreateNewCard создаёт новую карточку и возвращает её
 func (d *BoardDelivery) CreateNewCard(w http.ResponseWriter, r *http.Request) {
-	userID, hasUserID := session.UserIDFromContext(r.Context())
-	if hasUserID == false {
-		responses.DoBadResponse(w, http.StatusUnauthorized, "unathorized")
+	funcName := "CreateNewCard"
+	userID, ok := requests.GetUserIDOrFail(w, r, funcName)
+	if !ok {
 		return
 	}
 
@@ -261,15 +261,7 @@ func (d *BoardDelivery) CreateNewCard(w http.ResponseWriter, r *http.Request) {
 
 	newCard, err := d.boardUsecase.CreateNewCard(userID, boardID, requestData)
 	if err != nil {
-		if errors.Is(err, errs.ErrNotPermitted) {
-			responses.DoBadResponse(w, http.StatusForbidden, "No rights to act")
-			return
-		}
-		if errors.Is(err, errs.ErrNotFound) {
-			responses.DoBadResponse(w, http.StatusNotFound, "No such element was found")
-			return
-		}
-		responses.DoBadResponse(w, http.StatusInternalServerError, "Internal Server Error")
+		responses.ResponseErrorAndLog(w, err, funcName)
 		return
 	}
 
@@ -278,9 +270,9 @@ func (d *BoardDelivery) CreateNewCard(w http.ResponseWriter, r *http.Request) {
 
 // UpdateCard обновляет карточку и возвращает обновлённую версию
 func (d *BoardDelivery) UpdateCard(w http.ResponseWriter, r *http.Request) {
-	userID, hasUserID := session.UserIDFromContext(r.Context())
-	if hasUserID == false {
-		responses.DoBadResponse(w, http.StatusUnauthorized, "unathorized")
+	funcName := "UpdateCard"
+	userID, ok := requests.GetUserIDOrFail(w, r, funcName)
+	if !ok {
 		return
 	}
 
@@ -305,15 +297,7 @@ func (d *BoardDelivery) UpdateCard(w http.ResponseWriter, r *http.Request) {
 
 	updatedCard, err := d.boardUsecase.UpdateCard(userID, boardID, cardID, requestData)
 	if err != nil {
-		if errors.Is(err, errs.ErrNotPermitted) {
-			responses.DoBadResponse(w, http.StatusForbidden, "No rights to act")
-			return
-		}
-		if errors.Is(err, errs.ErrNotFound) {
-			responses.DoBadResponse(w, http.StatusNotFound, "No such element was found")
-			return
-		}
-		responses.DoBadResponse(w, http.StatusInternalServerError, "Internal Server Error")
+		responses.ResponseErrorAndLog(w, err, funcName)
 		return
 	}
 
@@ -322,9 +306,9 @@ func (d *BoardDelivery) UpdateCard(w http.ResponseWriter, r *http.Request) {
 
 // DeleteCard удаляет карточку
 func (d *BoardDelivery) DeleteCard(w http.ResponseWriter, r *http.Request) {
-	userID, hasUserID := session.UserIDFromContext(r.Context())
-	if hasUserID == false {
-		responses.DoBadResponse(w, http.StatusUnauthorized, "unathorized")
+	funcName := "DeleteCard"
+	userID, ok := requests.GetUserIDOrFail(w, r, funcName)
+	if !ok {
 		return
 	}
 
@@ -342,15 +326,7 @@ func (d *BoardDelivery) DeleteCard(w http.ResponseWriter, r *http.Request) {
 
 	err = d.boardUsecase.DeleteCard(userID, boardID, cardID)
 	if err != nil {
-		if errors.Is(err, errs.ErrNotPermitted) {
-			responses.DoBadResponse(w, http.StatusForbidden, "No rights to act")
-			return
-		}
-		if errors.Is(err, errs.ErrNotFound) {
-			responses.DoBadResponse(w, http.StatusNotFound, "No such element was found")
-			return
-		}
-		responses.DoBadResponse(w, http.StatusInternalServerError, "Internal Server Error")
+		responses.ResponseErrorAndLog(w, err, funcName)
 		return
 	}
 
@@ -359,9 +335,9 @@ func (d *BoardDelivery) DeleteCard(w http.ResponseWriter, r *http.Request) {
 
 // CreateColumn создаёт колонку канбана на доске и возвращает её
 func (d *BoardDelivery) CreateColumn(w http.ResponseWriter, r *http.Request) {
-	userID, hasUserID := session.UserIDFromContext(r.Context())
-	if hasUserID == false {
-		responses.DoBadResponse(w, http.StatusUnauthorized, "unathorized")
+	funcName := "CreateColumn"
+	userID, ok := requests.GetUserIDOrFail(w, r, funcName)
+	if !ok {
 		return
 	}
 
@@ -380,15 +356,7 @@ func (d *BoardDelivery) CreateColumn(w http.ResponseWriter, r *http.Request) {
 
 	newColumn, err := d.boardUsecase.CreateColumn(userID, boardID, requestData)
 	if err != nil {
-		if errors.Is(err, errs.ErrNotPermitted) {
-			responses.DoBadResponse(w, http.StatusForbidden, "No rights to act")
-			return
-		}
-		if errors.Is(err, errs.ErrNotFound) {
-			responses.DoBadResponse(w, http.StatusNotFound, "No such element was found")
-			return
-		}
-		responses.DoBadResponse(w, http.StatusInternalServerError, "Internal Server Error")
+		responses.ResponseErrorAndLog(w, err, funcName)
 		return
 	}
 
@@ -397,21 +365,23 @@ func (d *BoardDelivery) CreateColumn(w http.ResponseWriter, r *http.Request) {
 
 // UpdateColumn изменяет колонку и возвращает её обновлённую версию
 func (d *BoardDelivery) UpdateColumn(w http.ResponseWriter, r *http.Request) {
-	userID, hasUserID := session.UserIDFromContext(r.Context())
-	if hasUserID == false {
-		responses.DoBadResponse(w, http.StatusUnauthorized, "unathorized")
+	funcName := "UpdateColumn"
+	userID, ok := requests.GetUserIDOrFail(w, r, funcName)
+	if !ok {
 		return
 	}
 
 	boardID, err := requests.GetIDFromRequest(r, "boardId", "board_")
 	if err != nil {
 		responses.DoBadResponse(w, http.StatusBadRequest, "bad request")
+		log.Warn("boardID is invalid")
 		return
 	}
 
-	cardID, err := requests.GetIDFromRequest(r, "cardId", "card_")
+	columnID, err := requests.GetIDFromRequest(r, "columnID", "column_")
 	if err != nil {
 		responses.DoBadResponse(w, http.StatusBadRequest, "bad request")
+		log.Warn("boardID is invalid")
 		return
 	}
 
@@ -422,17 +392,9 @@ func (d *BoardDelivery) UpdateColumn(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	updatedCol, err := d.boardUsecase.UpdateColumn(userID, boardID, cardID, requestData)
+	updatedCol, err := d.boardUsecase.UpdateColumn(userID, boardID, columnID, requestData)
 	if err != nil {
-		if errors.Is(err, errs.ErrNotPermitted) {
-			responses.DoBadResponse(w, http.StatusForbidden, "No rights to act")
-			return
-		}
-		if errors.Is(err, errs.ErrNotFound) {
-			responses.DoBadResponse(w, http.StatusNotFound, "No such element was found")
-			return
-		}
-		responses.DoBadResponse(w, http.StatusInternalServerError, "Internal Server Error")
+		responses.ResponseErrorAndLog(w, err, funcName)
 		return
 	}
 
@@ -441,9 +403,9 @@ func (d *BoardDelivery) UpdateColumn(w http.ResponseWriter, r *http.Request) {
 
 // DeleteColumn удаляет колонку
 func (d *BoardDelivery) DeleteColumn(w http.ResponseWriter, r *http.Request) {
-	userID, hasUserID := session.UserIDFromContext(r.Context())
-	if hasUserID == false {
-		responses.DoBadResponse(w, http.StatusUnauthorized, "unathorized")
+	funcName := "DeleteColumn"
+	userID, ok := requests.GetUserIDOrFail(w, r, funcName)
+	if !ok {
 		return
 	}
 
@@ -461,15 +423,7 @@ func (d *BoardDelivery) DeleteColumn(w http.ResponseWriter, r *http.Request) {
 
 	err = d.boardUsecase.DeleteColumn(userID, boardID, columnID)
 	if err != nil {
-		if errors.Is(err, errs.ErrNotPermitted) {
-			responses.DoBadResponse(w, http.StatusForbidden, "No rights to act")
-			return
-		}
-		if errors.Is(err, errs.ErrNotFound) {
-			responses.DoBadResponse(w, http.StatusNotFound, "No such element was found")
-			return
-		}
-		responses.DoBadResponse(w, http.StatusInternalServerError, "Internal Server Error")
+		responses.ResponseErrorAndLog(w, err, funcName)
 		return
 	}
 

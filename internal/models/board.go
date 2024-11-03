@@ -10,7 +10,7 @@ type Board struct {
 	ID                 int       `json:"id"`
 	Name               string    `json:"name"`
 	Description        string    `json:"description"`
-	BackgroundImageUrl string    `json:"background,omitempty"`
+	BackgroundImageURL string    `json:"backgroundImageUrl,omitempty"`
 	CreatedAt          time.Time `json:"createdAt"`
 	UpdatedAt          time.Time `json:"updatedAt"`
 }
