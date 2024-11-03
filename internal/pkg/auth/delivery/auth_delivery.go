@@ -3,6 +3,7 @@ package delivery
 import (
 	"RPO_back/internal/errs"
 	"RPO_back/internal/models"
+	"RPO_back/internal/pkg/auth"
 	"RPO_back/internal/pkg/auth/usecase"
 	"RPO_back/internal/pkg/utils/requests"
 	"RPO_back/internal/pkg/utils/responses"

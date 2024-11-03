@@ -117,7 +117,7 @@ func (repo *AuthRepository) GetUserByID(userID int) (user *models.UserProfile, e
 	)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, auth.ErrWrongCredentials
+			return nil, errs.ErrWrongCredentials
 		}
 		return nil, fmt.Errorf("GetUserByID: %w", err)
 	}

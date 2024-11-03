@@ -3,7 +3,6 @@ package repository
 import (
 	"RPO_back/internal/errs"
 	"RPO_back/internal/models"
-	"RPO_back/internal/pkg/auth"
 	"RPO_back/internal/pkg/utils/uploads"
 	"context"
 	"errors"
@@ -88,13 +87,13 @@ func (r *UserRepository) UpdateUserProfile(userID int, data models.UserProfileUp
 		return nil, fmt.Errorf("UpdateUserProfile (check unique nick): %w", err)
 	}
 	if nicknameCount != 0 && emailCount != 0 {
-		return nil, fmt.Errorf("UpdateUserProfile (check unique): %w %w", auth.ErrBusyEmail, auth.ErrBusyNickname)
+		return nil, fmt.Errorf("UpdateUserProfile (check unique): %w %w", errs.ErrBusyEmail, errs.ErrBusyNickname)
 	}
 	if nicknameCount != 0 {
-		return nil, fmt.Errorf("UpdateUserProfile (check unique): %w", auth.ErrBusyNickname)
+		return nil, fmt.Errorf("UpdateUserProfile (check unique): %w", errs.ErrBusyNickname)
 	}
 	if emailCount != 0 {
-		return nil, fmt.Errorf("UpdateUserProfile (check unique): %w", auth.ErrBusyEmail)
+		return nil, fmt.Errorf("UpdateUserProfile (check unique): %w", errs.ErrBusyEmail)
 	}
 	tag, err := r.db.Exec(context.Background(), query3, data.Email, data.NewName, userID)
 	if err != nil {

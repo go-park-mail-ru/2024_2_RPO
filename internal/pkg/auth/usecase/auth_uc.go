@@ -71,3 +71,20 @@ func (uc *AuthUsecase) RegisterUser(user *models.UserRegistration) (sessionId st
 func (uc *AuthUsecase) LogoutUser(sessionId string) error {
 	return uc.authRepo.KillSessionRedis(sessionId)
 }
+
+func (uc *AuthUsecase) ChangePassword(userID int, oldPassword string, newPassword string) error {
+	user, err := uc.authRepo.GetUserByID(userID)
+	if err != nil {
+		return err
+	}
+	ok := encrypt.CheckPassword(oldPassword, user.PasswordHash)
+	if !ok {
+		return fmt.Errorf("ChangePassword: %w", errs.ErrNotPermitted)
+	}
+	newPasswordHash, err := encrypt.SaltAndHashPassword(newPassword)
+	if err != nil {
+		return fmt.Errorf("ChangePassword (hashing new): %w", err)
+	}
+	uc.authRepo.SetNewPasswordHash(userID, newPasswordHash)
+	return nil
+}
