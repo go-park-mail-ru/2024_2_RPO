@@ -24,12 +24,14 @@ build:
 	@echo "==> Building the application..."
 	@go build $(GOFLAGS) $(LDFLAGS) -o $(BUILD_DIR)/$(APP_NAME) $(SRC_DIR)
 
-test:
+run_tests:
 	@echo "==> Running tests..."
-	@go test $(GOFLAGS) -coverprofile coverage.out -v ./...
+	@go test $(GOFLAGS) -coverprofile coverage_raw.out -v ./...
 
-coverage: test
+test: run_tests
 	@echo "==> Calculating coverage..."
+	@grep -vi "mock" coverage_raw.out | cat >coverage.out
+	@go tool cover -func=coverage.out
 	@go tool cover -html=coverage.out -o=coverage.html
 	@echo "==> Done! Check coverage.html file!"
 

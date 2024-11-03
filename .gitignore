@@ -1,6 +1,7 @@
 .idea
 .env
 coverage.out
+coverage_raw.out
 coverage.html
 **/*.exe
 build
