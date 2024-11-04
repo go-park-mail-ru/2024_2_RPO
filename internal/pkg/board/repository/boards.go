@@ -128,8 +128,7 @@ func (r *BoardRepository) DeleteBoard(boardId int) error {
 // GetBoardsForUser возвращает все доски, к которым пользователь имеет доступ
 func (r *BoardRepository) GetBoardsForUser(userID int) (boardArray []models.Board, err error) {
 	query := `
-		SELECT b.board_id, b.name, b.description,
-		b.created_at, b.updated_at,
+		SELECT b.board_id, b.name, b.description, b.created_at, b.updated_at,
 		COALESCE(f.file_uuid::text, ''),
 		COALESCE(f.file_extension, '')
 		FROM user_to_board AS ub

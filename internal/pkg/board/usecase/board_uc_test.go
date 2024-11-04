@@ -17,7 +17,6 @@ func TestBoardUsecase_CreateNewBoard(t *testing.T) {
 
 	mockBoardRepo := mocks.NewMockBoardRepo(ctrl)
 	boardUsecase := BoardUsecase.CreateBoardUsecase(mockBoardRepo)
-	// authUsecase := AuthUsecase.CreateAuthUsecase(mockAuthRepo)
 
 	tests := []struct {
 		name                 string
@@ -83,6 +82,89 @@ func TestBoardUsecase_CreateNewBoard(t *testing.T) {
 			newBoard, err := boardUsecase.CreateNewBoard(tt.userID, tt.request)
 			assert.Equal(t, err != nil, tt.expectedError)
 			assert.Equal(t, tt.expectedBoardChecker(newBoard), true)
+		})
+	}
+}
+
+func TestBoardUsecase_UpdateBoard(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockBoardRepo := mocks.NewMockBoardRepo(ctrl)
+	boardUsecase := BoardUsecase.CreateBoardUsecase(mockBoardRepo)
+
+	tests := []struct {
+		name                 string
+		userID               int
+		boardID              int
+		request              models.BoardPutRequest
+		setupMock            func()
+		expectedError        bool
+		expectedBoardChecker func(*models.Board) bool
+	}{
+		// {
+		// 	name:    "successful board update by admin",
+		// 	userID:  1,
+		// 	boardID: 1,
+		// 	request: models.BoardPutRequest{NewName: "Updated Board"},
+		// 	setupMock: func() {
+		// 		mockBoardRepo.EXPECT().GetMemberPermissions(1, 1, false).Return(&models.MemberWithPermissions{Role: "admin"}, nil)
+		// 		mockBoardRepo.EXPECT().UpdateBoard(1, gomock.Any()).Return(nil).Times(1)
+		// 	},
+		// 	expectedError: false,
+		// 	expectedBoardChecker: func(b *models.Board) bool {
+		// 		return b != nil && b.Name == "Updated Board"
+		// 	},
+		// },
+		{
+			name:    "successful board update by editor chief",
+			userID:  2,
+			boardID: 1,
+			request: models.BoardPutRequest{NewName: "Updated Board by Editor Chief"},
+			setupMock: func() {
+				mockBoardRepo.EXPECT().GetMemberPermissions(1, 2, false).Return(&models.MemberWithPermissions{Role: "can_edit"}, nil)
+				mockBoardRepo.EXPECT().UpdateBoard(2, gomock.Any()).Return( nil)
+			},
+			expectedError: true,
+			expectedBoardChecker: func(b *models.Board) bool {
+				return b != nil && b.Name == "Updated Board by Editor Chief"
+			},
+		},
+		// {
+		// 	name:    "permission denied to update board",
+		// 	userID:  3,
+		// 	boardID: 1,
+		// 	request: models.BoardPutRequest{NewName: "Unauthorized Update"},
+		// 	setupMock: func() {
+		// 		mockBoardRepo.EXPECT().GetMemberPermissions(1, 3, false).Return(&models.MemberPermissions{CanEdit: true}, nil)
+		// 	},
+		// 	expectedError: true,
+		// 	expectedBoardChecker: func(b *models.Board) bool {
+		// 		return b == nil
+		// 	},
+		// },
+		// {
+		// 	name:    "error fetching permissions",
+		// 	userID:  4,
+		// 	boardID: 1,
+		// 	request: models.BoardPutRequest{NewName: "Error Fetching Permissions"},
+		// 	setupMock: func() {
+		// 		mockBoardRepo.EXPECT().GetMemberPermissions(1, 4, false).Return(nil, errors.New("error fetching permissions"))
+		// 	},
+		// 	expectedError: true,
+		// 	expectedBoardChecker: func(b *models.Board) bool {
+		// 		return b == nil
+		// 	},
+		// },
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tt.setupMock()
+
+			updatedBoard, err := boardUsecase.UpdateBoard(tt.userID, tt.boardID, tt.request)
+			assert.Equal(t, err != nil, tt.expectedError)
+			assert.Equal(t, tt.expectedBoardChecker(updatedBoard), true)
 		})
 	}
 }
