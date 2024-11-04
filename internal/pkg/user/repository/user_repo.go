@@ -62,7 +62,7 @@ func (r *UserRepository) GetUserProfile(userID int) (profile *models.UserProfile
 		}
 		return nil, fmt.Errorf("GetUserById: %w", err)
 	}
-	user.AvatarImageURL = uploads.JoinFileName(fileUUID, fileExt, defaultUserAvatar)
+	user.AvatarImageURL = uploads.JoinFileURL(fileUUID, fileExt, defaultUserAvatar)
 
 	return &user, nil
 }
@@ -130,5 +130,5 @@ func (r *UserRepository) SetUserAvatar(userID int, fileExtension string, fileSiz
 	if tag.RowsAffected() == 0 {
 		return "", fmt.Errorf("SetUserAvatar (update user): no rows affected")
 	}
-	return uploads.JoinFileName(fileUUID, fileExtension, ""), nil
+	return uploads.JoinFilePath(fileUUID, fileExtension), nil
 }

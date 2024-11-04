@@ -38,7 +38,7 @@ func (r *BoardRepository) GetUserProfile(userID int) (user *models.UserProfile, 
 		}
 		return nil, fmt.Errorf("GetUserProfile: %w", err)
 	}
-	user.AvatarImageURL = uploads.JoinFileName(avatarUUID, avatarExt, uploads.DefaultAvatarURL)
+	user.AvatarImageURL = uploads.JoinFileURL(avatarUUID, avatarExt, uploads.DefaultAvatarURL)
 	return user, nil
 }
 
@@ -201,9 +201,9 @@ func (r *BoardRepository) GetMembersWithPermissions(boardID int) (members []mode
 			field.UpdatedBy = nil
 		}
 
-		field.User.AvatarImageURL = uploads.JoinFileName(memberAvatarUUID, memberAvatarExt, uploads.DefaultAvatarURL)
-		field.AddedBy.AvatarImageURL = uploads.JoinFileName(adderAvatarUUID, adderAvatarExt, uploads.DefaultAvatarURL)
-		field.UpdatedBy.AvatarImageURL = uploads.JoinFileName(updaterAvatarUUID, updaterAvatarExt, uploads.DefaultAvatarURL)
+		field.User.AvatarImageURL = uploads.JoinFileURL(memberAvatarUUID, memberAvatarExt, uploads.DefaultAvatarURL)
+		field.AddedBy.AvatarImageURL = uploads.JoinFileURL(adderAvatarUUID, adderAvatarExt, uploads.DefaultAvatarURL)
+		field.UpdatedBy.AvatarImageURL = uploads.JoinFileURL(updaterAvatarUUID, updaterAvatarExt, uploads.DefaultAvatarURL)
 
 		members = append(members, field)
 	}
