@@ -379,12 +379,12 @@ func (uc *BoardUsecase) SetBoardBackground(userID int, boardID int, file *multip
 	filePath := filepath.Join(uploadDir, uploadTo)
 	dst, err := os.Create(filePath)
 	if err != nil {
-		return nil, fmt.Errorf("Cant create file on server side: %w", err)
+		return nil, fmt.Errorf("cant create file on server side: %w", err)
 	}
 	defer dst.Close()
 
 	if _, err = io.Copy(dst, *file); err != nil {
-		return nil, fmt.Errorf("Cant copy file on server side: %w", err)
+		return nil, fmt.Errorf("cant copy file on server side: %w", err)
 	}
 	return uc.boardRepository.GetBoard(boardID)
 }

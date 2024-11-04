@@ -6,6 +6,7 @@ package mock_board
 
 import (
 	models "RPO_back/internal/models"
+	multipart "mime/multipart"
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
@@ -193,6 +194,21 @@ func (m *MockBoardUsecase) RemoveMember(userID, boardID, memberID int) error {
 func (mr *MockBoardUsecaseMockRecorder) RemoveMember(userID, boardID, memberID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveMember", reflect.TypeOf((*MockBoardUsecase)(nil).RemoveMember), userID, boardID, memberID)
+}
+
+// SetBoardBackground mocks base method.
+func (m *MockBoardUsecase) SetBoardBackground(userID, boardID int, file *multipart.File, fileHeader *multipart.FileHeader) (*models.Board, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SetBoardBackground", userID, boardID, file, fileHeader)
+	ret0, _ := ret[0].(*models.Board)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// SetBoardBackground indicates an expected call of SetBoardBackground.
+func (mr *MockBoardUsecaseMockRecorder) SetBoardBackground(userID, boardID, file, fileHeader interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetBoardBackground", reflect.TypeOf((*MockBoardUsecase)(nil).SetBoardBackground), userID, boardID, file, fileHeader)
 }
 
 // UpdateBoard mocks base method.
@@ -512,6 +528,21 @@ func (m *MockBoardRepo) RemoveMember(boardID, memberUserID int) error {
 func (mr *MockBoardRepoMockRecorder) RemoveMember(boardID, memberUserID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveMember", reflect.TypeOf((*MockBoardRepo)(nil).RemoveMember), boardID, memberUserID)
+}
+
+// SetBoardBackground mocks base method.
+func (m *MockBoardRepo) SetBoardBackground(userID, boardID int, fileExtension string, fileSize int) (string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SetBoardBackground", userID, boardID, fileExtension, fileSize)
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// SetBoardBackground indicates an expected call of SetBoardBackground.
+func (mr *MockBoardRepoMockRecorder) SetBoardBackground(userID, boardID, fileExtension, fileSize interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetBoardBackground", reflect.TypeOf((*MockBoardRepo)(nil).SetBoardBackground), userID, boardID, fileExtension, fileSize)
 }
 
 // SetMemberRole mocks base method.

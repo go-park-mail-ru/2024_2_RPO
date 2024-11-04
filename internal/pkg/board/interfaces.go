@@ -2,6 +2,7 @@ package board
 
 import (
 	"RPO_back/internal/models"
+	"mime/multipart"
 )
 
 //go:generate mockgen -source=interfaces.go -destination=mocks/mock.go
@@ -22,6 +23,7 @@ type BoardUsecase interface {
 	CreateColumn(userID int, boardID int, data *models.ColumnRequest) (newCol *models.Column, err error)
 	UpdateColumn(userID int, boardID int, columnID int, data *models.ColumnRequest) (updatedCol *models.Column, err error)
 	DeleteColumn(userID int, boardID int, columnID int) (err error)
+	SetBoardBackground(userID int, boardID int, file *multipart.File, fileHeader *multipart.FileHeader) (updatedBoard *models.Board, err error)
 }
 
 type BoardRepo interface {
