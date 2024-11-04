@@ -3,6 +3,7 @@ package repository
 import (
 	"RPO_back/internal/errs"
 	"RPO_back/internal/models"
+	"RPO_back/internal/pkg/utils/uploads"
 	"context"
 	"errors"
 	"fmt"
@@ -14,16 +15,22 @@ import (
 // GetUserProfile получает из базы профиль пользователя
 func (r *BoardRepository) GetUserProfile(userID int) (user *models.UserProfile, err error) {
 	query := `
-	SELECT u_id, nickname, email, description, joined_at, updated_at
-	FROM "user"
+	SELECT
+	u_id, nickname, email, description, joined_at, updated_at,
+	COALESCE(f.file_uuid::text, ''), COALESCE(f.file_extension, '')
+	FROM "user" AS u
+	LEFT JOIN user_uploaded_file AS f ON f.file_uuid=u.avatar_file_uuid
 	WHERE u_id=$1;
 	`
 	rows := r.db.QueryRow(context.Background(), query, userID)
 	user = &models.UserProfile{}
+	var avatarUUID, avatarExt string
 	err = rows.Scan(&user.ID, &user.Name, &user.Email,
 		&user.Description,
 		&user.JoinedAt,
 		&user.UpdatedAt,
+		&avatarUUID,
+		&avatarExt,
 	)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -31,6 +38,7 @@ func (r *BoardRepository) GetUserProfile(userID int) (user *models.UserProfile, 
 		}
 		return nil, fmt.Errorf("GetUserProfile: %w", err)
 	}
+	user.AvatarImageURL = uploads.JoinFileName(avatarUUID, avatarExt, uploads.DefaultAvatarURL)
 	return user, nil
 }
 
@@ -38,12 +46,13 @@ func (r *BoardRepository) GetUserProfile(userID int) (user *models.UserProfile, 
 // Возвращает информацию о правах участника на конкретной доске
 // Если пользователя нет на доске, возвращает errs.ErrNotPermitted
 //
-// getAdderInfo - если равен true, запрос получит профили пригласившего
-// пользователя и пользователя, внёсшего последнее изменение. false -
+// verbose - если равен true, запрос получит профили пригласившего
+// пользователя и пользователя, внёсшего последнее изменение, а также
+// загрузит аватарки. false -
 // поля AddedBy и UpdatedBy будут установлены в nil. Но если
-// getAdderInfo равен true, ещё не факт, что указанные поля
+// verbose равен true, ещё не факт, что указанные поля
 // будут не nil
-func (r *BoardRepository) GetMemberPermissions(boardID int, memberUserID int, getAdderInfo bool) (member *models.MemberWithPermissions, err error) {
+func (r *BoardRepository) GetMemberPermissions(boardID int, memberUserID int, verbose bool) (member *models.MemberWithPermissions, err error) {
 	query := `
 	SELECT
 	ub.role,
@@ -82,7 +91,7 @@ func (r *BoardRepository) GetMemberPermissions(boardID int, memberUserID int, ge
 		}
 		return nil, fmt.Errorf("GetMemberPermissions (getting user perms): %w", err)
 	}
-	if getAdderInfo == true {
+	if verbose == true {
 		if addedByID != -1 {
 			adder, err := r.GetUserProfile(addedByID)
 			if err != nil {
@@ -93,7 +102,7 @@ func (r *BoardRepository) GetMemberPermissions(boardID int, memberUserID int, ge
 		if updatedByID != -1 {
 			updater, err := r.GetUserProfile(updatedByID)
 			if err != nil {
-				return nil, fmt.Errorf("GetMemberPermissions (getting last updater profile): %w", err)
+				return nil, fmt.Errorf("GetMemberPermissions (getting updater profile): %w", err)
 			}
 			member.UpdatedBy = updater
 		}
@@ -119,13 +128,21 @@ func (r *BoardRepository) GetMembersWithPermissions(boardID int) (members []mode
 	adder.description, adder.joined_at, adder.updated_at,
 
 	COALESCE(updater.u_id,-1), updater.nickname, updater.email,
-	updater.description, updater.joined_at, updater.updated_at
+	updater.description, updater.joined_at, updater.updated_at,
+
+	COALESCE(f_m.file_uuid::text,''), COALESCE(f_m.file_extension,''),
+	COALESCE(f_adder.file_uuid::text,''), COALESCE(f_adder.file_extension,''),
+	COALESCE(f_updater.file_uuid::text,''), COALESCE(f_updater.file_extension,'')
 
 	FROM "user" AS m
 	JOIN user_to_board AS ub ON m.u_id=ub.u_id
 	LEFT JOIN "user" AS adder ON adder.u_id=ub.added_by
 	LEFT JOIN "user" AS updater ON updater.u_id=ub.updated_by
-	WHERE ub.b_id=$1;
+
+	LEFT JOIN user_uploaded_file AS f_m ON f_m.file_uuid=m.avatar_file_uuid
+	LEFT JOIN user_uploaded_file AS f_adder ON f_adder.file_uuid=adder.avatar_file_uuid
+	LEFT JOIN user_uploaded_file AS f_updater ON f_updater.file_uuid=updater.avatar_file_uuid
+	WHERE ub.board_id=$1;
 	`
 	_, err = r.GetBoard(boardID)
 	if err != nil {
@@ -139,6 +156,7 @@ func (r *BoardRepository) GetMembersWithPermissions(boardID int) (members []mode
 		return nil, fmt.Errorf("GetMembersWithPermissions (main query): %w", err)
 	}
 	for rows.Next() {
+		var memberAvatarUUID, memberAvatarExt, adderAvatarUUID, adderAvatarExt, updaterAvatarUUID, updaterAvatarExt string
 		field := models.MemberWithPermissions{}
 		field.User = &models.UserProfile{}
 		field.AddedBy = &models.UserProfile{}
@@ -166,6 +184,10 @@ func (r *BoardRepository) GetMembersWithPermissions(boardID int) (members []mode
 			&field.UpdatedBy.Description,
 			&field.UpdatedBy.JoinedAt,
 			&field.UpdatedBy.UpdatedAt,
+
+			&memberAvatarUUID, &memberAvatarExt,
+			&adderAvatarUUID, &adderAvatarExt,
+			&updaterAvatarUUID, &updaterAvatarExt,
 		)
 		if err != nil {
 			if errors.Is(err, pgx.ErrNoRows) {
@@ -179,6 +201,11 @@ func (r *BoardRepository) GetMembersWithPermissions(boardID int) (members []mode
 		if field.UpdatedBy.ID == -1 {
 			field.UpdatedBy = nil
 		}
+
+		field.User.AvatarImageURL = uploads.JoinFileName(memberAvatarUUID, memberAvatarExt, uploads.DefaultAvatarURL)
+		field.AddedBy.AvatarImageURL = uploads.JoinFileName(adderAvatarUUID, adderAvatarExt, uploads.DefaultAvatarURL)
+		field.UpdatedBy.AvatarImageURL = uploads.JoinFileName(updaterAvatarUUID, updaterAvatarExt, uploads.DefaultAvatarURL)
+
 		members = append(members, field)
 	}
 	return members, nil
@@ -207,7 +234,7 @@ func (r *BoardRepository) SetMemberRole(boardID int, memberUserID int, newRole s
 	if err != nil {
 		return nil, fmt.Errorf("SetMemberRole (update): %w", err)
 	}
-	member, err = r.GetMemberPermissions(boardID, memberUserID, false)
+	member, err = r.GetMemberPermissions(boardID, memberUserID, true)
 	if err != nil {
 		return nil, fmt.Errorf("SetMemberRole (get updated perms): %w", err)
 	}
@@ -252,7 +279,7 @@ func (r *BoardRepository) AddMember(boardID int, adderID int, memberUserID int) 
 	if err != nil {
 		return nil, fmt.Errorf("AddMember (insert): %w", err)
 	}
-	member, err = r.GetMemberPermissions(boardID, memberUserID, false)
+	member, err = r.GetMemberPermissions(boardID, memberUserID, true)
 	return member, nil
 }
 

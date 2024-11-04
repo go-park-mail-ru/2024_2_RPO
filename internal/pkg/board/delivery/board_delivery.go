@@ -5,6 +5,7 @@ import (
 	"RPO_back/internal/pkg/board/usecase"
 	"RPO_back/internal/pkg/utils/requests"
 	"RPO_back/internal/pkg/utils/responses"
+	"fmt"
 	"net/http"
 	"slices"
 
@@ -45,7 +46,8 @@ func (d *BoardDelivery) CreateNewBoard(w http.ResponseWriter, r *http.Request) {
 
 // UpdateBoard обновляет информацию о доске и возвращает обновлённую информацию
 func (d *BoardDelivery) UpdateBoard(w http.ResponseWriter, r *http.Request) {
-	userID, ok := requests.GetUserIDOrFail(w, r, "UpdateBoard")
+	funcName := "UpdateBoard"
+	userID, ok := requests.GetUserIDOrFail(w, r, funcName)
 	if !ok {
 		return
 	}
@@ -58,15 +60,17 @@ func (d *BoardDelivery) UpdateBoard(w http.ResponseWriter, r *http.Request) {
 
 	data := models.BoardPutRequest{}
 	err = requests.GetRequestData(r, &data)
-	if err == nil {
+	if err != nil {
 		responses.DoBadResponse(w, http.StatusBadRequest, "bad request")
 		return
 	}
+	fmt.Println("REQUEST IS HERE")
 	newBoard, err := d.boardUsecase.UpdateBoard(userID, boardID, data)
 	if err != nil {
-		responses.ResponseErrorAndLog(w, err, "UpdateBoard")
+		responses.ResponseErrorAndLog(w, err, funcName)
 		return
 	}
+	fmt.Println("REQUEST IS HERE 2")
 	responses.DoJSONResponce(w, newBoard, http.StatusOK)
 }
 

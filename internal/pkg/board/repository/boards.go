@@ -3,16 +3,14 @@ package repository
 import (
 	"RPO_back/internal/errs"
 	"RPO_back/internal/models"
+	"RPO_back/internal/pkg/utils/uploads"
 	"context"
 	"errors"
 	"fmt"
-	"os"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
-
-const defaultImageUrl = "/static/img/backgroundPicture.png"
 
 type BoardRepository struct {
 	db *pgxpool.Pool
@@ -37,7 +35,7 @@ func (r *BoardRepository) CreateBoard(name string, userID int) (*models.Board, e
 		&board.CreatedAt,
 		&board.UpdatedAt,
 	)
-	board.BackgroundImageURL = defaultImageUrl
+	board.BackgroundImageURL = uploads.DefaultBackgroundURL
 	if err != nil {
 		return nil, fmt.Errorf("CreateBoard: %w", err)
 	}
@@ -60,7 +58,7 @@ func (r *BoardRepository) GetBoard(boardID int) (*models.Board, error) {
 		WHERE b.board_id = $1;
 	`
 	var board models.Board
-	var fileUuid string
+	var fileUUID string
 	var fileExtension string
 	err := r.db.QueryRow(context.Background(), query, boardID).Scan(
 		&board.ID,
@@ -68,14 +66,10 @@ func (r *BoardRepository) GetBoard(boardID int) (*models.Board, error) {
 		&board.Description,
 		&board.CreatedAt,
 		&board.UpdatedAt,
-		&fileUuid,
+		&fileUUID,
 		&fileExtension,
 	)
-	if fileUuid == "" {
-		board.BackgroundImageURL = defaultImageUrl
-	} else {
-		board.BackgroundImageURL = fmt.Sprintf("%s%s.%s", os.Getenv("USER_UPLOADS_URL"), fileUuid, fileExtension)
-	}
+	board.BackgroundImageURL = uploads.JoinFileName(fileUUID, fileExtension, uploads.DefaultBackgroundURL)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, fmt.Errorf("GetBoard: %w", errs.ErrNotFound)
@@ -86,7 +80,7 @@ func (r *BoardRepository) GetBoard(boardID int) (*models.Board, error) {
 }
 
 // UpdateBoard updates the specified fields of a board.
-func (r *BoardRepository) UpdateBoard(boardID int, data *models.BoardPutRequest) error {
+func (r *BoardRepository) UpdateBoard(boardID int, data *models.BoardPutRequest) (updatedBoard *models.Board, err error) {
 	query := `
 		UPDATE board
 		SET name=$1, description=$2, updated_at = CURRENT_TIMESTAMP
@@ -95,22 +89,22 @@ func (r *BoardRepository) UpdateBoard(boardID int, data *models.BoardPutRequest)
 
 	tag, err := r.db.Exec(context.Background(), query, data.NewName, data.NewDescription, boardID)
 	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) { // Может ли эта ошибка появиться?
-			return fmt.Errorf("UpdateBoard: %w", errs.ErrNotFound)
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, fmt.Errorf("UpdateBoard: %w", errs.ErrNotFound)
 		}
-		return fmt.Errorf("UpdateBoard: %w", err)
+		return nil, fmt.Errorf("UpdateBoard: %w", err)
 	}
 	if tag.RowsAffected() == 0 {
-		return fmt.Errorf("UpdateBoard: %w", errs.ErrNotFound)
+		return nil, fmt.Errorf("UpdateBoard: %w", errs.ErrNotFound)
 	}
-	return nil
+	return r.GetBoard(boardID)
 }
 
 // DeleteBoard удаляет доску по Id
 func (r *BoardRepository) DeleteBoard(boardId int) error {
 	query := `
 		DELETE FROM board
-		WHERE board_id = $1
+		WHERE board_id = $1;
 	`
 	tag, err := r.db.Exec(context.Background(), query, boardId)
 	if err != nil {
@@ -164,7 +158,7 @@ func (r *BoardRepository) GetBoardsForUser(userID int) (boardArray []models.Boar
 		if fileUuid != "" {
 			board.BackgroundImageURL = fmt.Sprintf("%s.%s", fileUuid, fileExtension)
 		} else {
-			board.BackgroundImageURL = defaultImageUrl
+			board.BackgroundImageURL = uploads.DefaultBackgroundURL
 		}
 		boardArray = append(boardArray, board)
 	}

@@ -143,6 +143,7 @@ func main() {
 	router.HandleFunc("/boards/my", boardDelivery.GetMyBoards).Methods("GET", "OPTIONS")
 	router.HandleFunc("/boards", boardDelivery.CreateNewBoard).Methods("POST", "OPTIONS")
 	router.HandleFunc("/boards/{boardId}", boardDelivery.DeleteBoard).Methods("DELETE", "OPTIONS")
+	router.HandleFunc("/boards/{boardId}", boardDelivery.UpdateBoard).Methods("PUT", "OPTIONS")
 	router.HandleFunc("/userPermissions/{boardId}", boardDelivery.GetMembersPermissions).Methods("GET", "OPTIONS")
 	router.HandleFunc("/userPermissions/{boardId}", boardDelivery.AddMember).Methods("POST", "OPTIONS")
 	router.HandleFunc("/userPermissions/{boardId}/{userId}", boardDelivery.UpdateMemberRole).Methods("PUT", "OPTIONS")
