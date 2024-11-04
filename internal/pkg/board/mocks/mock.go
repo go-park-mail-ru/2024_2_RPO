@@ -13,7 +13,7 @@ import (
 	models "RPO_back/internal/models"
 	reflect "reflect"
 
-	gomock "go.uber.org/mock/gomock"
+	gomock "github.com/golang/mock/gomock"
 )
 
 // MockBoardUsecase is a mock of BoardUsecase interface.

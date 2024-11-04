@@ -15,18 +15,9 @@ type Board struct {
 	UpdatedAt          time.Time `json:"updatedAt"`
 }
 
-// MemberPermissions нужна для внутренней логики
-type MemberPermissions struct {
-	CanEdit          bool
-	CanShare         bool
-	CanInviteMembers bool
-	IsAdmin          bool
-}
-
 // MemberWithPermissions - пользователь с правами (в контексте доски)
 type MemberWithPermissions struct {
 	User              *UserProfile      `json:"user"`
-	MemberPermissions MemberPermissions `json:"-"`
 	Role              string            `json:"role"`
 	AddedAt           time.Time         `json:"addedAt"`
 	UpdatedAt         time.Time         `json:"updatedAt"`
@@ -34,19 +25,6 @@ type MemberWithPermissions struct {
 	UpdatedBy         *UserProfile      `json:"updatedBy"`
 }
 
-// SetFlags устанавливает флаги в соответствии с ролью участника
-func (p *MemberWithPermissions) SetFlags() {
-	switch p.Role {
-	case "viewer":
-		p.MemberPermissions = MemberPermissions{IsAdmin: false, CanEdit: false, CanShare: false, CanInviteMembers: false}
-	case "editor":
-		p.MemberPermissions = MemberPermissions{IsAdmin: false, CanEdit: true, CanShare: true, CanInviteMembers: false}
-	case "editor_chief":
-		p.MemberPermissions = MemberPermissions{IsAdmin: false, CanEdit: true, CanShare: true, CanInviteMembers: true}
-	case "admin":
-		p.MemberPermissions = MemberPermissions{IsAdmin: true, CanEdit: false, CanShare: false, CanInviteMembers: false}
-	}
-}
 
 type BoardPutRequest struct {
 	NewName        string `json:"name"`

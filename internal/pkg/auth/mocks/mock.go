@@ -13,7 +13,7 @@ import (
 	models "RPO_back/internal/models"
 	reflect "reflect"
 
-	gomock "go.uber.org/mock/gomock"
+	gomock "github.com/golang/mock/gomock"
 )
 
 // MockAuthUsecase is a mock of AuthUsecase interface.

@@ -107,7 +107,6 @@ func (r *BoardRepository) GetMemberPermissions(boardID int, memberUserID int, ve
 			member.UpdatedBy = updater
 		}
 	}
-	member.SetFlags()
 	return member, nil
 }
 
