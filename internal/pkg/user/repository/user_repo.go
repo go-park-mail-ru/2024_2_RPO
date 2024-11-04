@@ -106,4 +106,9 @@ func (r *UserRepository) UpdateUserProfile(userID int, data models.UserProfileUp
 	return
 }
 
-// TODO загрузка аватарки
+func (r *UserRepository) SetUserAvatar(userID int, fileExtension string, fileSize int) (fileName string, err error) {
+	query1 := `
+	INSERT INTO user_uploaded_file
+	(file_uuid, file_extension, created_at, created_by)
+	VALUES `
+}

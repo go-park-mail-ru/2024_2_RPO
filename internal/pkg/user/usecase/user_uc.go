@@ -3,6 +3,7 @@ package usecase
 import (
 	"RPO_back/internal/models"
 	"RPO_back/internal/pkg/user/repository"
+	"mime/multipart"
 )
 
 type UserUsecase struct {
@@ -25,4 +26,9 @@ func (uc *UserUsecase) GetMyProfile(userID int) (profile *models.UserProfile, er
 func (uc *UserUsecase) UpdateMyProfile(userID int, data *models.UserProfileUpdate) (updatedProfile *models.UserProfile, err error) {
 	updatedProfile, err = uc.userRepo.UpdateUserProfile(userID, *data)
 	return
+}
+
+// SetMyAvatar устанавливает пользователю аватарку
+func (uc *UserUsecase) SetMyAvatar(userID int, file *multipart.File) (updated *models.UserProfile, err error) {
+	uc.userRepo.SetUserAvatar()
 }

@@ -1,6 +1,9 @@
 package uploads
 
-import "fmt"
+import (
+	"fmt"
+	"strings"
+)
 
 const (
 	DefaultAvatarURL     = "/static/img/KarlMarks.jpg"
@@ -17,4 +20,13 @@ func JoinFileName(fileUUID string, fileExtension string, defaultValue string) st
 		return fmt.Sprintf("%s.%s", fileUUID, fileExtension)
 	}
 	return fileUUID
+}
+
+// ExtractFileExtension извлекает из имени файла его расширение (возвращает "", если файл без расширения)
+func ExtractFileExtension(fileName string) string {
+	lastDotIndex := strings.LastIndex(fileName, ".")
+	if lastDotIndex == -1 || lastDotIndex == len(fileName)-1 {
+		return ""
+	}
+	return fileName[lastDotIndex+1:]
 }

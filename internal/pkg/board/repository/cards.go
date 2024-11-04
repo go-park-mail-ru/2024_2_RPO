@@ -118,26 +118,25 @@ func (r *BoardRepository) CreateNewCard(boardID int, columnID int, title string)
 }
 
 // UpdateCard обновляет карточку
-func (r *BoardRepository) UpdateCard(boardID int, cardID int, data models.CardPatchRequest) (updateCard *models.Card, err error) {
+func (r *BoardRepository) UpdateCard(boardID int, cardID int, data models.CardPutRequest) (updateCard *models.Card, err error) {
 	query := `
 	UPDATE card
 	SET
-		title = COALESCE(NULLIF($1, ''), title),
-		description = COALESCE(NULLIF($2, ''), description),
+		title = $1,
+		col_id = $2,
 		updated_at = CURRENT_TIMESTAMP
 	FROM kanban_column
 	WHERE card.col_id = kanban_column.col_id
 		AND kanban_column.board_id = $3
 		AND card.card_id = $4
 	RETURNING
-		card.card_id, card.title, card.description, card.col_id, card.created_at, card.updated_at
+		card.card_id, card.title, card.col_id, card.created_at, card.updated_at
 	`
 	updateCard = &models.Card{}
 
-	if err := r.db.QueryRow(context.Background(), query, data.NewTitle, data.NewDescription, data.ColumnId, boardID, cardID).Scan(
+	if err := r.db.QueryRow(context.Background(), query, data.NewTitle, data.NewColumnId, boardID, cardID).Scan(
 		&updateCard.ID,
 		&updateCard.Title,
-		&updateCard.Description,
 		&updateCard.ColumnID,
 		&updateCard.CreatedAt,
 		&updateCard.UpdatedAt,

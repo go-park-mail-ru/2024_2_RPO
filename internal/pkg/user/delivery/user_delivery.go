@@ -64,16 +64,13 @@ func (d *UserDelivery) SetMyAvatar(w http.ResponseWriter, r *http.Request) {
 
 	file, handler, err := r.FormFile("file")
 	if err != nil {
-		http.Error(w, "Не удалось получить файл", http.StatusBadRequest)
+		responses.DoBadResponse(w, 400, "bad request")
 		return
 	}
 	defer file.Close()
 
 	// Создание директории для сохранения файлов, если её нет
 	uploadDir := os.Getenv("USER_UPLOADS_DIR")
-	if _, err := os.Stat(uploadDir); os.IsNotExist(err) {
-		os.MkdirAll(uploadDir, os.ModePerm)
-	}
 
 	// Генерация уникального имени файла (опционально)
 	filename := filepath.Base(handler.Filename) // Можно добавить префикс или использовать UUID

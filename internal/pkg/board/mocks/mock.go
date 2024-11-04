@@ -86,7 +86,7 @@ func (mr *MockBoardUsecaseMockRecorder) CreateNewBoard(userID, data any) *gomock
 }
 
 // CreateNewCard mocks base method.
-func (m *MockBoardUsecase) CreateNewCard(userID, boardID int, data *models.CardPatchRequest) (*models.Card, error) {
+func (m *MockBoardUsecase) CreateNewCard(userID, boardID int, data *models.CardPutRequest) (*models.Card, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CreateNewCard", userID, boardID, data)
 	ret0, _ := ret[0].(*models.Card)
@@ -217,7 +217,7 @@ func (mr *MockBoardUsecaseMockRecorder) UpdateBoard(userID, boardID, data any) *
 }
 
 // UpdateCard mocks base method.
-func (m *MockBoardUsecase) UpdateCard(userID, boardID, cardID int, data *models.CardPatchRequest) (*models.Card, error) {
+func (m *MockBoardUsecase) UpdateCard(userID, boardID, cardID int, data *models.CardPutRequest) (*models.Card, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "UpdateCard", userID, boardID, cardID, data)
 	ret0, _ := ret[0].(*models.Card)
@@ -552,7 +552,7 @@ func (mr *MockBoardRepoMockRecorder) UpdateBoard(boardID, data any) *gomock.Call
 }
 
 // UpdateCard mocks base method.
-func (m *MockBoardRepo) UpdateCard(boardID, cardID int, data models.CardPatchRequest) (*models.Card, error) {
+func (m *MockBoardRepo) UpdateCard(boardID, cardID int, data models.CardPutRequest) (*models.Card, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "UpdateCard", boardID, cardID, data)
 	ret0, _ := ret[0].(*models.Card)

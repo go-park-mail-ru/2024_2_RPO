@@ -5,7 +5,6 @@ import (
 	"RPO_back/internal/pkg/board/usecase"
 	"RPO_back/internal/pkg/utils/requests"
 	"RPO_back/internal/pkg/utils/responses"
-	"fmt"
 	"net/http"
 	"slices"
 
@@ -64,13 +63,11 @@ func (d *BoardDelivery) UpdateBoard(w http.ResponseWriter, r *http.Request) {
 		responses.DoBadResponse(w, http.StatusBadRequest, "bad request")
 		return
 	}
-	fmt.Println("REQUEST IS HERE")
 	newBoard, err := d.boardUsecase.UpdateBoard(userID, boardID, data)
 	if err != nil {
 		responses.ResponseErrorAndLog(w, err, funcName)
 		return
 	}
-	fmt.Println("REQUEST IS HERE 2")
 	responses.DoJSONResponce(w, newBoard, http.StatusOK)
 }
 
@@ -256,7 +253,7 @@ func (d *BoardDelivery) CreateNewCard(w http.ResponseWriter, r *http.Request) {
 		responses.DoBadResponse(w, http.StatusBadRequest, "bad request")
 		return
 	}
-	requestData := &models.CardPatchRequest{}
+	requestData := &models.CardPutRequest{}
 	err = requests.GetRequestData(r, requestData)
 	if err != nil {
 		responses.DoBadResponse(w, http.StatusBadRequest, "bad request")
@@ -292,7 +289,7 @@ func (d *BoardDelivery) UpdateCard(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	requestData := &models.CardPatchRequest{}
+	requestData := &models.CardPutRequest{}
 	err = requests.GetRequestData(r, requestData)
 	if err != nil {
 		responses.DoBadResponse(w, http.StatusBadRequest, "bad request")

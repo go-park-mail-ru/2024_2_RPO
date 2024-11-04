@@ -5,17 +5,15 @@ import "time"
 type Card struct {
 	ID                 int       `json:"id"`
 	Title              string    `json:"title"`
-	Description        string    `json:"description"`
 	ColumnID           int       `json:"columnId"`
 	CreatedAt          time.Time `json:"createdAt"`
 	UpdatedAt          time.Time `json:"updatedAt"`
 	BackgroundImageURL string    `json:"backgroundImageUrl,omitempty"`
 }
 
-type CardPatchRequest struct {
-	NewTitle       string `json:"title"`
-	NewDescription string `json:"description"`
-	ColumnId       int    `json:"columnId"`
+type CardPutRequest struct {
+	NewTitle    string `json:"title" validate:"required"`
+	NewColumnId int    `json:"columnId" validate:"required"`
 }
 
 type Column struct {
@@ -24,5 +22,5 @@ type Column struct {
 }
 
 type ColumnRequest struct {
-	NewTitle string `json:"title"`
+	NewTitle string `json:"title" validate:"required"`
 }

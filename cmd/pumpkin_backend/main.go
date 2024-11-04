@@ -150,7 +150,7 @@ func main() {
 	router.HandleFunc("/userPermissions/{boardId}/{userId}", boardDelivery.RemoveMember).Methods("DELETE", "OPTIONS")
 	router.HandleFunc("/cards/{boardId}/allContent", boardDelivery.GetBoardContent).Methods("GET", "OPTIONS")
 	router.HandleFunc("/cards/{boardId}", boardDelivery.CreateNewCard).Methods("POST", "OPTIONS")
-	router.HandleFunc("/cards/{boardId}/{cardId}", boardDelivery.UpdateCard).Methods("PATCH", "OPTIONS")
+	router.HandleFunc("/cards/{boardId}/{cardId}", boardDelivery.UpdateCard).Methods("PUT", "OPTIONS")
 	router.HandleFunc("/cards/{boardId}/{cardId}", boardDelivery.DeleteCard).Methods("DELETE", "OPTIONS")
 	router.HandleFunc("/columns/{boardId}", boardDelivery.CreateColumn).Methods("POST", "OPTIONS")
 	router.HandleFunc("/columns/{boardId}/{columnId}", boardDelivery.UpdateColumn).Methods("PUT", "OPTIONS")

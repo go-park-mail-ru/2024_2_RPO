@@ -204,7 +204,7 @@ func (uc *BoardUsecase) GetBoardContent(userID int, boardID int) (content *model
 }
 
 // CreateNewCard создаёт новую карточку и возвращает её
-func (uc *BoardUsecase) CreateNewCard(userID int, boardID int, data *models.CardPatchRequest) (newCard *models.Card, err error) {
+func (uc *BoardUsecase) CreateNewCard(userID int, boardID int, data *models.CardPutRequest) (newCard *models.Card, err error) {
 	perms, err := uc.boardRepository.GetMemberPermissions(boardID, userID, false)
 	if err != nil {
 		if errors.Is(err, errs.ErrNotPermitted) {
@@ -219,23 +219,22 @@ func (uc *BoardUsecase) CreateNewCard(userID int, boardID int, data *models.Card
 		return nil, fmt.Errorf("CreateNewCard (check): %w", errs.ErrNotPermitted)
 	}
 
-	card, err := uc.boardRepository.CreateNewCard(boardID, data.ColumnId, data.NewTitle)
+	card, err := uc.boardRepository.CreateNewCard(boardID, data.NewColumnId, data.NewTitle)
 	if err != nil {
 		return nil, fmt.Errorf("CreateNewCard (add CreateNewCard): %w", err)
 	}
 
 	return &models.Card{
-		ID:          card.ID,
-		Title:       card.Title,
-		Description: card.Description,
-		ColumnID:    card.ColumnID,
-		CreatedAt:   card.CreatedAt,
-		UpdatedAt:   card.UpdatedAt,
+		ID:        card.ID,
+		Title:     card.Title,
+		ColumnID:  card.ColumnID,
+		CreatedAt: card.CreatedAt,
+		UpdatedAt: card.UpdatedAt,
 	}, nil
 }
 
 // UpdateCard обновляет карточку и возвращает обновлённую версию
-func (uc *BoardUsecase) UpdateCard(userID int, boardID int, cardID int, data *models.CardPatchRequest) (updatedCard *models.Card, err error) {
+func (uc *BoardUsecase) UpdateCard(userID int, boardID int, cardID int, data *models.CardPutRequest) (updatedCard *models.Card, err error) {
 	perms, err := uc.boardRepository.GetMemberPermissions(boardID, userID, false)
 	if err != nil {
 		if errors.Is(err, errs.ErrNotPermitted) {
@@ -252,16 +251,15 @@ func (uc *BoardUsecase) UpdateCard(userID int, boardID int, cardID int, data *mo
 
 	updatedCard, err = uc.boardRepository.UpdateCard(boardID, cardID, *data)
 	if err != nil {
-		return nil, fmt.Errorf("UpdateCard (add UpdateCard): %w", err)
+		return nil, fmt.Errorf("UpdateCard (repo): %w", err)
 	}
 
 	return &models.Card{
-		ID:          updatedCard.ID,
-		Title:       updatedCard.Title,
-		Description: updatedCard.Description,
-		ColumnID:    updatedCard.ColumnID,
-		CreatedAt:   updatedCard.CreatedAt,
-		UpdatedAt:   updatedCard.UpdatedAt,
+		ID:        updatedCard.ID,
+		Title:     updatedCard.Title,
+		ColumnID:  updatedCard.ColumnID,
+		CreatedAt: updatedCard.CreatedAt,
+		UpdatedAt: updatedCard.UpdatedAt,
 	}, nil
 }
 
