@@ -430,3 +430,37 @@ func (d *BoardDelivery) DeleteColumn(w http.ResponseWriter, r *http.Request) {
 
 	responses.DoEmptyOkResponce(w)
 }
+
+// SetMyAvatar принимает у пользователя файл новой обложки доски,
+// сохраняет его и возвращает обновлённую доску
+func (d *BoardDelivery) SetBoardBackground(w http.ResponseWriter, r *http.Request) {
+	funcName := "SetBoardBackground"
+	userID, ok := requests.GetUserIDOrFail(w, r, funcName)
+	if !ok {
+		return
+	}
+	boardID, err := requests.GetIDFromRequest(r, "boardId", "board_")
+	if err != nil {
+		responses.DoBadResponse(w, http.StatusBadRequest, "bad request")
+		return
+	}
+
+	// Ограничение размера 10 МБ
+	r.ParseMultipartForm(10 << 20)
+
+	file, fileHeader, err := r.FormFile("file")
+	if err != nil {
+		responses.DoBadResponse(w, 400, "bad request")
+		log.Warn(funcName, ": ", err)
+		return
+	}
+	defer file.Close()
+
+	updatedBoard, err := d.boardUsecase.SetBoardBackground(userID, boardID, &file, fileHeader)
+	if err != nil {
+		responses.ResponseErrorAndLog(w, err, funcName)
+		return
+	}
+
+	responses.DoJSONResponce(w, updatedBoard, 200)
+}

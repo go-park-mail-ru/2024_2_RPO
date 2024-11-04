@@ -6,6 +6,8 @@ import (
 	"RPO_back/internal/pkg/utils/requests"
 	"RPO_back/internal/pkg/utils/responses"
 	"net/http"
+
+	log "github.com/sirupsen/logrus"
 )
 
 type UserDelivery struct {
@@ -67,6 +69,7 @@ func (d *UserDelivery) SetMyAvatar(w http.ResponseWriter, r *http.Request) {
 	file, fileHeader, err := r.FormFile("file")
 	if err != nil {
 		responses.DoBadResponse(w, 400, "bad request")
+		log.Warn(funcName, ": ", err)
 		return
 	}
 	defer file.Close()
