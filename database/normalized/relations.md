@@ -4,11 +4,17 @@
 
 #### Отношение "Пользователь"
 
+##### Отношения, где детерминант неприводим слева
+
 `{u_id} -> {nickname, description, joined_at, updated_at, password_hash, email, avatar_file_uuid}`
 
 `{email} -> {u_id, nickname, description, joined_at, updated_at, password_hash, avatar_file_uuid}`
 
 `{nickname} -> {u_id, email, description, joined_at, updated_at, password_hash, avatar_file_uuid}`
+
+##### Отношения, где детерминант приводим слева
+
+Эти отношения не рассматриваются в доказательстве НФБК
 
 `{nickname, email} -> {u_id, description, joined_at, updated_at, password_hash, avatar_file_uuid}`
 
@@ -20,17 +26,13 @@
 
 #### Отношение "Загруженный пользователем файл"
 
-`{file_uuid} -> {file_extension, size, created_at, created_by, type}`
+`{file_uuid} -> {file_extension, size, created_at, created_by}`
 
 #### Отношение "Доска"
 
 `{board_id} -> {name, description, created_at, created_by, background_image_uuid, updated_at}`
 
 #### Отношение "Пользователь на доске"
-
-`{u_id} -> {board_id, added_at, updated_at, last_visit_at, added_by, updated_by, role}`
-
-`{board_id} -> {u_id, added_at, updated_at, last_visit_at, added_by, updated_by, role}`
 
 `{u_id, board_id} -> {added_at, updated_at, last_visit_at, added_by, updated_by, role}`
 
@@ -40,7 +42,7 @@
 
 #### Отношение "Карточка"
 
-`{card_id} -> {col_id, title, order_index, created_at, updated_at, cover_file_uuid}`
+`{card_id} -> {col_id, title, order_index, created_at, updated_at}`
 
 #### Транзитивные отношения (справедливые не для любых кортежей)
 
