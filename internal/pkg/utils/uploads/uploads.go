@@ -16,7 +16,7 @@ const (
 func JoinFileURL(fileUUID string, fileExtension string, defaultValue string) string {
 	urlPrefix := os.Getenv("USER_UPLOADS_URL")
 	if fileUUID == "" {
-		return urlPrefix + defaultValue
+		return defaultValue
 	}
 	if fileExtension != "" {
 		return urlPrefix + fmt.Sprintf("%s.%s", fileUUID, fileExtension)
