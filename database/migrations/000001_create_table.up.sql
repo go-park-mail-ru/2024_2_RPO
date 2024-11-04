@@ -1,5 +1,16 @@
 CREATE EXTENSION IF NOT EXISTS "citext";
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
+CREATE OR REPLACE FUNCTION to_uuid(raw text)
+  RETURNS uuid IMMUTABLE STRICT
+AS $$
+  BEGIN
+    RETURN raw::uuid;
+  EXCEPTION WHEN invalid_text_representation THEN
+    RETURN uuid_in(overlay(overlay(md5(raw) placing '4' from 13) placing '8' from 17)::cstring);
+  END;
+$$ LANGUAGE plpgsql;
+
 CREATE TABLE "user" (
     u_id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     nickname TEXT NOT NULL UNIQUE,
@@ -10,12 +21,6 @@ CREATE TABLE "user" (
     email CITEXT UNIQUE NOT NULL -- avatar_file_uuid UUID,
     -- FOREIGN KEY (avatar_file_uuid) REFERENCES user_uploaded_file(file_uuid)
     -- ON UPDATE CASCADE ON DELETE SET NULL
-);
-CREATE TYPE FILE_TYPE AS ENUM (
-    'avatar',
-    'background_image',
-    'card_cover_image',
-    'pinned_file'
 );
 CREATE TYPE USER_ROLE AS ENUM(
     'viewer',
@@ -29,7 +34,6 @@ CREATE TABLE user_uploaded_file(
     "size" INTEGER NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     created_by BIGINT,
-    "type" FILE_TYPE NOT NULL,
     FOREIGN KEY (created_by) REFERENCES "user"(u_id) ON UPDATE CASCADE ON DELETE
     SET NULL
 );
