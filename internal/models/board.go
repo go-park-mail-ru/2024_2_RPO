@@ -61,7 +61,7 @@ type BoardContent struct {
 }
 
 type AddMemberRequest struct {
-	MemberNickname string `json:"name"`
+	MemberNickname string `json:"nickname"`
 }
 
 type UpdateMemberRequest struct {
