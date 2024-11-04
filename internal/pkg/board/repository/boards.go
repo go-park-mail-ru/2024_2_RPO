@@ -169,3 +169,31 @@ func (r *BoardRepository) GetBoardsForUser(userID int) (boardArray []models.Boar
 
 	return boardArray, nil
 }
+
+func (r *BoardRepository) SetBoardBackground(userID int, boardID int, fileExtension string, fileSize int) (fileName string, err error) {
+	query1 := `
+	INSERT INTO user_uploaded_file
+	(file_extension, created_at, created_by, "size")
+	VALUES ($1, CURRENT_TIMESTAMP, $2, $3)
+	RETURNING file_uuid::text;
+	`
+	query2 := `
+	UPDATE board
+	SET background_image_uuid=to_uuid($1)
+	WHERE board_id=$2;
+	`
+	var fileUUID string
+	row := r.db.QueryRow(context.Background(), query1, fileExtension, userID, fileSize)
+	err = row.Scan(&fileUUID)
+	if err != nil {
+		return "", fmt.Errorf("SetBoardBackground (register file): %w", err)
+	}
+	tag, err := r.db.Exec(context.Background(), query2, fileUUID, boardID)
+	if err != nil {
+		return "", fmt.Errorf("SetBoardBackground (update board): %w", err)
+	}
+	if tag.RowsAffected() == 0 {
+		return "", fmt.Errorf("SetBoardBackground (update board): no rows affected")
+	}
+	return uploads.JoinFileName(fileUUID, fileExtension, ""), nil
+}

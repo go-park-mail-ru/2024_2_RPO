@@ -4,8 +4,13 @@ import (
 	"RPO_back/internal/errs"
 	"RPO_back/internal/models"
 	"RPO_back/internal/pkg/board"
+	"RPO_back/internal/pkg/utils/uploads"
 	"errors"
 	"fmt"
+	"io"
+	"mime/multipart"
+	"os"
+	"path/filepath"
 )
 
 var roleLevels = make(map[string]int)
@@ -318,13 +323,7 @@ func (uc *BoardUsecase) CreateColumn(userID int, boardID int, data *models.Colum
 func (uc *BoardUsecase) UpdateColumn(userID int, boardID int, columnID int, data *models.ColumnRequest) (updatedCol *models.Column, err error) {
 	perms, err := uc.boardRepository.GetMemberPermissions(boardID, userID, false)
 	if err != nil {
-		if errors.Is(err, errs.ErrNotPermitted) {
-			return nil, fmt.Errorf("UpdateColumn: %w", err)
-		}
-		if errors.Is(err, errs.ErrNotFound) {
-			return nil, fmt.Errorf("UpdateColumn: %w", err)
-		}
-		return nil, fmt.Errorf("UpdateColumn (add GetMemberPermissions): %w", err)
+		return nil, fmt.Errorf("UpdateColumn (get perms): %w", err)
 	}
 	if perms.Role == "viewer" {
 		return nil, fmt.Errorf("UpdateColumn (check): %w", errs.ErrNotPermitted)
@@ -345,13 +344,7 @@ func (uc *BoardUsecase) UpdateColumn(userID int, boardID int, columnID int, data
 func (uc *BoardUsecase) DeleteColumn(userID int, boardID int, columnID int) (err error) {
 	perms, err := uc.boardRepository.GetMemberPermissions(boardID, userID, false)
 	if err != nil {
-		if errors.Is(err, errs.ErrNotPermitted) {
-			return err
-		}
-		if errors.Is(err, errs.ErrNotFound) {
-			return err
-		}
-		return err
+		return fmt.Errorf("DeleteColumn (get perms): %w", err)
 	}
 	if perms.Role == "viewer" {
 		return fmt.Errorf("DeleteColumn (check): %w", errs.ErrNotPermitted)
@@ -365,7 +358,33 @@ func (uc *BoardUsecase) DeleteColumn(userID int, boardID int, columnID int) (err
 	return nil
 }
 
-// ReplaceBackground заменяет задний фон доски и возвращает обновлённую доску
-func (uc *BoardUsecase) ReplaceBackground(userID int, originalFileName string) (updatedBoard models.Board, fileName string, err error) {
-	panic("Not implemented")
+func (uc *BoardUsecase) SetBoardBackground(userID int, boardID int, file *multipart.File, fileHeader *multipart.FileHeader) (updatedBoard *models.Board, err error) {
+	perms, err := uc.boardRepository.GetMemberPermissions(boardID, userID, false)
+	if err != nil {
+		return nil, fmt.Errorf("SetBoardBackground (get perms): %w", err)
+	}
+	if perms.Role != "admin" && perms.Role != "editor_chief" {
+		return nil, fmt.Errorf("UpdateColumn (check): %w", errs.ErrNotPermitted)
+	}
+	uploadTo, err := uc.boardRepository.SetBoardBackground(
+		userID,
+		boardID,
+		uploads.ExtractFileExtension(fileHeader.Filename),
+		int(fileHeader.Size),
+	)
+	if err != nil {
+		return nil, err
+	}
+	uploadDir := os.Getenv("USER_UPLOADS_DIR")
+	filePath := filepath.Join(uploadDir, uploadTo)
+	dst, err := os.Create(filePath)
+	if err != nil {
+		return nil, fmt.Errorf("Cant create file on server side: %w", err)
+	}
+	defer dst.Close()
+
+	if _, err = io.Copy(dst, *file); err != nil {
+		return nil, fmt.Errorf("Cant copy file on server side: %w", err)
+	}
+	return uc.boardRepository.GetBoard(boardID)
 }

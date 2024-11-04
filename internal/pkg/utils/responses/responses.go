@@ -28,7 +28,6 @@ func DoBadResponse(w http.ResponseWriter, statusCode int, message string) {
 		return
 	}
 	w.Write(jsonResponse)
-
 }
 
 func DoEmptyOkResponce(w http.ResponseWriter) {

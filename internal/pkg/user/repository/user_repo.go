@@ -109,8 +109,8 @@ func (r *UserRepository) UpdateUserProfile(userID int, data models.UserProfileUp
 func (r *UserRepository) SetUserAvatar(userID int, fileExtension string, fileSize int) (fileName string, err error) {
 	query1 := `
 	INSERT INTO user_uploaded_file
-	(file_extension, created_at, created_by)
-	VALUES ($1, CURRENT_TIMESTAMP, $2)
+	(file_extension, created_at, created_by, "size")
+	VALUES ($1, CURRENT_TIMESTAMP, $2, $3)
 	RETURNING file_uuid::text;
 	`
 	query2 := `
@@ -118,7 +118,7 @@ func (r *UserRepository) SetUserAvatar(userID int, fileExtension string, fileSiz
 	SET avatar_file_uuid=to_uuid($1)
 	WHERE u_id=$2;`
 	var fileUUID string
-	row := r.db.QueryRow(context.Background(), query1, fileExtension, userID)
+	row := r.db.QueryRow(context.Background(), query1, fileExtension, userID, fileSize)
 	err = row.Scan(&fileUUID)
 	if err != nil {
 		return "", fmt.Errorf("SetUserAvatar (register file): %w", err)

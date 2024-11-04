@@ -45,4 +45,5 @@ type BoardRepo interface {
 	RemoveMember(boardID int, memberUserID int) (err error)
 	AddMember(boardID int, adderID int, memberUserID int) (member *models.MemberWithPermissions, err error)
 	GetUserByNickname(nickname string) (user *models.UserProfile, err error)
+	SetBoardBackground(userID int, boardID int, fileExtension string, fileSize int) (fileName string, err error)
 }
