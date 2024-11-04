@@ -2,6 +2,7 @@ package uploads
 
 import (
 	"fmt"
+	"os"
 	"strings"
 )
 
@@ -10,16 +11,17 @@ const (
 	DefaultBackgroundURL = "/static/img/backgroundPicture.png"
 )
 
-// JoinFileName восстанавливает имя файла из UUID и расширения (или,
+// JoinFileName восстанавливает URL файла из UUID и расширения (или,
 // если UUID пустой, возвращает дефолтное значение)
-func JoinFileName(fileUUID string, fileExtension string, defaultValue string) string {
+func JoinFileURL(fileUUID string, fileExtension string, defaultValue string) string {
+	urlPrefix := os.Getenv("USER_UPLOADS_URL")
 	if fileUUID == "" {
-		return defaultValue
+		return urlPrefix + defaultValue
 	}
 	if fileExtension != "" {
-		return fmt.Sprintf("%s.%s", fileUUID, fileExtension)
+		return urlPrefix + fmt.Sprintf("%s.%s", fileUUID, fileExtension)
 	}
-	return fileUUID
+	return urlPrefix + fileUUID
 }
 
 // ExtractFileExtension извлекает из имени файла его расширение (возвращает "", если файл без расширения)
@@ -29,4 +31,12 @@ func ExtractFileExtension(fileName string) string {
 		return ""
 	}
 	return fileName[lastDotIndex+1:]
+}
+
+// JoinFilePath восстанавливает имя файла из UUID
+func JoinFilePath(fileUUID string, fileExtension string) string {
+	if fileExtension != "" {
+		return fmt.Sprintf("%s.%s", fileUUID, fileExtension)
+	}
+	return fileUUID
 }

@@ -69,7 +69,7 @@ func (r *BoardRepository) GetBoard(boardID int) (*models.Board, error) {
 		&fileUUID,
 		&fileExtension,
 	)
-	board.BackgroundImageURL = uploads.JoinFileName(fileUUID, fileExtension, uploads.DefaultBackgroundURL)
+	board.BackgroundImageURL = uploads.JoinFileURL(fileUUID, fileExtension, uploads.DefaultBackgroundURL)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, fmt.Errorf("GetBoard: %w", errs.ErrNotFound)
@@ -195,5 +195,5 @@ func (r *BoardRepository) SetBoardBackground(userID int, boardID int, fileExtens
 	if tag.RowsAffected() == 0 {
 		return "", fmt.Errorf("SetBoardBackground (update board): no rows affected")
 	}
-	return uploads.JoinFileName(fileUUID, fileExtension, ""), nil
+	return uploads.JoinFilePath(fileUUID, fileExtension), nil
 }
