@@ -80,7 +80,7 @@ func (r *BoardRepository) GetBoard(boardID int) (*models.Board, error) {
 }
 
 // UpdateBoard updates the specified fields of a board.
-func (r *BoardRepository) UpdateBoard(boardID int, data *models.BoardPutRequest) error {
+func (r *BoardRepository) UpdateBoard(boardID int, data *models.BoardPutRequest) (updatedBoard *models.Board, err error) {
 	query := `
 		UPDATE board
 		SET name=$1, description=$2, updated_at = CURRENT_TIMESTAMP
@@ -90,14 +90,14 @@ func (r *BoardRepository) UpdateBoard(boardID int, data *models.BoardPutRequest)
 	tag, err := r.db.Exec(context.Background(), query, data.NewName, data.NewDescription, boardID)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return fmt.Errorf("UpdateBoard: %w", errs.ErrNotFound)
+			return nil, fmt.Errorf("UpdateBoard: %w", errs.ErrNotFound)
 		}
-		return fmt.Errorf("UpdateBoard: %w", err)
+		return nil, fmt.Errorf("UpdateBoard: %w", err)
 	}
 	if tag.RowsAffected() == 0 {
-		return fmt.Errorf("UpdateBoard: %w", errs.ErrNotFound)
+		return nil, fmt.Errorf("UpdateBoard: %w", errs.ErrNotFound)
 	}
-	return nil
+	return r.GetBoard(boardID)
 }
 
 // DeleteBoard удаляет доску по Id

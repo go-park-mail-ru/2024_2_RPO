@@ -6,7 +6,6 @@ import (
 
 //go:generate mockgen -source=interfaces.go -destination=mocks/mock.go
 
-
 type BoardUsecase interface {
 	CreateNewBoard(userID int, data models.CreateBoardRequest) (newBoard *models.Board, err error)
 	UpdateBoard(userID int, boardID int, data models.BoardPutRequest) (updatedBoard *models.Board, err error)
@@ -28,7 +27,7 @@ type BoardUsecase interface {
 type BoardRepo interface {
 	CreateBoard(name string, userID int) (*models.Board, error)
 	GetBoard(boardID int) (*models.Board, error)
-	UpdateBoard(boardID int, data *models.BoardPutRequest) error
+	UpdateBoard(boardID int, data *models.BoardPutRequest) (updatedBoard *models.Board, err error)
 	DeleteBoard(boardId int) error
 	GetBoardsForUser(userID int) (boardArray []models.Board, err error)
 	GetCardsForBoard(boardID int) (cards []models.Card, err error)
@@ -46,5 +45,4 @@ type BoardRepo interface {
 	RemoveMember(boardID int, memberUserID int) (err error)
 	AddMember(boardID int, adderID int, memberUserID int) (member *models.MemberWithPermissions, err error)
 	GetUserByNickname(nickname string) (user *models.UserProfile, err error)
-	
 }

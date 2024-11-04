@@ -102,7 +102,7 @@ func (r *BoardRepository) GetMemberPermissions(boardID int, memberUserID int, ve
 		if updatedByID != -1 {
 			updater, err := r.GetUserProfile(updatedByID)
 			if err != nil {
-				return nil, fmt.Errorf("GetMemberPermissions (getting last updater profile): %w", err)
+				return nil, fmt.Errorf("GetMemberPermissions (getting updater profile): %w", err)
 			}
 			member.UpdatedBy = updater
 		}
