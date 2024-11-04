@@ -1084,3 +1084,85 @@ func TestBoardUsecase_DeleteColumn(t *testing.T) {
 		})
 	}
 }
+
+// func TestBoardUsecase_SetBoardBackground(t *testing.T) {
+// 	ctrl := gomock.NewController(t)
+// 	defer ctrl.Finish()
+
+// 	mockBoardRepo := mocks.NewMockBoardRepo(ctrl)
+// 	boardUsecase := BoardUsecase.CreateBoardUsecase(mockBoardRepo)
+
+// 	fileContent := []byte("fake image content")
+// 	file := io.NopCloser(bytes.NewReader(fileContent))
+// 	fileHeader := &multipart.FileHeader{
+// 		Filename: "background.png",
+// 		Size:     int64(len(fileContent)),
+// 	}
+
+// 	tests := []struct {
+// 		name          string
+// 		userID        int
+// 		boardID       int
+// 		setupMock     func()
+// 		expectedError bool
+// 		expectedBoard *models.Board
+// 	}{
+// 		{
+// 			name:    "successful background set",
+// 			userID:  1,
+// 			boardID: 1,
+// 			setupMock: func() {
+// 				mockBoardRepo.EXPECT().GetMemberPermissions(1, 1, false).Return(&models.MemberWithPermissions{Role: "admin"}, nil)
+// 				mockBoardRepo.EXPECT().SetBoardBackground(1, 1, "png", len(fileContent)).Return("path/to/background.png", nil)
+// 				mockBoardRepo.EXPECT().GetBoard(1).Return(&models.Board{ID: 1, Name: "Demo Board"}, nil)
+// 			},
+// 			expectedError: false,
+// 			expectedBoard: &models.Board{ID: 1, Name: "Demo Board"},
+// 		},
+// 		{
+// 			name:    "permission error",
+// 			userID:  2,
+// 			boardID: 1,
+// 			setupMock: func() {
+// 				mockBoardRepo.EXPECT().GetMemberPermissions(1, 2, false).Return(&models.MemberWithPermissions{Role: "viewer"}, nil)
+// 			},
+// 			expectedError: true,
+// 		},
+// 		{
+// 			name:    "error during SetBoardBackground",
+// 			userID:  1,
+// 			boardID: 1,
+// 			setupMock: func() {
+// 				mockBoardRepo.EXPECT().GetMemberPermissions(1, 1, false).Return(&models.MemberWithPermissions{Role: "admin"}, nil)
+// 				mockBoardRepo.EXPECT().SetBoardBackground(1, 1, "png", len(fileContent)).Return("", errors.New("background set error"))
+// 			},
+// 			expectedError: true,
+// 		},
+// 		{
+// 			name:    "file creation error",
+// 			userID:  1,
+// 			boardID: 1,
+// 			setupMock: func() {
+// 				mockBoardRepo.EXPECT().GetMemberPermissions(1, 1, false).Return(&models.MemberWithPermissions{Role: "admin"}, nil)
+// 				mockBoardRepo.EXPECT().SetBoardBackground(1, 1, "png", len(fileContent)).Return("path/to/background.png", nil)
+// 			},
+// 			expectedError: true,
+// 		},
+// 	}
+
+// 	for _, tt := range tests {
+// 		t.Run(tt.name, func(t *testing.T) {
+// 			tt.setupMock()
+
+// 			updatedBoard, err := boardUsecase.SetBoardBackground(tt.userID, tt.boardID, &file, fileHeader)
+// 			if tt.expectedError {
+// 				assert.Nil(t, updatedBoard)
+// 				assert.Error(t, err)
+// 			} else {
+// 				assert.NotNil(t, updatedBoard)
+// 				assert.NoError(t, err)
+// 				assert.Equal(t, tt.expectedBoard, updatedBoard)
+// 			}
+// 		})
+// 	}
+// }
