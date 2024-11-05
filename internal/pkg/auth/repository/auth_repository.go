@@ -10,16 +10,16 @@ import (
 	"time"
 
 	"github.com/go-redis/redis/v8"
+	"github.com/jackc/pgtype/pgxtype"
 	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type AuthRepository struct {
-	db      *pgxpool.Pool
+	db   pgxtype.Querier
 	redisDb *redis.Client
 }
 
-func CreateAuthRepository(postgresDb *pgxpool.Pool, redisDb *redis.Client) *AuthRepository {
+func CreateAuthRepository(postgresDb pgxtype.Querier, redisDb *redis.Client) *AuthRepository {
 	return &AuthRepository{
 		db: postgresDb, redisDb: redisDb,
 	}

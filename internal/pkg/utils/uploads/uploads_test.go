@@ -6,7 +6,7 @@ import (
 	"github.com/go-playground/assert/v2"
 )
 
-func TestJoinFileName(t *testing.T) {
-	assert.Equal(t, JoinFileName("1234", "jpg", "default"), "1234.jpg")
+func TestJoinFilePath(t *testing.T) {
+	assert.Equal(t, JoinFilePath("1234", "jpg"), "1234.jpg")
 
 }
