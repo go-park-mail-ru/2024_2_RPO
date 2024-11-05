@@ -16,7 +16,7 @@ func TestUserUsecase_GetMyProfile(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	mockUserRepo := mocks.NewMockBoardRepo(ctrl)
+	mockUserRepo := mocks.NewMockUserRepo(ctrl)
 	userUsecase := usecase.CreateUserUsecase(mockUserRepo)
 
 	t.Run("successful profile retrieval", func(t *testing.T) {
