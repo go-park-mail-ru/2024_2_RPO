@@ -2,7 +2,7 @@ package usecase
 
 import (
 	"RPO_back/internal/models"
-	"RPO_back/internal/pkg/user/repository"
+	"RPO_back/internal/pkg/user"
 	"RPO_back/internal/pkg/utils/uploads"
 	"fmt"
 	"io"
@@ -12,10 +12,10 @@ import (
 )
 
 type UserUsecase struct {
-	userRepo *repository.UserRepository
+	userRepo user.UserRepo
 }
 
-func CreateUserUsecase(userRepo *repository.UserRepository) *UserUsecase {
+func CreateUserUsecase(userRepo user.UserRepo) *UserUsecase {
 	return &UserUsecase{
 		userRepo: userRepo,
 	}
