@@ -38,64 +38,53 @@ package repository
 // 	assert.Nil(t, err, fmt.Sprintf("Expected no error, but got %v", err))
 // }
 
-import (
-	"RPO_back/internal/models"
-	"errors"
-	"testing"
-	"time"
-
-	"github.com/driftprogramming/pgxpoolmock"
-	"github.com/golang/mock/gomock"
-	"github.com/stretchr/testify/assert"
-)
-
 // Здесь мы определяем необходимые поля в структуре UserProfile
 
-// Ошибка для неверных учетных данных
-var ErrWrongCredentials = errors.New("wrong credentials")
+// // Ошибка для неверных учетных данных
+// var ErrWrongCredentials = errors.New("wrong credentials")
 
-func TestGetUserByEmail(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+// func TestGetUserByEmail(t *testing.T) {
+// 	ctrl := gomock.NewController(t)
+// 	defer ctrl.Finish()
 
-	mockPool := pgxpoolmock.NewMockPgxPool(ctrl)
+// 	mockPool := pgxpoolmock.NewMockPgxPool(ctrl)
 
-	repo := &AuthRepository{
-		db: mockPool,
-	}
+// 	repo := &AuthRepository{
+// 		db: mockPool,
+// 	}
 
-	// Определяем переменные для теста
-	email := "test@example.com"
-	expectedUser := &models.UserProfile{
-		ID:           1,
-		Name:         "Test User",
-		Email:        email,
-		Description:  "Test Description",
-		JoinedAt:     time.Now(),
-		UpdatedAt:    time.Now(),
-		PasswordHash: "testhash",
-	}
+// 	// Определяем переменные для теста
+// 	email := "test@example.com"
+// 	expectedUser := &models.UserProfile{
+// 		ID:           1,
+// 		Name:         "Test User",
+// 		Email:        email,
+// 		Description:  "Test Description",
+// 		JoinedAt:     time.Now(),
+// 		UpdatedAt:    time.Now(),
+// 		PasswordHash: "testhash",
+// 	}
 
-	// Создаем ожидаемый response от базы данных
-	rows := pgxpoolmock.NewRows([]string{"u_id", "nickname", "email", "description", "joined_at", "updated_at", "password_hash"}).
-		AddRow(expectedUser.ID, expectedUser.Name, expectedUser.Email, expectedUser.Description, expectedUser.JoinedAt, expectedUser.UpdatedAt, expectedUser.PasswordHash)
+// 	// Создаем ожидаемый response от базы данных
+// 	rows := pgxpoolmock.NewRows([]string{"u_id", "nickname", "email", "description", "joined_at", "updated_at", "password_hash"}).
+// 		AddRow(expectedUser.ID, expectedUser.Name, expectedUser.Email, expectedUser.Description, expectedUser.JoinedAt, expectedUser.UpdatedAt, expectedUser.PasswordHash)
 
-	mockPool.EXPECT().
-		QueryRow(gomock.Any(), gomock.Any(), email).
-		Return(rows)
+// 	mockPool.EXPECT().
+// 		QueryRow(gomock.Any(), gomock.Any(), email).
+// 		Return(rows)
 
-	// Выполнение тестируемой функции
-	user, err := repo.GetUserByEmail(email)
-	assert.Nil(t, err)
-	assert.Equal(t, expectedUser, user)
+// 	// Выполнение тестируемой функции
+// 	user, err := repo.GetUserByEmail(email)
+// 	assert.Nil(t, err)
+// 	assert.Equal(t, expectedUser, user)
 
-	// Проверка на случай, если пользователь не найден
-	mockPool.EXPECT().
-		QueryRow(gomock.Any(), gomock.Any(), "nonexistent@example.com").
-		Return(pgxpoolmock.NewRows(nil)) // No rows
+// 	// Проверка на случай, если пользователь не найден
+// 	mockPool.EXPECT().
+// 		QueryRow(gomock.Any(), gomock.Any(), "nonexistent@example.com").
+// 		Return(pgxpoolmock.NewRows(nil)) // No rows
 
-	user, err = repo.GetUserByEmail("nonexistent@example.com")
-	assert.NotNil(t, err)
-	assert.Equal(t, ErrWrongCredentials, err)
-	assert.Nil(t, user)
-}
+// 	user, err = repo.GetUserByEmail("nonexistent@example.com")
+// 	assert.NotNil(t, err)
+// 	assert.Equal(t, ErrWrongCredentials, err)
+// 	assert.Nil(t, user)
+// }

@@ -15,7 +15,7 @@ import (
 )
 
 type AuthRepository struct {
-	db   pgxtype.Querier
+	db      pgxtype.Querier
 	redisDb *redis.Client
 }
 
