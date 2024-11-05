@@ -45,52 +45,52 @@ func TestUserUsecase_GetMyProfile(t *testing.T) {
 	})
 }
 
-// func TestUserUsecase_UpdateMyProfile(t *testing.T) {
-// 	ctrl := gomock.NewController(t)
-// 	defer ctrl.Finish()
+func TestUserUsecase_UpdateMyProfile(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
 
-// 	mockUserRepo := mocks.NewMockBoardRepo(ctrl)
-// 	userUsecase := usecase.CreateUserUsecase(mockUserRepo)
+	mockUserRepo := mocks.NewMockUserRepo(ctrl)
+	userUsecase := usecase.CreateUserUsecase(mockUserRepo)
 
-// 	t.Run("successful profile update", func(t *testing.T) {
-// 		updateData := &models.UserProfileUpdate{
-// 			NewName: "Updated User",
-// 			Email:   "updateduser@example.com",
-// 		}
-// 		mockUserRepo.EXPECT().UpdateUserProfile(1, *updateData).Return(&models.UserProfile{
-// 			ID:             1,
-// 			Name:           "Updated User",
-// 			Email:          "updateduser@example.com",
-// 			Description:    "Updated Description",
-// 			JoinedAt:       time.Now(),
-// 			UpdatedAt:      time.Now(),
-// 			AvatarImageURL: "",
-// 		}, nil)
+	t.Run("successful profile update", func(t *testing.T) {
+		updateData := &models.UserProfileUpdate{
+			NewName: "Updated User",
+			Email:   "updateduser@example.com",
+		}
+		mockUserRepo.EXPECT().UpdateUserProfile(1, *updateData).Return(&models.UserProfile{
+			ID:             1,
+			Name:           "Updated User",
+			Email:          "updateduser@example.com",
+			Description:    "Updated Description",
+			JoinedAt:       time.Now(),
+			UpdatedAt:      time.Now(),
+			AvatarImageURL: "",
+		}, nil)
 
-// 		profile, err := userUsecase.UpdateMyProfile(1, updateData)
-// 		assert.NoError(t, err)
-// 		assert.Equal(t, "Updated User", profile.Name)
-// 		assert.Equal(t, "updateduser@example.com", profile.Email)
-// 	})
+		profile, err := userUsecase.UpdateMyProfile(1, updateData)
+		assert.NoError(t, err)
+		assert.Equal(t, "Updated User", profile.Name)
+		assert.Equal(t, "updateduser@example.com", profile.Email)
+	})
 
-// 	t.Run("failed profile update", func(t *testing.T) {
-// 		updateData := &models.UserProfileUpdate{
-// 			NewName: "Updated User",
-// 			Email:   "updateduser@example.com",
-// 		}
-// 		mockUserRepo.EXPECT().UpdateUserProfile(1, *updateData).Return(nil, errors.New("update failed"))
+	t.Run("failed profile update", func(t *testing.T) {
+		updateData := &models.UserProfileUpdate{
+			NewName: "Updated User",
+			Email:   "updateduser@example.com",
+		}
+		mockUserRepo.EXPECT().UpdateUserProfile(1, *updateData).Return(nil, errors.New("update failed"))
 
-// 		profile, err := userUsecase.UpdateMyProfile(1, updateData)
-// 		assert.Error(t, err)
-// 		assert.Nil(t, profile)
-// 	})
-// }
+		profile, err := userUsecase.UpdateMyProfile(1, updateData)
+		assert.Error(t, err)
+		assert.Nil(t, profile)
+	})
+}
 
 // func TestUserUsecase_SetMyAvatar(t *testing.T) {
 // 	ctrl := gomock.NewController(t)
 // 	defer ctrl.Finish()
 
-// 	mockUserRepo := mocks.NewMockBoardRepo(ctrl)
+// 	mockUserRepo := mocks.NewMockUserRepo(ctrl)
 // 	userUsecase := usecase.CreateUserUsecase(mockUserRepo)
 
 // 	// Мокаем загрузку аватара
