@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/golang/mock/gomock"
+	gomock "github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 )
 
