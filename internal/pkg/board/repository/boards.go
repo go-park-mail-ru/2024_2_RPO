@@ -142,24 +142,20 @@ func (r *BoardRepository) GetBoardsForUser(userID int) (boardArray []models.Boar
 	boardArray = []models.Board{}
 	for rows.Next() {
 		var board models.Board
-		var fileUuid, fileExtension string
+		var fileUUID, fileExtension string
 		err := rows.Scan(
 			&board.ID,
 			&board.Name,
 			&board.Description,
 			&board.CreatedAt,
 			&board.UpdatedAt,
-			&fileUuid,
+			&fileUUID,
 			&fileExtension,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("GetBoardsForUser (for rows): %w", err)
 		}
-		if fileUuid != "" {
-			board.BackgroundImageURL = fmt.Sprintf("%s.%s", fileUuid, fileExtension)
-		} else {
-			board.BackgroundImageURL = uploads.DefaultBackgroundURL
-		}
+		board.BackgroundImageURL = uploads.JoinFileURL(fileUUID, fileExtension, uploads.DefaultBackgroundURL)
 		boardArray = append(boardArray, board)
 	}
 
