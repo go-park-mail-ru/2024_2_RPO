@@ -90,7 +90,7 @@ func (this *AuthDelivery) RegisterUser(w http.ResponseWriter, r *http.Request) {
 		SameSite: http.SameSiteStrictMode,
 		Path:     "/",
 		HttpOnly: true,
-		MaxAge:   10000,
+		MaxAge:   int((7 * 24 * time.Hour).Seconds()),
 	}
 	http.SetCookie(w, &cookie)
 

@@ -3,20 +3,20 @@ package repository
 import (
 	"RPO_back/internal/errs"
 	"RPO_back/internal/models"
+	"RPO_back/internal/pkg/utils/pgxiface"
 	"RPO_back/internal/pkg/utils/uploads"
 	"context"
 	"errors"
 	"fmt"
 
 	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type BoardRepository struct {
-	db *pgxpool.Pool
+	db pgxiface.PgxIface
 }
 
-func CreateBoardRepository(db *pgxpool.Pool) *BoardRepository {
+func CreateBoardRepository(db pgxiface.PgxIface) *BoardRepository {
 	return &BoardRepository{db: db}
 }
 
