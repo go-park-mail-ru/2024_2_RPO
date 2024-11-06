@@ -12,7 +12,13 @@
 
 [Ссылка на деплой](http://109.120.180.70:8002)
 
-[Ссылка на Swagger и `CREATE TABLE`](https://github.com/go-park-mail-ru/2024_2_RPO/tree/swagger_approved)
+[Ссылка на Swagger](https://dedxyk594.github.io/swagger_ui_RPO/index.html)
+
+### Стандарты разработки
+
+* Все комментарии на русском языке
+* Все логи на английском языке
+* У аббревиатур все буквы в одном регистре: ~~`sessionId`~~ `sessionID`
 
 ### Запуск сервера
 
@@ -25,19 +31,29 @@
 Затем надо оформить файл `.env`. Пример:
 
 ```
-DB_PASSWORD=my_secure_password
-DB_USER=tarasovxx
-DB_PORT=5432
+POSTGRES_HOST = localhost
+POSTGRES_PORT = 5432
+POSTGRES_USER = tarasovxx
+POSTGRES_PASSWORD = my_secure_password
+POSTGRES_DB = pumpkin
+POSTGRES_SSLMODE = require
 
-SERVER_PORT=8800
+SERVER_PORT = 8800
 
-REDIS_PORT=6379
-REDIS_USER=tarasovxx
-REDIS_PASSWORD=my_secure_password
+REDIS_HOST = localhost
+REDIS_PORT = 6379
+REDIS_PASSWORD = my_secure_password
+
+CORS_ORIGIN = https://mysite.com
+
+LOGS_FILE = log.json
+
+USER_UPLOADS_DIR = /opt/uploads
+USER_UPLOADS_URL = /files
 ```
 
-Запуск: `go run main.go`
+Запуск: `make run`
 
 ### Запуск тестов
 
-Надо сделать всё, что нужно для запуска сервера, но вместо `go run main.go` запустить `./get_coverage_data.sh`
+Надо сделать всё, что нужно для запуска сервера, но вместо `make run` запустить `make test`. Чтобы получить информацию о покрытии, надо запустить `make coverage`
