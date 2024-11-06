@@ -11,6 +11,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/pashagolub/pgxmock/v4"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestCreateBoard(t *testing.T) {
@@ -161,4 +162,150 @@ func TestGetMembersWithPermissions(t *testing.T) {
 
 	err = mock.ExpectationsWereMet()
 	assert.NoError(t, err)
+}
+
+func TestSetMemberRole_Success(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	require.NoError(t, err)
+
+	ctx := context.Background()
+	repo := CreateBoardRepository(mock)
+
+	uid := 123
+	bid := 456
+
+	mock.ExpectExec(`
+	UPDATE user_to_board`).
+		WithArgs(uid, bid).
+		WillReturnResult(pgxmock.NewResult("1", 1))
+
+	mock.ExpectQuery(`SELECT (.*) FROM "user"`).
+		WithArgs(pgxmock.AnyArg()).
+		WillReturnRows(pgxmock.NewRows([]string{"u_id", "nickname", "email",
+			"description",
+			"joined_at",
+			"updated_at",
+			"file_uuid",
+			"file_extension"}).AddRow(2, "RVasily", "rvasily@yandex.ru", "Hello! I am user of Pumpkin", time.Now(), time.Now(), "", ""))
+
+	mock.ExpectQuery("WITH board_check").
+		WithArgs(pgxmock.AnyArg(), pgxmock.AnyArg()).
+		WillReturnRows(pgxmock.NewRows([]string{"role", "added_at", "updated_at", "added_by", "updated_by"}).
+			AddRow("admin", time.Now(), time.Now(), 2, 3))
+
+	mock.ExpectQuery(`SELECT (.*) FROM "user"`).
+		WithArgs(pgxmock.AnyArg()).
+		WillReturnRows(pgxmock.NewRows([]string{"u_id", "nickname", "email",
+			"description",
+			"joined_at",
+			"updated_at",
+			"file_uuid",
+			"file_extension"}).AddRow(2, "RVasily", "rvasily@yandex.ru", "Hello! I am user of Pumpkin", time.Now(), time.Now(), "", ""))
+	mock.ExpectQuery(`SELECT (.*) FROM "user"`).
+		WithArgs(pgxmock.AnyArg()).
+		WillReturnRows(pgxmock.NewRows([]string{"u_id", "nickname", "email",
+			"description",
+			"joined_at",
+			"updated_at",
+			"file_uuid",
+			"file_extension"}).AddRow(2, "RVasily", "rvasily@yandex.ru", "Hello! I am user of Pumpkin", time.Now(), time.Now(), "", ""))
+
+	member, err := repo.SetMemberRole(ctx, bid, uid, "viewer")
+	assert.NoError(t, err)
+	assert.NotNil(t, member)
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestRemoveMember_Success(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	require.NoError(t, err)
+
+	ctx := context.Background()
+	repo := CreateBoardRepository(mock)
+
+	mock.ExpectExec(`DELETE FROM`).
+		WithArgs(123, 456).
+		WillReturnResult(pgxmock.NewResult("1", 1))
+
+	err = repo.RemoveMember(ctx, 123, 456)
+	assert.NoError(t, err)
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestAddMember_Success(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	require.NoError(t, err)
+	repo := CreateBoardRepository(mock)
+
+	mock.ExpectQuery(`SELECT (.*) FROM "user"`).
+		WithArgs(pgxmock.AnyArg()).
+		WillReturnRows(pgxmock.NewRows([]string{"u_id", "nickname", "email",
+			"description",
+			"joined_at",
+			"updated_at",
+			"file_uuid",
+			"file_extension"}).AddRow(2, "RVasily", "rvasily@yandex.ru", "Hello! I am user of Pumpkin", time.Now(), time.Now(), "", ""))
+	mock.ExpectQuery("WITH board_check").
+		WithArgs(pgxmock.AnyArg(), pgxmock.AnyArg()).
+		WillReturnError(pgx.ErrNoRows)
+
+	mock.ExpectExec(`INSERT INTO user_to_board`).
+		WithArgs(123, 456, 789).WillReturnResult(pgxmock.NewResult("1", 1))
+
+	mock.ExpectQuery(`SELECT (.*) FROM "user"`).
+		WithArgs(pgxmock.AnyArg()).
+		WillReturnRows(pgxmock.NewRows([]string{"u_id", "nickname", "email",
+			"description",
+			"joined_at",
+			"updated_at",
+			"file_uuid",
+			"file_extension"}).AddRow(2, "RVasily", "rvasily@yandex.ru", "Hello! I am user of Pumpkin", time.Now(), time.Now(), "", ""))
+
+	mock.ExpectQuery("WITH board_check").
+		WithArgs(pgxmock.AnyArg(), pgxmock.AnyArg()).
+		WillReturnRows(pgxmock.NewRows([]string{"role", "added_at", "updated_at", "added_by", "updated_by"}).
+			AddRow("admin", time.Now(), time.Now(), 2, 3))
+
+	mock.ExpectQuery(`SELECT (.*) FROM "user"`).
+		WithArgs(pgxmock.AnyArg()).
+		WillReturnRows(pgxmock.NewRows([]string{"u_id", "nickname", "email",
+			"description",
+			"joined_at",
+			"updated_at",
+			"file_uuid",
+			"file_extension"}).AddRow(2, "RVasily", "rvasily@yandex.ru", "Hello! I am user of Pumpkin", time.Now(), time.Now(), "", ""))
+
+	mock.ExpectQuery(`SELECT (.*) FROM "user"`).
+		WithArgs(pgxmock.AnyArg()).
+		WillReturnRows(pgxmock.NewRows([]string{"u_id", "nickname", "email",
+			"description",
+			"joined_at",
+			"updated_at",
+			"file_uuid",
+			"file_extension"}).AddRow(2, "RVasily", "rvasily@yandex.ru", "Hello! I am user of Pumpkin", time.Now(), time.Now(), "", ""))
+
+	member, err := repo.AddMember(context.Background(), 456, 789, 123)
+	assert.NoError(t, err)
+	assert.NotNil(t, member)
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestGetUserByNickname_Success(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	require.NoError(t, err)
+
+	ctx := context.Background()
+	repo := CreateBoardRepository(mock)
+
+	rows := pgxmock.NewRows([]string{"u_id", "nickname", "email", "description", "joined_at", "updated_at"}).
+		AddRow(1, "testuser", "test@example.com", "description", time.Now(), time.Now())
+
+	mock.ExpectQuery(`SELECT u_id, nickname, email, description, joined_at, updated_at FROM "user" WHERE nickname=\$1`).
+		WithArgs("testuser").
+		WillReturnRows(rows)
+
+	user, err := repo.GetUserByNickname(ctx, "testuser")
+	assert.NoError(t, err)
+	assert.NotNil(t, user)
+	assert.NoError(t, mock.ExpectationsWereMet())
 }

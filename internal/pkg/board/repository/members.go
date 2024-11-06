@@ -16,8 +16,14 @@ import (
 func (r *BoardRepository) GetUserProfile(ctx context.Context, userID int) (user *models.UserProfile, err error) {
 	query := `
 	SELECT
-	u_id, nickname, email, description, joined_at, updated_at,
-	COALESCE(f.file_uuid::text, ''), COALESCE(f.file_extension, '')
+	u_id,
+	nickname,
+	email,
+	description,
+	joined_at,
+	updated_at,
+	COALESCE(f.file_uuid::text, ''),
+	COALESCE(f.file_extension, '')
 	FROM "user" AS u
 	LEFT JOIN user_uploaded_file AS f ON f.file_uuid=u.avatar_file_uuid
 	WHERE u_id=$1;
@@ -54,6 +60,11 @@ func (r *BoardRepository) GetUserProfile(ctx context.Context, userID int) (user 
 // будут не nil
 func (r *BoardRepository) GetMemberPermissions(ctx context.Context, boardID int, memberUserID int, verbose bool) (member *models.MemberWithPermissions, err error) {
 	query := `
+	WITH board_check AS (
+		SELECT 1
+		FROM kanban_column
+		WHERE board_id=$2
+	)
 	SELECT
 	ub.role,
 	ub.added_at,
@@ -69,11 +80,6 @@ func (r *BoardRepository) GetMemberPermissions(ctx context.Context, boardID int,
 	userProfile, err := r.GetUserProfile(ctx, memberUserID)
 	if err != nil {
 		return nil, fmt.Errorf("GetMemberPermissions (getting user profile): %w", err)
-	}
-	// Проверка на то, что доска существует
-	_, err = r.GetBoard(ctx, boardID)
-	if err != nil {
-		return nil, fmt.Errorf("GetMemberPermissions (getting board): %w", err)
 	}
 	member.User = userProfile
 	var addedByID, updatedByID int
@@ -279,13 +285,12 @@ func (r *BoardRepository) AddMember(ctx context.Context, boardID int, adderID in
 		return nil, fmt.Errorf("AddMember (insert): %w", err)
 	}
 	member, err = r.GetMemberPermissions(ctx, boardID, memberUserID, true)
-	return member, nil
+	return member, err
 }
 
 // GetUserByNickname получает данные пользователя из базы по имени
 func (r *BoardRepository) GetUserByNickname(ctx context.Context, nickname string) (user *models.UserProfile, err error) {
-	query := `SELECT u_id, nickname, email, description, joined_at, updated_at
-	FROM "user"
+	query := `SELECT u_id, nickname, email, description, joined_at, updated_at FROM "user"
 	WHERE nickname=$1;`
 	user = &models.UserProfile{}
 	err = r.db.QueryRow(ctx, query, nickname).Scan(
