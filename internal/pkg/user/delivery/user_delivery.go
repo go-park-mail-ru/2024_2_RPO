@@ -2,7 +2,7 @@ package delivery
 
 import (
 	"RPO_back/internal/models"
-	"RPO_back/internal/pkg/user/usecase"
+	"RPO_back/internal/pkg/user"
 	"RPO_back/internal/pkg/utils/requests"
 	"RPO_back/internal/pkg/utils/responses"
 	"net/http"
@@ -11,10 +11,10 @@ import (
 )
 
 type UserDelivery struct {
-	userUC *usecase.UserUsecase
+	userUC user.UserUsecase
 }
 
-func CreateUserDelivery(userUC *usecase.UserUsecase) *UserDelivery {
+func CreateUserDelivery(userUC user.UserUsecase) *UserDelivery {
 	return &UserDelivery{userUC: userUC}
 }
 
