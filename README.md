@@ -6,7 +6,10 @@
 [Жуков Георгий](https://github.com/dedxyk594)
 [Константин Сафронов](https://github.com/kosafronov)
 
-Ментор: [Тарасов Артём](https://github.com/tarasovxx)
+Менторы:
+* [Тарасов Артём](https://github.com/tarasovxx)
+* [Фикслер Леонид](https://github.com/reddiridabl666)
+* [Алёхин Владислав](https://github.com/3kybika)
 
 [Репозиторий фронтенда](https://github.com/frontend-park-mail-ru/2024_2_RPO)
 
