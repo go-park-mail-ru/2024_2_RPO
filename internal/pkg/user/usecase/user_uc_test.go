@@ -4,6 +4,7 @@ import (
 	"RPO_back/internal/models"
 	mocks "RPO_back/internal/pkg/user/mocks"
 	"RPO_back/internal/pkg/user/usecase"
+	"context"
 	"errors"
 	"testing"
 	"time"
@@ -20,7 +21,7 @@ func TestUserUsecase_GetMyProfile(t *testing.T) {
 	userUsecase := usecase.CreateUserUsecase(mockUserRepo)
 
 	t.Run("successful profile retrieval", func(t *testing.T) {
-		mockUserRepo.EXPECT().GetUserProfile(1).Return(&models.UserProfile{
+		mockUserRepo.EXPECT().GetUserProfile(gomock.Any(), 1).Return(&models.UserProfile{
 			ID:             1,
 			Name:           "Test User",
 			Email:          "testuser@example.com",
@@ -30,16 +31,16 @@ func TestUserUsecase_GetMyProfile(t *testing.T) {
 			AvatarImageURL: "",
 		}, nil)
 
-		profile, err := userUsecase.GetMyProfile(1)
+		profile, err := userUsecase.GetMyProfile(context.Background(), 1)
 		assert.NoError(t, err)
 		assert.Equal(t, "Test User", profile.Name)
 		assert.Equal(t, "testuser@example.com", profile.Email)
 	})
 
 	t.Run("failed profile retrieval", func(t *testing.T) {
-		mockUserRepo.EXPECT().GetUserProfile(1).Return(nil, errors.New("user not found"))
+		mockUserRepo.EXPECT().GetUserProfile(gomock.Any(), 1).Return(nil, errors.New("user not found"))
 
-		profile, err := userUsecase.GetMyProfile(1)
+		profile, err := userUsecase.GetMyProfile(context.Background(), 1)
 		assert.Error(t, err)
 		assert.Nil(t, profile)
 	})
@@ -57,7 +58,7 @@ func TestUserUsecase_UpdateMyProfile(t *testing.T) {
 			NewName: "Updated User",
 			Email:   "updateduser@example.com",
 		}
-		mockUserRepo.EXPECT().UpdateUserProfile(1, *updateData).Return(&models.UserProfile{
+		mockUserRepo.EXPECT().UpdateUserProfile(gomock.Any(), 1, *updateData).Return(&models.UserProfile{
 			ID:             1,
 			Name:           "Updated User",
 			Email:          "updateduser@example.com",
@@ -67,7 +68,7 @@ func TestUserUsecase_UpdateMyProfile(t *testing.T) {
 			AvatarImageURL: "",
 		}, nil)
 
-		profile, err := userUsecase.UpdateMyProfile(1, updateData)
+		profile, err := userUsecase.UpdateMyProfile(context.Background(), 1, updateData)
 		assert.NoError(t, err)
 		assert.Equal(t, "Updated User", profile.Name)
 		assert.Equal(t, "updateduser@example.com", profile.Email)
@@ -78,9 +79,9 @@ func TestUserUsecase_UpdateMyProfile(t *testing.T) {
 			NewName: "Updated User",
 			Email:   "updateduser@example.com",
 		}
-		mockUserRepo.EXPECT().UpdateUserProfile(1, *updateData).Return(nil, errors.New("update failed"))
+		mockUserRepo.EXPECT().UpdateUserProfile(gomock.Any(), 1, *updateData).Return(nil, errors.New("update failed"))
 
-		profile, err := userUsecase.UpdateMyProfile(1, updateData)
+		profile, err := userUsecase.UpdateMyProfile(context.Background(), 1, updateData)
 		assert.Error(t, err)
 		assert.Nil(t, profile)
 	})

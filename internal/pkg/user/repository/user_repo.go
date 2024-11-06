@@ -42,7 +42,7 @@ func (r *UserRepository) GetUserProfile(ctx context.Context, userID int) (profil
 		LEFT JOIN user_uploaded_file AS f ON u.avatar_file_uuid=f.file_uuid
         WHERE u_id = $1;
     `
-	row := r.db.QueryRow(context.Background(), query, userID)
+	row := r.db.QueryRow(ctx, query, userID)
 
 	var user models.UserProfile
 	var fileUUID, fileExt string
@@ -76,12 +76,12 @@ func (r *UserRepository) UpdateUserProfile(ctx context.Context, userID int, data
 	SET email=$1, nickname=$2
 	WHERE u_id=$3;`
 	var nicknameCount, emailCount int
-	row := r.db.QueryRow(context.Background(), query1, data.Email, userID)
+	row := r.db.QueryRow(ctx, query1, data.Email, userID)
 	err = row.Scan(&emailCount)
 	if err != nil {
 		return nil, fmt.Errorf("UpdateUserProfile (check unique email): %w", err)
 	}
-	row = r.db.QueryRow(context.Background(), query2, data.NewName, userID)
+	row = r.db.QueryRow(ctx, query2, data.NewName, userID)
 	err = row.Scan(&nicknameCount)
 	if err != nil {
 		return nil, fmt.Errorf("UpdateUserProfile (check unique nick): %w", err)
@@ -95,7 +95,7 @@ func (r *UserRepository) UpdateUserProfile(ctx context.Context, userID int, data
 	if emailCount != 0 {
 		return nil, fmt.Errorf("UpdateUserProfile (check unique): %w", errs.ErrBusyEmail)
 	}
-	tag, err := r.db.Exec(context.Background(), query3, data.Email, data.NewName, userID)
+	tag, err := r.db.Exec(ctx, query3, data.Email, data.NewName, userID)
 	if err != nil {
 		return nil, fmt.Errorf("UpdateUserProfile (action): %w", err)
 	}
@@ -118,12 +118,12 @@ func (r *UserRepository) SetUserAvatar(ctx context.Context, userID int, fileExte
 	SET avatar_file_uuid=to_uuid($1)
 	WHERE u_id=$2;`
 	var fileUUID string
-	row := r.db.QueryRow(context.Background(), query1, fileExtension, userID, fileSize)
+	row := r.db.QueryRow(ctx, query1, fileExtension, userID, fileSize)
 	err = row.Scan(&fileUUID)
 	if err != nil {
 		return "", fmt.Errorf("SetUserAvatar (register file): %w", err)
 	}
-	tag, err := r.db.Exec(context.Background(), query2, fileUUID, userID)
+	tag, err := r.db.Exec(ctx, query2, fileUUID, userID)
 	if err != nil {
 		return "", fmt.Errorf("SetUserAvatar (update user): %w", err)
 	}

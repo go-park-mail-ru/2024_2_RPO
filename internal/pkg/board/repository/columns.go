@@ -19,7 +19,7 @@ func (r *BoardRepository) GetColumnsForBoard(ctx context.Context, boardID int) (
 	FROM kanban_column
 	WHERE board_id = $1;
 	`
-	rows, err := r.db.Query(context.Background(), query, boardID)
+	rows, err := r.db.Query(ctx, query, boardID)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, nil
@@ -54,7 +54,7 @@ func (r *BoardRepository) CreateColumn(ctx context.Context, boardID int, title s
 	`
 
 	newColumn = &models.Column{}
-	if err = r.db.QueryRow(context.Background(), query, boardID, title).Scan(
+	if err = r.db.QueryRow(ctx, query, boardID, title).Scan(
 		&newColumn.ID,
 		&newColumn.Title,
 	); err != nil {
@@ -74,7 +74,7 @@ func (r *BoardRepository) UpdateColumn(ctx context.Context, boardID int, columnI
 	`
 
 	updateColumn = &models.Column{}
-	if err = r.db.QueryRow(context.Background(), query, data.NewTitle, columnID, boardID).Scan(
+	if err = r.db.QueryRow(ctx, query, data.NewTitle, columnID, boardID).Scan(
 		&updateColumn.ID,
 		&updateColumn.Title,
 	); err != nil {
@@ -91,7 +91,7 @@ func (r *BoardRepository) DeleteColumn(ctx context.Context, boardID int, columnI
 		WHERE col_id = $1 AND board_id = $2;
 	`
 
-	tag, err := r.db.Exec(context.Background(), query, columnID, boardID)
+	tag, err := r.db.Exec(ctx, query, columnID, boardID)
 	if err != nil {
 		return fmt.Errorf("DeleteColumn (query): %w", err)
 	}

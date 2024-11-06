@@ -28,7 +28,7 @@ func (r *BoardRepository) CreateBoard(ctx context.Context, name string, userID i
 		RETURNING board_id, name, description, created_at, updated_at
 	`
 	var board models.Board
-	err := r.db.QueryRow(context.Background(), query, name, "", userID).Scan(
+	err := r.db.QueryRow(ctx, query, name, "", userID).Scan(
 		&board.ID,
 		&board.Name,
 		&board.Description,
@@ -60,7 +60,7 @@ func (r *BoardRepository) GetBoard(ctx context.Context, boardID int) (*models.Bo
 	var board models.Board
 	var fileUUID string
 	var fileExtension string
-	err := r.db.QueryRow(context.Background(), query, boardID).Scan(
+	err := r.db.QueryRow(ctx, query, boardID).Scan(
 		&board.ID,
 		&board.Name,
 		&board.Description,
@@ -87,7 +87,7 @@ func (r *BoardRepository) UpdateBoard(ctx context.Context, boardID int, data *mo
 		WHERE board_id = $3;
 	`
 
-	tag, err := r.db.Exec(context.Background(), query, data.NewName, data.NewDescription, boardID)
+	tag, err := r.db.Exec(ctx, query, data.NewName, data.NewDescription, boardID)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, fmt.Errorf("UpdateBoard: %w", errs.ErrNotFound)
@@ -106,7 +106,7 @@ func (r *BoardRepository) DeleteBoard(ctx context.Context, boardID int) error {
 		DELETE FROM board
 		WHERE board_id = $1;
 	`
-	tag, err := r.db.Exec(context.Background(), query, boardID)
+	tag, err := r.db.Exec(ctx, query, boardID)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return fmt.Errorf("DeleteBoard: %w", errs.ErrNotFound)
@@ -130,7 +130,7 @@ func (r *BoardRepository) GetBoardsForUser(ctx context.Context, userID int) (boa
 		LEFT JOIN user_uploaded_file AS f ON f.file_uuid=b.background_image_uuid
 		WHERE ub.u_id = $1
 	`
-	rows, err := r.db.Query(context.Background(), query, userID)
+	rows, err := r.db.Query(ctx, query, userID)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, nil
@@ -179,12 +179,12 @@ func (r *BoardRepository) SetBoardBackground(ctx context.Context, userID int, bo
 	WHERE board_id=$2;
 	`
 	var fileUUID string
-	row := r.db.QueryRow(context.Background(), query1, fileExtension, userID, fileSize)
+	row := r.db.QueryRow(ctx, query1, fileExtension, userID, fileSize)
 	err = row.Scan(&fileUUID)
 	if err != nil {
 		return "", fmt.Errorf("SetBoardBackground (register file): %w", err)
 	}
-	tag, err := r.db.Exec(context.Background(), query2, fileUUID, boardID)
+	tag, err := r.db.Exec(ctx, query2, fileUUID, boardID)
 	if err != nil {
 		return "", fmt.Errorf("SetBoardBackground (update board): %w", err)
 	}

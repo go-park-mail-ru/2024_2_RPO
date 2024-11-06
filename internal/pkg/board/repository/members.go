@@ -22,7 +22,7 @@ func (r *BoardRepository) GetUserProfile(ctx context.Context, userID int) (user 
 	LEFT JOIN user_uploaded_file AS f ON f.file_uuid=u.avatar_file_uuid
 	WHERE u_id=$1;
 	`
-	rows := r.db.QueryRow(context.Background(), query, userID)
+	rows := r.db.QueryRow(ctx, query, userID)
 	user = &models.UserProfile{}
 	var avatarUUID, avatarExt string
 	err = rows.Scan(&user.ID, &user.Name, &user.Email,
@@ -77,7 +77,7 @@ func (r *BoardRepository) GetMemberPermissions(ctx context.Context, boardID int,
 	}
 	member.User = userProfile
 	var addedByID, updatedByID int
-	rows := r.db.QueryRow(context.Background(), query, memberUserID, boardID)
+	rows := r.db.QueryRow(ctx, query, memberUserID, boardID)
 	err = rows.Scan(
 		&member.Role,
 		&member.AddedAt,
@@ -147,7 +147,7 @@ func (r *BoardRepository) GetMembersWithPermissions(ctx context.Context, boardID
 	if err != nil {
 		return nil, fmt.Errorf("GetMembersWithPermissions (getting board): %w", errs.ErrNotFound)
 	}
-	rows, err := r.db.Query(context.Background(), query, boardID)
+	rows, err := r.db.Query(ctx, query, boardID)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, nil
@@ -226,7 +226,7 @@ func (r *BoardRepository) SetMemberRole(ctx context.Context, boardID int, member
 	}
 	query = fmt.Sprintf(query, newRole)
 
-	tag, err := r.db.Exec(context.Background(), query, memberUserID, boardID)
+	tag, err := r.db.Exec(ctx, query, memberUserID, boardID)
 	if tag.RowsAffected() == 0 {
 		return nil, fmt.Errorf("SetMemberRole (update): %w", errs.ErrNotFound)
 	}
@@ -247,7 +247,7 @@ func (r *BoardRepository) RemoveMember(ctx context.Context, boardID int, memberU
 	WHERE board_id=$1
 	AND u_id=$2;
 	`
-	tag, err := r.db.Exec(context.Background(), query, boardID, memberUserID)
+	tag, err := r.db.Exec(ctx, query, boardID, memberUserID)
 	if tag.RowsAffected() == 0 {
 		return fmt.Errorf("RemoveMember: %w", errs.ErrNotFound)
 	}
@@ -274,7 +274,7 @@ func (r *BoardRepository) AddMember(ctx context.Context, boardID int, adderID in
 	if err == nil {
 		return nil, fmt.Errorf("AddMember (get member): %w", errs.ErrAlreadyExists)
 	}
-	_, err = r.db.Exec(context.Background(), query, memberUserID, boardID, adderID)
+	_, err = r.db.Exec(ctx, query, memberUserID, boardID, adderID)
 	if err != nil {
 		return nil, fmt.Errorf("AddMember (insert): %w", err)
 	}
@@ -288,7 +288,7 @@ func (r *BoardRepository) GetUserByNickname(ctx context.Context, nickname string
 	FROM "user"
 	WHERE nickname=$1;`
 	user = &models.UserProfile{}
-	err = r.db.QueryRow(context.Background(), query, nickname).Scan(
+	err = r.db.QueryRow(ctx, query, nickname).Scan(
 		&user.ID,
 		&user.Name,
 		&user.Email,

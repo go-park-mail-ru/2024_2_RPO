@@ -21,7 +21,7 @@ func (r *BoardRepository) GetCardsForBoard(ctx context.Context, boardID int) (ca
 	JOIN kanban_column kc ON c.col_id = kc.col_id
 	WHERE kc.board_id = $1;
 `
-	rows, err := r.db.Query(context.Background(), query, boardID)
+	rows, err := r.db.Query(ctx, query, boardID)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, nil
@@ -69,7 +69,7 @@ func (r *BoardRepository) CreateNewCard(ctx context.Context, boardID int, column
 	`
 
 	newCard = &models.Card{}
-	if err = r.db.QueryRow(context.Background(), query, boardID, columnID, title).Scan(
+	if err = r.db.QueryRow(ctx, query, boardID, columnID, title).Scan(
 		&newCard.ID,
 		&newCard.ColumnID,
 		&newCard.Title,
@@ -99,7 +99,7 @@ func (r *BoardRepository) UpdateCard(ctx context.Context, boardID int, cardID in
 	`
 	updateCard = &models.Card{}
 
-	if err := r.db.QueryRow(context.Background(), query, data.NewTitle, data.NewColumnId, boardID, cardID).Scan(
+	if err := r.db.QueryRow(ctx, query, data.NewTitle, data.NewColumnId, boardID, cardID).Scan(
 		&updateCard.ID,
 		&updateCard.Title,
 		&updateCard.ColumnID,
@@ -121,7 +121,7 @@ func (r *BoardRepository) DeleteCard(ctx context.Context, boardID int, cardID in
 			AND kanban_column.board_id = $1
 			AND card.card_id = $2
 	`
-	_, err = r.db.Exec(context.Background(), query, boardID, cardID)
+	_, err = r.db.Exec(ctx, query, boardID, cardID)
 	if err != nil {
 		return err
 	}
