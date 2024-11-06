@@ -459,115 +459,90 @@ func TestGetMembersPermissions(t *testing.T) {
 	// })
 }
 
-// func TestAddMember(t *testing.T) {
-// 	ctrl := gomock.NewController(t)
-// 	defer ctrl.Finish()
+func TestAddMember(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
 
-// 	mockBoardUsecase := mocks.NewMockBoardUsecase(ctrl)
-// 	boardDelivery := BoardDelivery.CreateBoardDelivery(mockBoardUsecase)
+	mockBoardUsecase := mocks.NewMockBoardUsecase(ctrl)
+	boardDelivery := BoardDelivery.CreateBoardDelivery(mockBoardUsecase)
 
-// 	t.Run("successful addition of a member", func(t *testing.T) {
-// 		userID := 1
-// 		boardID := 1
-// 		reqData := models.AddMemberRequest{MemberNickname: "user123"}
-// 		expectedMember := models.MemberWithPermissions{User: &models.UserProfile{ID: 2}, Role: "viewer"}
+	t.Run("successful addition of a member", func(t *testing.T) {
+		userID := 1
+		boardID := 1
+		reqData := models.AddMemberRequest{MemberNickname: "user123"}
+		expectedMember := models.MemberWithPermissions{User: &models.UserProfile{ID: 2}, Role: "viewer"}
 
-// 		mockBoardUsecase.EXPECT().AddMember(gomock.Any(), userID, boardID, &reqData).Return(&expectedMember, nil)
+		mockBoardUsecase.EXPECT().AddMember(gomock.Any(), userID, boardID, &reqData).Return(&expectedMember, nil)
 
-// 		ctx := context.WithValue(context.Background(), session.UserIDContextKey, userID)
+		ctx := context.WithValue(context.Background(), session.UserIDContextKey, userID)
 
-// 		reqBody, err := json.Marshal(reqData)
-// 		assert.NoError(t, err)
+		reqBody, err := json.Marshal(reqData)
+		assert.NoError(t, err)
 
-// 		req := httptest.NewRequest("POST", "/boards/1/members", bytes.NewBuffer(reqBody))
-// 		req = req.WithContext(ctx)
-// 		req.Header.Set("Content-Type", "application/json")
-// 		w := httptest.NewRecorder()
+		req := httptest.NewRequest("POST", "/boards/board_1/members", bytes.NewBuffer(reqBody))
+		req = req.WithContext(ctx)
+		req.Header.Set("Content-Type", "application/json")
+		w := httptest.NewRecorder()
 
-// 		r := mux.NewRouter()
-// 		r.HandleFunc("/boards/{boardId}/members", boardDelivery.AddMember).Methods("POST")
+		r := mux.NewRouter()
+		r.HandleFunc("/boards/{boardId}/members", boardDelivery.AddMember).Methods("POST")
 
-// 		r.ServeHTTP(w, req)
+		r.ServeHTTP(w, req)
 
-// 		assert.Equal(t, http.StatusOK, w.Code)
+		assert.Equal(t, http.StatusOK, w.Code)
 
-// 		var gotMember models.MemberWithPermissions
-// 		err = json.NewDecoder(w.Body).Decode(&gotMember)
-// 		assert.NoError(t, err)
-// 		assert.Equal(t, expectedMember, gotMember)
-// 	})
+		var gotMember models.MemberWithPermissions
+		err = json.NewDecoder(w.Body).Decode(&gotMember)
+		assert.NoError(t, err)
+		assert.Equal(t, expectedMember, gotMember)
+	})
 
-// 	t.Run("GetUserIDOrFail fails", func(t *testing.T) {
-// 		handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-// 			boardDelivery.AddMember(w, r)
-// 		})
+	t.Run("нет авторизации", func(t *testing.T) {
+		handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			boardDelivery.AddMember(w, r)
+		})
 
-// 		req := httptest.NewRequest("POST", "/boards/1/members", nil)
-// 		w := httptest.NewRecorder()
+		req := httptest.NewRequest("POST", "/boards/board_1/members", nil)
+		w := httptest.NewRecorder()
 
-// 		handler.ServeHTTP(w, req)
+		handler.ServeHTTP(w, req)
 
-// 		assert.Equal(t, http.StatusUnauthorized, w.Code)
-// 	})
+		assert.Equal(t, http.StatusUnauthorized, w.Code)
+	})
 
-// 	t.Run("GetIDFromRequest fails", func(t *testing.T) {
-// 		userID := 1
+	t.Run("четырёхсотка", func(t *testing.T) {
+		userID := 1
 
-// 		handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-// 			ctx := context.WithValue(r.Context(), session.UserIDContextKey, userID)
-// 			r = r.WithContext(ctx)
-// 			boardDelivery.AddMember(w, r)
-// 		})
+		handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			ctx := context.WithValue(r.Context(), session.UserIDContextKey, userID)
+			r = r.WithContext(ctx)
+			boardDelivery.AddMember(w, r)
+		})
 
-// 		req := httptest.NewRequest("POST", "/boards/invalid/members", nil)
-// 		req.Header.Set("Content-Type", "application/json")
-// 		w := httptest.NewRecorder()
+		req := httptest.NewRequest("POST", "/boards/4/members", nil)
+		req.Header.Set("Content-Type", "application/json")
+		w := httptest.NewRecorder()
 
-// 		handler.ServeHTTP(w, req)
+		handler.ServeHTTP(w, req)
 
-// 		assert.Equal(t, http.StatusBadRequest, w.Code)
-// 	})
+		assert.Equal(t, http.StatusBadRequest, w.Code)
+	})
 
-// 	t.Run("invalid request data", func(t *testing.T) {
-// 		userID := 1
+	t.Run("демаршалинг", func(t *testing.T) {
+		userID := 1
 
-// 		handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-// 			ctx := context.WithValue(r.Context(), session.UserIDContextKey, userID)
-// 			r = r.WithContext(ctx)
-// 			boardDelivery.AddMember(w, r)
-// 		})
+		handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			ctx := context.WithValue(r.Context(), session.UserIDContextKey, userID)
+			r = r.WithContext(ctx)
+			boardDelivery.AddMember(w, r)
+		})
 
-// 		req := httptest.NewRequest("POST", "/boards/1/members", bytes.NewBuffer([]byte("invalid json")))
-// 		req.Header.Set("Content-Type", "application/json")
-// 		w := httptest.NewRecorder()
+		req := httptest.NewRequest("POST", "/boards/board_1/members", bytes.NewBuffer([]byte("Кто прочитал и вернул 500 тот проиграл")))
+		req.Header.Set("Content-Type", "application/json")
+		w := httptest.NewRecorder()
 
-// 		handler.ServeHTTP(w, req)
+		handler.ServeHTTP(w, req)
 
-// 		assert.Equal(t, http.StatusBadRequest, w.Code)
-// 	})
-
-// 	t.Run("usecase returns error", func(t *testing.T) {
-// 		userID := 1
-// 		boardID := 1
-// 		reqData := models.AddMemberRequest{MemberNickname: "user123"}
-
-// 		mockBoardUsecase.EXPECT().AddMember(gomock.Any(), userID, boardID, &reqData).Return(nil, errors.New("usecase error"))
-
-// 		handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-// 			ctx := context.WithValue(r.Context(), session.UserIDContextKey, userID)
-// 			r = r.WithContext(ctx)
-// 			boardDelivery.AddMember(w, r)
-// 		})
-
-// 		reqBody, err := json.Marshal(reqData)
-// 		assert.NoError(t, err)
-
-// 		req := httptest.NewRequest("POST", "/boards/1/members", bytes.NewBuffer(reqBody))
-// 		req.Header.Set("Content-Type", "application/json")
-// 		w := httptest.NewRecorder()
-
-// 		handler.ServeHTTP(w, req)
-
-// 		assert.Equal(t, http.StatusInternalServerError, w.Code)
-// 	})
-// }
+		assert.Equal(t, http.StatusBadRequest, w.Code)
+	})
+}
