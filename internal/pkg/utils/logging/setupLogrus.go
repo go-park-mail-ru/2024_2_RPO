@@ -6,23 +6,20 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-// Настроить logrus, чтобы он писал в консоль цветом и в файл json-ом
+// SetupLogger настраивает logrus, чтобы он писал в консоль цветом и в файл json-ом
 func SetupLogger(jsonFile *os.File) {
-
-	// Настраиваем JSON формат
-	jsonFormatter := &log.JSONFormatter{}
-
-	// Настраиваем текстовый формат с цветами для терминала
+	// Настраиваем цвета
 	textFormatter := &log.TextFormatter{
 		ForceColors:   true,
 		FullTimestamp: true,
 	}
 	log.SetFormatter(textFormatter)
 
-	// Устанавливаем вывод в терминал и файл
-	log.SetOutput(os.Stdout) // Основной вывод в терминал
+	// Устанавливаем вывод в терминал
+	log.SetOutput(os.Stdout)
 
-	// Создаем хук для записи JSON-логов
+	// Создаем хук для записи JSON-логов в файл
+	jsonFormatter := &log.JSONFormatter{}
 	log.AddHook(&fileHook{
 		Writer:    jsonFile,
 		Formatter: jsonFormatter,

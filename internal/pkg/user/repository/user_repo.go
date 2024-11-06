@@ -12,10 +12,6 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-const (
-	defaultUserAvatar string = "/static/img/KarlMarks.jpg"
-)
-
 type UserRepository struct {
 	db *pgxpool.Pool
 }
@@ -62,7 +58,7 @@ func (r *UserRepository) GetUserProfile(ctx context.Context, userID int) (profil
 		}
 		return nil, fmt.Errorf("GetUserProfile: %w", err)
 	}
-	user.AvatarImageURL = uploads.JoinFileURL(fileUUID, fileExt, defaultUserAvatar)
+	user.AvatarImageURL = uploads.JoinFileURL(fileUUID, fileExt, uploads.DefaultAvatarURL)
 
 	return &user, nil
 }
