@@ -25,7 +25,7 @@ func (d *UserDelivery) GetMyProfile(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	profile, err := d.userUC.GetMyProfile(userID)
+	profile, err := d.userUC.GetMyProfile(r.Context(), userID)
 	if err != nil {
 		responses.ResponseErrorAndLog(w, err, funcName)
 		return
@@ -46,7 +46,7 @@ func (d *UserDelivery) UpdateMyProfile(w http.ResponseWriter, r *http.Request) {
 		responses.DoBadResponse(w, 400, "bad request")
 		return
 	}
-	newProfile, err := d.userUC.UpdateMyProfile(userID, &data)
+	newProfile, err := d.userUC.UpdateMyProfile(r.Context(), userID, &data)
 	if err != nil {
 		responses.ResponseErrorAndLog(w, err, funcName)
 		return
@@ -74,7 +74,7 @@ func (d *UserDelivery) SetMyAvatar(w http.ResponseWriter, r *http.Request) {
 	}
 	defer file.Close()
 
-	updatedProfile, err := d.userUC.SetMyAvatar(userID, &file, fileHeader)
+	updatedProfile, err := d.userUC.SetMyAvatar(r.Context(), userID, &file, fileHeader)
 	if err != nil {
 		responses.ResponseErrorAndLog(w, err, funcName)
 		return

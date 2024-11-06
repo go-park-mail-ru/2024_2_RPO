@@ -9,7 +9,7 @@ import (
 )
 
 // GetCardsForBoard возвращает все карточки, размещённые на доске
-func (r *BoardRepository) GetCardsForBoard(boardID int) (cards []models.Card, err error) {
+func (r *BoardRepository) GetCardsForBoard(ctx context.Context, boardID int) (cards []models.Card, err error) {
 	query := `
 	SELECT
 		c.card_id,
@@ -51,47 +51,12 @@ func (r *BoardRepository) GetCardsForBoard(boardID int) (cards []models.Card, er
 	return cards, nil
 }
 
-// GetColumnsForBoard возвращает все колонки, которые есть на доске
-func (r *BoardRepository) GetColumnsForBoard(boardID int) (columns []models.Column, err error) {
-	query := `
-	SELECT
-		col_id,
-		title
-	FROM kanban_column
-	WHERE board_id = $1;
-	`
-	rows, err := r.db.Query(context.Background(), query, boardID)
-	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, nil
-		}
-		return nil, err
-	}
-
-	defer rows.Close()
-
-	columns = make([]models.Column, 0)
-
-	for rows.Next() {
-		var column models.Column
-		if err := rows.Scan(
-			&column.Id,
-			&column.Title,
-		); err != nil {
-			return nil, err
-		}
-		columns = append(columns, column)
-	}
-
-	return columns, nil
-}
-
 // В последующих трёх функциях boardId нужен для того, чтобы пользователь не смог,
 // например, удалить карточку с другой доски по причине хакерской натуры своей.
 // Что-то типа дополнительного уровня защиты
 
 // CreateNewCard создаёт новую карточку
-func (r *BoardRepository) CreateNewCard(boardID int, columnID int, title string) (newCard *models.Card, err error) {
+func (r *BoardRepository) CreateNewCard(ctx context.Context, boardID int, columnID int, title string) (newCard *models.Card, err error) {
 	query := `
 	WITH col_check AS (
 		SELECT 1
@@ -118,7 +83,7 @@ func (r *BoardRepository) CreateNewCard(boardID int, columnID int, title string)
 }
 
 // UpdateCard обновляет карточку
-func (r *BoardRepository) UpdateCard(boardID int, cardID int, data models.CardPutRequest) (updateCard *models.Card, err error) {
+func (r *BoardRepository) UpdateCard(ctx context.Context, boardID int, cardID int, data models.CardPutRequest) (updateCard *models.Card, err error) {
 	query := `
 	UPDATE card
 	SET
@@ -148,7 +113,7 @@ func (r *BoardRepository) UpdateCard(boardID int, cardID int, data models.CardPu
 }
 
 // DeleteCard удаляет карточку
-func (r *BoardRepository) DeleteCard(boardID int, cardID int) (err error) {
+func (r *BoardRepository) DeleteCard(ctx context.Context, boardID int, cardID int) (err error) {
 	query := `
 		DELETE FROM card
 		USING kanban_column

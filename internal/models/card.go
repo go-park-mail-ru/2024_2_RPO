@@ -17,7 +17,7 @@ type CardPutRequest struct {
 }
 
 type Column struct {
-	Id    int    `json:"id"`
+	ID    int    `json:"id"`
 	Title string `json:"title"`
 }
 

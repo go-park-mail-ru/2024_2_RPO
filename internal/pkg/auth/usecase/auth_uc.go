@@ -5,6 +5,7 @@ import (
 	"RPO_back/internal/models"
 	"RPO_back/internal/pkg/auth"
 	"RPO_back/internal/pkg/utils/encrypt"
+	"context"
 	"errors"
 	"fmt"
 
@@ -21,8 +22,8 @@ func CreateAuthUsecase(repo auth.AuthRepo) *AuthUsecase {
 	}
 }
 
-func (uc *AuthUsecase) LoginUser(email string, password string) (sessionId string, err error) {
-	user, err := uc.authRepo.GetUserByEmail(email)
+func (uc *AuthUsecase) LoginUser(ctx context.Context, email string, password string) (sessionID string, err error) {
+	user, err := uc.authRepo.GetUserByEmail(ctx, email)
 	if err != nil {
 		return "", err
 	}
@@ -32,8 +33,8 @@ func (uc *AuthUsecase) LoginUser(email string, password string) (sessionId strin
 		return "", fmt.Errorf("LoginUser: passwords not match: %w", errs.ErrWrongCredentials)
 	}
 
-	sessionID := encrypt.GenerateSessionID()
-	err = uc.authRepo.RegisterSessionRedis(sessionID, user.ID)
+	sessionID = encrypt.GenerateSessionID()
+	err = uc.authRepo.RegisterSessionRedis(ctx, sessionID, user.ID)
 	if err != nil {
 		return "", err
 	}
@@ -41,8 +42,8 @@ func (uc *AuthUsecase) LoginUser(email string, password string) (sessionId strin
 	return sessionID, nil
 }
 
-func (uc *AuthUsecase) RegisterUser(user *models.UserRegistration) (sessionId string, err error) {
-	err = uc.authRepo.CheckUniqueCredentials(user.Name, user.Email)
+func (uc *AuthUsecase) RegisterUser(ctx context.Context, user *models.UserRegistration) (sessionID string, err error) {
+	err = uc.authRepo.CheckUniqueCredentials(ctx, user.Name, user.Email)
 	if err != nil {
 		return "", err
 	}
@@ -54,26 +55,26 @@ func (uc *AuthUsecase) RegisterUser(user *models.UserRegistration) (sessionId st
 
 	log.Info("Password hash: ", hashedPassword)
 
-	newUser, err := uc.authRepo.CreateUser(user, string(hashedPassword))
+	newUser, err := uc.authRepo.CreateUser(ctx, user, string(hashedPassword))
 	if err != nil {
 		return "", fmt.Errorf("internal error: %w", err)
 	}
 
-	sessionId = encrypt.GenerateSessionID()
-	err = uc.authRepo.RegisterSessionRedis(sessionId, newUser.ID)
+	sessionID = encrypt.GenerateSessionID()
+	err = uc.authRepo.RegisterSessionRedis(ctx, sessionID, newUser.ID)
 	if err != nil {
 		return "", errors.New("failed to register session")
 	}
 
-	return sessionId, nil
+	return sessionID, nil
 }
 
-func (uc *AuthUsecase) LogoutUser(sessionId string) error {
-	return uc.authRepo.KillSessionRedis(sessionId)
+func (uc *AuthUsecase) LogoutUser(ctx context.Context, sessionID string) error {
+	return uc.authRepo.KillSessionRedis(ctx, sessionID)
 }
 
-func (uc *AuthUsecase) ChangePassword(userID int, oldPassword string, newPassword string) error {
-	user, err := uc.authRepo.GetUserByID(userID)
+func (uc *AuthUsecase) ChangePassword(ctx context.Context, userID int, oldPassword string, newPassword string) error {
+	user, err := uc.authRepo.GetUserByID(ctx, userID)
 	if err != nil {
 		return err
 	}
@@ -85,6 +86,6 @@ func (uc *AuthUsecase) ChangePassword(userID int, oldPassword string, newPasswor
 	if err != nil {
 		return fmt.Errorf("ChangePassword (hashing new): %w", err)
 	}
-	uc.authRepo.SetNewPasswordHash(userID, newPasswordHash)
+	uc.authRepo.SetNewPasswordHash(ctx, userID, newPasswordHash)
 	return nil
 }

@@ -27,7 +27,7 @@ func CreateUserRepository(db *pgxpool.Pool) *UserRepository {
 }
 
 // GetUserProfile возвращает профиль пользователя
-func (r *UserRepository) GetUserProfile(userID int) (profile *models.UserProfile, err error) {
+func (r *UserRepository) GetUserProfile(ctx context.Context, userID int) (profile *models.UserProfile, err error) {
 	query := `
         SELECT
 		u.u_id,
@@ -58,9 +58,9 @@ func (r *UserRepository) GetUserProfile(userID int) (profile *models.UserProfile
 	)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, fmt.Errorf("GetUserById: %w", errs.ErrNotFound)
+			return nil, fmt.Errorf("GetUserProfile: %w", errs.ErrNotFound)
 		}
-		return nil, fmt.Errorf("GetUserById: %w", err)
+		return nil, fmt.Errorf("GetUserProfile: %w", err)
 	}
 	user.AvatarImageURL = uploads.JoinFileURL(fileUUID, fileExt, defaultUserAvatar)
 
@@ -68,7 +68,7 @@ func (r *UserRepository) GetUserProfile(userID int) (profile *models.UserProfile
 }
 
 // UpdateUserProfile обновляет профиль пользователя
-func (r *UserRepository) UpdateUserProfile(userID int, data models.UserProfileUpdate) (newProfile *models.UserProfile, err error) {
+func (r *UserRepository) UpdateUserProfile(ctx context.Context, userID int, data models.UserProfileUpdate) (newProfile *models.UserProfile, err error) {
 	query1 := `SELECT COUNT(*) FROM "user" WHERE email=$1 AND u_id!=$2;`
 	query2 := `SELECT COUNT(*) FROM "user" WHERE nickname=$1 AND u_id!=$2;`
 	query3 := `
@@ -102,11 +102,11 @@ func (r *UserRepository) UpdateUserProfile(userID int, data models.UserProfileUp
 	if tag.RowsAffected() == 0 {
 		return nil, fmt.Errorf("UpdateUserProfile (action): UPDATE made no changes")
 	}
-	newProfile, err = r.GetUserProfile(userID)
+	newProfile, err = r.GetUserProfile(ctx, userID)
 	return
 }
 
-func (r *UserRepository) SetUserAvatar(userID int, fileExtension string, fileSize int) (fileName string, err error) {
+func (r *UserRepository) SetUserAvatar(ctx context.Context, userID int, fileExtension string, fileSize int) (fileName string, err error) {
 	query1 := `
 	INSERT INTO user_uploaded_file
 	(file_extension, created_at, created_by, "size")

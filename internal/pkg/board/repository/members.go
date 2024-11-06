@@ -13,7 +13,7 @@ import (
 )
 
 // GetUserProfile получает из базы профиль пользователя
-func (r *BoardRepository) GetUserProfile(userID int) (user *models.UserProfile, err error) {
+func (r *BoardRepository) GetUserProfile(ctx context.Context, userID int) (user *models.UserProfile, err error) {
 	query := `
 	SELECT
 	u_id, nickname, email, description, joined_at, updated_at,
@@ -52,7 +52,7 @@ func (r *BoardRepository) GetUserProfile(userID int) (user *models.UserProfile, 
 // поля AddedBy и UpdatedBy будут установлены в nil. Но если
 // verbose равен true, ещё не факт, что указанные поля
 // будут не nil
-func (r *BoardRepository) GetMemberPermissions(boardID int, memberUserID int, verbose bool) (member *models.MemberWithPermissions, err error) {
+func (r *BoardRepository) GetMemberPermissions(ctx context.Context, boardID int, memberUserID int, verbose bool) (member *models.MemberWithPermissions, err error) {
 	query := `
 	SELECT
 	ub.role,
@@ -66,12 +66,12 @@ func (r *BoardRepository) GetMemberPermissions(boardID int, memberUserID int, ve
 	`
 	member = &models.MemberWithPermissions{}
 	// Получение профиля пользователя
-	userProfile, err := r.GetUserProfile(memberUserID)
+	userProfile, err := r.GetUserProfile(ctx, memberUserID)
 	if err != nil {
 		return nil, fmt.Errorf("GetMemberPermissions (getting user profile): %w", err)
 	}
 	// Проверка на то, что доска существует
-	_, err = r.GetBoard(boardID)
+	_, err = r.GetBoard(ctx, boardID)
 	if err != nil {
 		return nil, fmt.Errorf("GetMemberPermissions (getting board): %w", err)
 	}
@@ -93,14 +93,14 @@ func (r *BoardRepository) GetMemberPermissions(boardID int, memberUserID int, ve
 	}
 	if verbose == true {
 		if addedByID != -1 {
-			adder, err := r.GetUserProfile(addedByID)
+			adder, err := r.GetUserProfile(ctx, addedByID)
 			if err != nil {
 				return nil, fmt.Errorf("GetMemberPermissions (getting adder profile): %w", err)
 			}
 			member.AddedBy = adder
 		}
 		if updatedByID != -1 {
-			updater, err := r.GetUserProfile(updatedByID)
+			updater, err := r.GetUserProfile(ctx, updatedByID)
 			if err != nil {
 				return nil, fmt.Errorf("GetMemberPermissions (getting updater profile): %w", err)
 			}
@@ -113,7 +113,7 @@ func (r *BoardRepository) GetMemberPermissions(boardID int, memberUserID int, ve
 // GetMembersWithPermissions получает всех участников на конкретной
 // доске с информацией об их правах и с разрешением профилей добавителя
 // и пользователя, внёсшего последнее обновление в роль
-func (r *BoardRepository) GetMembersWithPermissions(boardID int) (members []models.MemberWithPermissions, err error) {
+func (r *BoardRepository) GetMembersWithPermissions(ctx context.Context, boardID int) (members []models.MemberWithPermissions, err error) {
 	query := `
 	SELECT
 
@@ -143,7 +143,7 @@ func (r *BoardRepository) GetMembersWithPermissions(boardID int) (members []mode
 	LEFT JOIN user_uploaded_file AS f_updater ON f_updater.file_uuid=updater.avatar_file_uuid
 	WHERE ub.board_id=$1;
 	`
-	_, err = r.GetBoard(boardID)
+	_, err = r.GetBoard(ctx, boardID)
 	if err != nil {
 		return nil, fmt.Errorf("GetMembersWithPermissions (getting board): %w", errs.ErrNotFound)
 	}
@@ -211,7 +211,7 @@ func (r *BoardRepository) GetMembersWithPermissions(boardID int) (members []mode
 }
 
 // SetMemberRole устанавливает существующему участнику права (роль)
-func (r *BoardRepository) SetMemberRole(boardID int, memberUserID int, newRole string) (member *models.MemberWithPermissions, err error) {
+func (r *BoardRepository) SetMemberRole(ctx context.Context, boardID int, memberUserID int, newRole string) (member *models.MemberWithPermissions, err error) {
 	query := `
 	UPDATE user_to_board
 	SET role='%s',
@@ -233,7 +233,7 @@ func (r *BoardRepository) SetMemberRole(boardID int, memberUserID int, newRole s
 	if err != nil {
 		return nil, fmt.Errorf("SetMemberRole (update): %w", err)
 	}
-	member, err = r.GetMemberPermissions(boardID, memberUserID, true)
+	member, err = r.GetMemberPermissions(ctx, boardID, memberUserID, true)
 	if err != nil {
 		return nil, fmt.Errorf("SetMemberRole (get updated perms): %w", err)
 	}
@@ -241,7 +241,7 @@ func (r *BoardRepository) SetMemberRole(boardID int, memberUserID int, newRole s
 }
 
 // RemoveMember удаляет участника с доски
-func (r *BoardRepository) RemoveMember(boardID int, memberUserID int) (err error) {
+func (r *BoardRepository) RemoveMember(ctx context.Context, boardID int, memberUserID int) (err error) {
 	query := `
 	DELETE FROM user_to_board
 	WHERE board_id=$1
@@ -258,7 +258,7 @@ func (r *BoardRepository) RemoveMember(boardID int, memberUserID int) (err error
 }
 
 // AddMember добавляет участника на доску с правами "viewer"
-func (r *BoardRepository) AddMember(boardID int, adderID int, memberUserID int) (member *models.MemberWithPermissions, err error) {
+func (r *BoardRepository) AddMember(ctx context.Context, boardID int, adderID int, memberUserID int) (member *models.MemberWithPermissions, err error) {
 	query := `
 	INSERT INTO user_to_board (u_id, board_id, added_at, updated_at,
 	last_visit_at, added_by, updated_by, "role") VALUES (
@@ -266,7 +266,7 @@ func (r *BoardRepository) AddMember(boardID int, adderID int, memberUserID int) 
 	$3, $3, 'viewer'
 	);
 	`
-	member, err = r.GetMemberPermissions(boardID, memberUserID, false)
+	member, err = r.GetMemberPermissions(ctx, boardID, memberUserID, false)
 
 	if (err != nil) && (!errors.Is(err, errs.ErrNotPermitted)) {
 		return nil, fmt.Errorf("AddMember (get member): %w", err)
@@ -278,12 +278,12 @@ func (r *BoardRepository) AddMember(boardID int, adderID int, memberUserID int) 
 	if err != nil {
 		return nil, fmt.Errorf("AddMember (insert): %w", err)
 	}
-	member, err = r.GetMemberPermissions(boardID, memberUserID, true)
+	member, err = r.GetMemberPermissions(ctx, boardID, memberUserID, true)
 	return member, nil
 }
 
 // GetUserByNickname получает данные пользователя из базы по имени
-func (r *BoardRepository) GetUserByNickname(nickname string) (user *models.UserProfile, err error) {
+func (r *BoardRepository) GetUserByNickname(ctx context.Context, nickname string) (user *models.UserProfile, err error) {
 	query := `SELECT u_id, nickname, email, description, joined_at, updated_at
 	FROM "user"
 	WHERE nickname=$1;`

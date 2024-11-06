@@ -21,7 +21,7 @@ func CreateBoardRepository(db *pgxpool.Pool) *BoardRepository {
 }
 
 // CreateBoard creates a new board in the database.
-func (r *BoardRepository) CreateBoard(name string, userID int) (*models.Board, error) {
+func (r *BoardRepository) CreateBoard(ctx context.Context, name string, userID int) (*models.Board, error) {
 	query := `
 		INSERT INTO board (name, description, created_by)
 		VALUES ($1, $2, $3)
@@ -43,7 +43,7 @@ func (r *BoardRepository) CreateBoard(name string, userID int) (*models.Board, e
 }
 
 // GetBoard retrieves a board by its ID.
-func (r *BoardRepository) GetBoard(boardID int) (*models.Board, error) {
+func (r *BoardRepository) GetBoard(ctx context.Context, boardID int) (*models.Board, error) {
 	query := `
 		SELECT
 			b.board_id,
@@ -80,7 +80,7 @@ func (r *BoardRepository) GetBoard(boardID int) (*models.Board, error) {
 }
 
 // UpdateBoard updates the specified fields of a board.
-func (r *BoardRepository) UpdateBoard(boardID int, data *models.BoardPutRequest) (updatedBoard *models.Board, err error) {
+func (r *BoardRepository) UpdateBoard(ctx context.Context, boardID int, data *models.BoardPutRequest) (updatedBoard *models.Board, err error) {
 	query := `
 		UPDATE board
 		SET name=$1, description=$2, updated_at = CURRENT_TIMESTAMP
@@ -97,16 +97,16 @@ func (r *BoardRepository) UpdateBoard(boardID int, data *models.BoardPutRequest)
 	if tag.RowsAffected() == 0 {
 		return nil, fmt.Errorf("UpdateBoard: %w", errs.ErrNotFound)
 	}
-	return r.GetBoard(boardID)
+	return r.GetBoard(ctx, boardID)
 }
 
 // DeleteBoard удаляет доску по Id
-func (r *BoardRepository) DeleteBoard(boardId int) error {
+func (r *BoardRepository) DeleteBoard(ctx context.Context, boardID int) error {
 	query := `
 		DELETE FROM board
 		WHERE board_id = $1;
 	`
-	tag, err := r.db.Exec(context.Background(), query, boardId)
+	tag, err := r.db.Exec(context.Background(), query, boardID)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return fmt.Errorf("DeleteBoard: %w", errs.ErrNotFound)
@@ -120,7 +120,7 @@ func (r *BoardRepository) DeleteBoard(boardId int) error {
 }
 
 // GetBoardsForUser возвращает все доски, к которым пользователь имеет доступ
-func (r *BoardRepository) GetBoardsForUser(userID int) (boardArray []models.Board, err error) {
+func (r *BoardRepository) GetBoardsForUser(ctx context.Context, userID int) (boardArray []models.Board, err error) {
 	query := `
 		SELECT b.board_id, b.name, b.description, b.created_at, b.updated_at,
 		COALESCE(f.file_uuid::text, ''),
@@ -166,7 +166,7 @@ func (r *BoardRepository) GetBoardsForUser(userID int) (boardArray []models.Boar
 	return boardArray, nil
 }
 
-func (r *BoardRepository) SetBoardBackground(userID int, boardID int, fileExtension string, fileSize int) (fileName string, err error) {
+func (r *BoardRepository) SetBoardBackground(ctx context.Context, userID int, boardID int, fileExtension string, fileSize int) (fileName string, err error) {
 	query1 := `
 	INSERT INTO user_uploaded_file
 	(file_extension, created_at, created_by, "size")

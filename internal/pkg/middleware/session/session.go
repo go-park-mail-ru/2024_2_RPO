@@ -31,7 +31,7 @@ func (mw *SessionMiddleware) Middleware(next http.Handler) http.Handler {
 			return
 		}
 
-		userID, err := mw.authRepo.RetrieveUserIdFromSessionId(cookie.Value)
+		userID, err := mw.authRepo.RetrieveUserIdFromSessionId(r.Context(), cookie.Value)
 		if err != nil {
 			http.SetCookie(w, &http.Cookie{
 				Name:   auth.SessionCookieName,

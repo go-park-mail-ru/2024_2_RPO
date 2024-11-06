@@ -35,7 +35,7 @@ func (d *BoardDelivery) CreateNewBoard(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	newBoard, err := d.boardUsecase.CreateNewBoard(userID, data)
+	newBoard, err := d.boardUsecase.CreateNewBoard(r.Context(), userID, data)
 	if err != nil {
 		responses.ResponseErrorAndLog(w, err, funcName)
 		return
@@ -63,7 +63,7 @@ func (d *BoardDelivery) UpdateBoard(w http.ResponseWriter, r *http.Request) {
 		responses.DoBadResponse(w, http.StatusBadRequest, "bad request")
 		return
 	}
-	newBoard, err := d.boardUsecase.UpdateBoard(userID, boardID, data)
+	newBoard, err := d.boardUsecase.UpdateBoard(r.Context(), userID, boardID, data)
 	if err != nil {
 		responses.ResponseErrorAndLog(w, err, funcName)
 		return
@@ -83,7 +83,7 @@ func (d *BoardDelivery) DeleteBoard(w http.ResponseWriter, r *http.Request) {
 		responses.DoBadResponse(w, http.StatusBadRequest, "bad request")
 		return
 	}
-	err = d.boardUsecase.DeleteBoard(userID, boardID)
+	err = d.boardUsecase.DeleteBoard(r.Context(), userID, boardID)
 	if err != nil {
 		responses.ResponseErrorAndLog(w, err, "DeleteBoard")
 		return
@@ -98,7 +98,7 @@ func (d *BoardDelivery) GetMyBoards(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	myBoards, err := d.boardUsecase.GetMyBoards(userID)
+	myBoards, err := d.boardUsecase.GetMyBoards(r.Context(), userID)
 	if err != nil {
 		responses.ResponseErrorAndLog(w, err, "GetMyBoards")
 		return
@@ -118,7 +118,7 @@ func (d *BoardDelivery) GetMembersPermissions(w http.ResponseWriter, r *http.Req
 		responses.DoBadResponse(w, http.StatusBadRequest, "bad request")
 		return
 	}
-	memberPermissions, err := d.boardUsecase.GetMembersPermissions(userID, boardID)
+	memberPermissions, err := d.boardUsecase.GetMembersPermissions(r.Context(), userID, boardID)
 	if err != nil {
 		responses.ResponseErrorAndLog(w, err, "GetMembersPermissions")
 		return
@@ -146,7 +146,7 @@ func (d *BoardDelivery) AddMember(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	newMember, err := d.boardUsecase.AddMember(userID, boardID, &data)
+	newMember, err := d.boardUsecase.AddMember(r.Context(), userID, boardID, &data)
 	if err != nil {
 		responses.ResponseErrorAndLog(w, err, "AddMember")
 		return
@@ -181,7 +181,7 @@ func (d *BoardDelivery) UpdateMemberRole(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	updatedMember, err := d.boardUsecase.UpdateMemberRole(userID, boardID, memberID, data.NewRole)
+	updatedMember, err := d.boardUsecase.UpdateMemberRole(r.Context(), userID, boardID, memberID, data.NewRole)
 	if err != nil {
 		responses.ResponseErrorAndLog(w, err, "UpdateMemberRole")
 		return
@@ -209,7 +209,7 @@ func (d *BoardDelivery) RemoveMember(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = d.boardUsecase.RemoveMember(userID, boardID, memberID)
+	err = d.boardUsecase.RemoveMember(r.Context(), userID, boardID, memberID)
 	if err != nil {
 		responses.ResponseErrorAndLog(w, err, funcName)
 		return
@@ -231,7 +231,7 @@ func (d *BoardDelivery) GetBoardContent(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	content, err := d.boardUsecase.GetBoardContent(userID, boardID)
+	content, err := d.boardUsecase.GetBoardContent(r.Context(), userID, boardID)
 	if err != nil {
 		responses.ResponseErrorAndLog(w, err, funcName)
 		return
@@ -260,7 +260,7 @@ func (d *BoardDelivery) CreateNewCard(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	newCard, err := d.boardUsecase.CreateNewCard(userID, boardID, requestData)
+	newCard, err := d.boardUsecase.CreateNewCard(r.Context(), userID, boardID, requestData)
 	if err != nil {
 		responses.ResponseErrorAndLog(w, err, funcName)
 		return
@@ -296,7 +296,7 @@ func (d *BoardDelivery) UpdateCard(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	updatedCard, err := d.boardUsecase.UpdateCard(userID, boardID, cardID, requestData)
+	updatedCard, err := d.boardUsecase.UpdateCard(r.Context(), userID, boardID, cardID, requestData)
 	if err != nil {
 		responses.ResponseErrorAndLog(w, err, funcName)
 		return
@@ -325,7 +325,7 @@ func (d *BoardDelivery) DeleteCard(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = d.boardUsecase.DeleteCard(userID, boardID, cardID)
+	err = d.boardUsecase.DeleteCard(r.Context(), userID, boardID, cardID)
 	if err != nil {
 		responses.ResponseErrorAndLog(w, err, funcName)
 		return
@@ -355,7 +355,7 @@ func (d *BoardDelivery) CreateColumn(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	newColumn, err := d.boardUsecase.CreateColumn(userID, boardID, requestData)
+	newColumn, err := d.boardUsecase.CreateColumn(r.Context(), userID, boardID, requestData)
 	if err != nil {
 		responses.ResponseErrorAndLog(w, err, funcName)
 		return
@@ -393,7 +393,7 @@ func (d *BoardDelivery) UpdateColumn(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	updatedCol, err := d.boardUsecase.UpdateColumn(userID, boardID, columnID, requestData)
+	updatedCol, err := d.boardUsecase.UpdateColumn(r.Context(), userID, boardID, columnID, requestData)
 	if err != nil {
 		responses.ResponseErrorAndLog(w, err, funcName)
 		return
@@ -422,7 +422,7 @@ func (d *BoardDelivery) DeleteColumn(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = d.boardUsecase.DeleteColumn(userID, boardID, columnID)
+	err = d.boardUsecase.DeleteColumn(r.Context(), userID, boardID, columnID)
 	if err != nil {
 		responses.ResponseErrorAndLog(w, err, funcName)
 		return
@@ -456,7 +456,7 @@ func (d *BoardDelivery) SetBoardBackground(w http.ResponseWriter, r *http.Reques
 	}
 	defer file.Close()
 
-	updatedBoard, err := d.boardUsecase.SetBoardBackground(userID, boardID, &file, fileHeader)
+	updatedBoard, err := d.boardUsecase.SetBoardBackground(r.Context(), userID, boardID, &file, fileHeader)
 	if err != nil {
 		responses.ResponseErrorAndLog(w, err, funcName)
 		return

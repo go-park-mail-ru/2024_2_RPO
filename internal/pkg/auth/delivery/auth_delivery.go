@@ -35,7 +35,7 @@ func (this *AuthDelivery) LoginUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	sessionID, err := this.authUsecase.LoginUser(loginRequest.Email, loginRequest.Password)
+	sessionID, err := this.authUsecase.LoginUser(r.Context(), loginRequest.Email, loginRequest.Password)
 	if err != nil {
 		if errors.Is(err, errs.ErrWrongCredentials) {
 			responses.DoBadResponse(w, 401, "Wrong credentials")
@@ -69,7 +69,7 @@ func (this *AuthDelivery) RegisterUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	sessionID, err := this.authUsecase.RegisterUser(&user)
+	sessionID, err := this.authUsecase.RegisterUser(r.Context(), &user)
 	if err != nil {
 		log.Error("Auth: ", err)
 		if errors.Is(err, errs.ErrBusyEmail) && errors.Is(err, errs.ErrBusyNickname) {
@@ -107,7 +107,7 @@ func (this *AuthDelivery) LogoutUser(w http.ResponseWriter, r *http.Request) {
 
 	sessionID := cookie.Value
 
-	err = this.authUsecase.LogoutUser(sessionID)
+	err = this.authUsecase.LogoutUser(r.Context(), sessionID)
 
 	http.SetCookie(w, &http.Cookie{
 		Name:   auth.SessionCookieName,
@@ -136,7 +136,7 @@ func (d *AuthDelivery) ChangePassword(w http.ResponseWriter, r *http.Request) {
 		responses.DoBadResponse(w, http.StatusBadRequest, "bad request")
 		return
 	}
-	err = d.authUsecase.ChangePassword(userID, data.OldPassword, data.NewPassword)
+	err = d.authUsecase.ChangePassword(r.Context(), userID, data.OldPassword, data.NewPassword)
 	if err != nil {
 		responses.DoBadResponse(w, 500, "internal error")
 		return

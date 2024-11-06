@@ -26,7 +26,7 @@ func CreateAuthRepository(postgresDb *pgxpool.Pool, redisDb *redis.Client) *Auth
 }
 
 // Регистрирует сессионную куку в Redis
-func (repo *AuthRepository) RegisterSessionRedis(cookie string, userID int) error {
+func (repo *AuthRepository) RegisterSessionRedis(ctx context.Context, cookie string, userID int) error {
 	redisConn := repo.redisDb.Conn(repo.redisDb.Context())
 	defer redisConn.Close()
 
@@ -41,11 +41,11 @@ func (repo *AuthRepository) RegisterSessionRedis(cookie string, userID int) erro
 }
 
 // KillSessionRedis удаляет сессию из Redis
-func (repo *AuthRepository) KillSessionRedis(sessionId string) error {
+func (repo *AuthRepository) KillSessionRedis(ctx context.Context, sessionID string) error {
 	redisConn := repo.redisDb.Conn(repo.redisDb.Context())
 	defer redisConn.Close()
 
-	if err := redisConn.Del(repo.redisDb.Context(), sessionId).Err(); err != nil {
+	if err := redisConn.Del(repo.redisDb.Context(), sessionID).Err(); err != nil {
 		return err
 	}
 
@@ -53,13 +53,13 @@ func (repo *AuthRepository) KillSessionRedis(sessionId string) error {
 }
 
 // RetrieveUserIdFromSessionId ходит в Redis и получает UserID (или не получает и даёт ошибку errs.ErrNotFound)
-func (repo *AuthRepository) RetrieveUserIdFromSessionId(sessionId string) (userId int, err error) {
+func (repo *AuthRepository) RetrieveUserIdFromSessionId(ctx context.Context, sessionID string) (userID int, err error) {
 	redisConn := repo.redisDb.Conn(repo.redisDb.Context())
 	defer redisConn.Close()
 
-	val, err := redisConn.Get(repo.redisDb.Context(), sessionId).Result()
+	val, err := redisConn.Get(repo.redisDb.Context(), sessionID).Result()
 	if err == redis.Nil {
-		return 0, fmt.Errorf("RetrieveUserIdFromSessionId(%v): %w", sessionId, errs.ErrNotFound)
+		return 0, fmt.Errorf("RetrieveUserIdFromSessionId(%v): %w", sessionID, errs.ErrNotFound)
 	} else if err != nil {
 		return 0, err
 	}
@@ -73,14 +73,14 @@ func (repo *AuthRepository) RetrieveUserIdFromSessionId(sessionId string) (userI
 }
 
 // GetUserByEmail получает данные пользователя из базы по email
-func (repo *AuthRepository) GetUserByEmail(email string) (user *models.UserProfile, err error) {
+func (repo *AuthRepository) GetUserByEmail(ctx context.Context, email string) (user *models.UserProfile, err error) {
 	query := `
 	SELECT u_id, nickname, email, description,
 	joined_at, updated_at, password_hash
 	FROM "user"
 	WHERE email=$1;`
 	user = &models.UserProfile{}
-	err = repo.db.QueryRow(context.Background(), query, email).Scan(
+	err = repo.db.QueryRow(ctx, query, email).Scan(
 		&user.ID,
 		&user.Name,
 		&user.Email,
@@ -99,14 +99,14 @@ func (repo *AuthRepository) GetUserByEmail(email string) (user *models.UserProfi
 }
 
 // GetUserByID получает данные пользователя из базы по id
-func (repo *AuthRepository) GetUserByID(userID int) (user *models.UserProfile, err error) {
+func (repo *AuthRepository) GetUserByID(ctx context.Context, userID int) (user *models.UserProfile, err error) {
 	query := `
 	SELECT u_id, nickname, email, description,
 	joined_at, updated_at, password_hash
 	FROM "user"
 	WHERE u_id=$1;`
 	user = &models.UserProfile{}
-	err = repo.db.QueryRow(context.Background(), query, userID).Scan(
+	err = repo.db.QueryRow(ctx, query, userID).Scan(
 		&user.ID,
 		&user.Name,
 		&user.Email,
@@ -125,12 +125,12 @@ func (repo *AuthRepository) GetUserByID(userID int) (user *models.UserProfile, e
 }
 
 // CreateUser создаёт пользователя (или не создаёт, если повторяются креды)
-func (repo *AuthRepository) CreateUser(user *models.UserRegistration, hashedPassword string) (newUser *models.UserProfile, err error) {
+func (repo *AuthRepository) CreateUser(ctx context.Context, user *models.UserRegistration, hashedPassword string) (newUser *models.UserProfile, err error) {
 	newUser = &models.UserProfile{}
 	query := `INSERT INTO "user" (nickname, email, password_hash, description, joined_at, updated_at)
               VALUES ($1, $2, $3, $4, $5, $6) RETURNING u_id, nickname, email, password_hash, description, joined_at, updated_at`
 
-	err = repo.db.QueryRow(context.Background(), query, user.Name, user.Email, hashedPassword, "", time.Now(), time.Now()).Scan(
+	err = repo.db.QueryRow(ctx, query, user.Name, user.Email, hashedPassword, "", time.Now(), time.Now()).Scan(
 		&newUser.ID,
 		&newUser.Name,
 		&newUser.Email,
@@ -143,15 +143,15 @@ func (repo *AuthRepository) CreateUser(user *models.UserRegistration, hashedPass
 }
 
 // CheckUniqueCredentials проверяет, существуют ли такие логин и email в базе
-func (repo *AuthRepository) CheckUniqueCredentials(nickname string, email string) error {
-	query1 := `SELECT COUNT(*) FROM "user" WHERE nickname = $1`
-	query2 := `SELECT COUNT(*) FROM "user" WHERE email = $1`
+func (repo *AuthRepository) CheckUniqueCredentials(ctx context.Context, nickname string, email string) error {
+	query1 := `SELECT COUNT(*) FROM "user" WHERE nickname = $1;`
+	query2 := `SELECT COUNT(*) FROM "user" WHERE email = $1;`
 	var count1, count2 int
-	err := repo.db.QueryRow(context.Background(), query1, nickname).Scan(&count1)
+	err := repo.db.QueryRow(ctx, query1, nickname).Scan(&count1)
 	if err != nil {
 		return fmt.Errorf("AuthRepository CheckUniqueCredentials (query1): %w", err)
 	}
-	err = repo.db.QueryRow(context.Background(), query2, email).Scan(&count2)
+	err = repo.db.QueryRow(ctx, query2, email).Scan(&count2)
 	if err != nil {
 		return fmt.Errorf("AuthRepository CheckUniqueCredentials (query2): %w", err)
 	}
@@ -166,13 +166,13 @@ func (repo *AuthRepository) CheckUniqueCredentials(nickname string, email string
 }
 
 // SetNewPasswordHash устанавливает пользователю новый хеш пароля
-func (repo *AuthRepository) SetNewPasswordHash(userID int, newPasswordHash string) error {
+func (repo *AuthRepository) SetNewPasswordHash(ctx context.Context, userID int, newPasswordHash string) error {
 	query := `
 	UPDATE "user"
 	SET password_hash=$1
 	WHERE u_id=$2;
 	`
-	tag, err := repo.db.Exec(context.Background(), query, newPasswordHash, userID)
+	tag, err := repo.db.Exec(ctx, query, newPasswordHash, userID)
 	if err != nil {
 		return fmt.Errorf("SetNewPasswordHash: %w", err)
 	}
