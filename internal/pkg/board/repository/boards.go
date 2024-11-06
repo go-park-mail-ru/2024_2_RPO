@@ -20,7 +20,7 @@ func CreateBoardRepository(db pgxiface.PgxIface) *BoardRepository {
 	return &BoardRepository{db: db}
 }
 
-// CreateBoard creates a new board in the database.
+// CreateBoard инсертит новую доску (ВНИМАНИЕ! ОН НЕ ДОБАВЛЯЕТ СОЗДАТЕЛЯ НА ДОСКУ!)
 func (r *BoardRepository) CreateBoard(ctx context.Context, name string, userID int) (*models.Board, error) {
 	query := `
 		INSERT INTO board (name, description, created_by)
@@ -42,7 +42,7 @@ func (r *BoardRepository) CreateBoard(ctx context.Context, name string, userID i
 	return &board, nil
 }
 
-// GetBoard retrieves a board by its ID.
+// GetBoard получает доску по ID
 func (r *BoardRepository) GetBoard(ctx context.Context, boardID int) (*models.Board, error) {
 	query := `
 		SELECT
@@ -79,7 +79,7 @@ func (r *BoardRepository) GetBoard(ctx context.Context, boardID int) (*models.Bo
 	return &board, nil
 }
 
-// UpdateBoard updates the specified fields of a board.
+// UpdateBoard обновляет информацию о доске
 func (r *BoardRepository) UpdateBoard(ctx context.Context, boardID int, data *models.BoardPutRequest) (updatedBoard *models.Board, err error) {
 	query := `
 		UPDATE board
