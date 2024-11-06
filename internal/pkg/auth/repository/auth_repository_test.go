@@ -1,90 +1,120 @@
 package repository
 
-// Мы предполагаем, что у вас настроен mock-объект для Redis
-// type MockRedisConn struct {
-// 	mock *gomock.Controller
-// }
+import (
+	"RPO_back/internal/models"
+	"context"
+	"testing"
+	"time"
 
-// func (m *MockRedisConn) Conn(ctx context.Context) redis.Cmdable {
-// 	mockRedisClient := NewMockCmdable(m.mock)
-// 	return mockRedisClient
-// }
+	"github.com/pashagolub/pgxmock/v4"
+)
 
-// // Mock Cmdable methods implementation generated with Mockgen
-// type MockCmdable struct {
-// 	mock.Mock
-// }
+func TestGetUserByEmail_Success(t *testing.T) {
+	ctx := context.Background()
+	mock, err := pgxmock.NewConn()
+	if err != nil {
+		t.Fatalf("unable to create mock connection: %v", err)
+	}
+	defer mock.Close(ctx)
+	email := "kaymekaydex@mail.ru"
 
-// func (m *MockCmdable) Set(ctx context.Context, key string, value interface{}, expiration time.Duration) *redis.StatusCmd {
-// 	args := m.Called(ctx, key, value, expiration)
-// 	return args.Get(0).(*redis.StatusCmd)
-// }
+	repo := &AuthRepository{db: mock}
 
-// // Mock generation is typically done with mockgen tool
+	query := `SELECT u_id, nickname, email, description, joined_at, updated_at, password_hash FROM "user" WHERE email=\$1;`
+	rows := pgxmock.NewRows([]string{"u_id", "nickname", "email", "description", "joined_at", "updated_at", "password_hash"}).
+		AddRow(1, "testnickname", email, "test description", time.Now(), time.Now(), "hashedpassword")
 
-// func TestRegisterSessionRedis(t *testing.T) {
-// 	ctrl := gomock.NewController(t)
-// 	defer ctrl.Finish()
+	mock.ExpectQuery(query).WithArgs(email).WillReturnRows(rows)
 
-// 	// Create a mock redis client
-// 	mockRedis := NewMockCmdable(ctrl)
-// 	mockRedis.EXPECT().Set(gomock.Any(), "test_cookie", 1, 7*24*time.Hour).Return(redis.NewStatusResult("", nil))
+	_, err = repo.GetUserByEmail(ctx, email)
+	if err != nil {
+		t.Errorf("expected no error, but got %v", err)
+	}
+}
 
-// 	authRepo := &AuthRepository{
-// 		redisDb: &MockRedisConn{mock: ctrl},
-// 	}
+func TestGetUserByID_Success(t *testing.T) {
+	ctx := context.Background()
+	mock, err := pgxmock.NewConn()
+	if err != nil {
+		t.Fatalf("unable to create mock connection: %v", err)
+	}
+	defer mock.Close(ctx)
+	email := "kaymekaydex@mail.ru"
 
-// 	err := authRepo.RegisterSessionRedis("test_cookie", 1)
-// 	assert.Nil(t, err, fmt.Sprintf("Expected no error, but got %v", err))
-// }
+	repo := &AuthRepository{db: mock}
 
-// Здесь мы определяем необходимые поля в структуре UserProfile
+	query := `SELECT u_id, nickname, email, description, joined_at, updated_at, password_hash FROM "user" WHERE u_id=\$1;`
+	rows := pgxmock.NewRows([]string{"u_id", "nickname", "email", "description", "joined_at", "updated_at", "password_hash"}).
+		AddRow(1337, "testnickname", email, "test description", time.Now(), time.Now(), "hashedpassword")
 
-// // Ошибка для неверных учетных данных
-// var ErrWrongCredentials = errors.New("wrong credentials")
+	mock.ExpectQuery(query).WithArgs(1337).WillReturnRows(rows)
 
-// func TestGetUserByEmail(t *testing.T) {
-// 	ctrl := gomock.NewController(t)
-// 	defer ctrl.Finish()
+	_, err = repo.GetUserByID(ctx, 1337)
+	if err != nil {
+		t.Errorf("expected no error, but got %v", err)
+	}
+}
 
-// 	mockPool := pgxpoolmock.NewMockPgxPool(ctrl)
+func TestCreateUser_Success(t *testing.T) {
+	ctx := context.Background()
+	mock, err := pgxmock.NewConn()
+	if err != nil {
+		t.Fatalf("unable to create mock connection: %v", err)
+	}
+	defer mock.Close(ctx)
 
-// 	repo := &AuthRepository{
-// 		db: mockPool,
-// 	}
+	repo := &AuthRepository{db: mock}
 
-// 	// Определяем переменные для теста
-// 	email := "test@example.com"
-// 	expectedUser := &models.UserProfile{
-// 		ID:           1,
-// 		Name:         "Test User",
-// 		Email:        email,
-// 		Description:  "Test Description",
-// 		JoinedAt:     time.Now(),
-// 		UpdatedAt:    time.Now(),
-// 		PasswordHash: "testhash",
-// 	}
+	query := `INSERT INTO "user" \(nickname, email, password_hash, description, joined_at, updated_at\) VALUES \(\$1, \$2, \$3, \$4, \$5, \$6\) RETURNING u_id, nickname, email, password_hash, description, joined_at, updated_at`
+	rows := pgxmock.NewRows([]string{"u_id", "nickname", "email", "password_hash", "description", "joined_at", "updated_at"}).
+		AddRow(1, "testnickname", "testemail", "hashedpassword", "", time.Now(), time.Now())
 
-// 	// Создаем ожидаемый response от базы данных
-// 	rows := pgxpoolmock.NewRows([]string{"u_id", "nickname", "email", "description", "joined_at", "updated_at", "password_hash"}).
-// 		AddRow(expectedUser.ID, expectedUser.Name, expectedUser.Email, expectedUser.Description, expectedUser.JoinedAt, expectedUser.UpdatedAt, expectedUser.PasswordHash)
+	mock.ExpectQuery(query).WithArgs("testnickname", "testemail", "hashedpassword", "", pgxmock.AnyArg(), pgxmock.AnyArg()).WillReturnRows(rows)
 
-// 	mockPool.EXPECT().
-// 		QueryRow(gomock.Any(), gomock.Any(), email).
-// 		Return(rows)
+	_, err = repo.CreateUser(ctx, &models.UserRegistration{Name: "testnickname", Email: "testemail"}, "hashedpassword")
+	if err != nil {
+		t.Errorf("expected no error, but got %v", err)
+	}
+}
 
-// 	// Выполнение тестируемой функции
-// 	user, err := repo.GetUserByEmail(email)
-// 	assert.Nil(t, err)
-// 	assert.Equal(t, expectedUser, user)
+func TestCheckUniqueCredentials_Success(t *testing.T) {
+	ctx := context.Background()
+	mock, err := pgxmock.NewConn()
+	if err != nil {
+		t.Fatalf("unable to create mock connection: %v", err)
+	}
+	defer mock.Close(ctx)
 
-// 	// Проверка на случай, если пользователь не найден
-// 	mockPool.EXPECT().
-// 		QueryRow(gomock.Any(), gomock.Any(), "nonexistent@example.com").
-// 		Return(pgxpoolmock.NewRows(nil)) // No rows
+	repo := &AuthRepository{db: mock}
 
-// 	user, err = repo.GetUserByEmail("nonexistent@example.com")
-// 	assert.NotNil(t, err)
-// 	assert.Equal(t, ErrWrongCredentials, err)
-// 	assert.Nil(t, user)
-// }
+	query1 := `SELECT COUNT\(\*\) FROM "user" WHERE nickname = \$1;`
+	query2 := `SELECT COUNT\(\*\) FROM "user" WHERE email = \$1;`
+
+	mock.ExpectQuery(query1).WithArgs("testnickname").WillReturnRows(pgxmock.NewRows([]string{"count"}).AddRow(0))
+	mock.ExpectQuery(query2).WithArgs("testemail").WillReturnRows(pgxmock.NewRows([]string{"count"}).AddRow(0))
+
+	err = repo.CheckUniqueCredentials(ctx, "testnickname", "testemail")
+	if err != nil {
+		t.Errorf("expected no error, but got %v", err)
+	}
+}
+
+func TestSetNewPasswordHash_Success(t *testing.T) {
+	ctx := context.Background()
+	mock, err := pgxmock.NewConn()
+	if err != nil {
+		t.Fatalf("unable to create mock connection: %v", err)
+	}
+	defer mock.Close(ctx)
+
+	repo := &AuthRepository{db: mock}
+
+	query := `UPDATE "user" SET password_hash=\$1 WHERE u_id=\$2;`
+
+	mock.ExpectExec(query).WithArgs("newhashedpassword", 228).WillReturnResult(pgxmock.NewResult("1", 1))
+
+	err = repo.SetNewPasswordHash(ctx, 228, "newhashedpassword")
+	if err != nil {
+		t.Errorf("expected no error, but got %v", err)
+	}
+}

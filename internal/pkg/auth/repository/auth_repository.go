@@ -3,6 +3,7 @@ package repository
 import (
 	"RPO_back/internal/errs"
 	"RPO_back/internal/models"
+	"RPO_back/internal/pkg/utils/pgxiface"
 	"context"
 	"errors"
 	"fmt"
@@ -11,15 +12,14 @@ import (
 
 	"github.com/go-redis/redis/v8"
 	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type AuthRepository struct {
-	db      *pgxpool.Pool
+	db      pgxiface.PgxIface
 	redisDb *redis.Client
 }
 
-func CreateAuthRepository(postgresDb *pgxpool.Pool, redisDb *redis.Client) *AuthRepository {
+func CreateAuthRepository(postgresDb pgxiface.PgxIface, redisDb *redis.Client) *AuthRepository {
 	return &AuthRepository{
 		db: postgresDb, redisDb: redisDb,
 	}
