@@ -964,3 +964,318 @@ func TestDeleteCard(t *testing.T) {
 		assert.Equal(t, http.StatusInternalServerError, w.Code)
 	})
 }
+
+func TestCreateColumn(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockBoardUsecase := mocks.NewMockBoardUsecase(ctrl)
+	boardDelivery := BoardDelivery.CreateBoardDelivery(mockBoardUsecase)
+
+	t.Run("successful creation of column", func(t *testing.T) {
+		userID := 1
+		boardID := 1
+		requestData := models.ColumnRequest{NewTitle: "New Column"}
+
+		mockBoardUsecase.EXPECT().CreateColumn(gomock.Any(), userID, boardID, &requestData).Return(&models.Column{ID: 1, Title: requestData.NewTitle}, nil)
+
+		ctx := context.WithValue(context.Background(), session.UserIDContextKey, userID)
+
+		body, _ := json.Marshal(requestData)
+		req := httptest.NewRequest("POST", "/columns/board_1", bytes.NewReader(body)).WithContext(ctx)
+		req = mux.SetURLVars(req, map[string]string{"boardId": "1"})
+		w := httptest.NewRecorder()
+
+		r := mux.NewRouter()
+		r.HandleFunc("/columns/{boardId}", boardDelivery.CreateColumn).Methods("POST")
+
+		r.ServeHTTP(w, req)
+
+		assert.Equal(t, http.StatusCreated, w.Code)
+
+		var gotColumn models.Column
+		err := json.NewDecoder(w.Body).Decode(&gotColumn)
+		assert.NoError(t, err)
+		expectedColumn := models.Column{ID: 1, Title: requestData.NewTitle}
+		assert.Equal(t, expectedColumn, gotColumn)
+	})
+
+	t.Run("GetUserIDOrFail fails", func(t *testing.T) {
+		req := httptest.NewRequest("POST", "/columns/board_1", nil)
+		w := httptest.NewRecorder()
+
+		r := mux.NewRouter()
+		r.HandleFunc("/columns/{boardId}", boardDelivery.CreateColumn).Methods("POST")
+
+		r.ServeHTTP(w, req)
+
+		assert.Equal(t, http.StatusUnauthorized, w.Code)
+	})
+
+	t.Run("GetIDFromRequest fails", func(t *testing.T) {
+		userID := 1
+
+		ctx := context.WithValue(context.Background(), session.UserIDContextKey, userID)
+
+		req := httptest.NewRequest("POST", "/columns/invalid", nil).WithContext(ctx)
+		w := httptest.NewRecorder()
+
+		r := mux.NewRouter()
+		r.HandleFunc("/columns/{boardId}", boardDelivery.CreateColumn).Methods("POST")
+
+		r.ServeHTTP(w, req)
+
+		assert.Equal(t, http.StatusBadRequest, w.Code)
+	})
+
+	t.Run("invalid request data", func(t *testing.T) {
+		userID := 1
+
+		ctx := context.WithValue(context.Background(), session.UserIDContextKey, userID)
+
+		req := httptest.NewRequest("POST", "/columns/board_1", bytes.NewReader([]byte("invalid json"))).WithContext(ctx)
+		req = mux.SetURLVars(req, map[string]string{"boardId": "1"})
+		w := httptest.NewRecorder()
+
+		r := mux.NewRouter()
+		r.HandleFunc("/columns/{boardId}", boardDelivery.CreateColumn).Methods("POST")
+
+		r.ServeHTTP(w, req)
+
+		assert.Equal(t, http.StatusBadRequest, w.Code)
+	})
+
+	t.Run("usecase returns error", func(t *testing.T) {
+		userID := 1
+		boardID := 1
+		requestData := models.ColumnRequest{NewTitle: "New Column"}
+
+		mockBoardUsecase.EXPECT().CreateColumn(gomock.Any(), userID, boardID, &requestData).Return(nil, errors.New("usecase error"))
+
+		ctx := context.WithValue(context.Background(), session.UserIDContextKey, userID)
+
+		body, _ := json.Marshal(requestData)
+		req := httptest.NewRequest("POST", "/columns/board_1", bytes.NewReader(body)).WithContext(ctx)
+		w := httptest.NewRecorder()
+
+		r := mux.NewRouter()
+		r.HandleFunc("/columns/{boardId}", boardDelivery.CreateColumn).Methods("POST")
+
+		r.ServeHTTP(w, req)
+
+		assert.Equal(t, http.StatusInternalServerError, w.Code)
+	})
+}
+
+func TestUpdateColumn(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockBoardUsecase := mocks.NewMockBoardUsecase(ctrl)
+	boardDelivery := BoardDelivery.CreateBoardDelivery(mockBoardUsecase)
+
+	t.Run("successful update of column", func(t *testing.T) {
+		userID := 1
+		boardID := 1
+		columnID := 1
+		requestData := models.ColumnRequest{NewTitle: "Updated Column"}
+
+		mockBoardUsecase.EXPECT().UpdateColumn(gomock.Any(), userID, boardID, columnID, &requestData).Return(&models.Column{ID: columnID, Title: requestData.NewTitle}, nil)
+
+		ctx := context.WithValue(context.Background(), session.UserIDContextKey, userID)
+
+		body, _ := json.Marshal(requestData)
+		req := httptest.NewRequest("PUT", "/columns/board_1/column_1", bytes.NewReader(body)).WithContext(ctx)
+		req = mux.SetURLVars(req, map[string]string{"boardId": "1", "columnId": "1"})
+		w := httptest.NewRecorder()
+
+		r := mux.NewRouter()
+		r.HandleFunc("/columns/{boardId}/{columnId}", boardDelivery.UpdateColumn).Methods("PUT")
+
+		r.ServeHTTP(w, req)
+
+		assert.Equal(t, http.StatusOK, w.Code)
+
+		var gotColumn models.Column
+		err := json.NewDecoder(w.Body).Decode(&gotColumn)
+		assert.NoError(t, err)
+		expectedColumn := models.Column{ID: columnID, Title: requestData.NewTitle}
+		assert.Equal(t, expectedColumn, gotColumn)
+	})
+
+	t.Run("GetUserIDOrFail fails", func(t *testing.T) {
+		req := httptest.NewRequest("PUT", "/columns/board_1/column_1", nil)
+		w := httptest.NewRecorder()
+
+		r := mux.NewRouter()
+		r.HandleFunc("/columns/{boardId}/{columnId}", boardDelivery.UpdateColumn).Methods("PUT")
+
+		r.ServeHTTP(w, req)
+
+		assert.Equal(t, http.StatusUnauthorized, w.Code)
+	})
+
+	t.Run("GetIDFromRequest fails for boardId", func(t *testing.T) {
+		userID := 1
+
+		ctx := context.WithValue(context.Background(), session.UserIDContextKey, userID)
+
+		req := httptest.NewRequest("PUT", "/columns/invalid/column_1", nil).WithContext(ctx)
+		w := httptest.NewRecorder()
+
+		r := mux.NewRouter()
+		r.HandleFunc("/columns/{boardId}/{columnId}", boardDelivery.UpdateColumn).Methods("PUT")
+
+		r.ServeHTTP(w, req)
+
+		assert.Equal(t, http.StatusBadRequest, w.Code)
+	})
+
+	t.Run("GetIDFromRequest fails for columnId", func(t *testing.T) {
+		userID := 1
+
+		ctx := context.WithValue(context.Background(), session.UserIDContextKey, userID)
+
+		req := httptest.NewRequest("PUT", "/columns/board_1/invalid", nil).WithContext(ctx)
+		w := httptest.NewRecorder()
+
+		r := mux.NewRouter()
+		r.HandleFunc("/columns/{boardId}/{columnId}", boardDelivery.UpdateColumn).Methods("PUT")
+
+		r.ServeHTTP(w, req)
+
+		assert.Equal(t, http.StatusBadRequest, w.Code)
+	})
+
+	t.Run("invalid request data", func(t *testing.T) {
+		userID := 1
+
+		ctx := context.WithValue(context.Background(), session.UserIDContextKey, userID)
+
+		req := httptest.NewRequest("PUT", "/columns/board_1/column_1", bytes.NewReader([]byte("invalid json"))).WithContext(ctx)
+		req = mux.SetURLVars(req, map[string]string{"boardId": "1", "columnId": "1"})
+		w := httptest.NewRecorder()
+
+		r := mux.NewRouter()
+		r.HandleFunc("/columns/{boardId}/{columnId}", boardDelivery.UpdateColumn).Methods("PUT")
+
+		r.ServeHTTP(w, req)
+
+		assert.Equal(t, http.StatusBadRequest, w.Code)
+	})
+
+	t.Run("usecase returns error", func(t *testing.T) {
+		userID := 1
+		boardID := 1
+		columnID := 1
+		requestData := models.ColumnRequest{NewTitle: "Updated Column"}
+
+		mockBoardUsecase.EXPECT().UpdateColumn(gomock.Any(), userID, boardID, columnID, &requestData).Return(nil, errors.New("usecase error"))
+
+		ctx := context.WithValue(context.Background(), session.UserIDContextKey, userID)
+
+		body, _ := json.Marshal(requestData)
+		req := httptest.NewRequest("PUT", "/columns/board_1/column_1", bytes.NewReader(body)).WithContext(ctx)
+		w := httptest.NewRecorder()
+
+		r := mux.NewRouter()
+		r.HandleFunc("/columns/{boardId}/{columnId}", boardDelivery.UpdateColumn).Methods("PUT")
+
+		r.ServeHTTP(w, req)
+
+		assert.Equal(t, http.StatusInternalServerError, w.Code)
+	})
+}
+
+func TestDeleteColumn(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockBoardUsecase := mocks.NewMockBoardUsecase(ctrl)
+	boardDelivery := BoardDelivery.CreateBoardDelivery(mockBoardUsecase)
+
+	t.Run("successful deletion of column", func(t *testing.T) {
+		userID := 1
+		boardID := 1
+		columnID := 1
+
+		mockBoardUsecase.EXPECT().DeleteColumn(gomock.Any(), userID, boardID, columnID).Return(nil)
+
+		ctx := context.WithValue(context.Background(), session.UserIDContextKey, userID)
+
+		req := httptest.NewRequest("DELETE", "/columns/board_1/column_1", nil).WithContext(ctx)
+		req = mux.SetURLVars(req, map[string]string{"boardId": "1", "columnId": "1"})
+		w := httptest.NewRecorder()
+
+		r := mux.NewRouter()
+		r.HandleFunc("/columns/{boardId}/{columnId}", boardDelivery.DeleteColumn).Methods("DELETE")
+
+		r.ServeHTTP(w, req)
+
+		assert.Equal(t, http.StatusOK, w.Code)
+	})
+
+	t.Run("GetUserIDOrFail fails", func(t *testing.T) {
+		req := httptest.NewRequest("DELETE", "/columns/board_1/column_1", nil)
+		w := httptest.NewRecorder()
+
+		r := mux.NewRouter()
+		r.HandleFunc("/columns/{boardId}/{columnId}", boardDelivery.DeleteColumn).Methods("DELETE")
+
+		r.ServeHTTP(w, req)
+
+		assert.Equal(t, http.StatusUnauthorized, w.Code)
+	})
+
+	t.Run("GetIDFromRequest fails for boardId", func(t *testing.T) {
+		userID := 1
+
+		ctx := context.WithValue(context.Background(), session.UserIDContextKey, userID)
+
+		req := httptest.NewRequest("DELETE", "/columns/invalid/column_1", nil).WithContext(ctx)
+		w := httptest.NewRecorder()
+
+		r := mux.NewRouter()
+		r.HandleFunc("/columns/{boardId}/{columnId}", boardDelivery.DeleteColumn).Methods("DELETE")
+
+		r.ServeHTTP(w, req)
+
+		assert.Equal(t, http.StatusBadRequest, w.Code)
+	})
+
+	t.Run("GetIDFromRequest fails for columnId", func(t *testing.T) {
+		userID := 1
+
+		ctx := context.WithValue(context.Background(), session.UserIDContextKey, userID)
+
+		req := httptest.NewRequest("DELETE", "/columns/board_1/invalid", nil).WithContext(ctx)
+		w := httptest.NewRecorder()
+
+		r := mux.NewRouter()
+		r.HandleFunc("/columns/{boardId}/{columnId}", boardDelivery.DeleteColumn).Methods("DELETE")
+
+		r.ServeHTTP(w, req)
+
+		assert.Equal(t, http.StatusBadRequest, w.Code)
+	})
+
+	t.Run("usecase returns error", func(t *testing.T) {
+		userID := 1
+		boardID := 1
+		columnID := 1
+
+		mockBoardUsecase.EXPECT().DeleteColumn(gomock.Any(), userID, boardID, columnID).Return(errors.New("usecase error"))
+
+		ctx := context.WithValue(context.Background(), session.UserIDContextKey, userID)
+
+		req := httptest.NewRequest("DELETE", "/columns/board_1/column_1", nil).WithContext(ctx)
+		w := httptest.NewRecorder()
+
+		r := mux.NewRouter()
+		r.HandleFunc("/columns/{boardId}/{columnId}", boardDelivery.DeleteColumn).Methods("DELETE")
+
+		r.ServeHTTP(w, req)
+
+		assert.Equal(t, http.StatusInternalServerError, w.Code)
+	})
+}
