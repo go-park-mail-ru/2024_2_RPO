@@ -1,8 +1,10 @@
 package repository
 
 import (
+	"RPO_back/internal/models"
 	"RPO_back/internal/pkg/utils/uploads"
 	"context"
+	"errors"
 	"fmt"
 	"regexp"
 	"testing"
@@ -307,5 +309,88 @@ func TestGetUserByNickname_Success(t *testing.T) {
 	user, err := repo.GetUserByNickname(ctx, "testuser")
 	assert.NoError(t, err)
 	assert.NotNil(t, user)
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestUpdateBoard(t *testing.T) {
+	mock, err := pgxmock.NewConn()
+	assert.NoError(t, err)
+	defer mock.Close(context.Background())
+
+	boardRepo := CreateBoardRepository(mock)
+
+	ctx := context.Background()
+	boardID := 1
+	data := &models.BoardPutRequest{
+		NewName:        "Updated Name",
+		NewDescription: "Updated Description",
+	}
+
+	mock.ExpectExec(`UPDATE board SET name=\$1, description=\$2, updated_at = CURRENT_TIMESTAMP WHERE board_id = \$3;`).
+		WithArgs(data.NewName, data.NewDescription, boardID).
+		WillReturnError(errors.New("test error"))
+
+	_, err = boardRepo.UpdateBoard(ctx, boardID, data)
+	assert.Error(t, err)
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestDeleteBoard(t *testing.T) {
+	mock, err := pgxmock.NewConn()
+	assert.NoError(t, err)
+	defer mock.Close(context.Background())
+
+	boardRepo := CreateBoardRepository(mock)
+
+	ctx := context.Background()
+	boardID := 1
+
+	mock.ExpectExec(`DELETE FROM board WHERE board_id = \$1;`).
+		WithArgs(boardID).
+		WillReturnError(errors.New("test error"))
+
+	err = boardRepo.DeleteBoard(ctx, boardID)
+	assert.Error(t, err)
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestGetBoardsForUser(t *testing.T) {
+	mock, err := pgxmock.NewConn()
+	assert.NoError(t, err)
+	defer mock.Close(context.Background())
+
+	boardRepo := CreateBoardRepository(mock)
+
+	ctx := context.Background()
+	userID := 1
+
+	mock.ExpectQuery(`SELECT b.board_id, b.name, b.description, b.created_at, b.updated_at, COALESCE\(f.file_uuid::text, ''\), COALESCE\(f.file_extension, ''\) FROM user_to_board AS ub JOIN board AS b ON b.board_id = ub.board_id LEFT JOIN user_uploaded_file AS f ON f.file_uuid=b.background_image_uuid WHERE ub.u_id = \$1`).
+		WithArgs(userID).
+		WillReturnError(errors.New("test error"))
+
+	_, err = boardRepo.GetBoardsForUser(ctx, userID)
+	assert.Error(t, err)
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestSetBoardBackground(t *testing.T) {
+	mock, err := pgxmock.NewConn()
+	assert.NoError(t, err)
+	defer mock.Close(context.Background())
+
+	boardRepo := CreateBoardRepository(mock)
+
+	ctx := context.Background()
+	userID := 1
+	boardID := 1
+	fileExtension := "jpg"
+	fileSize := 1024
+
+	mock.ExpectQuery(`INSERT INTO user_uploaded_file \(file_extension, created_at, created_by, "size"\) VALUES \(\$1, CURRENT_TIMESTAMP, \$2, \$3\) RETURNING file_uuid::text;`).
+		WithArgs(fileExtension, userID, fileSize).
+		WillReturnError(errors.New("test error"))
+
+	_, err = boardRepo.SetBoardBackground(ctx, userID, boardID, fileExtension, fileSize)
+	assert.Error(t, err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
