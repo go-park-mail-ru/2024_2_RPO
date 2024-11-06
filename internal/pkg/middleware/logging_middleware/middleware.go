@@ -13,7 +13,7 @@ type contextKey string
 const rIDKey = contextKey("requestID")
 
 var (
-	rIDCounter uint64
+	rIDCounter uint64 = 1
 	mu         sync.Mutex
 )
 

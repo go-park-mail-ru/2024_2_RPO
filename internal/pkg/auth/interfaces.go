@@ -15,6 +15,7 @@ type AuthUsecase interface {
 	LoginUser(ctx context.Context, email string, password string) (sessionID string, err error)
 	RegisterUser(ctx context.Context, user *models.UserRegistration) (sessionID string, err error)
 	LogoutUser(ctx context.Context, sessionID string) error
+	ChangePassword(ctx context.Context, userID int, oldPassword string, newPassword string) error
 }
 
 type AuthRepo interface {

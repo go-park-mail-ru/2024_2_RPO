@@ -4,7 +4,6 @@ import (
 	"RPO_back/internal/errs"
 	"RPO_back/internal/models"
 	"RPO_back/internal/pkg/auth"
-	"RPO_back/internal/pkg/auth/usecase"
 	"RPO_back/internal/pkg/utils/requests"
 	"RPO_back/internal/pkg/utils/responses"
 	"errors"
@@ -15,10 +14,10 @@ import (
 )
 
 type AuthDelivery struct {
-	authUsecase *usecase.AuthUsecase
+	authUsecase auth.AuthUsecase
 }
 
-func CreateAuthDelivery(uc *usecase.AuthUsecase) *AuthDelivery {
+func CreateAuthDelivery(uc auth.AuthUsecase) *AuthDelivery {
 	return &AuthDelivery{
 		authUsecase: uc,
 	}
@@ -138,7 +137,7 @@ func (d *AuthDelivery) ChangePassword(w http.ResponseWriter, r *http.Request) {
 	}
 	err = d.authUsecase.ChangePassword(r.Context(), userID, data.OldPassword, data.NewPassword)
 	if err != nil {
-		responses.DoBadResponse(w, 500, "internal error")
+		responses.DoBadResponse(w, http.StatusInternalServerError, "internal error")
 		return
 	}
 	responses.DoEmptyOkResponce(w)

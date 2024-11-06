@@ -2,7 +2,6 @@ package session
 
 import (
 	auth "RPO_back/internal/pkg/auth"
-	"RPO_back/internal/pkg/auth/repository"
 	"context"
 	"net/http"
 )
@@ -14,10 +13,10 @@ const (
 )
 
 type SessionMiddleware struct {
-	authRepo *repository.AuthRepository
+	authRepo auth.AuthRepo
 }
 
-func CreateSessionMiddleware(authRepo *repository.AuthRepository) *SessionMiddleware {
+func CreateSessionMiddleware(authRepo auth.AuthRepo) *SessionMiddleware {
 	return &SessionMiddleware{
 		authRepo: authRepo,
 	}
