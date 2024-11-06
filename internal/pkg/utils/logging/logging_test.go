@@ -2,6 +2,8 @@ package logging
 
 import (
 	"bytes"
+	"context"
+	"fmt"
 	"os"
 	"testing"
 
@@ -38,4 +40,20 @@ func TestSetupLogger(t *testing.T) {
 	if !bytes.Contains(fileContent, []byte("Test log to file")) {
 		t.Errorf("Лог не записан в файл")
 	}
+}
+
+func TestLogFunc(t *testing.T) {
+	ctx := context.WithValue(context.Background(), "requestID", uint64(123456))
+
+	Warn(ctx, "This is a warning message")
+	Info(ctx, "This is an info message")
+	Error(ctx, "This is an error message")
+	Debug(ctx, "This is a debug message")
+
+	Warnf(ctx, "Warning with format: %s", "formatted warning")
+	Infof(ctx, "Info with format: %s", "formatted info")
+	Errorf(ctx, "Error with format: %s", "formatted error")
+	Debugf(ctx, "Debug with format: %s", "formatted debug")
+
+	fmt.Println("All functions tested.")
 }

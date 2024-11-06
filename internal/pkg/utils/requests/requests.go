@@ -28,7 +28,7 @@ func GetRequestData(r *http.Request, requestData interface{}) error {
 		return err
 	}
 
-	err = validate.Validate(requestData)
+	err = validate.Validate(r.Context(), requestData)
 	if err != nil {
 		fmt.Println(err)
 		return err

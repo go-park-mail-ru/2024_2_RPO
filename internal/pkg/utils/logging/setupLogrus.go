@@ -74,3 +74,23 @@ func Debug(ctx context.Context, data ...interface{}) {
 	logData := append([]interface{}{fmt.Sprintf("rid=%d ", GetRequestID(ctx))}, data...)
 	log.Debug(logData...)
 }
+
+func Warnf(ctx context.Context, format string, data ...interface{}) {
+	ridInfo := fmt.Sprintf("rid=%d ", GetRequestID(ctx))
+	log.Warnf(ridInfo+format, data...)
+}
+
+func Infof(ctx context.Context, format string, data ...interface{}) {
+	ridInfo := fmt.Sprintf("rid=%d ", GetRequestID(ctx))
+	log.Infof(ridInfo+format, data...)
+}
+
+func Errorf(ctx context.Context, format string, data ...interface{}) {
+	ridInfo := fmt.Sprintf("rid=%d ", GetRequestID(ctx))
+	log.Errorf(ridInfo+format, data...)
+}
+
+func Debugf(ctx context.Context, format string, data ...interface{}) {
+	ridInfo := fmt.Sprintf("rid=%d ", GetRequestID(ctx))
+	log.Debugf(ridInfo+format, data...)
+}
