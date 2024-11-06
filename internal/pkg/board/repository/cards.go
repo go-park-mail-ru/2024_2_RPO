@@ -2,6 +2,7 @@ package repository
 
 import (
 	"RPO_back/internal/models"
+	"RPO_back/internal/pkg/utils/logging"
 	"context"
 	"errors"
 
@@ -22,6 +23,8 @@ func (r *BoardRepository) GetCardsForBoard(ctx context.Context, boardID int) (ca
 	WHERE kc.board_id = $1;
 `
 	rows, err := r.db.Query(ctx, query, boardID)
+	logging.Debug(ctx, "GetCardsForBoard query has err: ", err)
+
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, nil
@@ -69,13 +72,15 @@ func (r *BoardRepository) CreateNewCard(ctx context.Context, boardID int, column
 	`
 
 	newCard = &models.Card{}
-	if err = r.db.QueryRow(ctx, query, boardID, columnID, title).Scan(
+	err = r.db.QueryRow(ctx, query, boardID, columnID, title).Scan(
 		&newCard.ID,
 		&newCard.ColumnID,
 		&newCard.Title,
 		&newCard.CreatedAt,
 		&newCard.UpdatedAt,
-	); err != nil {
+	)
+	logging.Debug(ctx, "CreateNewCard query has err: ", err)
+	if err != nil {
 		return nil, err
 	}
 
@@ -99,13 +104,15 @@ func (r *BoardRepository) UpdateCard(ctx context.Context, boardID int, cardID in
 	`
 	updateCard = &models.Card{}
 
-	if err := r.db.QueryRow(ctx, query, data.NewTitle, data.NewColumnId, boardID, cardID).Scan(
+	err = r.db.QueryRow(ctx, query, data.NewTitle, data.NewColumnId, boardID, cardID).Scan(
 		&updateCard.ID,
 		&updateCard.Title,
 		&updateCard.ColumnID,
 		&updateCard.CreatedAt,
 		&updateCard.UpdatedAt,
-	); err != nil {
+	)
+	logging.Debug(ctx, "UpdateCard query has err: ", err)
+	if err != nil {
 		return nil, err
 	}
 
@@ -122,6 +129,7 @@ func (r *BoardRepository) DeleteCard(ctx context.Context, boardID int, cardID in
 			AND card.card_id = $2
 	`
 	_, err = r.db.Exec(ctx, query, boardID, cardID)
+	logging.Debug(ctx, "DeleteCard query has err: ", err)
 	if err != nil {
 		return err
 	}

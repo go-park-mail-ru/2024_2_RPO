@@ -3,6 +3,7 @@ package repository
 import (
 	"RPO_back/internal/errs"
 	"RPO_back/internal/models"
+	"RPO_back/internal/pkg/utils/logging"
 	"RPO_back/internal/pkg/utils/uploads"
 	"context"
 	"errors"
@@ -52,6 +53,7 @@ func (r *UserRepository) GetUserProfile(ctx context.Context, userID int) (profil
 		&fileUUID,
 		&fileExt,
 	)
+	logging.Debug(ctx, "GetUserProfile query has err: ", err)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, fmt.Errorf("GetUserProfile: %w", errs.ErrNotFound)
@@ -74,11 +76,13 @@ func (r *UserRepository) UpdateUserProfile(ctx context.Context, userID int, data
 	var nicknameCount, emailCount int
 	row := r.db.QueryRow(ctx, query1, data.Email, userID)
 	err = row.Scan(&emailCount)
+	logging.Debug(ctx, "UpdateUserProfile query 1 has err: ", err)
 	if err != nil {
 		return nil, fmt.Errorf("UpdateUserProfile (check unique email): %w", err)
 	}
 	row = r.db.QueryRow(ctx, query2, data.NewName, userID)
 	err = row.Scan(&nicknameCount)
+	logging.Debug(ctx, "UpdateUserProfile query 2 has err: ", err)
 	if err != nil {
 		return nil, fmt.Errorf("UpdateUserProfile (check unique nick): %w", err)
 	}
@@ -92,6 +96,7 @@ func (r *UserRepository) UpdateUserProfile(ctx context.Context, userID int, data
 		return nil, fmt.Errorf("UpdateUserProfile (check unique): %w", errs.ErrBusyEmail)
 	}
 	tag, err := r.db.Exec(ctx, query3, data.Email, data.NewName, userID)
+	logging.Debug(ctx, "UpdateUserProfile query 3 has err: ", err)
 	if err != nil {
 		return nil, fmt.Errorf("UpdateUserProfile (action): %w", err)
 	}
@@ -116,10 +121,12 @@ func (r *UserRepository) SetUserAvatar(ctx context.Context, userID int, fileExte
 	var fileUUID string
 	row := r.db.QueryRow(ctx, query1, fileExtension, userID, fileSize)
 	err = row.Scan(&fileUUID)
+	logging.Debug(ctx, "SetUserAvatar query 1 has err: ", err)
 	if err != nil {
 		return "", fmt.Errorf("SetUserAvatar (register file): %w", err)
 	}
 	tag, err := r.db.Exec(ctx, query2, fileUUID, userID)
+	logging.Debug(ctx, "SetUserAvatar query 2 has err: ", err)
 	if err != nil {
 		return "", fmt.Errorf("SetUserAvatar (update user): %w", err)
 	}

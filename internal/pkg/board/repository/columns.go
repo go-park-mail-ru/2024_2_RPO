@@ -3,6 +3,7 @@ package repository
 import (
 	"RPO_back/internal/errs"
 	"RPO_back/internal/models"
+	"RPO_back/internal/pkg/utils/logging"
 	"context"
 	"errors"
 	"fmt"
@@ -20,6 +21,7 @@ func (r *BoardRepository) GetColumnsForBoard(ctx context.Context, boardID int) (
 	WHERE board_id = $1;
 	`
 	rows, err := r.db.Query(ctx, query, boardID)
+	logging.Debug(ctx, "GetColumnsForBoard query has err: ", err)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, nil
@@ -54,10 +56,12 @@ func (r *BoardRepository) CreateColumn(ctx context.Context, boardID int, title s
 	`
 
 	newColumn = &models.Column{}
-	if err = r.db.QueryRow(ctx, query, boardID, title).Scan(
+	err = r.db.QueryRow(ctx, query, boardID, title).Scan(
 		&newColumn.ID,
 		&newColumn.Title,
-	); err != nil {
+	)
+	logging.Debug(ctx, "CreateColumn query has err: ", err)
+	if err != nil {
 		return nil, err
 	}
 
@@ -74,10 +78,12 @@ func (r *BoardRepository) UpdateColumn(ctx context.Context, boardID int, columnI
 	`
 
 	updateColumn = &models.Column{}
-	if err = r.db.QueryRow(ctx, query, data.NewTitle, columnID, boardID).Scan(
+	err = r.db.QueryRow(ctx, query, data.NewTitle, columnID, boardID).Scan(
 		&updateColumn.ID,
 		&updateColumn.Title,
-	); err != nil {
+	)
+	logging.Debug(ctx, "UpdateColumn query has err: ", err)
+	if err != nil {
 		return nil, err
 	}
 
@@ -92,6 +98,7 @@ func (r *BoardRepository) DeleteColumn(ctx context.Context, boardID int, columnI
 	`
 
 	tag, err := r.db.Exec(ctx, query, columnID, boardID)
+	logging.Debug(ctx, "DeleteColumns query has err: ", err)
 	if err != nil {
 		return fmt.Errorf("DeleteColumn (query): %w", err)
 	}

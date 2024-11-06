@@ -3,6 +3,7 @@ package repository
 import (
 	"RPO_back/internal/errs"
 	"RPO_back/internal/models"
+	"RPO_back/internal/pkg/utils/logging"
 	"RPO_back/internal/pkg/utils/pgxiface"
 	"context"
 	"errors"
@@ -33,6 +34,7 @@ func (repo *AuthRepository) RegisterSessionRedis(ctx context.Context, cookie str
 	ttl := 7 * 24 * time.Hour
 
 	err := redisConn.Set(repo.redisDb.Context(), cookie, userID, ttl).Err()
+	logging.Debug(ctx, "RegisterSessionRedis query to redis has err: ", err)
 	if err != nil {
 		return fmt.Errorf("unable to set session in Redis: %v", err)
 	}
@@ -45,7 +47,9 @@ func (repo *AuthRepository) KillSessionRedis(ctx context.Context, sessionID stri
 	redisConn := repo.redisDb.Conn(repo.redisDb.Context())
 	defer redisConn.Close()
 
-	if err := redisConn.Del(repo.redisDb.Context(), sessionID).Err(); err != nil {
+	err := redisConn.Del(repo.redisDb.Context(), sessionID).Err()
+	logging.Debug(ctx, "KillSessionRedis query to redis has err: ", err)
+	if err != nil {
 		return err
 	}
 
@@ -58,6 +62,7 @@ func (repo *AuthRepository) RetrieveUserIdFromSessionId(ctx context.Context, ses
 	defer redisConn.Close()
 
 	val, err := redisConn.Get(repo.redisDb.Context(), sessionID).Result()
+	logging.Debug(ctx, "RetrieveUserIdFromSessionId query to redis has err: ", err)
 	if err == redis.Nil {
 		return 0, fmt.Errorf("RetrieveUserIdFromSessionId(%v): %w", sessionID, errs.ErrNotFound)
 	} else if err != nil {
@@ -89,6 +94,7 @@ func (repo *AuthRepository) GetUserByEmail(ctx context.Context, email string) (u
 		&user.UpdatedAt,
 		&user.PasswordHash,
 	)
+	logging.Debug(ctx, "GetUserByEmail query has err: ", err)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, errs.ErrWrongCredentials
@@ -115,6 +121,7 @@ func (repo *AuthRepository) GetUserByID(ctx context.Context, userID int) (user *
 		&user.UpdatedAt,
 		&user.PasswordHash,
 	)
+	logging.Debug(ctx, "GetUserByID query has err: ", err)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, errs.ErrWrongCredentials
@@ -139,6 +146,7 @@ func (repo *AuthRepository) CreateUser(ctx context.Context, user *models.UserReg
 		&newUser.JoinedAt,
 		&newUser.UpdatedAt,
 	)
+	logging.Debug(ctx, "CreateUser query has err: ", err)
 	return newUser, err
 }
 
@@ -148,10 +156,12 @@ func (repo *AuthRepository) CheckUniqueCredentials(ctx context.Context, nickname
 	query2 := `SELECT COUNT(*) FROM "user" WHERE email = $1;`
 	var count1, count2 int
 	err := repo.db.QueryRow(ctx, query1, nickname).Scan(&count1)
+	logging.Debug(ctx, "CheckUniqueCredentials query 1 has err: ", err)
 	if err != nil {
 		return fmt.Errorf("AuthRepository CheckUniqueCredentials (query1): %w", err)
 	}
 	err = repo.db.QueryRow(ctx, query2, email).Scan(&count2)
+	logging.Debug(ctx, "CheckUniqueCredentials query 2 has err: ", err)
 	if err != nil {
 		return fmt.Errorf("AuthRepository CheckUniqueCredentials (query2): %w", err)
 	}
@@ -173,6 +183,7 @@ func (repo *AuthRepository) SetNewPasswordHash(ctx context.Context, userID int, 
 	WHERE u_id=$2;
 	`
 	tag, err := repo.db.Exec(ctx, query, newPasswordHash, userID)
+	logging.Debug(ctx, "SetNewPasswordHash query has err: ", err, " tag: ", tag)
 	if err != nil {
 		return fmt.Errorf("SetNewPasswordHash: %w", err)
 	}

@@ -3,6 +3,7 @@ package repository
 import (
 	"RPO_back/internal/errs"
 	"RPO_back/internal/models"
+	"RPO_back/internal/pkg/utils/logging"
 	"RPO_back/internal/pkg/utils/pgxiface"
 	"RPO_back/internal/pkg/utils/uploads"
 	"context"
@@ -35,10 +36,11 @@ func (r *BoardRepository) CreateBoard(ctx context.Context, name string, userID i
 		&board.CreatedAt,
 		&board.UpdatedAt,
 	)
-	board.BackgroundImageURL = uploads.DefaultBackgroundURL
+	logging.Debug(ctx, "CreateBoard query has err: ", err)
 	if err != nil {
 		return nil, fmt.Errorf("CreateBoard: %w", err)
 	}
+	board.BackgroundImageURL = uploads.DefaultBackgroundURL
 	return &board, nil
 }
 
@@ -69,13 +71,14 @@ func (r *BoardRepository) GetBoard(ctx context.Context, boardID int) (*models.Bo
 		&fileUUID,
 		&fileExtension,
 	)
-	board.BackgroundImageURL = uploads.JoinFileURL(fileUUID, fileExtension, uploads.DefaultBackgroundURL)
+	logging.Debug(ctx, "GetBoard query has err: ", err)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, fmt.Errorf("GetBoard: %w", errs.ErrNotFound)
 		}
 		return nil, err
 	}
+	board.BackgroundImageURL = uploads.JoinFileURL(fileUUID, fileExtension, uploads.DefaultBackgroundURL)
 	return &board, nil
 }
 
@@ -88,6 +91,7 @@ func (r *BoardRepository) UpdateBoard(ctx context.Context, boardID int, data *mo
 	`
 
 	tag, err := r.db.Exec(ctx, query, data.NewName, data.NewDescription, boardID)
+	logging.Debug(ctx, "UpdateBoard query has err: ", err, " tag: ", tag)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, fmt.Errorf("UpdateBoard: %w", errs.ErrNotFound)
@@ -107,6 +111,7 @@ func (r *BoardRepository) DeleteBoard(ctx context.Context, boardID int) error {
 		WHERE board_id = $1;
 	`
 	tag, err := r.db.Exec(ctx, query, boardID)
+	logging.Debug(ctx, "DeleteBoard query has err: ", err, " tag: ", tag)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return fmt.Errorf("DeleteBoard: %w", errs.ErrNotFound)
@@ -131,6 +136,7 @@ func (r *BoardRepository) GetBoardsForUser(ctx context.Context, userID int) (boa
 		WHERE ub.u_id = $1
 	`
 	rows, err := r.db.Query(ctx, query, userID)
+	logging.Debug(ctx, "GetBoardsForUser query has err: ", err)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, nil
@@ -181,10 +187,12 @@ func (r *BoardRepository) SetBoardBackground(ctx context.Context, userID int, bo
 	var fileUUID string
 	row := r.db.QueryRow(ctx, query1, fileExtension, userID, fileSize)
 	err = row.Scan(&fileUUID)
+	logging.Debug(ctx, "SetBoardBackground query 1 has err: ", err)
 	if err != nil {
 		return "", fmt.Errorf("SetBoardBackground (register file): %w", err)
 	}
 	tag, err := r.db.Exec(ctx, query2, fileUUID, boardID)
+	logging.Debug(ctx, "SetBoardBackground query 2 has err: ", err, "tag: ", tag)
 	if err != nil {
 		return "", fmt.Errorf("SetBoardBackground (update board): %w", err)
 	}

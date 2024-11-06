@@ -3,6 +3,7 @@ package repository
 import (
 	"RPO_back/internal/errs"
 	"RPO_back/internal/models"
+	"RPO_back/internal/pkg/utils/logging"
 	"RPO_back/internal/pkg/utils/uploads"
 	"context"
 	"errors"
@@ -154,6 +155,7 @@ func (r *BoardRepository) GetMembersWithPermissions(ctx context.Context, boardID
 		return nil, fmt.Errorf("GetMembersWithPermissions (getting board): %w", errs.ErrNotFound)
 	}
 	rows, err := r.db.Query(ctx, query, boardID)
+	logging.Debug(ctx, "GetMembersWithPermissions query has err: ", err)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, nil
@@ -233,6 +235,7 @@ func (r *BoardRepository) SetMemberRole(ctx context.Context, boardID int, member
 	query = fmt.Sprintf(query, newRole)
 
 	tag, err := r.db.Exec(ctx, query, memberUserID, boardID)
+	logging.Debug(ctx, "SetMemberRole query has err: ", err)
 	if tag.RowsAffected() == 0 {
 		return nil, fmt.Errorf("SetMemberRole (update): %w", errs.ErrNotFound)
 	}
@@ -254,6 +257,7 @@ func (r *BoardRepository) RemoveMember(ctx context.Context, boardID int, memberU
 	AND u_id=$2;
 	`
 	tag, err := r.db.Exec(ctx, query, boardID, memberUserID)
+	logging.Debug(ctx, "RemoveMember query has err: ", err, " tag: ", tag)
 	if tag.RowsAffected() == 0 {
 		return fmt.Errorf("RemoveMember: %w", errs.ErrNotFound)
 	}
@@ -273,6 +277,7 @@ func (r *BoardRepository) AddMember(ctx context.Context, boardID int, adderID in
 	);
 	`
 	member, err = r.GetMemberPermissions(ctx, boardID, memberUserID, false)
+	logging.Debug(ctx, "AddMember query has err: ", err)
 
 	if (err != nil) && (!errors.Is(err, errs.ErrNotPermitted)) {
 		return nil, fmt.Errorf("AddMember (get member): %w", err)
@@ -301,6 +306,7 @@ func (r *BoardRepository) GetUserByNickname(ctx context.Context, nickname string
 		&user.JoinedAt,
 		&user.UpdatedAt,
 	)
+	logging.Debug(ctx, "GetUserByNickname query has err: ", err)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, fmt.Errorf("GetUserByNickname (query): %w", errs.ErrNotFound)
