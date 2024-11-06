@@ -42,7 +42,7 @@ func GetIDFromRequest(r *http.Request, requestVarName string, prefix string) (in
 	vars := mux.Vars(r)
 	rawID, isExist := vars[requestVarName]
 	if !isExist {
-		return 0, errors.New("there is no such parameter")
+		return 0, errors.New("there is no such parameter: " + requestVarName)
 	}
 
 	IDWithoutPrefix, found := strings.CutPrefix(rawID, prefix)

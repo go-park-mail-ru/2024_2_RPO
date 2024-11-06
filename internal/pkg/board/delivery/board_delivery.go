@@ -2,7 +2,8 @@ package delivery
 
 import (
 	"RPO_back/internal/models"
-	"RPO_back/internal/pkg/board/usecase"
+	"RPO_back/internal/pkg/board"
+	"RPO_back/internal/pkg/utils/logging"
 	"RPO_back/internal/pkg/utils/requests"
 	"RPO_back/internal/pkg/utils/responses"
 	"net/http"
@@ -12,10 +13,10 @@ import (
 )
 
 type BoardDelivery struct {
-	boardUsecase *usecase.BoardUsecase
+	boardUsecase board.BoardUsecase
 }
 
-func CreateBoardDelivery(boardUsecase *usecase.BoardUsecase) *BoardDelivery {
+func CreateBoardDelivery(boardUsecase board.BoardUsecase) *BoardDelivery {
 	return &BoardDelivery{boardUsecase: boardUsecase}
 }
 
@@ -53,6 +54,7 @@ func (d *BoardDelivery) UpdateBoard(w http.ResponseWriter, r *http.Request) {
 
 	boardID, err := requests.GetIDFromRequest(r, "boardId", "board_")
 	if err != nil {
+		logging.Warn(r.Context(), err)
 		responses.DoBadResponse(w, http.StatusBadRequest, "bad request")
 		return
 	}

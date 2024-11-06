@@ -56,21 +56,21 @@ func GetRequestID(ctx context.Context) uint64 {
 }
 
 func Warn(ctx context.Context, data ...interface{}) {
-	logData := append([]interface{}{fmt.Sprintf("rid=%d", GetRequestID(ctx))}, data...)
+	logData := append([]interface{}{fmt.Sprintf("rid=%d ", GetRequestID(ctx))}, data...)
 	log.Warn(logData...)
 }
 
 func Info(ctx context.Context, data ...interface{}) {
-	logData := append([]interface{}{fmt.Sprintf("rid=%d", GetRequestID(ctx))}, data...)
+	logData := append([]interface{}{fmt.Sprintf("rid=%d ", GetRequestID(ctx))}, data...)
 	log.Info(logData...)
 }
 
 func Error(ctx context.Context, data ...interface{}) {
-	logData := append([]interface{}{fmt.Sprintf("rid=%d", GetRequestID(ctx))}, data...)
+	logData := append([]interface{}{fmt.Sprintf("rid=%d ", GetRequestID(ctx))}, data...)
 	log.Error(logData...)
 }
 
 func Debug(ctx context.Context, data ...interface{}) {
-	logData := append([]interface{}{fmt.Sprintf("rid=%d", GetRequestID(ctx))}, data...)
+	logData := append([]interface{}{fmt.Sprintf("rid=%d ", GetRequestID(ctx))}, data...)
 	log.Debug(logData...)
 }
