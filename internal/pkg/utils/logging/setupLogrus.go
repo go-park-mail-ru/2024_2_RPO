@@ -1,6 +1,8 @@
 package logging
 
 import (
+	"context"
+	"fmt"
 	"os"
 
 	log "github.com/sirupsen/logrus"
@@ -43,4 +45,32 @@ func (hook *fileHook) Fire(entry *log.Entry) error {
 	}
 	_, err = hook.Writer.Write(line)
 	return err
+}
+
+func GetRequestID(ctx context.Context) uint64 {
+	requestID, ok := ctx.Value("requestID").(uint64)
+	if !ok {
+		return 0
+	}
+	return requestID
+}
+
+func Warn(ctx context.Context, data ...interface{}) {
+	logData := append([]interface{}{fmt.Sprintf("rid=%d", GetRequestID(ctx))}, data...)
+	log.Warn(logData...)
+}
+
+func Info(ctx context.Context, data ...interface{}) {
+	logData := append([]interface{}{fmt.Sprintf("rid=%d", GetRequestID(ctx))}, data...)
+	log.Info(logData...)
+}
+
+func Error(ctx context.Context, data ...interface{}) {
+	logData := append([]interface{}{fmt.Sprintf("rid=%d", GetRequestID(ctx))}, data...)
+	log.Error(logData...)
+}
+
+func Debug(ctx context.Context, data ...interface{}) {
+	logData := append([]interface{}{fmt.Sprintf("rid=%d", GetRequestID(ctx))}, data...)
+	log.Debug(logData...)
 }
