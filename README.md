@@ -7,9 +7,10 @@
 [Константин Сафронов](https://github.com/kosafronov)
 
 Менторы:
-* [Тарасов Артём](https://github.com/tarasovxx)
-* [Фикслер Леонид](https://github.com/reddiridabl666)
-* [Алёхин Владислав](https://github.com/3kybika)
+
+- [Тарасов Артём](https://github.com/tarasovxx)
+- [Фикслер Леонид](https://github.com/reddiridabl666)
+- [Алёхин Владислав](https://github.com/3kybika)
 
 [Репозиторий фронтенда](https://github.com/frontend-park-mail-ru/2024_2_RPO)
 
@@ -19,9 +20,9 @@
 
 ### Стандарты разработки
 
-* Все комментарии на русском языке
-* Все логи на английском языке
-* У аббревиатур все буквы в одном регистре: ~~`sessionId`~~ `sessionID`
+- Все комментарии на русском языке
+- Все логи на английском языке
+- У аббревиатур все буквы в одном регистре: ~~`sessionId`~~ `sessionID`
 
 ### Запуск сервера
 
@@ -56,6 +57,12 @@ USER_UPLOADS_URL = /files
 ```
 
 Запуск: `make run`
+
+Миграции: `make migrate-up`
+
+### Установка зависимостей
+
+go install -tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@latest
 
 ### Запуск тестов
 
