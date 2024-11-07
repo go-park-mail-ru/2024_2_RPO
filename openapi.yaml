@@ -183,6 +183,10 @@ components:
           type: string
           format: date-time
           example: "2023-10-01T12:34:56Z"
+        visitedAt:
+          type: string
+          format: date-time
+          example: "2023-10-01T12:34:56Z"
 
     BoardPut:
       type: object
@@ -212,7 +216,7 @@ components:
             $ref: "#/components/schemas/Card"
         myRole:
           type: string
-          enum: ["viewer","editor","editor_chief","admin"]
+          enum: ["viewer", "editor", "editor_chief", "admin"]
           example: "viewer"
 
     Card:
@@ -281,7 +285,7 @@ components:
           example: "2023-10-01T12:34:56Z"
         role:
           type: string
-          enum: ["viewer","editor","editor_chief","admin"]
+          enum: ["viewer", "editor", "editor_chief", "admin"]
           example: "viewer"
         updatedAt:
           type: string
@@ -534,7 +538,6 @@ paths:
         "401":
           $ref: "#/components/responses/NoAuthResponse"
 
-
   /boards:
     post:
       summary: Создать новую доску
@@ -619,6 +622,8 @@ paths:
       summary: "Установить на доску изображение заднего фона"
       tags:
         - Доски
+      parameters:
+        - $ref: "#/components/parameters/boardId"
       requestBody:
         required: true
         content:
@@ -725,6 +730,7 @@ paths:
         "404":
           $ref: "#/components/responses/NotFoundResponse"
         "409":
+          description: "Конфликт"
           content:
             application/json:
               schema:
