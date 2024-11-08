@@ -49,4 +49,5 @@ type BoardRepo interface {
 	AddMember(ctx context.Context, boardID int, adderID int, memberUserID int) (member *models.MemberWithPermissions, err error)
 	GetUserByNickname(ctx context.Context, nickname string) (user *models.UserProfile, err error)
 	SetBoardBackground(ctx context.Context, userID int, boardID int, fileExtension string, fileSize int) (fileName string, err error)
+	UpdateLastVisit(ctx context.Context, userID int, boardID int) error
 }

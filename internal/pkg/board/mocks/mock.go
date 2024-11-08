@@ -605,3 +605,17 @@ func (mr *MockBoardRepoMockRecorder) UpdateColumn(ctx, boardID, columnID, data i
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateColumn", reflect.TypeOf((*MockBoardRepo)(nil).UpdateColumn), ctx, boardID, columnID, data)
 }
+
+// UpdateLastVisit mocks base method.
+func (m *MockBoardRepo) UpdateLastVisit(ctx context.Context, userID, boardID int) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateLastVisit", ctx, userID, boardID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateLastVisit indicates an expected call of UpdateLastVisit.
+func (mr *MockBoardRepoMockRecorder) UpdateLastVisit(ctx, userID, boardID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateLastVisit", reflect.TypeOf((*MockBoardRepo)(nil).UpdateLastVisit), ctx, userID, boardID)
+}

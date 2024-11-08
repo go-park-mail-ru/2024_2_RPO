@@ -78,6 +78,7 @@ func (r *BoardRepository) GetBoard(ctx context.Context, boardID int) (*models.Bo
 		}
 		return nil, err
 	}
+
 	board.BackgroundImageURL = uploads.JoinFileURL(fileUUID, fileExtension, uploads.DefaultBackgroundURL)
 	return &board, nil
 }
@@ -200,4 +201,15 @@ func (r *BoardRepository) SetBoardBackground(ctx context.Context, userID int, bo
 		return "", fmt.Errorf("SetBoardBackground (update board): no rows affected")
 	}
 	return uploads.JoinFilePath(fileUUID, fileExtension), nil
+}
+
+func (r *BoardRepository) UpdateLastVisit(ctx context.Context, userID int, boardID int) error {
+	query := `
+	UPDATE user_to_board
+    SET last_visit_at = NOW()
+    WHERE u_id = $1 AND board_id = $2;
+	`
+
+	_, err := r.db.Exec(ctx, query, userID, boardID)
+	return err
 }

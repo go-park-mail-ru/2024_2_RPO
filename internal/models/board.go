@@ -13,18 +13,18 @@ type Board struct {
 	BackgroundImageURL string    `json:"backgroundImageUrl,omitempty"`
 	CreatedAt          time.Time `json:"createdAt"`
 	UpdatedAt          time.Time `json:"updatedAt"`
+	LastVisitAt        time.Time `json:"lastVisitAt"`
 }
 
 // MemberWithPermissions - пользователь с правами (в контексте доски)
 type MemberWithPermissions struct {
-	User              *UserProfile      `json:"user"`
-	Role              string            `json:"role"`
-	AddedAt           time.Time         `json:"addedAt"`
-	UpdatedAt         time.Time         `json:"updatedAt"`
-	AddedBy           *UserProfile      `json:"addedBy"`
-	UpdatedBy         *UserProfile      `json:"updatedBy"`
+	User      *UserProfile `json:"user"`
+	Role      string       `json:"role"`
+	AddedAt   time.Time    `json:"addedAt"`
+	UpdatedAt time.Time    `json:"updatedAt"`
+	AddedBy   *UserProfile `json:"addedBy"`
+	UpdatedBy *UserProfile `json:"updatedBy"`
 }
-
 
 type BoardPutRequest struct {
 	NewName        string `json:"name"`

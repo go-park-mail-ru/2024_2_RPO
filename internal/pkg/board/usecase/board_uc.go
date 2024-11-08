@@ -186,6 +186,11 @@ func (uc *BoardUsecase) GetBoardContent(ctx context.Context, userID int, boardID
 		return nil, fmt.Errorf("GetBoardContent (add GetMemberPermissions): %w", err)
 	}
 
+	err = uc.boardRepository.UpdateLastVisit(ctx, userID, boardID)
+	if err != nil {
+		return nil, fmt.Errorf("GetBoardContent (UpdateLastVisit): %w", err)
+	}
+
 	cards, err := uc.boardRepository.GetCardsForBoard(ctx, boardID)
 	if err != nil {
 		return nil, fmt.Errorf("GetBoardContent (add GetCardsForBoard): %w", err)
