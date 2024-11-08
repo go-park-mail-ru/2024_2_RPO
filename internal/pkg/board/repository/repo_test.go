@@ -63,6 +63,7 @@ func TestGetBoard(t *testing.T) {
 
 	ctx := context.Background()
 	boardID := 1
+	userID := 1
 
 	rows := pgxmock.NewRows([]string{
 		"board_id", "name", "description", "created_at", "updated_at", "file_uuid", "file_extension",
@@ -76,7 +77,7 @@ func TestGetBoard(t *testing.T) {
 
 	boardRepo := CreateBoardRepository(mock)
 
-	board, err := boardRepo.GetBoard(ctx, boardID)
+	board, err := boardRepo.GetBoard(ctx, boardID, userID)
 	assert.NoError(t, err)
 	assert.NotNil(t, board)
 }
@@ -87,6 +88,7 @@ func TestGetBoard_NotFound(t *testing.T) {
 
 	ctx := context.Background()
 	boardID := 1
+	userID := 1
 
 	mock.ExpectQuery("^SELECT (.+) FROM board AS b LEFT JOIN user_uploaded_file AS file ON file.file_uuid=b.background_image_uuid WHERE b.board_id = \\$1;").
 		WithArgs(boardID).
@@ -94,7 +96,7 @@ func TestGetBoard_NotFound(t *testing.T) {
 
 	boardRepo := CreateBoardRepository(mock)
 
-	board, err := boardRepo.GetBoard(ctx, boardID)
+	board, err := boardRepo.GetBoard(ctx, boardID, userID)
 	assert.Error(t, err)
 	assert.Nil(t, board)
 }
@@ -105,6 +107,7 @@ func TestGetBoard_QueryError(t *testing.T) {
 
 	ctx := context.Background()
 	boardID := 1
+	userID := 1
 
 	mock.ExpectQuery("^SELECT (.+) FROM board AS b LEFT JOIN user_uploaded_file AS file ON file.file_uuid=b.background_image_uuid WHERE b.board_id = \\$1;").
 		WithArgs(boardID).
@@ -112,7 +115,7 @@ func TestGetBoard_QueryError(t *testing.T) {
 
 	boardRepo := CreateBoardRepository(mock)
 
-	board, err := boardRepo.GetBoard(ctx, boardID)
+	board, err := boardRepo.GetBoard(ctx, boardID, userID)
 	assert.Error(t, err)
 	assert.Nil(t, board)
 }
@@ -122,6 +125,7 @@ func TestGetMembersWithPermissions(t *testing.T) {
 	assert.NoError(t, err)
 
 	boardID := 1
+	userID := 1
 
 	// Устанавливаем ожидания для запроса GetBoard.
 	mock.ExpectQuery("SELECT (.+) FROM board").
@@ -159,7 +163,7 @@ func TestGetMembersWithPermissions(t *testing.T) {
 		WillReturnRows(rows)
 
 	repo := CreateBoardRepository(mock)
-	_, err = repo.GetMembersWithPermissions(context.Background(), boardID)
+	_, err = repo.GetMembersWithPermissions(context.Background(), boardID, userID)
 	assert.NoError(t, err)
 
 	err = mock.ExpectationsWereMet()
@@ -321,6 +325,7 @@ func TestUpdateBoard(t *testing.T) {
 
 	ctx := context.Background()
 	boardID := 1
+	userID := 1
 	data := &models.BoardPutRequest{
 		NewName:        "Updated Name",
 		NewDescription: "Updated Description",
@@ -330,7 +335,7 @@ func TestUpdateBoard(t *testing.T) {
 		WithArgs(data.NewName, data.NewDescription, boardID).
 		WillReturnError(errors.New("test error"))
 
-	_, err = boardRepo.UpdateBoard(ctx, boardID, data)
+	_, err = boardRepo.UpdateBoard(ctx, boardID, userID, data)
 	assert.Error(t, err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }

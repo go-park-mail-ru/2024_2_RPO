@@ -398,18 +398,18 @@ func (mr *MockBoardRepoMockRecorder) DeleteColumn(ctx, boardID, columnID interfa
 }
 
 // GetBoard mocks base method.
-func (m *MockBoardRepo) GetBoard(ctx context.Context, boardID int) (*models.Board, error) {
+func (m *MockBoardRepo) GetBoard(ctx context.Context, boardID, userID int) (*models.Board, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetBoard", ctx, boardID)
+	ret := m.ctrl.Call(m, "GetBoard", ctx, boardID, userID)
 	ret0, _ := ret[0].(*models.Board)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetBoard indicates an expected call of GetBoard.
-func (mr *MockBoardRepoMockRecorder) GetBoard(ctx, boardID interface{}) *gomock.Call {
+func (mr *MockBoardRepoMockRecorder) GetBoard(ctx, boardID, userID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBoard", reflect.TypeOf((*MockBoardRepo)(nil).GetBoard), ctx, boardID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBoard", reflect.TypeOf((*MockBoardRepo)(nil).GetBoard), ctx, boardID, userID)
 }
 
 // GetBoardsForUser mocks base method.
@@ -473,18 +473,18 @@ func (mr *MockBoardRepoMockRecorder) GetMemberPermissions(ctx, boardID, memberUs
 }
 
 // GetMembersWithPermissions mocks base method.
-func (m *MockBoardRepo) GetMembersWithPermissions(ctx context.Context, boardID int) ([]models.MemberWithPermissions, error) {
+func (m *MockBoardRepo) GetMembersWithPermissions(ctx context.Context, boardID, userID int) ([]models.MemberWithPermissions, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetMembersWithPermissions", ctx, boardID)
+	ret := m.ctrl.Call(m, "GetMembersWithPermissions", ctx, boardID, userID)
 	ret0, _ := ret[0].([]models.MemberWithPermissions)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetMembersWithPermissions indicates an expected call of GetMembersWithPermissions.
-func (mr *MockBoardRepoMockRecorder) GetMembersWithPermissions(ctx, boardID interface{}) *gomock.Call {
+func (mr *MockBoardRepoMockRecorder) GetMembersWithPermissions(ctx, boardID, userID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMembersWithPermissions", reflect.TypeOf((*MockBoardRepo)(nil).GetMembersWithPermissions), ctx, boardID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMembersWithPermissions", reflect.TypeOf((*MockBoardRepo)(nil).GetMembersWithPermissions), ctx, boardID, userID)
 }
 
 // GetUserByNickname mocks base method.
@@ -562,18 +562,18 @@ func (mr *MockBoardRepoMockRecorder) SetMemberRole(ctx, boardID, memberUserID, n
 }
 
 // UpdateBoard mocks base method.
-func (m *MockBoardRepo) UpdateBoard(ctx context.Context, boardID int, data *models.BoardPutRequest) (*models.Board, error) {
+func (m *MockBoardRepo) UpdateBoard(ctx context.Context, boardID, userID int, data *models.BoardPutRequest) (*models.Board, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpdateBoard", ctx, boardID, data)
+	ret := m.ctrl.Call(m, "UpdateBoard", ctx, boardID, userID, data)
 	ret0, _ := ret[0].(*models.Board)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // UpdateBoard indicates an expected call of UpdateBoard.
-func (mr *MockBoardRepoMockRecorder) UpdateBoard(ctx, boardID, data interface{}) *gomock.Call {
+func (mr *MockBoardRepoMockRecorder) UpdateBoard(ctx, boardID, userID, data interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateBoard", reflect.TypeOf((*MockBoardRepo)(nil).UpdateBoard), ctx, boardID, data)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateBoard", reflect.TypeOf((*MockBoardRepo)(nil).UpdateBoard), ctx, boardID, userID, data)
 }
 
 // UpdateCard mocks base method.

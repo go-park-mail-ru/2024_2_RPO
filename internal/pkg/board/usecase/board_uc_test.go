@@ -112,7 +112,7 @@ func TestBoardUsecase_UpdateBoard(t *testing.T) {
 			request: models.BoardPutRequest{NewName: "Updated Board"},
 			setupMock: func() {
 				mockBoardRepo.EXPECT().GetMemberPermissions(gomock.Any(), 1, 1, false).Return(&models.MemberWithPermissions{Role: "admin"}, nil)
-				mockBoardRepo.EXPECT().UpdateBoard(gomock.Any(), 1, gomock.Any()).Return(&models.Board{Name: "Updated Board"}, nil)
+				mockBoardRepo.EXPECT().UpdateBoard(gomock.Any(), 1, 1, gomock.Any()).Return(&models.Board{Name: "Updated Board"}, nil)
 			},
 			expectedError: false,
 			expectedBoardChecker: func(b *models.Board) bool {
@@ -126,7 +126,7 @@ func TestBoardUsecase_UpdateBoard(t *testing.T) {
 			request: models.BoardPutRequest{NewName: "Updated Board by Editor Chief"},
 			setupMock: func() {
 				mockBoardRepo.EXPECT().GetMemberPermissions(gomock.Any(), 1, 2, false).Return(&models.MemberWithPermissions{Role: "editor_chief"}, nil)
-				mockBoardRepo.EXPECT().UpdateBoard(gomock.Any(), 1, gomock.Any()).Return(&models.Board{Name: "Updated Board by Editor Chief"}, nil)
+				mockBoardRepo.EXPECT().UpdateBoard(gomock.Any(), 1, 1, gomock.Any()).Return(&models.Board{Name: "Updated Board by Editor Chief"}, nil)
 			},
 			expectedError: false,
 			expectedBoardChecker: func(b *models.Board) bool {
@@ -312,7 +312,7 @@ func TestBoardUsecase_GetMembersPermissions(t *testing.T) {
 			boardID: 1,
 			setupMock: func() {
 				mockBoardRepo.EXPECT().GetMemberPermissions(gomock.Any(), 1, 1, false).Return(&models.MemberWithPermissions{Role: "admin"}, nil)
-				mockBoardRepo.EXPECT().GetMembersWithPermissions(gomock.Any(), 1).Return([]models.MemberWithPermissions{
+				mockBoardRepo.EXPECT().GetMembersWithPermissions(gomock.Any(), 1, 1).Return([]models.MemberWithPermissions{
 					{User: &models.UserProfile{ID: 1}, Role: "admin"},
 					{User: &models.UserProfile{ID: 2}, Role: "editor"},
 				}, nil)
@@ -339,7 +339,7 @@ func TestBoardUsecase_GetMembersPermissions(t *testing.T) {
 			boardID: 1,
 			setupMock: func() {
 				mockBoardRepo.EXPECT().GetMemberPermissions(gomock.Any(), 1, 1, false).Return(&models.MemberWithPermissions{Role: "admin"}, nil)
-				mockBoardRepo.EXPECT().GetMembersWithPermissions(gomock.Any(), 1).Return(nil, errors.New("query error"))
+				mockBoardRepo.EXPECT().GetMembersWithPermissions(gomock.Any(), 1, 1).Return(nil, errors.New("query error"))
 			},
 			expectedError: true,
 			expectedData:  nil,
@@ -622,7 +622,7 @@ func TestBoardUsecase_GetBoardContent(t *testing.T) {
 				mockBoardRepo.EXPECT().GetMemberPermissions(gomock.Any(), 1, 1, false).Return(&models.MemberWithPermissions{Role: "admin"}, nil)
 				mockBoardRepo.EXPECT().GetCardsForBoard(gomock.Any(), 1).Return([]models.Card{{ID: 1}}, nil)
 				mockBoardRepo.EXPECT().GetColumnsForBoard(gomock.Any(), 1).Return([]models.Column{{ID: 1}}, nil)
-				mockBoardRepo.EXPECT().GetBoard(gomock.Any(), 1).Return(&models.Board{ID: 1}, nil)
+				mockBoardRepo.EXPECT().GetBoard(gomock.Any(), 1, 1).Return(&models.Board{ID: 1}, nil)
 			},
 			expectedError: false,
 			expectedRole:  "admin",
@@ -665,7 +665,7 @@ func TestBoardUsecase_GetBoardContent(t *testing.T) {
 				mockBoardRepo.EXPECT().GetMemberPermissions(gomock.Any(), 1, 1, false).Return(&models.MemberWithPermissions{Role: "admin"}, nil)
 				mockBoardRepo.EXPECT().GetCardsForBoard(gomock.Any(), 1).Return([]models.Card{{ID: 1}}, nil)
 				mockBoardRepo.EXPECT().GetColumnsForBoard(gomock.Any(), 1).Return([]models.Column{{ID: 1}}, nil)
-				mockBoardRepo.EXPECT().GetBoard(gomock.Any(), 1).Return(nil, errors.New("board error"))
+				mockBoardRepo.EXPECT().GetBoard(gomock.Any(), 1, 1).Return(nil, errors.New("board error"))
 			},
 			expectedError: true,
 		},

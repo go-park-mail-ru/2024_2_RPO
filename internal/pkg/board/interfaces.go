@@ -29,8 +29,8 @@ type BoardUsecase interface {
 
 type BoardRepo interface {
 	CreateBoard(ctx context.Context, name string, userID int) (*models.Board, error)
-	GetBoard(ctx context.Context, boardID int) (*models.Board, error)
-	UpdateBoard(ctx context.Context, boardID int, data *models.BoardPutRequest) (updatedBoard *models.Board, err error)
+	GetBoard(ctx context.Context, boardID int, userID int) (*models.Board, error)
+	UpdateBoard(ctx context.Context, boardID int, userID int, data *models.BoardPutRequest) (updatedBoard *models.Board, err error)
 	DeleteBoard(ctx context.Context, boardId int) error
 	GetBoardsForUser(ctx context.Context, userID int) (boardArray []models.Board, err error)
 	GetCardsForBoard(ctx context.Context, boardID int) (cards []models.Card, err error)
@@ -43,7 +43,7 @@ type BoardRepo interface {
 	DeleteColumn(ctx context.Context, boardID int, columnID int) (err error)
 	GetUserProfile(ctx context.Context, userID int) (user *models.UserProfile, err error)
 	GetMemberPermissions(ctx context.Context, boardID int, memberUserID int, getAdderInfo bool) (member *models.MemberWithPermissions, err error)
-	GetMembersWithPermissions(ctx context.Context, boardID int) (members []models.MemberWithPermissions, err error)
+	GetMembersWithPermissions(ctx context.Context, boardID int, userID int) (members []models.MemberWithPermissions, err error)
 	SetMemberRole(ctx context.Context, boardID int, memberUserID int, newRole string) (member *models.MemberWithPermissions, err error)
 	RemoveMember(ctx context.Context, boardID int, memberUserID int) (err error)
 	AddMember(ctx context.Context, boardID int, adderID int, memberUserID int) (member *models.MemberWithPermissions, err error)

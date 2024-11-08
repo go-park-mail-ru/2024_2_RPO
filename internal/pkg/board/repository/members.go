@@ -120,7 +120,7 @@ func (r *BoardRepository) GetMemberPermissions(ctx context.Context, boardID int,
 // GetMembersWithPermissions получает всех участников на конкретной
 // доске с информацией об их правах и с разрешением профилей добавителя
 // и пользователя, внёсшего последнее обновление в роль
-func (r *BoardRepository) GetMembersWithPermissions(ctx context.Context, boardID int) (members []models.MemberWithPermissions, err error) {
+func (r *BoardRepository) GetMembersWithPermissions(ctx context.Context, boardID int, userID int) (members []models.MemberWithPermissions, err error) {
 	query := `
 	SELECT
 
@@ -150,7 +150,7 @@ func (r *BoardRepository) GetMembersWithPermissions(ctx context.Context, boardID
 	LEFT JOIN user_uploaded_file AS f_updater ON f_updater.file_uuid=updater.avatar_file_uuid
 	WHERE ub.board_id=$1;
 	`
-	_, err = r.GetBoard(ctx, boardID)
+	_, err = r.GetBoard(ctx, boardID, userID)
 	if err != nil {
 		return nil, fmt.Errorf("GetMembersWithPermissions (getting board): %w", errs.ErrNotFound)
 	}

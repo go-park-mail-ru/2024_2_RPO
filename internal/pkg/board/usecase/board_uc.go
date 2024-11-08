@@ -59,7 +59,7 @@ func (uc *BoardUsecase) UpdateBoard(ctx context.Context, userID int, boardID int
 	if deleterMember.Role != "admin" && deleterMember.Role != "editor_chief" {
 		return nil, fmt.Errorf("GetMembersPermissions (checking): %w", errs.ErrNotPermitted)
 	}
-	updatedBoard, err = uc.boardRepository.UpdateBoard(ctx, boardID, &data)
+	updatedBoard, err = uc.boardRepository.UpdateBoard(ctx, boardID, userID, &data)
 	return
 }
 
@@ -91,7 +91,7 @@ func (uc *BoardUsecase) GetMembersPermissions(ctx context.Context, userID int, b
 	if err != nil {
 		return nil, fmt.Errorf("GetMembersPermissions (permissions): %w", err)
 	}
-	permissions, err := uc.boardRepository.GetMembersWithPermissions(ctx, boardID)
+	permissions, err := uc.boardRepository.GetMembersWithPermissions(ctx, boardID, userID)
 	if err != nil {
 		return nil, fmt.Errorf("GetMembersPermissions (query): %w", err)
 	}
@@ -201,7 +201,7 @@ func (uc *BoardUsecase) GetBoardContent(ctx context.Context, userID int, boardID
 		return nil, fmt.Errorf("GetBoardContent (add GetColumnsForBoard): %w", err)
 	}
 
-	info, err := uc.boardRepository.GetBoard(ctx, boardID)
+	info, err := uc.boardRepository.GetBoard(ctx, boardID, userID)
 	if err != nil {
 		return nil, fmt.Errorf("GetBoardContent (add GetBoard): %w", err)
 	}
@@ -393,5 +393,5 @@ func (uc *BoardUsecase) SetBoardBackground(ctx context.Context, userID int, boar
 	if _, err = io.Copy(dst, *file); err != nil {
 		return nil, fmt.Errorf("cant copy file on server side: %w", err)
 	}
-	return uc.boardRepository.GetBoard(ctx, boardID)
+	return uc.boardRepository.GetBoard(ctx, boardID, userID)
 }

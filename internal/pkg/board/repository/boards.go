@@ -45,29 +45,32 @@ func (r *BoardRepository) CreateBoard(ctx context.Context, name string, userID i
 }
 
 // GetBoard получает доску по ID
-func (r *BoardRepository) GetBoard(ctx context.Context, boardID int) (*models.Board, error) {
+func (r *BoardRepository) GetBoard(ctx context.Context, boardID int, userID int) (*models.Board, error) {
 	query := `
-		SELECT
-			b.board_id,
-			b.name,
-			b.description,
-			b.created_at,
-			b.updated_at,
-			COALESCE(file.file_uuid::text,''),
-			COALESCE(file.file_extension,'')
-		FROM board AS b
-		LEFT JOIN user_uploaded_file AS file ON file.file_uuid=b.background_image_uuid
-		WHERE b.board_id = $1;
-	`
+    SELECT
+        b.board_id,
+        b.name,
+        b.description,
+        b.created_at,
+        b.updated_at,
+        ub.last_visit_at,
+        COALESCE(file.file_uuid::text,''),
+        COALESCE(file.file_extension,'')
+    FROM board AS b
+    LEFT JOIN user_to_board AS ub ON ub.board_id = b.board_id AND ub.u_id = $1
+    LEFT JOIN user_uploaded_file AS file ON file.file_uuid=b.background_image_uuid
+    WHERE b.board_id = $2;
+    `
 	var board models.Board
 	var fileUUID string
 	var fileExtension string
-	err := r.db.QueryRow(ctx, query, boardID).Scan(
+	err := r.db.QueryRow(ctx, query, userID, boardID).Scan(
 		&board.ID,
 		&board.Name,
 		&board.Description,
 		&board.CreatedAt,
 		&board.UpdatedAt,
+		&board.LastVisitAt,
 		&fileUUID,
 		&fileExtension,
 	)
@@ -84,7 +87,7 @@ func (r *BoardRepository) GetBoard(ctx context.Context, boardID int) (*models.Bo
 }
 
 // UpdateBoard обновляет информацию о доске
-func (r *BoardRepository) UpdateBoard(ctx context.Context, boardID int, data *models.BoardPutRequest) (updatedBoard *models.Board, err error) {
+func (r *BoardRepository) UpdateBoard(ctx context.Context, boardID int, userID int, data *models.BoardPutRequest) (updatedBoard *models.Board, err error) {
 	query := `
 		UPDATE board
 		SET name=$1, description=$2, updated_at = CURRENT_TIMESTAMP
@@ -102,7 +105,7 @@ func (r *BoardRepository) UpdateBoard(ctx context.Context, boardID int, data *mo
 	if tag.RowsAffected() == 0 {
 		return nil, fmt.Errorf("UpdateBoard: %w", errs.ErrNotFound)
 	}
-	return r.GetBoard(ctx, boardID)
+	return r.GetBoard(ctx, boardID, userID)
 }
 
 // DeleteBoard удаляет доску по Id
