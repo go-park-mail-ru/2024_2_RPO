@@ -41,7 +41,7 @@ func (d *BoardDelivery) CreateNewBoard(w http.ResponseWriter, r *http.Request) {
 		responses.ResponseErrorAndLog(w, err, funcName)
 		return
 	}
-	responses.DoJSONResponce(w, newBoard, http.StatusCreated)
+	responses.DoJSONResponse(w, newBoard, http.StatusCreated)
 }
 
 // UpdateBoard обновляет информацию о доске и возвращает обновлённую информацию
@@ -70,7 +70,7 @@ func (d *BoardDelivery) UpdateBoard(w http.ResponseWriter, r *http.Request) {
 		responses.ResponseErrorAndLog(w, err, funcName)
 		return
 	}
-	responses.DoJSONResponce(w, newBoard, http.StatusOK)
+	responses.DoJSONResponse(w, newBoard, http.StatusOK)
 }
 
 // DeleteBoard удаляет доску
@@ -90,7 +90,7 @@ func (d *BoardDelivery) DeleteBoard(w http.ResponseWriter, r *http.Request) {
 		responses.ResponseErrorAndLog(w, err, "DeleteBoard")
 		return
 	}
-	responses.DoEmptyOkResponce(w)
+	responses.DoEmptyOkResponse(w)
 }
 
 // GetMyBoards получает все доски для пользователя
@@ -105,7 +105,7 @@ func (d *BoardDelivery) GetMyBoards(w http.ResponseWriter, r *http.Request) {
 		responses.ResponseErrorAndLog(w, err, "GetMyBoards")
 		return
 	}
-	responses.DoJSONResponce(w, myBoards, http.StatusOK)
+	responses.DoJSONResponse(w, myBoards, http.StatusOK)
 }
 
 // GetMembersPermissions получает информацию о ролях всех участников доски
@@ -125,7 +125,7 @@ func (d *BoardDelivery) GetMembersPermissions(w http.ResponseWriter, r *http.Req
 		responses.ResponseErrorAndLog(w, err, "GetMembersPermissions")
 		return
 	}
-	responses.DoJSONResponce(w, memberPermissions, http.StatusOK)
+	responses.DoJSONResponse(w, memberPermissions, http.StatusOK)
 }
 
 // AddMember добавляет участника на доску с правами "viewer" и возвращает его права
@@ -153,7 +153,7 @@ func (d *BoardDelivery) AddMember(w http.ResponseWriter, r *http.Request) {
 		responses.ResponseErrorAndLog(w, err, "AddMember")
 		return
 	}
-	responses.DoJSONResponce(w, newMember, 200)
+	responses.DoJSONResponse(w, newMember, 200)
 }
 
 // UpdateMemberRole обновляет роль участника и возвращает обновлённые права
@@ -188,7 +188,7 @@ func (d *BoardDelivery) UpdateMemberRole(w http.ResponseWriter, r *http.Request)
 		responses.ResponseErrorAndLog(w, err, "UpdateMemberRole")
 		return
 	}
-	responses.DoJSONResponce(w, updatedMember, 200)
+	responses.DoJSONResponse(w, updatedMember, 200)
 }
 
 // RemoveMember удаляет участника с доски
@@ -216,7 +216,7 @@ func (d *BoardDelivery) RemoveMember(w http.ResponseWriter, r *http.Request) {
 		responses.ResponseErrorAndLog(w, err, funcName)
 		return
 	}
-	responses.DoEmptyOkResponce(w)
+	responses.DoEmptyOkResponse(w)
 }
 
 // GetBoardContent получает все карточки и колонки с доски, а также информацию о доске
@@ -239,7 +239,7 @@ func (d *BoardDelivery) GetBoardContent(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	responses.DoJSONResponce(w, content, http.StatusOK)
+	responses.DoJSONResponse(w, content, http.StatusOK)
 }
 
 // CreateNewCard создаёт новую карточку и возвращает её
@@ -268,7 +268,7 @@ func (d *BoardDelivery) CreateNewCard(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	responses.DoJSONResponce(w, newCard, http.StatusCreated)
+	responses.DoJSONResponse(w, newCard, http.StatusCreated)
 }
 
 // UpdateCard обновляет карточку и возвращает обновлённую версию
@@ -304,7 +304,7 @@ func (d *BoardDelivery) UpdateCard(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	responses.DoJSONResponce(w, updatedCard, http.StatusOK)
+	responses.DoJSONResponse(w, updatedCard, http.StatusOK)
 }
 
 // DeleteCard удаляет карточку
@@ -333,7 +333,7 @@ func (d *BoardDelivery) DeleteCard(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	responses.DoEmptyOkResponce(w)
+	responses.DoEmptyOkResponse(w)
 }
 
 // CreateColumn создаёт колонку канбана на доске и возвращает её
@@ -363,7 +363,7 @@ func (d *BoardDelivery) CreateColumn(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	responses.DoJSONResponce(w, newColumn, http.StatusCreated)
+	responses.DoJSONResponse(w, newColumn, http.StatusCreated)
 }
 
 // UpdateColumn изменяет колонку и возвращает её обновлённую версию
@@ -401,7 +401,7 @@ func (d *BoardDelivery) UpdateColumn(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	responses.DoJSONResponce(w, updatedCol, http.StatusOK)
+	responses.DoJSONResponse(w, updatedCol, http.StatusOK)
 }
 
 // DeleteColumn удаляет колонку
@@ -430,7 +430,7 @@ func (d *BoardDelivery) DeleteColumn(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	responses.DoEmptyOkResponce(w)
+	responses.DoEmptyOkResponse(w)
 }
 
 // SetMyAvatar принимает у пользователя файл новой обложки доски,
@@ -464,5 +464,5 @@ func (d *BoardDelivery) SetBoardBackground(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	responses.DoJSONResponce(w, updatedBoard, 200)
+	responses.DoJSONResponse(w, updatedBoard, 200)
 }

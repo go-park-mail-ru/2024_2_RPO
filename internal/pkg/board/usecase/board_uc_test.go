@@ -695,7 +695,7 @@ func TestBoardUsecase_CreateNewCard(t *testing.T) {
 	mockBoardRepo := mocks.NewMockBoardRepo(ctrl)
 	boardUsecase := BoardUsecase.CreateBoardUsecase(mockBoardRepo)
 
-	cardRequest := &models.CardPutRequest{NewColumnId: 10, NewTitle: "New Card"}
+	cardRequest := &models.CardPutRequest{NewColumnID: 10, NewTitle: "New Card"}
 
 	tests := []struct {
 		name          string
@@ -711,7 +711,7 @@ func TestBoardUsecase_CreateNewCard(t *testing.T) {
 			boardID: 1,
 			setupMock: func() {
 				mockBoardRepo.EXPECT().GetMemberPermissions(gomock.Any(), 1, 1, false).Return(&models.MemberWithPermissions{Role: "editor"}, nil)
-				mockBoardRepo.EXPECT().CreateNewCard(gomock.Any(), 1, cardRequest.NewColumnId, cardRequest.NewTitle).Return(&models.Card{ID: 1, Title: "New Card", ColumnID: 10}, nil)
+				mockBoardRepo.EXPECT().CreateNewCard(gomock.Any(), 1, cardRequest.NewColumnID, cardRequest.NewTitle).Return(&models.Card{ID: 1, Title: "New Card", ColumnID: 10}, nil)
 			},
 			expectedError: false,
 			expectedCard:  &models.Card{ID: 1, Title: "New Card", ColumnID: 10},
@@ -731,7 +731,7 @@ func TestBoardUsecase_CreateNewCard(t *testing.T) {
 			boardID: 1,
 			setupMock: func() {
 				mockBoardRepo.EXPECT().GetMemberPermissions(gomock.Any(), 1, 1, false).Return(&models.MemberWithPermissions{Role: "editor"}, nil)
-				mockBoardRepo.EXPECT().CreateNewCard(gomock.Any(), 1, cardRequest.NewColumnId, cardRequest.NewTitle).Return(nil, errors.New("creation error"))
+				mockBoardRepo.EXPECT().CreateNewCard(gomock.Any(), 1, cardRequest.NewColumnID, cardRequest.NewTitle).Return(nil, errors.New("creation error"))
 			},
 			expectedError: true,
 		},
@@ -761,7 +761,7 @@ func TestBoardUsecase_UpdateCard(t *testing.T) {
 	mockBoardRepo := mocks.NewMockBoardRepo(ctrl)
 	boardUsecase := BoardUsecase.CreateBoardUsecase(mockBoardRepo)
 
-	cardRequest := &models.CardPutRequest{NewColumnId: 10, NewTitle: "Updated Card"}
+	cardRequest := &models.CardPutRequest{NewColumnID: 10, NewTitle: "Updated Card"}
 
 	tests := []struct {
 		name          string

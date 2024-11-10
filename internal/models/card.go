@@ -13,7 +13,7 @@ type Card struct {
 
 type CardPutRequest struct {
 	NewTitle    string `json:"title" validate:"required"`
-	NewColumnId int    `json:"columnId" validate:"required"`
+	NewColumnID int    `json:"columnId" validate:"required"`
 }
 
 type Column struct {

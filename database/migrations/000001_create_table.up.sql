@@ -1,4 +1,3 @@
-CREATE EXTENSION IF NOT EXISTS "citext";
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 CREATE OR REPLACE FUNCTION to_uuid(raw text)
@@ -18,7 +17,7 @@ CREATE TABLE "user" (
     joined_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     password_hash TEXT NOT NULL,
-    email CITEXT UNIQUE NOT NULL -- avatar_file_uuid UUID,
+    email TEXT UNIQUE NOT NULL -- avatar_file_uuid UUID,
     -- FOREIGN KEY (avatar_file_uuid) REFERENCES user_uploaded_file(file_uuid)
     -- ON UPDATE CASCADE ON DELETE SET NULL
 );
@@ -92,7 +91,7 @@ CREATE TABLE "card" (
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     cover_file_uuid UUID,
-    FOREIGN KEY (col_id) REFERENCES kanban_column(col_id) ON UPDATE CASCADE ON DELETE RESTRICT,
+    FOREIGN KEY (col_id) REFERENCES kanban_column(col_id) ON UPDATE CASCADE ON DELETE CASCADE,
     FOREIGN KEY (cover_file_uuid) REFERENCES user_uploaded_file(file_uuid) ON UPDATE CASCADE ON DELETE
     SET NULL
 );

@@ -53,7 +53,7 @@ func TestUpdateCard(t *testing.T) {
 
 	data := models.CardPutRequest{
 		NewTitle:    "Updated Title",
-		NewColumnId: 2,
+		NewColumnID: 2,
 	}
 
 	_, err = repo.UpdateCard(context.Background(), 1, 1, data)

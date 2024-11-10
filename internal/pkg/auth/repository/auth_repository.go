@@ -57,14 +57,14 @@ func (repo *AuthRepository) KillSessionRedis(ctx context.Context, sessionID stri
 }
 
 // RetrieveUserIdFromSessionId ходит в Redis и получает UserID (или не получает и даёт ошибку errs.ErrNotFound)
-func (repo *AuthRepository) RetrieveUserIdFromSessionId(ctx context.Context, sessionID string) (userID int, err error) {
+func (repo *AuthRepository) RetrieveUserIDFromSession(ctx context.Context, sessionID string) (userID int, err error) {
 	redisConn := repo.redisDb.Conn(repo.redisDb.Context())
 	defer redisConn.Close()
 
 	val, err := redisConn.Get(repo.redisDb.Context(), sessionID).Result()
-	logging.Debug(ctx, "RetrieveUserIdFromSessionId query to redis has err: ", err)
+	logging.Debug(ctx, "RetrieveUserIDFromSession query to redis has err: ", err)
 	if err == redis.Nil {
-		return 0, fmt.Errorf("RetrieveUserIdFromSessionId(%v): %w", sessionID, errs.ErrNotFound)
+		return 0, fmt.Errorf("RetrieveUserIDFromSession(%v): %w", sessionID, errs.ErrNotFound)
 	} else if err != nil {
 		return 0, err
 	}

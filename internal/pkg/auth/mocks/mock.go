@@ -203,19 +203,19 @@ func (mr *MockAuthRepoMockRecorder) RegisterSessionRedis(ctx, cookie, userID int
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RegisterSessionRedis", reflect.TypeOf((*MockAuthRepo)(nil).RegisterSessionRedis), ctx, cookie, userID)
 }
 
-// RetrieveUserIdFromSessionId mocks base method.
-func (m *MockAuthRepo) RetrieveUserIdFromSessionId(ctx context.Context, sessionId string) (int, error) {
+// RetrieveUserIDFromSession mocks base method.
+func (m *MockAuthRepo) RetrieveUserIDFromSession(ctx context.Context, sessionID string) (int, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "RetrieveUserIdFromSessionId", ctx, sessionId)
+	ret := m.ctrl.Call(m, "RetrieveUserIDFromSession", ctx, sessionID)
 	ret0, _ := ret[0].(int)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// RetrieveUserIdFromSessionId indicates an expected call of RetrieveUserIdFromSessionId.
-func (mr *MockAuthRepoMockRecorder) RetrieveUserIdFromSessionId(ctx, sessionId interface{}) *gomock.Call {
+// RetrieveUserIDFromSession indicates an expected call of RetrieveUserIDFromSession.
+func (mr *MockAuthRepoMockRecorder) RetrieveUserIDFromSession(ctx, sessionID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RetrieveUserIdFromSessionId", reflect.TypeOf((*MockAuthRepo)(nil).RetrieveUserIdFromSessionId), ctx, sessionId)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RetrieveUserIDFromSession", reflect.TypeOf((*MockAuthRepo)(nil).RetrieveUserIDFromSession), ctx, sessionID)
 }
 
 // SetNewPasswordHash mocks base method.
