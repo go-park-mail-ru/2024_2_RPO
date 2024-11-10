@@ -104,7 +104,7 @@ func (r *BoardRepository) UpdateCard(ctx context.Context, boardID int, cardID in
 	`
 	updateCard = &models.Card{}
 
-	err = r.db.QueryRow(ctx, query, data.NewTitle, data.NewColumnId, boardID, cardID).Scan(
+	err = r.db.QueryRow(ctx, query, data.NewTitle, data.NewColumnID, boardID, cardID).Scan(
 		&updateCard.ID,
 		&updateCard.Title,
 		&updateCard.ColumnID,

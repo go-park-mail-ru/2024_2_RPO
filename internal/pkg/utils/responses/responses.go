@@ -30,13 +30,13 @@ func DoBadResponse(w http.ResponseWriter, statusCode int, message string) {
 	w.Write(jsonResponse)
 }
 
-func DoEmptyOkResponce(w http.ResponseWriter) {
+func DoEmptyOkResponse(w http.ResponseWriter) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte("{\"status\":200,\"text\":\"success\"}"))
 }
 
-func DoJSONResponce(w http.ResponseWriter, responseData interface{}, successStatusCode int) {
+func DoJSONResponse(w http.ResponseWriter, responseData interface{}, successStatusCode int) {
 	body, err := json.Marshal(responseData)
 	if err != nil {
 		DoBadResponse(w, 500, "error serializing response")

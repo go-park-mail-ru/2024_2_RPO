@@ -16,7 +16,7 @@ LDFLAGS := -ldflags="-s -w" # Отключить дебаг-информацию
 DATABASE_URL="postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}?sslmode=${POSTGRES_SSLMODE}"
 
 # Цели Makefile, которые не привязываются к файлам
-.PHONY: all build test clean coverage run
+.PHONY: all build test clean coverage run generate
 
 all: build
 
@@ -24,7 +24,7 @@ build:
 	@echo "==> Building the application..."
 	@go build $(GOFLAGS) $(LDFLAGS) -o $(BUILD_DIR)/$(APP_NAME) $(SRC_DIR)
 
-run_tests:
+run_tests: generate
 	@echo "==> Running tests..."
 	@go test $(GOFLAGS) -coverprofile coverage_raw.out -v ./...
 
@@ -35,6 +35,9 @@ test: run_tests
 	@go tool cover -html=coverage.out -o=coverage.html
 	@echo "==> Done! Check coverage.html file!"
 
+generate:
+	@echo "==> Generating mocks..."
+	@go generate ./...
 
 clean:
 	@echo "==> Cleaning up..."

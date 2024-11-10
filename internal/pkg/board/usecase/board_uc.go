@@ -14,13 +14,11 @@ import (
 	"path/filepath"
 )
 
-var roleLevels = make(map[string]int)
-
-func init() {
-	roleLevels["viewer"] = 0
-	roleLevels["editor"] = 1
-	roleLevels["editor_chief"] = 2
-	roleLevels["admin"] = 3
+var roleLevels = map[string]int{
+	"viewer":       0,
+	"editor":       1,
+	"editor_chief": 2,
+	"admin":        3,
 }
 
 type BoardUsecase struct {
@@ -225,7 +223,7 @@ func (uc *BoardUsecase) CreateNewCard(ctx context.Context, userID int, boardID i
 		return nil, fmt.Errorf("CreateNewCard (check): %w", errs.ErrNotPermitted)
 	}
 
-	card, err := uc.boardRepository.CreateNewCard(ctx, boardID, data.NewColumnId, data.NewTitle)
+	card, err := uc.boardRepository.CreateNewCard(ctx, boardID, data.NewColumnID, data.NewTitle)
 	if err != nil {
 		return nil, fmt.Errorf("CreateNewCard (add CreateNewCard): %w", err)
 	}

@@ -30,7 +30,7 @@ func (d *UserDelivery) GetMyProfile(w http.ResponseWriter, r *http.Request) {
 		responses.ResponseErrorAndLog(w, err, funcName)
 		return
 	}
-	responses.DoJSONResponce(w, profile, 200)
+	responses.DoJSONResponse(w, profile, 200)
 }
 
 // UpdateMyProfile обновляет профиль пользователя и возвращает обновлённый профиль
@@ -51,7 +51,7 @@ func (d *UserDelivery) UpdateMyProfile(w http.ResponseWriter, r *http.Request) {
 		responses.ResponseErrorAndLog(w, err, funcName)
 		return
 	}
-	responses.DoJSONResponce(w, newProfile, 200)
+	responses.DoJSONResponse(w, newProfile, 200)
 }
 
 // SetMyAvatar принимает у пользователя файл изображения, сохраняет его,
@@ -80,5 +80,5 @@ func (d *UserDelivery) SetMyAvatar(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	responses.DoJSONResponce(w, updatedProfile, 200)
+	responses.DoJSONResponse(w, updatedProfile, 200)
 }

@@ -21,7 +21,7 @@ type AuthUsecase interface {
 type AuthRepo interface {
 	RegisterSessionRedis(ctx context.Context, cookie string, userID int) error
 	KillSessionRedis(ctx context.Context, sessionID string) error
-	RetrieveUserIdFromSessionId(ctx context.Context, sessionId string) (userID int, err error)
+	RetrieveUserIDFromSession(ctx context.Context, sessionID string) (userID int, err error)
 	GetUserByEmail(ctx context.Context, email string) (user *models.UserProfile, err error)
 	GetUserByID(ctx context.Context, userID int) (user *models.UserProfile, err error)
 	CreateUser(ctx context.Context, user *models.UserRegistration, hashedPassword string) (newUser *models.UserProfile, err error)

@@ -55,7 +55,7 @@ func (this *AuthDelivery) LoginUser(w http.ResponseWriter, r *http.Request) {
 	}
 	http.SetCookie(w, &cookie)
 
-	responses.DoEmptyOkResponce(w)
+	responses.DoEmptyOkResponse(w)
 }
 
 // RegisterUser регистрирует пользователя
@@ -93,7 +93,7 @@ func (this *AuthDelivery) RegisterUser(w http.ResponseWriter, r *http.Request) {
 	}
 	http.SetCookie(w, &cookie)
 
-	responses.DoEmptyOkResponce(w)
+	responses.DoEmptyOkResponse(w)
 }
 
 // LogoutUser разлогинивает пользователя
@@ -118,7 +118,7 @@ func (this *AuthDelivery) LogoutUser(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		responses.ResponseErrorAndLog(w, err, "LogoutUser")
 	} else {
-		responses.DoEmptyOkResponce(w)
+		responses.DoEmptyOkResponse(w)
 	}
 }
 
@@ -140,5 +140,5 @@ func (d *AuthDelivery) ChangePassword(w http.ResponseWriter, r *http.Request) {
 		responses.DoBadResponse(w, http.StatusInternalServerError, "internal error")
 		return
 	}
-	responses.DoEmptyOkResponce(w)
+	responses.DoEmptyOkResponse(w)
 }

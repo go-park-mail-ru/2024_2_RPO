@@ -661,9 +661,9 @@ func TestCreateNewCard(t *testing.T) {
 	t.Run("successful creation of new card", func(t *testing.T) {
 		userID := 1
 		boardID := 1
-		requestData := models.CardPutRequest{NewTitle: "New Task", NewColumnId: 1}
+		requestData := models.CardPutRequest{NewTitle: "New Task", NewColumnID: 1}
 
-		mockBoardUsecase.EXPECT().CreateNewCard(gomock.Any(), gomock.Eq(userID), gomock.Eq(boardID), gomock.Eq(&requestData)).Return(&models.Card{ID: 1, Title: requestData.NewTitle, ColumnID: requestData.NewColumnId}, nil)
+		mockBoardUsecase.EXPECT().CreateNewCard(gomock.Any(), gomock.Eq(userID), gomock.Eq(boardID), gomock.Eq(&requestData)).Return(&models.Card{ID: 1, Title: requestData.NewTitle, ColumnID: requestData.NewColumnID}, nil)
 
 		ctx := context.WithValue(context.Background(), session.UserIDContextKey, userID)
 
@@ -682,7 +682,7 @@ func TestCreateNewCard(t *testing.T) {
 		var gotCard models.Card
 		err := json.NewDecoder(w.Body).Decode(&gotCard)
 		assert.NoError(t, err)
-		expectedCard := models.Card{ID: 1, Title: requestData.NewTitle, ColumnID: requestData.NewColumnId}
+		expectedCard := models.Card{ID: 1, Title: requestData.NewTitle, ColumnID: requestData.NewColumnID}
 		assert.Equal(t, expectedCard, gotCard)
 	})
 
@@ -734,7 +734,7 @@ func TestCreateNewCard(t *testing.T) {
 	t.Run("usecase returns error", func(t *testing.T) {
 		userID := 1
 		boardID := 1
-		requestData := models.CardPutRequest{NewTitle: "New Task", NewColumnId: 1}
+		requestData := models.CardPutRequest{NewTitle: "New Task", NewColumnID: 1}
 
 		mockBoardUsecase.EXPECT().CreateNewCard(gomock.Any(), userID, boardID, &requestData).Return(nil, errors.New("usecase error"))
 
@@ -763,9 +763,9 @@ func TestUpdateCard(t *testing.T) {
 		userID := 1
 		boardID := 1
 		cardID := 1
-		requestData := models.CardPutRequest{NewTitle: "Updated Task", NewColumnId: 1}
+		requestData := models.CardPutRequest{NewTitle: "Updated Task", NewColumnID: 1}
 
-		mockBoardUsecase.EXPECT().UpdateCard(gomock.Any(), userID, boardID, cardID, &requestData).Return(&models.Card{ID: cardID, Title: requestData.NewTitle, ColumnID: requestData.NewColumnId}, nil)
+		mockBoardUsecase.EXPECT().UpdateCard(gomock.Any(), userID, boardID, cardID, &requestData).Return(&models.Card{ID: cardID, Title: requestData.NewTitle, ColumnID: requestData.NewColumnID}, nil)
 
 		ctx := context.WithValue(context.Background(), session.UserIDContextKey, userID)
 
@@ -784,7 +784,7 @@ func TestUpdateCard(t *testing.T) {
 		var gotCard models.Card
 		err := json.NewDecoder(w.Body).Decode(&gotCard)
 		assert.NoError(t, err)
-		expectedCard := models.Card{ID: cardID, Title: requestData.NewTitle, ColumnID: requestData.NewColumnId}
+		expectedCard := models.Card{ID: cardID, Title: requestData.NewTitle, ColumnID: requestData.NewColumnID}
 		assert.Equal(t, expectedCard, gotCard)
 	})
 
@@ -853,7 +853,7 @@ func TestUpdateCard(t *testing.T) {
 		userID := 1
 		boardID := 1
 		cardID := 1
-		requestData := models.CardPutRequest{NewTitle: "Updated Task", NewColumnId: 1}
+		requestData := models.CardPutRequest{NewTitle: "Updated Task", NewColumnID: 1}
 
 		mockBoardUsecase.EXPECT().UpdateCard(gomock.Any(), userID, boardID, cardID, &requestData).Return(nil, errors.New("usecase error"))
 
