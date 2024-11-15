@@ -50,11 +50,13 @@ docker-build:
 	@echo "==> Building Docker image..."
 	@docker build -t $(APP_NAME):latest .
 
-# Миграции для базы данных
 migrate-up:
 	@echo "==> Running migrations..."
 	@migrate -path ./database/migrations -database $(DATABASE_URL) up
 
-migrate-down:
-	@echo "==> Reverting migrations..."
-	@migrate -path ./database/migrations -database $(DATABASE_URL) down
+make-migrations:
+	@echo "==> Let's generate migrations with Atlas!"
+	@which atlas
+	@echo "Provide migration name: >>> "
+	@read MIGRATION_NAME; echo "MIGRATION_NAME: $$MIGRATION_NAME"; \
+	atlas migrate diff $$MIGRATION_NAME.up --dir "file://database/migrations" --to "file://database/schema.sql" --dev-url "$(TEST_DATABASE_URL)"
