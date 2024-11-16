@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+package auth; // не забыть заменить
+
+option go_package = "../internal/pkg/auth/delivery/grpc/gen/;gen";
+
+service Auth {
+    rpc CheckSession(Session) returns (User) {}
+}
+
+message Session {
+    string sessionID = 1;
+}
+
+message UserFormData {
+    int userID = 1;
+    string error = 2;
+}
