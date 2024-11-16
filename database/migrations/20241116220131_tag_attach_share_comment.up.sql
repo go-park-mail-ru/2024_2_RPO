@@ -1,0 +1,16 @@
+-- Modify "user_to_board" table
+ALTER TABLE "public"."user_to_board" DROP CONSTRAINT "user_to_board_pkey", DROP CONSTRAINT "user_to_board_u_id_board_id_key", DROP COLUMN "user_to_board_id", ADD COLUMN "invite_link_uuid" uuid NULL, ADD PRIMARY KEY ("u_id", "board_id");
+-- Modify "user_uploaded_file" table
+ALTER TABLE "public"."user_uploaded_file" DROP COLUMN "created_by", ADD COLUMN "file_hash" text NULL;
+-- Modify "user" table
+ALTER TABLE "public"."user" DROP CONSTRAINT "fk_avatar_file_id", ADD CONSTRAINT "user_avatar_file_id_fkey" FOREIGN KEY ("avatar_file_id") REFERENCES "public"."user_uploaded_file" ("file_id") ON UPDATE CASCADE ON DELETE SET NULL;
+-- Modify "card" table
+ALTER TABLE "public"."card" ADD COLUMN "card_uuid" uuid NOT NULL DEFAULT public.uuid_generate_v4(), ADD COLUMN "deadline" timestamptz NULL, ADD COLUMN "is_done" boolean NULL DEFAULT false;
+-- Create "card_attachment" table
+CREATE TABLE "public"."card_attachment" ("attachment_id" bigint NOT NULL GENERATED ALWAYS AS IDENTITY, "card_id" bigint NOT NULL, "file_id" bigint NOT NULL, "original_name" text NOT NULL, "attached_at" timestamptz NOT NULL DEFAULT CURRENT_TIMESTAMP, "attached_by" bigint NOT NULL, PRIMARY KEY ("attachment_id"), CONSTRAINT "card_attachment_attached_by_fkey" FOREIGN KEY ("attached_by") REFERENCES "public"."user" ("u_id") ON UPDATE CASCADE ON DELETE CASCADE, CONSTRAINT "card_attachment_card_id_fkey" FOREIGN KEY ("card_id") REFERENCES "public"."card" ("card_id") ON UPDATE CASCADE ON DELETE CASCADE, CONSTRAINT "card_attachment_file_id_fkey" FOREIGN KEY ("file_id") REFERENCES "public"."user_uploaded_file" ("file_id") ON UPDATE CASCADE ON DELETE CASCADE);
+-- Create "card_comment" table
+CREATE TABLE "public"."card_comment" ("comment_id" bigint NOT NULL GENERATED ALWAYS AS IDENTITY, "card_id" bigint NOT NULL, "title" text NOT NULL, "created_by" bigint NOT NULL, "created_at" timestamptz NOT NULL DEFAULT CURRENT_TIMESTAMP, "updated_at" timestamptz NOT NULL DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY ("comment_id"), CONSTRAINT "card_comment_card_id_fkey" FOREIGN KEY ("card_id") REFERENCES "public"."card" ("card_id") ON UPDATE CASCADE ON DELETE CASCADE, CONSTRAINT "card_comment_created_by_fkey" FOREIGN KEY ("created_by") REFERENCES "public"."user" ("u_id") ON UPDATE CASCADE ON DELETE CASCADE);
+-- Create "card_user_assignment" table
+CREATE TABLE "public"."card_user_assignment" ("assignment_id" bigint NOT NULL GENERATED ALWAYS AS IDENTITY, "card_id" bigint NOT NULL, "u_id" bigint NOT NULL, PRIMARY KEY ("assignment_id"), CONSTRAINT "card_user_assignment_card_id_fkey" FOREIGN KEY ("card_id") REFERENCES "public"."card" ("card_id") ON UPDATE CASCADE ON DELETE CASCADE, CONSTRAINT "card_user_assignment_u_id_fkey" FOREIGN KEY ("u_id") REFERENCES "public"."user" ("u_id") ON UPDATE CASCADE ON DELETE CASCADE);
+-- Create "checklist_field" table
+CREATE TABLE "public"."checklist_field" ("checklist_field_id" bigint NOT NULL GENERATED ALWAYS AS IDENTITY, "card_id" bigint NOT NULL, "title" text NOT NULL, "is_done" boolean NOT NULL DEFAULT false, "order_index" integer NULL, PRIMARY KEY ("checklist_field_id"), CONSTRAINT "checklist_field_card_id_fkey" FOREIGN KEY ("card_id") REFERENCES "public"."card" ("card_id") ON UPDATE CASCADE ON DELETE CASCADE);

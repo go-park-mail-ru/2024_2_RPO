@@ -22,6 +22,12 @@ services:
   postgres:
     env_file:
       - .env
+    command:
+      - "postgres"
+      - "-c"
+      - "config_file=/etc/postgresql.conf"
+      - "-c"
+      - "hba_file=/etc/pg_hba.conf"
     container_name: postgres
     image: postgres:latest
     environment:
@@ -34,6 +40,8 @@ services:
       - Pumpkin-network
     volumes:
       - pumpkin-db-data:/var/lib/postgresql/data
+      - ./database/postgresql.conf:/etc/postgresql.conf:ro
+      - ./database/pg_hba.conf:/etc/pg_hba.conf:ro
 
   redis:
     container_name: redis
