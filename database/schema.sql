@@ -122,8 +122,6 @@ CREATE TABLE card_user_assignment (
     FOREIGN KEY (u_id) REFERENCES "user"(u_id) ON UPDATE CASCADE ON DELETE CASCADE
 );
 
-CREATE ROLE "3kybika";
-
 -- CREATE TYPE card_update_type AS ENUM (
 --     'created',
 --     'moved',

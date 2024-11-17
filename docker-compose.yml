@@ -42,6 +42,7 @@ services:
       - pumpkin-db-data:/var/lib/postgresql/data
       - ./database/postgresql.conf:/etc/postgresql.conf:ro
       - ./database/pg_hba.conf:/etc/pg_hba.conf:ro
+      - pumpkin-all-logs:/pg_logs
 
   redis:
     container_name: redis
@@ -68,3 +69,4 @@ volumes:
   pumpkin-db-data:
   pumpkin-redis-data:
   pumpkin-user-uploads:
+  pumpkin-all-logs:
