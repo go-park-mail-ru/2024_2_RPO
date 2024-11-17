@@ -270,6 +270,18 @@ components:
             isDone:
               type: boolean
               example: false
+        hasCheckList:
+          type: boolean
+          example: false
+        hasAttachments:
+          type: boolean
+          example: false
+        hasAssignedUsers:
+          type: boolean
+          example: false
+        hasComments:
+          type: boolean
+          example: false
 
     CardPostRequest:
       type: object
@@ -1083,6 +1095,31 @@ paths:
       responses:
         "200":
           $ref: "#/components/responses/EmptyOkResponse"
+        "400":
+          $ref: "#/components/responses/BadRequestResponse"
+        "401":
+          $ref: "#/components/responses/NoAuthResponse"
+        "403":
+          $ref: "#/components/responses/ForbiddenResponse"
+        "404":
+          $ref: "#/components/responses/NotFoundResponse"
+
+  /cardDetails/{cardId}:
+    get:
+      summary: "Получить подробную информацию о карточке"
+      tags:
+        - Карточки
+      security:
+        - SessionCookieAuth: []
+      parameters:
+        - $ref: "#/components/parameters/cardId"
+      responses:
+        "200":
+          description: "Получена информация о карточке"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CardDetails"
         "400":
           $ref: "#/components/responses/BadRequestResponse"
         "401":
