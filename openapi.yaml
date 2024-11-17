@@ -246,9 +246,9 @@ components:
         title:
           type: string
           example: "Задача 1"
-        description:
+        coverImageUrl:
           type: string
-          example: "Описание задачи 1"
+          example: "/uploads/b5ce022f-270a-4638-a8e3-799d135d64c7.jpg"
         columnId:
           type: integer
           example: 228
@@ -260,6 +260,16 @@ components:
           type: string
           format: date-time
           example: "2023-10-01T12:34:56Z"
+        deadline:
+          type: object
+          properties:
+            deadline:
+              type: string
+              format: date-time
+              example: "2023-10-01T12:34:56Z"
+            isDone:
+              type: boolean
+              example: false
 
     CardPostRequest:
       type: object
@@ -491,6 +501,35 @@ components:
         nextCardId:
           type: integer
           example: 222
+
+    CardDetails:
+      type: object
+      properties:
+        card:
+          $ref: "#/components/schemas/Card"
+        checkList:
+          type: array
+          items:
+            $ref: "#/components/schemas/CheckListField"
+        attachments:
+          type: array
+          items:
+            $ref: "#/components/schemas/Attachment"
+        comments:
+          type: array
+          items:
+            $ref: "#/components/schemas/Comment"
+        assignedUsers:
+          type: array
+          items:
+            $ref: "#/components/schemas/User"
+
+    InviteLink:
+      type: object
+      properties:
+        inviteLinkUuid:
+          type: string
+          example: "1b7123a0-c604-4667-9377-99b51cc982c9"
 
 paths:
   /auth/register:
@@ -1534,33 +1573,27 @@ paths:
         "404":
           $ref: "#/components/responses/NotFoundResponse"
 
-  cardOrder/{cardId}:
+  /cardOrder/{cardId}:
     put:
       summary: >
-        > Переместить карточку.
-        > previousCardId задать -1, если новое положение карточки - первое в колонке
-        > nextCardId задать -1, если новое положение карточки - последнее в колонке
+        Переместить карточку.
+        previousCardId задать -1, если новое положение карточки - первое в колонке.
+        nextCardId задать -1, если новое положение карточки - последнее в колонке
       tags:
         - Drag-n-Drop карточек
       security:
         - SessionCookieAuth: []
       parameters:
         - $ref: "#/components/parameters/cardId"
-        - name: fieldId
-          in: path
-          required: true
-          schema:
-            type: string
-            example: "field_228"
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/CheckListFieldPutRequest"
+              $ref: "#/components/schemas/CardMoveRequest"
       responses:
         "200":
-          $ref:
+          $ref: "#/components/responses/EmptyOkResponse"
         "400":
           $ref: "#/components/responses/BadRequestResponse"
         "401":
@@ -1582,3 +1615,149 @@ paths:
                   text:
                     type: string
                     example: "conflict"
+
+  /sharedCard/{cardUuid}:
+    get:
+      summary: "Получить карточку по ссылке"
+      tags:
+        - Доступ к карточке по ссылке
+      security:
+        - SessionCookieAuth: []
+      parameters:
+        - name: cardUuid
+          in: path
+          required: true
+          schema:
+            type: string
+            example: "4421f872-6945-42ac-b7e4-88842327c76f"
+      responses:
+        "200":
+          description: "Карточка с таким UUID найдена. Смотри схему, там может быть два варианта: или пользователь есть на этой доске, или пользователя нет"
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - type: object
+                    properties:
+                      boardId:
+                        type: integer
+                        example: 123
+                      cardId:
+                        type: integer
+                        example: 234
+                  - type: object
+                    properties:
+                      boardName:
+                        type: string
+                        example: "Проект ТИГР"
+                      backgroundImageUrl:
+                        type: string
+                        example: "/uploads/4421f872-6945-42ac-b7e4-88842327c76f.png"
+                      card:
+                        $ref: "#/components/schemas/CardDetails"
+        "400":
+          $ref: "#/components/responses/BadRequestResponse"
+        "404":
+          $ref: "#/components/responses/NotFoundResponse"
+
+  /inviteLink/{boardId}:
+    put:
+      summary: "Или создать новую ссылку, или удалить старую и заменить на новую"
+      tags:
+        - Ссылка-приглашение на доску
+      security:
+        - SessionCookieAuth: []
+      parameters:
+        - $ref: "#/components/parameters/boardId"
+      responses:
+        "200":
+          description: "Успешно задана ссылка-приглашение"
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/InviteLink"
+        "400":
+          $ref: "#/components/responses/BadRequestResponse"
+        "401":
+          $ref: "#/components/responses/NoAuthResponse"
+        "403":
+          $ref: "#/components/responses/ForbiddenResponse"
+        "404":
+          $ref: "#/components/responses/NotFoundResponse"
+    delete:
+      summary: "Удалена ссылка-приглашение"
+      tags:
+        - Ссылка-приглашение на доску
+      security:
+        - SessionCookieAuth: []
+      parameters:
+        - $ref: "#/components/parameters/boardId"
+      responses:
+        "200":
+          $ref: "#/components/responses/EmptyOkResponse"
+        "400":
+          $ref: "#/components/responses/BadRequestResponse"
+        "401":
+          $ref: "#/components/responses/NoAuthResponse"
+        "403":
+          $ref: "#/components/responses/ForbiddenResponse"
+        "404":
+          $ref: "#/components/responses/NotFoundResponse"
+
+  /joinBoard/{inviteUuid}:
+    get:
+      summary: "Получить информацию о доске, на которую тебя приглашают"
+      tags:
+        - Ссылка-приглашение на доску
+      parameters:
+        - name: inviteUuid
+          in: path
+          required: true
+          schema:
+            type: string
+            example: "611ae8b9-8ab2-4f9f-9b1a-dc641355c59d"
+      security:
+        - SessionCookieAuth: []
+      responses:
+        "200":
+          description: "Информация о доске"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Board"
+        "400":
+          $ref: "#/components/responses/BadRequestResponse"
+        "401":
+          $ref: "#/components/responses/NoAuthResponse"
+        "404":
+          $ref: "#/components/responses/NotFoundResponse"
+    post:
+      summary: "Присоединиться к доске, на которую тебя приглашают"
+      tags:
+        - Ссылка-приглашение на доску
+      parameters:
+        - name: inviteUuid
+          in: path
+          required: true
+          schema:
+            type: string
+            example: "611ae8b9-8ab2-4f9f-9b1a-dc641355c59d"
+      security:
+        - SessionCookieAuth: []
+      responses:
+        "200":
+          description: "Успешно присоединился"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Board"
+        "400":
+          $ref: "#/components/responses/BadRequestResponse"
+        "401":
+          $ref: "#/components/responses/NoAuthResponse"
+        "404":
+          $ref: "#/components/responses/NotFoundResponse"
+        "409":
+          $ref: "#/components/responses/NotFoundResponse"
