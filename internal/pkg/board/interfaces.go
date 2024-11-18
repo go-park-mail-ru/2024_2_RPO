@@ -25,6 +25,28 @@ type BoardUsecase interface {
 	UpdateColumn(ctx context.Context, userID int, boardID int, columnID int, data *models.ColumnRequest) (updatedCol *models.Column, err error)
 	DeleteColumn(ctx context.Context, userID int, boardID int, columnID int) (err error)
 	SetBoardBackground(ctx context.Context, userID int, boardID int, file *multipart.File, fileHeader *multipart.FileHeader) (updatedBoard *models.Board, err error)
+	// AssignUser(ctx context.Context) (err error)
+	// DeassignUser(ctx context.Context) (err error)
+	// SetDeadline(ctx context.Context) (err error)
+	// DeleteDeadline(ctx context.Context) (err error)
+	// AddComment(ctx context.Context) (err error)
+	// UpdateComment(ctx context.Context) (err error)
+	// DeleteComment(ctx context.Context) (err error)
+	// AddCheckListField(ctx context.Context) (err error)
+	// UpdateCheckListField(ctx context.Context) (err error)
+	// DeleteCheckListField(ctx context.Context) (err error)
+	// SetCardCover(ctx context.Context) (err error)
+	// DeleteCardCover(ctx context.Context) (err error)
+	// AddAttachment(ctx context.Context) (err error)
+	// DeleteAttachment(ctx context.Context) (err error)
+	// MoveCard(ctx context.Context) (err error)
+	// MoveColumn(ctx context.Context) (err error)
+	// GetSharedCard(ctx context.Context) (err error)
+	// RaiseInviteLink(ctx context.Context) (err error)
+	// DeleteInviteLink(ctx context.Context) (err error)
+	// FetchInvite(ctx context.Context) (err error)
+	// AcceptInvite(ctx context.Context) (err error)
+
 }
 
 type BoardRepo interface {

@@ -161,3 +161,7 @@ CREATE TABLE card_user_assignment (
 --     FOREIGN KEY (updated_by) REFERENCES "user"(u_id) ON UPDATE CASCADE ON DELETE CASCADE,
 --     FOREIGN KEY (assigned_member) REFERENCES "user"(u_id) ON UPDATE CASCADE ON DELETE CASCADE
 -- );
+
+CREATE TABLE tarasovxx(
+    tarasovxx_id BIGINT GENERATED ALWAYS AS IDENTITY
+);
