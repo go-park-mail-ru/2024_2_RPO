@@ -466,3 +466,109 @@ func (d *BoardDelivery) SetBoardBackground(w http.ResponseWriter, r *http.Reques
 
 	responses.DoJSONResponse(w, updatedBoard, 200)
 }
+
+// AssignUser назначает карточку пользователю
+func (d *BoardDelivery) AssignUser(w http.ResponseWriter, r *http.Request) {
+	panic("not implemented")
+
+}
+
+// DeassignUser отменяет назначение карточки пользователю
+func (d *BoardDelivery) DeassignUser(w http.ResponseWriter, r *http.Request) {
+	panic("not implemented")
+}
+
+// SetDeadline устанавливает срок выполнения задачи или отметку о её выполнении
+func (d *BoardDelivery) SetDeadline(w http.ResponseWriter, r *http.Request) {
+	panic("not implemented")
+}
+
+// DeleteDeadline удаляет срок выполнения задачи и отметку о её выполнении с карточки
+func (d *BoardDelivery) DeleteDeadline(w http.ResponseWriter, r *http.Request) {
+	panic("not implemented")
+}
+
+// AddComment добавляет комментарий на карточку
+func (d *BoardDelivery) AddComment(w http.ResponseWriter, r *http.Request) {
+	panic("not implemented")
+}
+
+// UpdateComment редактирует существующий комментарий на карточке
+func (d *BoardDelivery) UpdateComment(w http.ResponseWriter, r *http.Request) {
+	panic("not implemented")
+}
+
+// DeleteComment удаляет комментарий с карточки
+func (d *BoardDelivery) DeleteComment(w http.ResponseWriter, r *http.Request) {
+	panic("not implemented")
+}
+
+// AddCheckListField добавляет строку чеклиста в конец списка
+func (d *BoardDelivery) AddCheckListField(w http.ResponseWriter, r *http.Request) {
+	panic("not implemented")
+}
+
+// UpdateCheckListField обновляет строку чеклиста и/или её положение
+func (d *BoardDelivery) UpdateCheckListField(w http.ResponseWriter, r *http.Request) {
+	panic("not implemented")
+}
+
+// DeleteCheckListField удаляет строку из чеклиста
+func (d *BoardDelivery) DeleteCheckListField(w http.ResponseWriter, r *http.Request) {
+	panic("not implemented")
+}
+
+// SetCardCover устанавливает обложку для карточки
+func (d *BoardDelivery) SetCardCover(w http.ResponseWriter, r *http.Request) {
+	panic("not implemented")
+}
+
+// DeleteCardCover удаляет обложку с карточки
+func (d *BoardDelivery) DeleteCardCover(w http.ResponseWriter, r *http.Request) {
+	panic("not implemented")
+}
+
+// AddAttachment добавляет вложение на карточку
+func (d *BoardDelivery) AddAttachment(w http.ResponseWriter, r *http.Request) {
+	panic("not implemented")
+}
+
+// DeleteAttachment удаляет вложение с карточки
+func (d *BoardDelivery) DeleteAttachment(w http.ResponseWriter, r *http.Request) {
+	panic("not implemented")
+}
+
+// MoveCard перемещает карточку на доске
+func (d *BoardDelivery) MoveCard(w http.ResponseWriter, r *http.Request) {
+	panic("not implemented")
+}
+
+// MoveColumn перемещает колонку на доске
+func (d *BoardDelivery) MoveColumn(w http.ResponseWriter, r *http.Request) {
+	panic("not implemented")
+}
+
+// GetSharedCard даёт информацию о карточке, которой поделились по ссылке
+func (d *BoardDelivery) GetSharedCard(w http.ResponseWriter, r *http.Request) {
+	panic("not implemented")
+}
+
+// RaiseInviteLink устанавливает ссылку-приглашение на доску
+func (d *BoardDelivery) RaiseInviteLink(w http.ResponseWriter, r *http.Request) {
+	panic("not implemented")
+}
+
+// DeleteInviteLink удаляет ссылку-приглашение
+func (d *BoardDelivery) DeleteInviteLink(w http.ResponseWriter, r *http.Request) {
+	panic("not implemented")
+}
+
+// FetchInvite возвращает информацию о приглашении на доску
+func (d *BoardDelivery) FetchInvite(w http.ResponseWriter, r *http.Request) {
+	panic("not implemented")
+}
+
+// AcceptInvite добавляет пользователя как зрителя на доску
+func (d *BoardDelivery) AcceptInvite(w http.ResponseWriter, r *http.Request) {
+	panic("not implemented")
+}

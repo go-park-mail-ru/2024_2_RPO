@@ -393,3 +393,108 @@ func (uc *BoardUsecase) SetBoardBackground(ctx context.Context, userID int, boar
 	}
 	return uc.boardRepository.GetBoard(ctx, boardID, userID)
 }
+
+// AssignUser назначает карточку пользователю
+func (uc *BoardUsecase) AssignUser(ctx context.Context) (err error) {
+	panic("not implemented")
+}
+
+// DeassignUser отменяет назначение карточки пользователю
+func (uc *BoardUsecase) DeassignUser(ctx context.Context) (err error) {
+	panic("not implemented")
+}
+
+// SetDeadline устанавливает срок выполнения задачи или отметку о её выполнении
+func (uc *BoardUsecase) SetDeadline(ctx context.Context) (err error) {
+	panic("not implemented")
+}
+
+// DeleteDeadline удаляет срок выполнения задачи и отметку о её выполнении с карточки
+func (uc *BoardUsecase) DeleteDeadline(ctx context.Context) (err error) {
+	panic("not implemented")
+}
+
+// AddComment добавляет комментарий на карточку
+func (uc *BoardUsecase) AddComment(ctx context.Context) (err error) {
+	panic("not implemented")
+}
+
+// UpdateComment редактирует существующий комментарий на карточке
+func (uc *BoardUsecase) UpdateComment(ctx context.Context) (err error) {
+	panic("not implemented")
+}
+
+// DeleteComment удаляет комментарий с карточки
+func (uc *BoardUsecase) DeleteComment(ctx context.Context) (err error) {
+	panic("not implemented")
+}
+
+// AddCheckListField добавляет строку чеклиста в конец списка
+func (uc *BoardUsecase) AddCheckListField(ctx context.Context) (err error) {
+	panic("not implemented")
+}
+
+// UpdateCheckListField обновляет строку чеклиста и/или её положение
+func (uc *BoardUsecase) UpdateCheckListField(ctx context.Context) (err error) {
+	panic("not implemented")
+}
+
+// DeleteCheckListField удаляет строку из чеклиста
+func (uc *BoardUsecase) DeleteCheckListField(ctx context.Context) (err error) {
+	panic("not implemented")
+}
+
+// SetCardCover устанавливает обложку для карточки
+func (uc *BoardUsecase) SetCardCover(ctx context.Context) (err error) {
+	panic("not implemented")
+}
+
+// DeleteCardCover удаляет обложку с карточки
+func (uc *BoardUsecase) DeleteCardCover(ctx context.Context) (err error) {
+	panic("not implemented")
+}
+
+// AddAttachment добавляет вложение на карточку
+func (uc *BoardUsecase) AddAttachment(ctx context.Context) (err error) {
+	panic("not implemented")
+}
+
+// DeleteAttachment удаляет вложение с карточки
+func (uc *BoardUsecase) DeleteAttachment(ctx context.Context) (err error) {
+	panic("not implemented")
+}
+
+// MoveCard перемещает карточку на доске
+func (uc *BoardUsecase) MoveCard(ctx context.Context) (err error) {
+	panic("not implemented")
+}
+
+// MoveColumn перемещает колонку на доске
+func (uc *BoardUsecase) MoveColumn(ctx context.Context) (err error) {
+	panic("not implemented")
+}
+
+// GetSharedCard даёт информацию о карточке, которой поделились по ссылке
+func (uc *BoardUsecase) GetSharedCard(ctx context.Context) (err error) {
+	panic("not implemented")
+}
+
+// RaiseInviteLink устанавливает ссылку-приглашение на доску
+func (uc *BoardUsecase) RaiseInviteLink(ctx context.Context) (err error) {
+	panic("not implemented")
+}
+
+// DeleteInviteLink удаляет ссылку-приглашение
+func (uc *BoardUsecase) DeleteInviteLink(ctx context.Context) (err error) {
+	panic("not implemented")
+}
+
+// FetchInvite возвращает информацию о приглашении на доску
+func (uc *BoardUsecase) FetchInvite(ctx context.Context) (err error) {
+	panic("not implemented")
+}
+
+// AcceptInvite добавляет пользователя как зрителя на доску
+func (uc *BoardUsecase) AcceptInvite(ctx context.Context) (err error) {
+	panic("not implemented")
+}

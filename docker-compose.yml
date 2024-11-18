@@ -40,9 +40,9 @@ services:
       - Pumpkin-network
     volumes:
       - pumpkin-db-data:/var/lib/postgresql/data
+      - pumpkin-all-logs:/pg_logs
       - ./database/postgresql.conf:/etc/postgresql.conf:ro
       - ./database/pg_hba.conf:/etc/pg_hba.conf:ro
-      - pumpkin-all-logs:/pg_logs
 
   redis:
     container_name: redis
@@ -59,6 +59,10 @@ services:
       - .env
     networks:
       - Pumpkin-network
+
+  grafana:
+    container_name: grafana
+    image: grafana/grafana
 
 networks:
   Pumpkin-network:
