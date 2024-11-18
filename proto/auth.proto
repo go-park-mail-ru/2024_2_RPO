@@ -1,18 +1,40 @@
 syntax = "proto3";
 
-package auth; // не забыть заменить
+package auth;
 
 option go_package = "../internal/pkg/auth/delivery/grpc/gen/;gen";
 
 service Auth {
-    rpc CheckSession(Session) returns (User) {}
+    rpc CreateSession(UserDataRequest) returns (Session) {}
+    rpc CheckSession(Session) returns (UserDataResponse) {}
+    rpc DeleteSession(Session) returns (EmptyMessage) {}
+    rpc ChangePassword(ChangePasswordRequest) returns (UserDataResponse) {}
+}
+
+enum Error {
+    NONE = 0; 
+    INVALID_CREDENTIALS = 1; 
+    INTERNAL_SERVER_ERROR = 2;
 }
 
 message Session {
     string sessionID = 1;
 }
 
-message UserFormData {
-    int userID = 1;
-    string error = 2;
+message UserDataRequest {
+    int64 userID = 1;
+    string passwordHash = 2;
 }
+
+message UserDataResponse {
+    int64 userID = 1;
+    string Error = 2;
+}
+
+
+message ChangePasswordRequest {
+    string passwordOld = 1;
+    string passwordNew = 2;
+}
+
+message EmptyMessage {}
