@@ -1347,7 +1347,7 @@ paths:
         "404":
           $ref: "#/components/responses/NotFoundResponse"
 
-  /comments/{cardId}/{commentId}:
+  /comments/{commentId}:
     put:
       summary: "Изменить комментарий"
       tags:
@@ -1355,7 +1355,6 @@ paths:
       security:
         - SessionCookieAuth: []
       parameters:
-        - $ref: "#/components/parameters/cardId"
         - name: commentId
           in: path
           required: true
@@ -1390,7 +1389,6 @@ paths:
       security:
         - SessionCookieAuth: []
       parameters:
-        - $ref: "#/components/parameters/cardId"
         - name: commentId
           in: path
           required: true
@@ -1440,7 +1438,7 @@ paths:
         "404":
           $ref: "#/components/responses/NotFoundResponse"
 
-  /checkList/{cardId}/{fieldId}:
+  /checkList/{fieldId}:
     put:
       summary: "Изменить положение, текст или статус строки чеклиста"
       tags:
@@ -1448,7 +1446,6 @@ paths:
       security:
         - SessionCookieAuth: []
       parameters:
-        - $ref: "#/components/parameters/cardId"
         - name: fieldId
           in: path
           required: true
@@ -1485,7 +1482,6 @@ paths:
       security:
         - SessionCookieAuth: []
       parameters:
-        - $ref: "#/components/parameters/cardId"
         - name: fieldId
           in: path
           required: true
@@ -1596,7 +1592,7 @@ paths:
         "404":
           $ref: "#/components/responses/NotFoundResponse"
 
-  /attachments/{cardId}/{attachmentId}:
+  /attachments/{attachmentId}:
     delete:
       summary: "Удалить вложение с карточки"
       tags:
@@ -1604,7 +1600,6 @@ paths:
       security:
         - SessionCookieAuth: []
       parameters:
-        - $ref: "#/components/parameters/cardId"
         - name: attachmentId
           in: path
           required: true
