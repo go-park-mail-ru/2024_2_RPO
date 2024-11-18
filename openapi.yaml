@@ -514,6 +514,19 @@ components:
           type: integer
           example: 222
 
+    ColumnMoveRequest:
+      type: object
+      required:
+        - previousColumnId
+        - nextColumnId
+      properties:
+        previousColumnId:
+          type: integer
+          example: 111
+        nextColumnId:
+          type: integer
+          example: 222
+
     CardDetails:
       type: object
       properties:
@@ -1617,7 +1630,7 @@ paths:
         previousCardId задать -1, если новое положение карточки - первое в колонке.
         nextCardId задать -1, если новое положение карточки - последнее в колонке
       tags:
-        - Drag-n-Drop карточек
+        - Drag-n-Drop
       security:
         - SessionCookieAuth: []
       parameters:
@@ -1641,6 +1654,49 @@ paths:
           $ref: "#/components/responses/NotFoundResponse"
         "409":
           description: "Не получается переместить карточку. Может быть, кто-то другой перемещал карточки только что"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: number
+                    example: 409
+                  text:
+                    type: string
+                    example: "conflict"
+
+  /columnOrder/{columnId}:
+    put:
+      summary: >
+        Переместить колонку.
+        previousColumnId задать -1, если новое положение колонки - первое на доске.
+        nextColumnId задать -1, если новое положение колонки - последнее на доске
+      tags:
+        - Drag-n-Drop
+      security:
+        - SessionCookieAuth: []
+      parameters:
+        - $ref: "#/components/parameters/columnId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ColumnMoveRequest"
+      responses:
+        "200":
+          $ref: "#/components/responses/EmptyOkResponse"
+        "400":
+          $ref: "#/components/responses/BadRequestResponse"
+        "401":
+          $ref: "#/components/responses/NoAuthResponse"
+        "403":
+          $ref: "#/components/responses/ForbiddenResponse"
+        "404":
+          $ref: "#/components/responses/NotFoundResponse"
+        "409":
+          description: "Не получается переместить колонку. Может быть, кто-то другой перемещал карточки только что"
           content:
             application/json:
               schema:
