@@ -36,8 +36,68 @@ func (m *MockBoardUsecase) EXPECT() *MockBoardUsecaseMockRecorder {
 	return m.recorder
 }
 
+// AcceptInvite mocks base method.
+func (m *MockBoardUsecase) AcceptInvite(ctx context.Context, userID int64, inviteUUID string) (*models.Board, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "AcceptInvite", ctx, userID, inviteUUID)
+	ret0, _ := ret[0].(*models.Board)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// AcceptInvite indicates an expected call of AcceptInvite.
+func (mr *MockBoardUsecaseMockRecorder) AcceptInvite(ctx, userID, inviteUUID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AcceptInvite", reflect.TypeOf((*MockBoardUsecase)(nil).AcceptInvite), ctx, userID, inviteUUID)
+}
+
+// AddAttachment mocks base method.
+func (m *MockBoardUsecase) AddAttachment(ctx context.Context, userID, cardID int64, file *multipart.File, fileHeader *multipart.FileHeader) (*models.Attachment, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "AddAttachment", ctx, userID, cardID, file, fileHeader)
+	ret0, _ := ret[0].(*models.Attachment)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// AddAttachment indicates an expected call of AddAttachment.
+func (mr *MockBoardUsecaseMockRecorder) AddAttachment(ctx, userID, cardID, file, fileHeader interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddAttachment", reflect.TypeOf((*MockBoardUsecase)(nil).AddAttachment), ctx, userID, cardID, file, fileHeader)
+}
+
+// AddCheckListField mocks base method.
+func (m *MockBoardUsecase) AddCheckListField(ctx context.Context, userID, cardID int64, fieldReq *models.CheckListFieldPostRequest) (*models.CheckListField, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "AddCheckListField", ctx, userID, cardID, fieldReq)
+	ret0, _ := ret[0].(*models.CheckListField)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// AddCheckListField indicates an expected call of AddCheckListField.
+func (mr *MockBoardUsecaseMockRecorder) AddCheckListField(ctx, userID, cardID, fieldReq interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddCheckListField", reflect.TypeOf((*MockBoardUsecase)(nil).AddCheckListField), ctx, userID, cardID, fieldReq)
+}
+
+// AddComment mocks base method.
+func (m *MockBoardUsecase) AddComment(ctx context.Context, userID, cardID int64, commentReq *models.CommentRequest) (*models.Comment, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "AddComment", ctx, userID, cardID, commentReq)
+	ret0, _ := ret[0].(*models.Comment)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// AddComment indicates an expected call of AddComment.
+func (mr *MockBoardUsecaseMockRecorder) AddComment(ctx, userID, cardID, commentReq interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddComment", reflect.TypeOf((*MockBoardUsecase)(nil).AddComment), ctx, userID, cardID, commentReq)
+}
+
 // AddMember mocks base method.
-func (m *MockBoardUsecase) AddMember(ctx context.Context, userID, boardID int, addRequest *models.AddMemberRequest) (*models.MemberWithPermissions, error) {
+func (m *MockBoardUsecase) AddMember(ctx context.Context, userID, boardID int64, addRequest *models.AddMemberRequest) (*models.MemberWithPermissions, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "AddMember", ctx, userID, boardID, addRequest)
 	ret0, _ := ret[0].(*models.MemberWithPermissions)
@@ -51,8 +111,23 @@ func (mr *MockBoardUsecaseMockRecorder) AddMember(ctx, userID, boardID, addReque
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddMember", reflect.TypeOf((*MockBoardUsecase)(nil).AddMember), ctx, userID, boardID, addRequest)
 }
 
+// AssignUser mocks base method.
+func (m *MockBoardUsecase) AssignUser(ctx context.Context, userID, cardID, assignedUserID int64) (*models.UserProfile, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "AssignUser", ctx, userID, cardID, assignedUserID)
+	ret0, _ := ret[0].(*models.UserProfile)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// AssignUser indicates an expected call of AssignUser.
+func (mr *MockBoardUsecaseMockRecorder) AssignUser(ctx, userID, cardID, assignedUserID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AssignUser", reflect.TypeOf((*MockBoardUsecase)(nil).AssignUser), ctx, userID, cardID, assignedUserID)
+}
+
 // CreateColumn mocks base method.
-func (m *MockBoardUsecase) CreateColumn(ctx context.Context, userID, boardID int, data *models.ColumnRequest) (*models.Column, error) {
+func (m *MockBoardUsecase) CreateColumn(ctx context.Context, userID, boardID int64, data *models.ColumnRequest) (*models.Column, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CreateColumn", ctx, userID, boardID, data)
 	ret0, _ := ret[0].(*models.Column)
@@ -67,7 +142,7 @@ func (mr *MockBoardUsecaseMockRecorder) CreateColumn(ctx, userID, boardID, data 
 }
 
 // CreateNewBoard mocks base method.
-func (m *MockBoardUsecase) CreateNewBoard(ctx context.Context, userID int, data models.CreateBoardRequest) (*models.Board, error) {
+func (m *MockBoardUsecase) CreateNewBoard(ctx context.Context, userID int64, data models.BoardRequest) (*models.Board, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CreateNewBoard", ctx, userID, data)
 	ret0, _ := ret[0].(*models.Board)
@@ -82,7 +157,7 @@ func (mr *MockBoardUsecaseMockRecorder) CreateNewBoard(ctx, userID, data interfa
 }
 
 // CreateNewCard mocks base method.
-func (m *MockBoardUsecase) CreateNewCard(ctx context.Context, userID, boardID int, data *models.CardPatchRequest) (*models.Card, error) {
+func (m *MockBoardUsecase) CreateNewCard(ctx context.Context, userID, boardID int64, data *models.CardPatchRequest) (*models.Card, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CreateNewCard", ctx, userID, boardID, data)
 	ret0, _ := ret[0].(*models.Card)
@@ -96,8 +171,36 @@ func (mr *MockBoardUsecaseMockRecorder) CreateNewCard(ctx, userID, boardID, data
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateNewCard", reflect.TypeOf((*MockBoardUsecase)(nil).CreateNewCard), ctx, userID, boardID, data)
 }
 
+// DeassignUser mocks base method.
+func (m *MockBoardUsecase) DeassignUser(ctx context.Context, userID, cardID, assignedUserID int64) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeassignUser", ctx, userID, cardID, assignedUserID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeassignUser indicates an expected call of DeassignUser.
+func (mr *MockBoardUsecaseMockRecorder) DeassignUser(ctx, userID, cardID, assignedUserID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeassignUser", reflect.TypeOf((*MockBoardUsecase)(nil).DeassignUser), ctx, userID, cardID, assignedUserID)
+}
+
+// DeleteAttachment mocks base method.
+func (m *MockBoardUsecase) DeleteAttachment(ctx context.Context, userID, attachmentID int64) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteAttachment", ctx, userID, attachmentID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteAttachment indicates an expected call of DeleteAttachment.
+func (mr *MockBoardUsecaseMockRecorder) DeleteAttachment(ctx, userID, attachmentID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteAttachment", reflect.TypeOf((*MockBoardUsecase)(nil).DeleteAttachment), ctx, userID, attachmentID)
+}
+
 // DeleteBoard mocks base method.
-func (m *MockBoardUsecase) DeleteBoard(ctx context.Context, userID, boardID int) error {
+func (m *MockBoardUsecase) DeleteBoard(ctx context.Context, userID, boardID int64) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "DeleteBoard", ctx, userID, boardID)
 	ret0, _ := ret[0].(error)
@@ -111,7 +214,7 @@ func (mr *MockBoardUsecaseMockRecorder) DeleteBoard(ctx, userID, boardID interfa
 }
 
 // DeleteCard mocks base method.
-func (m *MockBoardUsecase) DeleteCard(ctx context.Context, userID, boardID, cardID int) error {
+func (m *MockBoardUsecase) DeleteCard(ctx context.Context, userID, boardID, cardID int64) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "DeleteCard", ctx, userID, boardID, cardID)
 	ret0, _ := ret[0].(error)
@@ -124,8 +227,36 @@ func (mr *MockBoardUsecaseMockRecorder) DeleteCard(ctx, userID, boardID, cardID 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteCard", reflect.TypeOf((*MockBoardUsecase)(nil).DeleteCard), ctx, userID, boardID, cardID)
 }
 
+// DeleteCardCover mocks base method.
+func (m *MockBoardUsecase) DeleteCardCover(ctx context.Context, userID, cardID int64) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteCardCover", ctx, userID, cardID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteCardCover indicates an expected call of DeleteCardCover.
+func (mr *MockBoardUsecaseMockRecorder) DeleteCardCover(ctx, userID, cardID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteCardCover", reflect.TypeOf((*MockBoardUsecase)(nil).DeleteCardCover), ctx, userID, cardID)
+}
+
+// DeleteCheckListField mocks base method.
+func (m *MockBoardUsecase) DeleteCheckListField(ctx context.Context, userID, fieldID int64) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteCheckListField", ctx, userID, fieldID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteCheckListField indicates an expected call of DeleteCheckListField.
+func (mr *MockBoardUsecaseMockRecorder) DeleteCheckListField(ctx, userID, fieldID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteCheckListField", reflect.TypeOf((*MockBoardUsecase)(nil).DeleteCheckListField), ctx, userID, fieldID)
+}
+
 // DeleteColumn mocks base method.
-func (m *MockBoardUsecase) DeleteColumn(ctx context.Context, userID, boardID, columnID int) error {
+func (m *MockBoardUsecase) DeleteColumn(ctx context.Context, userID, boardID, columnID int64) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "DeleteColumn", ctx, userID, boardID, columnID)
 	ret0, _ := ret[0].(error)
@@ -138,8 +269,51 @@ func (mr *MockBoardUsecaseMockRecorder) DeleteColumn(ctx, userID, boardID, colum
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteColumn", reflect.TypeOf((*MockBoardUsecase)(nil).DeleteColumn), ctx, userID, boardID, columnID)
 }
 
+// DeleteComment mocks base method.
+func (m *MockBoardUsecase) DeleteComment(ctx context.Context, userID, commentID int64) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteComment", ctx, userID, commentID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteComment indicates an expected call of DeleteComment.
+func (mr *MockBoardUsecaseMockRecorder) DeleteComment(ctx, userID, commentID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteComment", reflect.TypeOf((*MockBoardUsecase)(nil).DeleteComment), ctx, userID, commentID)
+}
+
+// DeleteInviteLink mocks base method.
+func (m *MockBoardUsecase) DeleteInviteLink(ctx context.Context, userID, boardID int64) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteInviteLink", ctx, userID, boardID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteInviteLink indicates an expected call of DeleteInviteLink.
+func (mr *MockBoardUsecaseMockRecorder) DeleteInviteLink(ctx, userID, boardID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteInviteLink", reflect.TypeOf((*MockBoardUsecase)(nil).DeleteInviteLink), ctx, userID, boardID)
+}
+
+// FetchInvite mocks base method.
+func (m *MockBoardUsecase) FetchInvite(ctx context.Context, inviteUUID string) (*models.Board, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FetchInvite", ctx, inviteUUID)
+	ret0, _ := ret[0].(*models.Board)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FetchInvite indicates an expected call of FetchInvite.
+func (mr *MockBoardUsecaseMockRecorder) FetchInvite(ctx, inviteUUID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FetchInvite", reflect.TypeOf((*MockBoardUsecase)(nil).FetchInvite), ctx, inviteUUID)
+}
+
 // GetBoardContent mocks base method.
-func (m *MockBoardUsecase) GetBoardContent(ctx context.Context, userID, boardID int) (*models.BoardContent, error) {
+func (m *MockBoardUsecase) GetBoardContent(ctx context.Context, userID, boardID int64) (*models.BoardContent, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetBoardContent", ctx, userID, boardID)
 	ret0, _ := ret[0].(*models.BoardContent)
@@ -154,7 +328,7 @@ func (mr *MockBoardUsecaseMockRecorder) GetBoardContent(ctx, userID, boardID int
 }
 
 // GetMembersPermissions mocks base method.
-func (m *MockBoardUsecase) GetMembersPermissions(ctx context.Context, userID, boardID int) ([]models.MemberWithPermissions, error) {
+func (m *MockBoardUsecase) GetMembersPermissions(ctx context.Context, userID, boardID int64) ([]models.MemberWithPermissions, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetMembersPermissions", ctx, userID, boardID)
 	ret0, _ := ret[0].([]models.MemberWithPermissions)
@@ -169,7 +343,7 @@ func (mr *MockBoardUsecaseMockRecorder) GetMembersPermissions(ctx, userID, board
 }
 
 // GetMyBoards mocks base method.
-func (m *MockBoardUsecase) GetMyBoards(ctx context.Context, userID int) ([]models.Board, error) {
+func (m *MockBoardUsecase) GetMyBoards(ctx context.Context, userID int64) ([]models.Board, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetMyBoards", ctx, userID)
 	ret0, _ := ret[0].([]models.Board)
@@ -183,8 +357,67 @@ func (mr *MockBoardUsecaseMockRecorder) GetMyBoards(ctx, userID interface{}) *go
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMyBoards", reflect.TypeOf((*MockBoardUsecase)(nil).GetMyBoards), ctx, userID)
 }
 
+// GetSharedCard mocks base method.
+func (m *MockBoardUsecase) GetSharedCard(ctx context.Context, userID int64, cardUuid string) (*models.SharedCardFoundResponse, *models.SharedCardDummyResponse, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetSharedCard", ctx, userID, cardUuid)
+	ret0, _ := ret[0].(*models.SharedCardFoundResponse)
+	ret1, _ := ret[1].(*models.SharedCardDummyResponse)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
+}
+
+// GetSharedCard indicates an expected call of GetSharedCard.
+func (mr *MockBoardUsecaseMockRecorder) GetSharedCard(ctx, userID, cardUuid interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSharedCard", reflect.TypeOf((*MockBoardUsecase)(nil).GetSharedCard), ctx, userID, cardUuid)
+}
+
+// MoveCard mocks base method.
+func (m *MockBoardUsecase) MoveCard(ctx context.Context, userID, cardID int64, moveReq *models.CardMoveRequest) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "MoveCard", ctx, userID, cardID, moveReq)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// MoveCard indicates an expected call of MoveCard.
+func (mr *MockBoardUsecaseMockRecorder) MoveCard(ctx, userID, cardID, moveReq interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MoveCard", reflect.TypeOf((*MockBoardUsecase)(nil).MoveCard), ctx, userID, cardID, moveReq)
+}
+
+// MoveColumn mocks base method.
+func (m *MockBoardUsecase) MoveColumn(ctx context.Context, userID, columnID int64, moveReq *models.ColumnMoveRequest) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "MoveColumn", ctx, userID, columnID, moveReq)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// MoveColumn indicates an expected call of MoveColumn.
+func (mr *MockBoardUsecaseMockRecorder) MoveColumn(ctx, userID, columnID, moveReq interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MoveColumn", reflect.TypeOf((*MockBoardUsecase)(nil).MoveColumn), ctx, userID, columnID, moveReq)
+}
+
+// RaiseInviteLink mocks base method.
+func (m *MockBoardUsecase) RaiseInviteLink(ctx context.Context, userID, boardID int64) (*models.InviteLink, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RaiseInviteLink", ctx, userID, boardID)
+	ret0, _ := ret[0].(*models.InviteLink)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// RaiseInviteLink indicates an expected call of RaiseInviteLink.
+func (mr *MockBoardUsecaseMockRecorder) RaiseInviteLink(ctx, userID, boardID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RaiseInviteLink", reflect.TypeOf((*MockBoardUsecase)(nil).RaiseInviteLink), ctx, userID, boardID)
+}
+
 // RemoveMember mocks base method.
-func (m *MockBoardUsecase) RemoveMember(ctx context.Context, userID, boardID, memberID int) error {
+func (m *MockBoardUsecase) RemoveMember(ctx context.Context, userID, boardID, memberID int64) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "RemoveMember", ctx, userID, boardID, memberID)
 	ret0, _ := ret[0].(error)
@@ -198,7 +431,7 @@ func (mr *MockBoardUsecaseMockRecorder) RemoveMember(ctx, userID, boardID, membe
 }
 
 // SetBoardBackground mocks base method.
-func (m *MockBoardUsecase) SetBoardBackground(ctx context.Context, userID, boardID int, file *multipart.File, fileHeader *multipart.FileHeader) (*models.Board, error) {
+func (m *MockBoardUsecase) SetBoardBackground(ctx context.Context, userID, boardID int64, file *multipart.File, fileHeader *multipart.FileHeader) (*models.Board, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SetBoardBackground", ctx, userID, boardID, file, fileHeader)
 	ret0, _ := ret[0].(*models.Board)
@@ -212,8 +445,23 @@ func (mr *MockBoardUsecaseMockRecorder) SetBoardBackground(ctx, userID, boardID,
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetBoardBackground", reflect.TypeOf((*MockBoardUsecase)(nil).SetBoardBackground), ctx, userID, boardID, file, fileHeader)
 }
 
+// SetCardCover mocks base method.
+func (m *MockBoardUsecase) SetCardCover(ctx context.Context, userID, cardID int64, file *multipart.File, fileHeader *multipart.FileHeader) (*models.Card, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SetCardCover", ctx, userID, cardID, file, fileHeader)
+	ret0, _ := ret[0].(*models.Card)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// SetCardCover indicates an expected call of SetCardCover.
+func (mr *MockBoardUsecaseMockRecorder) SetCardCover(ctx, userID, cardID, file, fileHeader interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetCardCover", reflect.TypeOf((*MockBoardUsecase)(nil).SetCardCover), ctx, userID, cardID, file, fileHeader)
+}
+
 // UpdateBoard mocks base method.
-func (m *MockBoardUsecase) UpdateBoard(ctx context.Context, userID, boardID int, data models.BoardRequest) (*models.Board, error) {
+func (m *MockBoardUsecase) UpdateBoard(ctx context.Context, userID, boardID int64, data models.BoardRequest) (*models.Board, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "UpdateBoard", ctx, userID, boardID, data)
 	ret0, _ := ret[0].(*models.Board)
@@ -228,7 +476,7 @@ func (mr *MockBoardUsecaseMockRecorder) UpdateBoard(ctx, userID, boardID, data i
 }
 
 // UpdateCard mocks base method.
-func (m *MockBoardUsecase) UpdateCard(ctx context.Context, userID, boardID, cardID int, data *models.CardPatchRequest) (*models.Card, error) {
+func (m *MockBoardUsecase) UpdateCard(ctx context.Context, userID, boardID, cardID int64, data *models.CardPatchRequest) (*models.Card, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "UpdateCard", ctx, userID, boardID, cardID, data)
 	ret0, _ := ret[0].(*models.Card)
@@ -242,8 +490,23 @@ func (mr *MockBoardUsecaseMockRecorder) UpdateCard(ctx, userID, boardID, cardID,
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateCard", reflect.TypeOf((*MockBoardUsecase)(nil).UpdateCard), ctx, userID, boardID, cardID, data)
 }
 
+// UpdateCheckListField mocks base method.
+func (m *MockBoardUsecase) UpdateCheckListField(ctx context.Context, userID, fieldID int64, fieldReq *models.CheckListFieldPatchRequest) (*models.CheckListField, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateCheckListField", ctx, userID, fieldID, fieldReq)
+	ret0, _ := ret[0].(*models.CheckListField)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// UpdateCheckListField indicates an expected call of UpdateCheckListField.
+func (mr *MockBoardUsecaseMockRecorder) UpdateCheckListField(ctx, userID, fieldID, fieldReq interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateCheckListField", reflect.TypeOf((*MockBoardUsecase)(nil).UpdateCheckListField), ctx, userID, fieldID, fieldReq)
+}
+
 // UpdateColumn mocks base method.
-func (m *MockBoardUsecase) UpdateColumn(ctx context.Context, userID, boardID, columnID int, data *models.ColumnRequest) (*models.Column, error) {
+func (m *MockBoardUsecase) UpdateColumn(ctx context.Context, userID, boardID, columnID int64, data *models.ColumnRequest) (*models.Column, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "UpdateColumn", ctx, userID, boardID, columnID, data)
 	ret0, _ := ret[0].(*models.Column)
@@ -257,8 +520,23 @@ func (mr *MockBoardUsecaseMockRecorder) UpdateColumn(ctx, userID, boardID, colum
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateColumn", reflect.TypeOf((*MockBoardUsecase)(nil).UpdateColumn), ctx, userID, boardID, columnID, data)
 }
 
+// UpdateComment mocks base method.
+func (m *MockBoardUsecase) UpdateComment(ctx context.Context, userID, commentID int64, commentReq *models.CommentRequest) (*models.Comment, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateComment", ctx, userID, commentID, commentReq)
+	ret0, _ := ret[0].(*models.Comment)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// UpdateComment indicates an expected call of UpdateComment.
+func (mr *MockBoardUsecaseMockRecorder) UpdateComment(ctx, userID, commentID, commentReq interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateComment", reflect.TypeOf((*MockBoardUsecase)(nil).UpdateComment), ctx, userID, commentID, commentReq)
+}
+
 // UpdateMemberRole mocks base method.
-func (m *MockBoardUsecase) UpdateMemberRole(ctx context.Context, userID, boardID, memberID int, newRole string) (*models.MemberWithPermissions, error) {
+func (m *MockBoardUsecase) UpdateMemberRole(ctx context.Context, userID, boardID, memberID int64, newRole string) (*models.MemberWithPermissions, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "UpdateMemberRole", ctx, userID, boardID, memberID, newRole)
 	ret0, _ := ret[0].(*models.MemberWithPermissions)
@@ -296,7 +574,7 @@ func (m *MockBoardRepo) EXPECT() *MockBoardRepoMockRecorder {
 }
 
 // AddMember mocks base method.
-func (m *MockBoardRepo) AddMember(ctx context.Context, boardID, adderID, memberUserID int) (*models.MemberWithPermissions, error) {
+func (m *MockBoardRepo) AddMember(ctx context.Context, boardID, adderID, memberUserID int64) (*models.MemberWithPermissions, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "AddMember", ctx, boardID, adderID, memberUserID)
 	ret0, _ := ret[0].(*models.MemberWithPermissions)
@@ -311,7 +589,7 @@ func (mr *MockBoardRepoMockRecorder) AddMember(ctx, boardID, adderID, memberUser
 }
 
 // CreateBoard mocks base method.
-func (m *MockBoardRepo) CreateBoard(ctx context.Context, name string, userID int) (*models.Board, error) {
+func (m *MockBoardRepo) CreateBoard(ctx context.Context, name string, userID int64) (*models.Board, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CreateBoard", ctx, name, userID)
 	ret0, _ := ret[0].(*models.Board)
@@ -326,7 +604,7 @@ func (mr *MockBoardRepoMockRecorder) CreateBoard(ctx, name, userID interface{}) 
 }
 
 // CreateColumn mocks base method.
-func (m *MockBoardRepo) CreateColumn(ctx context.Context, boardId int, title string) (*models.Column, error) {
+func (m *MockBoardRepo) CreateColumn(ctx context.Context, boardId int64, title string) (*models.Column, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CreateColumn", ctx, boardId, title)
 	ret0, _ := ret[0].(*models.Column)
@@ -341,7 +619,7 @@ func (mr *MockBoardRepoMockRecorder) CreateColumn(ctx, boardId, title interface{
 }
 
 // CreateNewCard mocks base method.
-func (m *MockBoardRepo) CreateNewCard(ctx context.Context, boardID, columnID int, title string) (*models.Card, error) {
+func (m *MockBoardRepo) CreateNewCard(ctx context.Context, boardID, columnID int64, title string) (*models.Card, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CreateNewCard", ctx, boardID, columnID, title)
 	ret0, _ := ret[0].(*models.Card)
@@ -356,7 +634,7 @@ func (mr *MockBoardRepoMockRecorder) CreateNewCard(ctx, boardID, columnID, title
 }
 
 // DeleteBoard mocks base method.
-func (m *MockBoardRepo) DeleteBoard(ctx context.Context, boardId int) error {
+func (m *MockBoardRepo) DeleteBoard(ctx context.Context, boardId int64) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "DeleteBoard", ctx, boardId)
 	ret0, _ := ret[0].(error)
@@ -370,7 +648,7 @@ func (mr *MockBoardRepoMockRecorder) DeleteBoard(ctx, boardId interface{}) *gomo
 }
 
 // DeleteCard mocks base method.
-func (m *MockBoardRepo) DeleteCard(ctx context.Context, boardID, cardID int) error {
+func (m *MockBoardRepo) DeleteCard(ctx context.Context, boardID, cardID int64) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "DeleteCard", ctx, boardID, cardID)
 	ret0, _ := ret[0].(error)
@@ -384,7 +662,7 @@ func (mr *MockBoardRepoMockRecorder) DeleteCard(ctx, boardID, cardID interface{}
 }
 
 // DeleteColumn mocks base method.
-func (m *MockBoardRepo) DeleteColumn(ctx context.Context, boardID, columnID int) error {
+func (m *MockBoardRepo) DeleteColumn(ctx context.Context, boardID, columnID int64) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "DeleteColumn", ctx, boardID, columnID)
 	ret0, _ := ret[0].(error)
@@ -398,7 +676,7 @@ func (mr *MockBoardRepoMockRecorder) DeleteColumn(ctx, boardID, columnID interfa
 }
 
 // GetBoard mocks base method.
-func (m *MockBoardRepo) GetBoard(ctx context.Context, boardID, userID int) (*models.Board, error) {
+func (m *MockBoardRepo) GetBoard(ctx context.Context, boardID, userID int64) (*models.Board, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetBoard", ctx, boardID, userID)
 	ret0, _ := ret[0].(*models.Board)
@@ -413,7 +691,7 @@ func (mr *MockBoardRepoMockRecorder) GetBoard(ctx, boardID, userID interface{}) 
 }
 
 // GetBoardsForUser mocks base method.
-func (m *MockBoardRepo) GetBoardsForUser(ctx context.Context, userID int) ([]models.Board, error) {
+func (m *MockBoardRepo) GetBoardsForUser(ctx context.Context, userID int64) ([]models.Board, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetBoardsForUser", ctx, userID)
 	ret0, _ := ret[0].([]models.Board)
@@ -428,7 +706,7 @@ func (mr *MockBoardRepoMockRecorder) GetBoardsForUser(ctx, userID interface{}) *
 }
 
 // GetCardsForBoard mocks base method.
-func (m *MockBoardRepo) GetCardsForBoard(ctx context.Context, boardID int) ([]models.Card, error) {
+func (m *MockBoardRepo) GetCardsForBoard(ctx context.Context, boardID int64) ([]models.Card, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetCardsForBoard", ctx, boardID)
 	ret0, _ := ret[0].([]models.Card)
@@ -443,7 +721,7 @@ func (mr *MockBoardRepoMockRecorder) GetCardsForBoard(ctx, boardID interface{}) 
 }
 
 // GetColumnsForBoard mocks base method.
-func (m *MockBoardRepo) GetColumnsForBoard(ctx context.Context, boardID int) ([]models.Column, error) {
+func (m *MockBoardRepo) GetColumnsForBoard(ctx context.Context, boardID int64) ([]models.Column, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetColumnsForBoard", ctx, boardID)
 	ret0, _ := ret[0].([]models.Column)
@@ -458,7 +736,7 @@ func (mr *MockBoardRepoMockRecorder) GetColumnsForBoard(ctx, boardID interface{}
 }
 
 // GetMemberPermissions mocks base method.
-func (m *MockBoardRepo) GetMemberPermissions(ctx context.Context, boardID, memberUserID int, getAdderInfo bool) (*models.MemberWithPermissions, error) {
+func (m *MockBoardRepo) GetMemberPermissions(ctx context.Context, boardID, memberUserID int64, getAdderInfo bool) (*models.MemberWithPermissions, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetMemberPermissions", ctx, boardID, memberUserID, getAdderInfo)
 	ret0, _ := ret[0].(*models.MemberWithPermissions)
@@ -473,7 +751,7 @@ func (mr *MockBoardRepoMockRecorder) GetMemberPermissions(ctx, boardID, memberUs
 }
 
 // GetMembersWithPermissions mocks base method.
-func (m *MockBoardRepo) GetMembersWithPermissions(ctx context.Context, boardID, userID int) ([]models.MemberWithPermissions, error) {
+func (m *MockBoardRepo) GetMembersWithPermissions(ctx context.Context, boardID, userID int64) ([]models.MemberWithPermissions, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetMembersWithPermissions", ctx, boardID, userID)
 	ret0, _ := ret[0].([]models.MemberWithPermissions)
@@ -503,7 +781,7 @@ func (mr *MockBoardRepoMockRecorder) GetUserByNickname(ctx, nickname interface{}
 }
 
 // GetUserProfile mocks base method.
-func (m *MockBoardRepo) GetUserProfile(ctx context.Context, userID int) (*models.UserProfile, error) {
+func (m *MockBoardRepo) GetUserProfile(ctx context.Context, userID int64) (*models.UserProfile, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetUserProfile", ctx, userID)
 	ret0, _ := ret[0].(*models.UserProfile)
@@ -518,7 +796,7 @@ func (mr *MockBoardRepoMockRecorder) GetUserProfile(ctx, userID interface{}) *go
 }
 
 // RemoveMember mocks base method.
-func (m *MockBoardRepo) RemoveMember(ctx context.Context, boardID, memberUserID int) error {
+func (m *MockBoardRepo) RemoveMember(ctx context.Context, boardID, memberUserID int64) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "RemoveMember", ctx, boardID, memberUserID)
 	ret0, _ := ret[0].(error)
@@ -532,7 +810,7 @@ func (mr *MockBoardRepoMockRecorder) RemoveMember(ctx, boardID, memberUserID int
 }
 
 // SetBoardBackground mocks base method.
-func (m *MockBoardRepo) SetBoardBackground(ctx context.Context, userID, boardID int, fileExtension string, fileSize int) (string, error) {
+func (m *MockBoardRepo) SetBoardBackground(ctx context.Context, userID, boardID int64, fileExtension string, fileSize int64) (string, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SetBoardBackground", ctx, userID, boardID, fileExtension, fileSize)
 	ret0, _ := ret[0].(string)
@@ -547,7 +825,7 @@ func (mr *MockBoardRepoMockRecorder) SetBoardBackground(ctx, userID, boardID, fi
 }
 
 // SetMemberRole mocks base method.
-func (m *MockBoardRepo) SetMemberRole(ctx context.Context, boardID, memberUserID int, newRole string) (*models.MemberWithPermissions, error) {
+func (m *MockBoardRepo) SetMemberRole(ctx context.Context, boardID, memberUserID int64, newRole string) (*models.MemberWithPermissions, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SetMemberRole", ctx, boardID, memberUserID, newRole)
 	ret0, _ := ret[0].(*models.MemberWithPermissions)
@@ -562,7 +840,7 @@ func (mr *MockBoardRepoMockRecorder) SetMemberRole(ctx, boardID, memberUserID, n
 }
 
 // UpdateBoard mocks base method.
-func (m *MockBoardRepo) UpdateBoard(ctx context.Context, boardID, userID int, data *models.BoardRequest) (*models.Board, error) {
+func (m *MockBoardRepo) UpdateBoard(ctx context.Context, boardID, userID int64, data *models.BoardRequest) (*models.Board, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "UpdateBoard", ctx, boardID, userID, data)
 	ret0, _ := ret[0].(*models.Board)
@@ -577,7 +855,7 @@ func (mr *MockBoardRepoMockRecorder) UpdateBoard(ctx, boardID, userID, data inte
 }
 
 // UpdateCard mocks base method.
-func (m *MockBoardRepo) UpdateCard(ctx context.Context, boardID, cardID int, data models.CardPatchRequest) (*models.Card, error) {
+func (m *MockBoardRepo) UpdateCard(ctx context.Context, boardID, cardID int64, data models.CardPatchRequest) (*models.Card, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "UpdateCard", ctx, boardID, cardID, data)
 	ret0, _ := ret[0].(*models.Card)
@@ -592,7 +870,7 @@ func (mr *MockBoardRepoMockRecorder) UpdateCard(ctx, boardID, cardID, data inter
 }
 
 // UpdateColumn mocks base method.
-func (m *MockBoardRepo) UpdateColumn(ctx context.Context, boardID, columnID int, data models.ColumnRequest) (*models.Column, error) {
+func (m *MockBoardRepo) UpdateColumn(ctx context.Context, boardID, columnID int64, data models.ColumnRequest) (*models.Column, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "UpdateColumn", ctx, boardID, columnID, data)
 	ret0, _ := ret[0].(*models.Column)
@@ -607,7 +885,7 @@ func (mr *MockBoardRepoMockRecorder) UpdateColumn(ctx, boardID, columnID, data i
 }
 
 // UpdateLastVisit mocks base method.
-func (m *MockBoardRepo) UpdateLastVisit(ctx context.Context, userID, boardID int) error {
+func (m *MockBoardRepo) UpdateLastVisit(ctx context.Context, userID, boardID int64) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "UpdateLastVisit", ctx, userID, boardID)
 	ret0, _ := ret[0].(error)

@@ -1,7 +1,6 @@
 package auth
 
 import (
-	"RPO_back/internal/models"
 	"context"
 )
 
@@ -21,10 +20,8 @@ type AuthUsecase interface {
 type AuthRepo interface {
 	RegisterSessionRedis(ctx context.Context, cookie string, userID int) error
 	KillSessionRedis(ctx context.Context, sessionID string) error
-	RetrieveUserIDFromSession(ctx context.Context, sessionID string) (userID int, err error)
-	GetUserByEmail(ctx context.Context, email string) (user *models.UserProfile, err error)
-	GetUserByID(ctx context.Context, userID int) (user *models.UserProfile, err error)
-	CreateUser(ctx context.Context, user *models.UserRegisterRequest, hashedPassword string) (newUser *models.UserProfile, err error)
-	CheckUniqueCredentials(ctx context.Context, nickname string, email string) error
+	CheckSession(ctx context.Context, sessionID string) (userID int, err error)
 	SetNewPasswordHash(ctx context.Context, userID int, newPasswordHash string) error
+	GetUserPasswordHashForUser(ctx context.Context, userID int) (passwordHash string, err error)
+	DisplaceUserSessions(ctx context.Context, sessionID string, userID int64) error
 }

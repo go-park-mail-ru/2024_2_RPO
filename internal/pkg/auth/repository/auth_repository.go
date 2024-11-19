@@ -26,13 +26,13 @@ func CreateAuthRepository(postgresDb pgxiface.PgxIface, redisDb *redis.Client) *
 }
 
 // Регистрирует сессионную куку в Redis
-func (r *AuthRepository) RegisterSessionRedis(ctx context.Context, cookie string, userID int) error {
+func (r *AuthRepository) RegisterSessionRedis(ctx context.Context, sessionID string, userID int) error {
 	redisConn := r.redisDb.Conn(r.redisDb.Context())
 	defer redisConn.Close()
 
 	ttl := 7 * 24 * time.Hour
 
-	err := redisConn.Set(r.redisDb.Context(), cookie, userID, ttl).Err()
+	err := redisConn.Set(r.redisDb.Context(), sessionID, userID, ttl).Err()
 	logging.Debug(ctx, "RegisterSessionRedis query to redis has err: ", err)
 	if err != nil {
 		return fmt.Errorf("unable to set session in Redis: %v", err)
@@ -55,8 +55,65 @@ func (r *AuthRepository) KillSessionRedis(ctx context.Context, sessionID string)
 	return nil
 }
 
-// RetrieveUserIdFromSessionId ходит в Redis и получает UserID (или не получает и даёт ошибку errs.ErrNotFound)
-func (r *AuthRepository) RetrieveUserIDFromSession(ctx context.Context, sessionID string) (userID int, err error) {
+func (r *AuthRepository) DisplaceUserSessions(ctx context.Context, sessionID string, userID int64) error {
+	var keysToDelete []string
+
+	cursor := uint64(0)
+	for {
+		keys, newCursor, err := r.redisDb.Scan(ctx, cursor, "*", 100).Result()
+		if err != nil {
+			return fmt.Errorf("error while scanning keys: %w", err)
+		}
+
+		if len(keys) > 0 {
+			pipe := r.redisDb.Pipeline()
+			cmds := make(map[string]*redis.StringCmd)
+
+			for _, key := range keys {
+				cmds[key] = pipe.Get(ctx, key)
+			}
+
+			_, err = pipe.Exec(ctx)
+			if err != nil && err != redis.Nil {
+				return fmt.Errorf("error while executing pipeline: %w", err)
+			}
+
+			for key, cmd := range cmds {
+				val, err := cmd.Result()
+				if err == nil && val == sessionID {
+					userIDFromRedisCmd := pipe.Get(ctx, fmt.Sprintf("%d", userID))
+					userIDFromRedis, err := userIDFromRedisCmd.Result()
+					if err == nil {
+						parseUserIDFromRedis, err := strconv.Atoi(userIDFromRedis)
+						if err == nil && parseUserIDFromRedis != int(userID) {
+							keysToDelete = append(keysToDelete, key)
+						}
+					}
+				}
+			}
+		}
+
+		cursor = newCursor
+		if cursor == 0 {
+			break
+		}
+	}
+
+	if len(keysToDelete) > 0 {
+		count, err := r.redisDb.Del(ctx, keysToDelete...).Result()
+		if err != nil {
+			return fmt.Errorf("error while deleting keys: %w", err)
+		}
+		logging.Info(ctx, "Deleted %d keys", count)
+	} else {
+		logging.Info(ctx, "Keys with specified value not found.")
+	}
+
+	return nil
+}
+
+// CheckSession ходит в Redis и получает UserID (или не получает и даёт ошибку errs.ErrNotFound)
+func (r *AuthRepository) CheckSession(ctx context.Context, sessionID string) (userID int, err error) {
 	redisConn := r.redisDb.Conn(r.redisDb.Context())
 	defer redisConn.Close()
 
