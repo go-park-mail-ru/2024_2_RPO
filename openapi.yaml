@@ -210,14 +210,10 @@ components:
       type: object
       required:
         - name
-        - description
       properties:
         name:
           type: string
           example: "Любимый проект"
-        description:
-          type: string
-          example: "На этой доске размещены задачи любимого проекта! <3"
 
     BoardContent:
       type: object
@@ -261,15 +257,12 @@ components:
           format: date-time
           example: "2023-10-01T12:34:56Z"
         deadline:
-          type: object
-          properties:
-            deadline:
-              type: string
-              format: date-time
-              example: "2023-10-01T12:34:56Z"
-            isDone:
-              type: boolean
-              example: false
+          type: string
+          format: date-time
+          example: "2023-10-01T12:34:56Z"
+        isDone:
+          type: boolean
+          example: false
         hasCheckList:
           type: boolean
           example: false
@@ -1075,13 +1068,7 @@ paths:
               properties:
                 title:
                   type: string
-                  example: "Обновленная задача"
-                description:
-                  type: string
-                  example: "Обновленное описание задачи"
-                status:
-                  type: string
-                  example: "In Progress"
+                  example: "Переустановить windows"
       responses:
         "200":
           description: "Карточка успешно обновлена"
@@ -1763,9 +1750,7 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/InviteLink"
+                $ref: "#/components/schemas/InviteLink"
         "400":
           $ref: "#/components/responses/BadRequestResponse"
         "401":
