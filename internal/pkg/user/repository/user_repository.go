@@ -67,7 +67,7 @@ func (r *UserRepository) GetUserProfile(ctx context.Context, userID int) (profil
 }
 
 // UpdateUserProfile обновляет профиль пользователя
-func (r *UserRepository) UpdateUserProfile(ctx context.Context, userID int, data models.UserProfileUpdate) (newProfile *models.UserProfile, err error) {
+func (r *UserRepository) UpdateUserProfile(ctx context.Context, userID int, data models.UserProfileUpdateRequest) (newProfile *models.UserProfile, err error) {
 	query1 := `SELECT COUNT(*) FROM "user" WHERE email=$1 AND u_id!=$2;`
 	query2 := `SELECT COUNT(*) FROM "user" WHERE nickname=$1 AND u_id!=$2;`
 	query3 := `
@@ -164,12 +164,12 @@ func (r *UserRepository) GetUserByEmail(ctx context.Context, email string) (user
 }
 
 // CreateUser создаёт пользователя (или не создаёт, если повторяются креды)
-func (r *UserRepository) CreateUser(ctx context.Context, user *models.UserRegistration, hashedPassword string) (newUser *models.UserProfile, err error) {
+func (r *UserRepository) CreateUser(ctx context.Context, user *models.UserRegisterRequest, hashedPassword string) (newUser *models.UserProfile, err error) {
 	newUser = &models.UserProfile{}
 	query := `INSERT INTO "user" (nickname, email, password_hash, description, joined_at, updated_at)
               VALUES ($1, $2, $3, $4, $5, $6) RETURNING u_id, nickname, email, password_hash, description, joined_at, updated_at`
 
-	err = repo.db.QueryRow(ctx, query, user.Name, user.Email, "", time.Now(), time.Now()).Scan(
+	err = r.db.QueryRow(ctx, query, user.Name, user.Email, "", time.Now(), time.Now()).Scan(
 		&newUser.ID,
 		&newUser.Name,
 		&newUser.Email,
@@ -182,10 +182,10 @@ func (r *UserRepository) CreateUser(ctx context.Context, user *models.UserRegist
 }
 
 // CheckUniqueCredentials проверяет, существуют ли такие логин и email в базе
-func (repo *UserRepository) CheckUniqueCredentials(ctx context.Context, nickname string, email string) error {
+func (r *UserRepository) CheckUniqueCredentials(ctx context.Context, nickname string, email string) error {
 	query1 := `SELECT nickname, email FROM "user" WHERE nickname = $1 OR email=$2;`
 	var emailCount, nicknameCount int
-	rows, err := repo.db.Query(ctx, query1, nickname)
+	rows, err := r.db.Query(ctx, query1, nickname)
 	logging.Debug(ctx, "CheckUniqueCredentials query has err: ", err)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {

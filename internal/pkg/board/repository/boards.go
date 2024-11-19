@@ -87,14 +87,14 @@ func (r *BoardRepository) GetBoard(ctx context.Context, boardID int, userID int)
 }
 
 // UpdateBoard обновляет информацию о доске
-func (r *BoardRepository) UpdateBoard(ctx context.Context, boardID int, userID int, data *models.BoardPutRequest) (updatedBoard *models.Board, err error) {
+func (r *BoardRepository) UpdateBoard(ctx context.Context, boardID int, userID int, data *models.BoardRequest) (updatedBoard *models.Board, err error) {
 	query := `
 		UPDATE board
-		SET name=$1, description=$2, updated_at = CURRENT_TIMESTAMP
+		SET name=$1, updated_at = CURRENT_TIMESTAMP
 		WHERE board_id = $3;
 	`
 
-	tag, err := r.db.Exec(ctx, query, data.NewName, data.NewDescription, boardID)
+	tag, err := r.db.Exec(ctx, query, data.NewName, boardID)
 	logging.Debug(ctx, "UpdateBoard query has err: ", err, " tag: ", tag)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -108,7 +108,7 @@ func (r *BoardRepository) UpdateBoard(ctx context.Context, boardID int, userID i
 	return r.GetBoard(ctx, boardID, userID)
 }
 
-// DeleteBoard удаляет доску по Id
+// DeleteBoard удаляет доску по ID
 func (r *BoardRepository) DeleteBoard(ctx context.Context, boardID int) error {
 	query := `
 		DELETE FROM board

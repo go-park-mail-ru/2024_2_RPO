@@ -88,7 +88,7 @@ func (r *BoardRepository) CreateNewCard(ctx context.Context, boardID int, column
 }
 
 // UpdateCard обновляет карточку
-func (r *BoardRepository) UpdateCard(ctx context.Context, boardID int, cardID int, data models.CardPutRequest) (updateCard *models.Card, err error) {
+func (r *BoardRepository) UpdateCard(ctx context.Context, boardID int, cardID int, data models.CardPatchRequest) (updateCard *models.Card, err error) {
 	query := `
 	UPDATE card
 	SET

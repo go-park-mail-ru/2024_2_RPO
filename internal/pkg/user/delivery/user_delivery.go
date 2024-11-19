@@ -44,7 +44,7 @@ func (d *UserDelivery) UpdateMyProfile(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	data := models.UserProfileUpdate{}
+	data := models.UserProfileUpdateRequest{}
 	err := requests.GetRequestData(r, &data)
 	if err != nil {
 		responses.DoBadResponse(w, 400, "bad request")

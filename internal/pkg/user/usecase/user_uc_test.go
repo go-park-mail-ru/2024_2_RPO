@@ -54,7 +54,7 @@ func TestUserUsecase_UpdateMyProfile(t *testing.T) {
 	userUsecase := usecase.CreateUserUsecase(mockUserRepo)
 
 	t.Run("successful profile update", func(t *testing.T) {
-		updateData := &models.UserProfileUpdate{
+		updateData := &models.UserProfileUpdateRequest{
 			NewName: "Updated User",
 			Email:   "updateduser@example.com",
 		}
@@ -75,7 +75,7 @@ func TestUserUsecase_UpdateMyProfile(t *testing.T) {
 	})
 
 	t.Run("failed profile update", func(t *testing.T) {
-		updateData := &models.UserProfileUpdate{
+		updateData := &models.UserProfileUpdateRequest{
 			NewName: "Updated User",
 			Email:   "updateduser@example.com",
 		}

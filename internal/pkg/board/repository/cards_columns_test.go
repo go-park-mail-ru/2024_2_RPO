@@ -51,7 +51,7 @@ func TestUpdateCard(t *testing.T) {
 		WithArgs("Updated Title", 2, 1, 1).
 		WillReturnError(errors.New("some error"))
 
-	data := models.CardPutRequest{
+	data := models.CardPatchRequest{
 		NewTitle:    "Updated Title",
 		NewColumnID: 2,
 	}

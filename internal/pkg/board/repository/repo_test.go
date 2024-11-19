@@ -326,7 +326,7 @@ func TestUpdateBoard(t *testing.T) {
 	ctx := context.Background()
 	boardID := 1
 	userID := 1
-	data := &models.BoardPutRequest{
+	data := &models.BoardRequest{
 		NewName:        "Updated Name",
 		NewDescription: "Updated Description",
 	}

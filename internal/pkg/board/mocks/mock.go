@@ -82,7 +82,7 @@ func (mr *MockBoardUsecaseMockRecorder) CreateNewBoard(ctx, userID, data interfa
 }
 
 // CreateNewCard mocks base method.
-func (m *MockBoardUsecase) CreateNewCard(ctx context.Context, userID, boardID int, data *models.CardPutRequest) (*models.Card, error) {
+func (m *MockBoardUsecase) CreateNewCard(ctx context.Context, userID, boardID int, data *models.CardPatchRequest) (*models.Card, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CreateNewCard", ctx, userID, boardID, data)
 	ret0, _ := ret[0].(*models.Card)
@@ -213,7 +213,7 @@ func (mr *MockBoardUsecaseMockRecorder) SetBoardBackground(ctx, userID, boardID,
 }
 
 // UpdateBoard mocks base method.
-func (m *MockBoardUsecase) UpdateBoard(ctx context.Context, userID, boardID int, data models.BoardPutRequest) (*models.Board, error) {
+func (m *MockBoardUsecase) UpdateBoard(ctx context.Context, userID, boardID int, data models.BoardRequest) (*models.Board, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "UpdateBoard", ctx, userID, boardID, data)
 	ret0, _ := ret[0].(*models.Board)
@@ -228,7 +228,7 @@ func (mr *MockBoardUsecaseMockRecorder) UpdateBoard(ctx, userID, boardID, data i
 }
 
 // UpdateCard mocks base method.
-func (m *MockBoardUsecase) UpdateCard(ctx context.Context, userID, boardID, cardID int, data *models.CardPutRequest) (*models.Card, error) {
+func (m *MockBoardUsecase) UpdateCard(ctx context.Context, userID, boardID, cardID int, data *models.CardPatchRequest) (*models.Card, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "UpdateCard", ctx, userID, boardID, cardID, data)
 	ret0, _ := ret[0].(*models.Card)
@@ -562,7 +562,7 @@ func (mr *MockBoardRepoMockRecorder) SetMemberRole(ctx, boardID, memberUserID, n
 }
 
 // UpdateBoard mocks base method.
-func (m *MockBoardRepo) UpdateBoard(ctx context.Context, boardID, userID int, data *models.BoardPutRequest) (*models.Board, error) {
+func (m *MockBoardRepo) UpdateBoard(ctx context.Context, boardID, userID int, data *models.BoardRequest) (*models.Board, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "UpdateBoard", ctx, boardID, userID, data)
 	ret0, _ := ret[0].(*models.Board)
@@ -577,7 +577,7 @@ func (mr *MockBoardRepoMockRecorder) UpdateBoard(ctx, boardID, userID, data inte
 }
 
 // UpdateCard mocks base method.
-func (m *MockBoardRepo) UpdateCard(ctx context.Context, boardID, cardID int, data models.CardPutRequest) (*models.Card, error) {
+func (m *MockBoardRepo) UpdateCard(ctx context.Context, boardID, cardID int, data models.CardPatchRequest) (*models.Card, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "UpdateCard", ctx, boardID, cardID, data)
 	ret0, _ := ret[0].(*models.Card)

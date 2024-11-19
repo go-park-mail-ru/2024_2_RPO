@@ -31,7 +31,6 @@ CREATE TYPE user_role AS ENUM (
 CREATE TABLE board (
     board_id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     "name" TEXT NOT NULL,
-    "description" TEXT NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     created_by BIGINT,
     background_image_id BIGINT,
@@ -71,7 +70,6 @@ CREATE TABLE "card" (
     card_id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     card_uuid UUID NOT NULL DEFAULT uuid_generate_v4(), -- UUID для ссылки на карточку
     col_id BIGINT NOT NULL,
-    title TEXT NOT NULL,
     order_index INTEGER, -- Порядковый номер карточки в колонке
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,

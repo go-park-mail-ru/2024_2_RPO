@@ -79,7 +79,7 @@ func (mr *MockAuthUsecaseMockRecorder) LogoutUser(ctx, sessionID interface{}) *g
 }
 
 // RegisterUser mocks base method.
-func (m *MockAuthUsecase) RegisterUser(ctx context.Context, user *models.UserRegistration) (string, error) {
+func (m *MockAuthUsecase) RegisterUser(ctx context.Context, user *models.UserRegisterRequest) (string, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "RegisterUser", ctx, user)
 	ret0, _ := ret[0].(string)
@@ -131,7 +131,7 @@ func (mr *MockAuthRepoMockRecorder) CheckUniqueCredentials(ctx, nickname, email 
 }
 
 // CreateUser mocks base method.
-func (m *MockAuthRepo) CreateUser(ctx context.Context, user *models.UserRegistration, hashedPassword string) (*models.UserProfile, error) {
+func (m *MockAuthRepo) CreateUser(ctx context.Context, user *models.UserRegisterRequest, hashedPassword string) (*models.UserProfile, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CreateUser", ctx, user, hashedPassword)
 	ret0, _ := ret[0].(*models.UserProfile)

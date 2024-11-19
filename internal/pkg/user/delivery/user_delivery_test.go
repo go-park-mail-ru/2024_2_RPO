@@ -53,7 +53,7 @@ func TestUpdateMyProfile(t *testing.T) {
 	handler := CreateUserDelivery(mockUserUC)
 
 	oldProfile := models.UserProfile{ID: 1, Name: "John Smith"}
-	updateData := models.UserProfileUpdate{NewName: "Romanov Vasily", Email: "rvasily@google.com"}
+	updateData := models.UserProfileUpdateRequest{NewName: "Romanov Vasily", Email: "rvasily@google.com"}
 
 	mockUserUC.EXPECT().UpdateMyProfile(gomock.Any(), 1, &updateData).Return(&oldProfile, nil)
 

@@ -29,7 +29,7 @@ func (uc *UserUsecase) GetMyProfile(ctx context.Context, userID int) (profile *m
 }
 
 // UpdateMyProfile обновляет профиль пользователя и возвращает обновлённый профиль
-func (uc *UserUsecase) UpdateMyProfile(ctx context.Context, userID int, data *models.UserProfileUpdate) (updatedProfile *models.UserProfile, err error) {
+func (uc *UserUsecase) UpdateMyProfile(ctx context.Context, userID int, data *models.UserProfileUpdateRequest) (updatedProfile *models.UserProfile, err error) {
 	updatedProfile, err = uc.userRepo.UpdateUserProfile(ctx, userID, *data)
 	return
 }

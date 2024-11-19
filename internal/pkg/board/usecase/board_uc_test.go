@@ -100,7 +100,7 @@ func TestBoardUsecase_UpdateBoard(t *testing.T) {
 		name                 string
 		userID               int
 		boardID              int
-		request              models.BoardPutRequest
+		request              models.BoardRequest
 		setupMock            func()
 		expectedError        bool
 		expectedBoardChecker func(*models.Board) bool
@@ -109,7 +109,7 @@ func TestBoardUsecase_UpdateBoard(t *testing.T) {
 			name:    "successful board update by admin",
 			userID:  1,
 			boardID: 1,
-			request: models.BoardPutRequest{NewName: "Updated Board"},
+			request: models.BoardRequest{NewName: "Updated Board"},
 			setupMock: func() {
 				mockBoardRepo.EXPECT().GetMemberPermissions(gomock.Any(), 1, 1, false).Return(&models.MemberWithPermissions{Role: "admin"}, nil)
 				mockBoardRepo.EXPECT().UpdateBoard(gomock.Any(), 1, 1, gomock.Any()).Return(&models.Board{Name: "Updated Board"}, nil)
@@ -123,7 +123,7 @@ func TestBoardUsecase_UpdateBoard(t *testing.T) {
 			name:    "successful board update by editor chief",
 			userID:  2,
 			boardID: 1,
-			request: models.BoardPutRequest{NewName: "Updated Board by Editor Chief"},
+			request: models.BoardRequest{NewName: "Updated Board by Editor Chief"},
 			setupMock: func() {
 				mockBoardRepo.EXPECT().GetMemberPermissions(gomock.Any(), 1, 2, false).Return(&models.MemberWithPermissions{Role: "editor_chief"}, nil)
 				mockBoardRepo.EXPECT().UpdateBoard(gomock.Any(), 1, 1, gomock.Any()).Return(&models.Board{Name: "Updated Board by Editor Chief"}, nil)
@@ -137,7 +137,7 @@ func TestBoardUsecase_UpdateBoard(t *testing.T) {
 			name:    "permission denied to update board",
 			userID:  3,
 			boardID: 1,
-			request: models.BoardPutRequest{NewName: "Unauthorized Update"},
+			request: models.BoardRequest{NewName: "Unauthorized Update"},
 			setupMock: func() {
 				mockBoardRepo.EXPECT().GetMemberPermissions(gomock.Any(), 1, 3, false).Return(&models.MemberWithPermissions{Role: "editor"}, nil)
 			},
@@ -150,7 +150,7 @@ func TestBoardUsecase_UpdateBoard(t *testing.T) {
 			name:    "error fetching permissions",
 			userID:  4,
 			boardID: 1,
-			request: models.BoardPutRequest{NewName: "Error Fetching Permissions"},
+			request: models.BoardRequest{NewName: "Error Fetching Permissions"},
 			setupMock: func() {
 				mockBoardRepo.EXPECT().GetMemberPermissions(gomock.Any(), 1, 4, false).Return(nil, errors.New("error fetching permissions"))
 			},
@@ -695,7 +695,7 @@ func TestBoardUsecase_CreateNewCard(t *testing.T) {
 	mockBoardRepo := mocks.NewMockBoardRepo(ctrl)
 	boardUsecase := BoardUsecase.CreateBoardUsecase(mockBoardRepo)
 
-	cardRequest := &models.CardPutRequest{NewColumnID: 10, NewTitle: "New Card"}
+	cardRequest := &models.CardPatchRequest{NewColumnID: 10, NewTitle: "New Card"}
 
 	tests := []struct {
 		name          string
@@ -761,7 +761,7 @@ func TestBoardUsecase_UpdateCard(t *testing.T) {
 	mockBoardRepo := mocks.NewMockBoardRepo(ctrl)
 	boardUsecase := BoardUsecase.CreateBoardUsecase(mockBoardRepo)
 
-	cardRequest := &models.CardPutRequest{NewColumnID: 10, NewTitle: "Updated Card"}
+	cardRequest := &models.CardPatchRequest{NewColumnID: 10, NewTitle: "Updated Card"}
 
 	tests := []struct {
 		name          string

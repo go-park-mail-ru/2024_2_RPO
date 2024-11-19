@@ -67,7 +67,7 @@ func (mr *MockUserUsecaseMockRecorder) SetMyAvatar(ctx, userID, file, fileHeader
 }
 
 // UpdateMyProfile mocks base method.
-func (m *MockUserUsecase) UpdateMyProfile(ctx context.Context, userID int, data *models.UserProfileUpdate) (*models.UserProfile, error) {
+func (m *MockUserUsecase) UpdateMyProfile(ctx context.Context, userID int, data *models.UserProfileUpdateRequest) (*models.UserProfile, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "UpdateMyProfile", ctx, userID, data)
 	ret0, _ := ret[0].(*models.UserProfile)
@@ -135,7 +135,7 @@ func (mr *MockUserRepoMockRecorder) SetUserAvatar(ctx, userID, fileExtension, fi
 }
 
 // UpdateUserProfile mocks base method.
-func (m *MockUserRepo) UpdateUserProfile(ctx context.Context, userID int, data models.UserProfileUpdate) (*models.UserProfile, error) {
+func (m *MockUserRepo) UpdateUserProfile(ctx context.Context, userID int, data models.UserProfileUpdateRequest) (*models.UserProfile, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "UpdateUserProfile", ctx, userID, data)
 	ret0, _ := ret[0].(*models.UserProfile)

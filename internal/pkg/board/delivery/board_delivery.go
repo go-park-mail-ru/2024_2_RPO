@@ -59,7 +59,7 @@ func (d *BoardDelivery) UpdateBoard(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	data := models.BoardPutRequest{}
+	data := models.BoardRequest{}
 	err = requests.GetRequestData(r, &data)
 	if err != nil {
 		responses.DoBadResponse(w, http.StatusBadRequest, "bad request")
@@ -255,7 +255,7 @@ func (d *BoardDelivery) CreateNewCard(w http.ResponseWriter, r *http.Request) {
 		responses.DoBadResponse(w, http.StatusBadRequest, "bad request")
 		return
 	}
-	requestData := &models.CardPutRequest{}
+	requestData := &models.CardPatchRequest{}
 	err = requests.GetRequestData(r, requestData)
 	if err != nil {
 		responses.DoBadResponse(w, http.StatusBadRequest, "bad request")
@@ -291,7 +291,7 @@ func (d *BoardDelivery) UpdateCard(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	requestData := &models.CardPutRequest{}
+	requestData := &models.CardPatchRequest{}
 	err = requests.GetRequestData(r, requestData)
 	if err != nil {
 		responses.DoBadResponse(w, http.StatusBadRequest, "bad request")

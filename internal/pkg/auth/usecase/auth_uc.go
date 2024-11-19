@@ -42,7 +42,7 @@ func (uc *AuthUsecase) LoginUser(ctx context.Context, email string, password str
 	return sessionID, nil
 }
 
-func (uc *AuthUsecase) RegisterUser(ctx context.Context, user *models.UserRegistration) (sessionID string, err error) {
+func (uc *AuthUsecase) RegisterUser(ctx context.Context, user *models.UserRegisterRequest) (sessionID string, err error) {
 	err = uc.authRepo.CheckUniqueCredentials(ctx, user.Name, user.Email)
 	if err != nil {
 		return "", err

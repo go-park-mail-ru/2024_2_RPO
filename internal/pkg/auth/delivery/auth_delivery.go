@@ -60,7 +60,7 @@ func (this *AuthDelivery) LoginUser(w http.ResponseWriter, r *http.Request) {
 
 // RegisterUser регистрирует пользователя
 func (this *AuthDelivery) RegisterUser(w http.ResponseWriter, r *http.Request) {
-	var user models.UserRegistration
+	var user models.UserRegisterRequest
 	err := requests.GetRequestData(r, &user)
 	if err != nil {
 		log.Error("AuthDelivery Parsing JSON: ", err)

@@ -125,7 +125,7 @@ func TestUpdateBoard(t *testing.T) {
 	t.Run("successful board update", func(t *testing.T) {
 		userID := 1
 		boardID := 1
-		reqData := models.BoardPutRequest{NewName: "Updated Board"}
+		reqData := models.BoardRequest{NewName: "Updated Board"}
 		expectedBoard := models.Board{ID: boardID, Name: reqData.NewName, Description: "", BackgroundImageURL: "", CreatedAt: time.Date(1, time.January, 1, 0, 0, 0, 0, time.UTC), UpdatedAt: time.Date(1, time.January, 1, 0, 0, 0, 0, time.UTC)}
 
 		mockBoardUsecase.EXPECT().UpdateBoard(gomock.Any(), userID, boardID, reqData).Return(&expectedBoard, nil)
@@ -172,7 +172,7 @@ func TestUpdateBoard(t *testing.T) {
 	t.Run("usecase returns error", func(t *testing.T) {
 		userID := 1
 		boardID := 1
-		reqData := models.BoardPutRequest{NewName: "Updated Board"}
+		reqData := models.BoardRequest{NewName: "Updated Board"}
 
 		mockBoardUsecase.EXPECT().UpdateBoard(gomock.Any(), userID, boardID, reqData).Return(nil, errors.New("usecase error"))
 
@@ -661,7 +661,7 @@ func TestCreateNewCard(t *testing.T) {
 	t.Run("successful creation of new card", func(t *testing.T) {
 		userID := 1
 		boardID := 1
-		requestData := models.CardPutRequest{NewTitle: "New Task", NewColumnID: 1}
+		requestData := models.CardPatchRequest{NewTitle: "New Task", NewColumnID: 1}
 
 		mockBoardUsecase.EXPECT().CreateNewCard(gomock.Any(), gomock.Eq(userID), gomock.Eq(boardID), gomock.Eq(&requestData)).Return(&models.Card{ID: 1, Title: requestData.NewTitle, ColumnID: requestData.NewColumnID}, nil)
 
@@ -734,7 +734,7 @@ func TestCreateNewCard(t *testing.T) {
 	t.Run("usecase returns error", func(t *testing.T) {
 		userID := 1
 		boardID := 1
-		requestData := models.CardPutRequest{NewTitle: "New Task", NewColumnID: 1}
+		requestData := models.CardPatchRequest{NewTitle: "New Task", NewColumnID: 1}
 
 		mockBoardUsecase.EXPECT().CreateNewCard(gomock.Any(), userID, boardID, &requestData).Return(nil, errors.New("usecase error"))
 
@@ -763,7 +763,7 @@ func TestUpdateCard(t *testing.T) {
 		userID := 1
 		boardID := 1
 		cardID := 1
-		requestData := models.CardPutRequest{NewTitle: "Updated Task", NewColumnID: 1}
+		requestData := models.CardPatchRequest{NewTitle: "Updated Task", NewColumnID: 1}
 
 		mockBoardUsecase.EXPECT().UpdateCard(gomock.Any(), userID, boardID, cardID, &requestData).Return(&models.Card{ID: cardID, Title: requestData.NewTitle, ColumnID: requestData.NewColumnID}, nil)
 
@@ -853,7 +853,7 @@ func TestUpdateCard(t *testing.T) {
 		userID := 1
 		boardID := 1
 		cardID := 1
-		requestData := models.CardPutRequest{NewTitle: "Updated Task", NewColumnID: 1}
+		requestData := models.CardPatchRequest{NewTitle: "Updated Task", NewColumnID: 1}
 
 		mockBoardUsecase.EXPECT().UpdateCard(gomock.Any(), userID, boardID, cardID, &requestData).Return(nil, errors.New("usecase error"))
 

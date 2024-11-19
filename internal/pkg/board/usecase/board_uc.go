@@ -49,7 +49,7 @@ func (uc *BoardUsecase) CreateNewBoard(ctx context.Context, userID int, data mod
 }
 
 // UpdateBoard обновляет информацию о доске и возвращает обновлённую информацию
-func (uc *BoardUsecase) UpdateBoard(ctx context.Context, userID int, boardID int, data models.BoardPutRequest) (updatedBoard *models.Board, err error) {
+func (uc *BoardUsecase) UpdateBoard(ctx context.Context, userID int, boardID int, data models.BoardRequest) (updatedBoard *models.Board, err error) {
 	deleterMember, err := uc.boardRepository.GetMemberPermissions(ctx, boardID, userID, false)
 	if err != nil {
 		return nil, fmt.Errorf("GetMembersPermissions (getting editor perm-s): %w", err)
@@ -213,7 +213,7 @@ func (uc *BoardUsecase) GetBoardContent(ctx context.Context, userID int, boardID
 }
 
 // CreateNewCard создаёт новую карточку и возвращает её
-func (uc *BoardUsecase) CreateNewCard(ctx context.Context, userID int, boardID int, data *models.CardPutRequest) (newCard *models.Card, err error) {
+func (uc *BoardUsecase) CreateNewCard(ctx context.Context, userID int, boardID int, data *models.CardPatchRequest) (newCard *models.Card, err error) {
 	perms, err := uc.boardRepository.GetMemberPermissions(ctx, boardID, userID, false)
 	if err != nil {
 		if errors.Is(err, errs.ErrNotPermitted) {
@@ -243,7 +243,7 @@ func (uc *BoardUsecase) CreateNewCard(ctx context.Context, userID int, boardID i
 }
 
 // UpdateCard обновляет карточку и возвращает обновлённую версию
-func (uc *BoardUsecase) UpdateCard(ctx context.Context, userID int, boardID int, cardID int, data *models.CardPutRequest) (updatedCard *models.Card, err error) {
+func (uc *BoardUsecase) UpdateCard(ctx context.Context, userID int, boardID int, cardID int, data *models.CardPatchRequest) (updatedCard *models.Card, err error) {
 	perms, err := uc.boardRepository.GetMemberPermissions(ctx, boardID, userID, false)
 	if err != nil {
 		if errors.Is(err, errs.ErrNotPermitted) {

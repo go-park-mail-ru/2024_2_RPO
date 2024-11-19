@@ -71,7 +71,7 @@ func TestCreateUser_Success(t *testing.T) {
 
 	mock.ExpectQuery(query).WithArgs("testnickname", "testemail", "hashedpassword", "", pgxmock.AnyArg(), pgxmock.AnyArg()).WillReturnRows(rows)
 
-	_, err = repo.CreateUser(ctx, &models.UserRegistration{Name: "testnickname", Email: "testemail"}, "hashedpassword")
+	_, err = repo.CreateUser(ctx, &models.UserRegisterRequest{Name: "testnickname", Email: "testemail"}, "hashedpassword")
 	if err != nil {
 		t.Errorf("expected no error, but got %v", err)
 	}
