@@ -15,7 +15,7 @@ CREATE TABLE "user" (
     "description" TEXT NOT NULL,
     joined_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    password_hash TEXT NOT NULL,
+    password_hash TEXT,
     email TEXT UNIQUE NOT NULL,
     avatar_file_id BIGINT,
     FOREIGN KEY (avatar_file_id) REFERENCES user_uploaded_file(file_id) ON UPDATE CASCADE ON DELETE SET NULL
@@ -161,7 +161,3 @@ CREATE TABLE card_user_assignment (
 --     FOREIGN KEY (updated_by) REFERENCES "user"(u_id) ON UPDATE CASCADE ON DELETE CASCADE,
 --     FOREIGN KEY (assigned_member) REFERENCES "user"(u_id) ON UPDATE CASCADE ON DELETE CASCADE
 -- );
-
-CREATE TABLE tarasovxx(
-    tarasovxx_id BIGINT GENERATED ALWAYS AS IDENTITY
-);

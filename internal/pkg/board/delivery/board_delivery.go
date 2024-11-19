@@ -412,13 +412,7 @@ func (d *BoardDelivery) DeleteColumn(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	boardID, err := requests.GetIDFromRequest(r, "boardId", "board_")
-	if err != nil {
-		responses.DoBadResponse(w, http.StatusBadRequest, "bad request")
-		return
-	}
-
-	columnID, err := requests.GetIDFromRequest(r, "columnId", "column_")
+	columnID, err := requests.GetIDFromRequest(r, "columnID", "column_")
 	if err != nil {
 		responses.DoBadResponse(w, http.StatusBadRequest, "bad request")
 		return
@@ -441,7 +435,7 @@ func (d *BoardDelivery) SetBoardBackground(w http.ResponseWriter, r *http.Reques
 	if !ok {
 		return
 	}
-	boardID, err := requests.GetIDFromRequest(r, "boardId", "board_")
+	boardID, err := requests.GetIDFromRequest(r, "boardID", "board_")
 	if err != nil {
 		responses.DoBadResponse(w, http.StatusBadRequest, "bad request")
 		return
@@ -475,16 +469,6 @@ func (d *BoardDelivery) AssignUser(w http.ResponseWriter, r *http.Request) {
 
 // DeassignUser отменяет назначение карточки пользователю
 func (d *BoardDelivery) DeassignUser(w http.ResponseWriter, r *http.Request) {
-	panic("not implemented")
-}
-
-// SetDeadline устанавливает срок выполнения задачи или отметку о её выполнении
-func (d *BoardDelivery) SetDeadline(w http.ResponseWriter, r *http.Request) {
-	panic("not implemented")
-}
-
-// DeleteDeadline удаляет срок выполнения задачи и отметку о её выполнении с карточки
-func (d *BoardDelivery) DeleteDeadline(w http.ResponseWriter, r *http.Request) {
 	panic("not implemented")
 }
 

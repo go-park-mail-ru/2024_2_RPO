@@ -15,7 +15,6 @@ type UserProfile struct {
 	Description    string    `json:"description"`
 	JoinedAt       time.Time `json:"joinedAt"`
 	UpdatedAt      time.Time `json:"updatedAt"`
-	PasswordHash   string    `json:"-"`
 	AvatarImageURL string    `json:"avatarImageUrl"`
 }
 

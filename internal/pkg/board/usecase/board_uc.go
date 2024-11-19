@@ -395,22 +395,12 @@ func (uc *BoardUsecase) SetBoardBackground(ctx context.Context, userID int, boar
 }
 
 // AssignUser назначает карточку пользователю
-func (uc *BoardUsecase) AssignUser(ctx context.Context) (err error) {
+func (uc *BoardUsecase) AssignUser(ctx context.Context, userID int, cardID int, assignedUserID int) (assignedUser *models.UserProfile, err error) {
 	panic("not implemented")
 }
 
 // DeassignUser отменяет назначение карточки пользователю
-func (uc *BoardUsecase) DeassignUser(ctx context.Context) (err error) {
-	panic("not implemented")
-}
-
-// SetDeadline устанавливает срок выполнения задачи или отметку о её выполнении
-func (uc *BoardUsecase) SetDeadline(ctx context.Context) (err error) {
-	panic("not implemented")
-}
-
-// DeleteDeadline удаляет срок выполнения задачи и отметку о её выполнении с карточки
-func (uc *BoardUsecase) DeleteDeadline(ctx context.Context) (err error) {
+func (uc *BoardUsecase) DeassignUser(ctx context.Context, userID int, cardID int, assignedUserID int) (err error) {
 	panic("not implemented")
 }
 

@@ -77,33 +77,6 @@ func (repo *AuthRepository) RetrieveUserIDFromSession(ctx context.Context, sessi
 	return intVal, nil
 }
 
-// GetUserByEmail получает данные пользователя из базы по email
-func (repo *AuthRepository) GetUserByEmail(ctx context.Context, email string) (user *models.UserProfile, err error) {
-	query := `
-	SELECT u_id, nickname, email, description,
-	joined_at, updated_at, password_hash
-	FROM "user"
-	WHERE email=$1;`
-	user = &models.UserProfile{}
-	err = repo.db.QueryRow(ctx, query, email).Scan(
-		&user.ID,
-		&user.Name,
-		&user.Email,
-		&user.Description,
-		&user.JoinedAt,
-		&user.UpdatedAt,
-		&user.PasswordHash,
-	)
-	logging.Debug(ctx, "GetUserByEmail query has err: ", err)
-	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, errs.ErrWrongCredentials
-		}
-		return nil, err
-	}
-	return user, nil
-}
-
 // GetUserByID получает данные пользователя из базы по id
 func (repo *AuthRepository) GetUserByID(ctx context.Context, userID int) (user *models.UserProfile, err error) {
 	query := `
@@ -137,11 +110,10 @@ func (repo *AuthRepository) CreateUser(ctx context.Context, user *models.UserReg
 	query := `INSERT INTO "user" (nickname, email, password_hash, description, joined_at, updated_at)
               VALUES ($1, $2, $3, $4, $5, $6) RETURNING u_id, nickname, email, password_hash, description, joined_at, updated_at`
 
-	err = repo.db.QueryRow(ctx, query, user.Name, user.Email, hashedPassword, "", time.Now(), time.Now()).Scan(
+	err = repo.db.QueryRow(ctx, query, user.Name, user.Email, "", time.Now(), time.Now()).Scan(
 		&newUser.ID,
 		&newUser.Name,
 		&newUser.Email,
-		&newUser.PasswordHash,
 		&newUser.Description,
 		&newUser.JoinedAt,
 		&newUser.UpdatedAt,

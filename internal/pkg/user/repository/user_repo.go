@@ -135,3 +135,30 @@ func (r *UserRepository) SetUserAvatar(ctx context.Context, userID int, fileExte
 	}
 	return uploads.JoinFilePath(fileUUID, fileExtension), nil
 }
+
+// GetUserByEmail получает данные пользователя из базы по email
+func (r *UserRepository) GetUserByEmail(ctx context.Context, email string) (user *models.UserProfile, err error) {
+	query := `
+	SELECT u_id, nickname, email, description,
+	joined_at, updated_at, password_hash
+	FROM "user"
+	WHERE email=$1;`
+	user = &models.UserProfile{}
+	err = r.db.QueryRow(ctx, query, email).Scan(
+		&user.ID,
+		&user.Name,
+		&user.Email,
+		&user.Description,
+		&user.JoinedAt,
+		&user.UpdatedAt,
+		&user.PasswordHash,
+	)
+	logging.Debug(ctx, "GetUserByEmail query has err: ", err)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, errs.ErrWrongCredentials
+		}
+		return nil, err
+	}
+	return user, nil
+}

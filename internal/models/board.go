@@ -2,15 +2,11 @@ package models
 
 import "time"
 
-type CreateBoardRequest struct {
-	Name string `json:"name"`
-}
-
 type Board struct {
 	ID                 int       `json:"id"`
 	Name               string    `json:"name"`
 	Description        string    `json:"description"`
-	BackgroundImageURL string    `json:"backgroundImageUrl,omitempty"`
+	BackgroundImageURL string    `json:"backgroundImageUrl"`
 	CreatedAt          time.Time `json:"createdAt"`
 	UpdatedAt          time.Time `json:"updatedAt"`
 	LastVisitAt        time.Time `json:"lastVisitAt"`
@@ -26,11 +22,6 @@ type MemberWithPermissions struct {
 	UpdatedBy *UserProfile `json:"updatedBy"`
 }
 
-type BoardPutRequest struct {
-	NewName        string `json:"name"`
-	NewDescription string `json:"description"`
-}
-
 type BoardContent struct {
 	MyRole    string   `json:"myRole"`
 	Cards     []Card   `json:"allCards"`
@@ -38,10 +29,16 @@ type BoardContent struct {
 	BoardInfo *Board   `json:"boardInfo"`
 }
 
-type AddMemberRequest struct {
-	MemberNickname string `json:"nickname"`
+type Card struct {
+	ID                 int       `json:"id"`
+	Title              string    `json:"title"`
+	ColumnID           int       `json:"columnId"`
+	CreatedAt          time.Time `json:"createdAt"`
+	UpdatedAt          time.Time `json:"updatedAt"`
+	BackgroundImageURL string    `json:"backgroundImageUrl"`
 }
 
-type UpdateMemberRequest struct {
-	NewRole string `json:"newRole"`
+type Column struct {
+	ID    int    `json:"id"`
+	Title string `json:"title"`
 }
