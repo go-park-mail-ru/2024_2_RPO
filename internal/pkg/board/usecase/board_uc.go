@@ -405,86 +405,86 @@ func (uc *BoardUsecase) DeassignUser(ctx context.Context, userID int, cardID int
 }
 
 // AddComment добавляет комментарий на карточку
-func (uc *BoardUsecase) AddComment(ctx context.Context) (err error) {
+func (uc *BoardUsecase) AddComment(ctx context.Context, userID int, cardID int, commentReq *models.CommentRequest) (newComment *models.Comment, err error) {
 	panic("not implemented")
 }
 
 // UpdateComment редактирует существующий комментарий на карточке
-func (uc *BoardUsecase) UpdateComment(ctx context.Context) (err error) {
+func (uc *BoardUsecase) UpdateComment(ctx context.Context, userID int, commentID int, commentReq *models.CommentRequest) (updatedComment *models.Comment, err error) {
 	panic("not implemented")
 }
 
 // DeleteComment удаляет комментарий с карточки
-func (uc *BoardUsecase) DeleteComment(ctx context.Context) (err error) {
+func (uc *BoardUsecase) DeleteComment(ctx context.Context, userID int, commentID int) (err error) {
 	panic("not implemented")
 }
 
 // AddCheckListField добавляет строку чеклиста в конец списка
-func (uc *BoardUsecase) AddCheckListField(ctx context.Context) (err error) {
+func (uc *BoardUsecase) AddCheckListField(ctx context.Context, userID int, cardID int, fieldReq *models.CheckListFieldPostRequest) (newField *models.CheckListField, err error) {
 	panic("not implemented")
 }
 
 // UpdateCheckListField обновляет строку чеклиста и/или её положение
-func (uc *BoardUsecase) UpdateCheckListField(ctx context.Context) (err error) {
+func (uc *BoardUsecase) UpdateCheckListField(ctx context.Context, userID int, fieldID int, fieldReq *models.CheckListFieldPatchRequest) (updatedField *models.CheckListField, err error) {
 	panic("not implemented")
 }
 
 // DeleteCheckListField удаляет строку из чеклиста
-func (uc *BoardUsecase) DeleteCheckListField(ctx context.Context) (err error) {
+func (uc *BoardUsecase) DeleteCheckListField(ctx context.Context, userID int, fieldID int) (err error) {
 	panic("not implemented")
 }
 
 // SetCardCover устанавливает обложку для карточки
-func (uc *BoardUsecase) SetCardCover(ctx context.Context) (err error) {
+func (uc *BoardUsecase) SetCardCover(ctx context.Context, userID int, cardID int, file *multipart.File, fileHeader *multipart.FileHeader) (updatedCard *models.Card, err error) {
 	panic("not implemented")
 }
 
 // DeleteCardCover удаляет обложку с карточки
-func (uc *BoardUsecase) DeleteCardCover(ctx context.Context) (err error) {
+func (uc *BoardUsecase) DeleteCardCover(ctx context.Context, userID int, cardID int) (err error) {
 	panic("not implemented")
 }
 
 // AddAttachment добавляет вложение на карточку
-func (uc *BoardUsecase) AddAttachment(ctx context.Context) (err error) {
+func (uc *BoardUsecase) AddAttachment(ctx context.Context, userID int, cardID int, file *multipart.File, fileHeader *multipart.FileHeader) (newAttachment *models.Attachment, err error) {
 	panic("not implemented")
 }
 
 // DeleteAttachment удаляет вложение с карточки
-func (uc *BoardUsecase) DeleteAttachment(ctx context.Context) (err error) {
+func (uc *BoardUsecase) DeleteAttachment(ctx context.Context, userID int, attachmentID int) (err error) {
 	panic("not implemented")
 }
 
 // MoveCard перемещает карточку на доске
-func (uc *BoardUsecase) MoveCard(ctx context.Context) (err error) {
+func (uc *BoardUsecase) MoveCard(ctx context.Context, userID int, cardID int, moveReq *models.CardMoveRequest) (err error) {
 	panic("not implemented")
 }
 
 // MoveColumn перемещает колонку на доске
-func (uc *BoardUsecase) MoveColumn(ctx context.Context) (err error) {
+func (uc *BoardUsecase) MoveColumn(ctx context.Context, userID int, columnID int, moveReq *models.ColumnMoveRequest) (err error) {
 	panic("not implemented")
 }
 
 // GetSharedCard даёт информацию о карточке, которой поделились по ссылке
-func (uc *BoardUsecase) GetSharedCard(ctx context.Context) (err error) {
+func (uc *BoardUsecase) GetSharedCard(ctx context.Context, userID int, cardUuid string) (found *models.SharedCardFoundResponse, dummy *models.SharedCardDummyResponse, err error) {
 	panic("not implemented")
 }
 
 // RaiseInviteLink устанавливает ссылку-приглашение на доску
-func (uc *BoardUsecase) RaiseInviteLink(ctx context.Context) (err error) {
+func (uc *BoardUsecase) RaiseInviteLink(ctx context.Context, userID int, boardID int) (inviteLink *models.InviteLink, err error) {
 	panic("not implemented")
 }
 
 // DeleteInviteLink удаляет ссылку-приглашение
-func (uc *BoardUsecase) DeleteInviteLink(ctx context.Context) (err error) {
+func (uc *BoardUsecase) DeleteInviteLink(ctx context.Context, userID int, boardID int) (err error) {
 	panic("not implemented")
 }
 
 // FetchInvite возвращает информацию о приглашении на доску
-func (uc *BoardUsecase) FetchInvite(ctx context.Context) (err error) {
+func (uc *BoardUsecase) FetchInvite(ctx context.Context, inviteUUID string) (board *models.Board, err error) {
 	panic("not implemented")
 }
 
 // AcceptInvite добавляет пользователя как зрителя на доску
-func (uc *BoardUsecase) AcceptInvite(ctx context.Context) (err error) {
+func (uc *BoardUsecase) AcceptInvite(ctx context.Context, userID int, inviteUUID string) (board *models.Board, err error) {
 	panic("not implemented")
 }

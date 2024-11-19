@@ -24,7 +24,7 @@ func TestBoardUsecase_CreateNewBoard(t *testing.T) {
 	tests := []struct {
 		name                 string
 		userID               int
-		request              models.CreateBoardRequest
+		request              models.BoardRequest
 		setupMock            func()
 		expectedError        bool
 		expectedBoardChecker func(*models.Board) bool
@@ -32,7 +32,7 @@ func TestBoardUsecase_CreateNewBoard(t *testing.T) {
 		{
 			name:    "successful board creation",
 			userID:  1,
-			request: models.CreateBoardRequest{Name: "New Board"},
+			request: models.BoardRequest{NewName: "New Board"},
 			setupMock: func() {
 				mockBoardRepo.EXPECT().CreateBoard(gomock.Any(), "New Board", 1).Return(&models.Board{ID: 1, Name: "New Board"}, nil)
 				mockBoardRepo.EXPECT().AddMember(gomock.Any(), 1, 1, 1).Return(nil, nil)

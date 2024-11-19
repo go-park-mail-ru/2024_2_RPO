@@ -48,13 +48,25 @@ type UserProfileUpdateRequest struct {
 type CommentRequest struct {
 	Text string `json:"text" validate:"required,min=3,max=1024"`
 }
-type CheckListFieldPutRequest struct {
-	Title           string `json:"" validate:"required"`
-	IsDone          bool   `json:"" validate:"re"`
-	PreviousFieldID *int   `json:"" validate:""`
-	NextFieldID     *int   `json:"" validate:""`
+
+type CheckListFieldPatchRequest struct {
+	Title           *string `json:"title" validate:"min=3,max=50"`
+	IsDone          *bool   `json:"isDone"`
+	PreviousFieldID *int    `json:"previousFieldId"`
+	NextFieldID     *int    `json:"nextFieldId"`
 }
 
 type CheckListFieldPostRequest struct {
-	Title string
+	Title string `json:"title" validate:"required"`
+}
+
+type CardMoveRequest struct {
+	NewColumnID    *int `json:"newColumnId" validate:"required"`
+	PreviousCardID *int `json:"previousCardId" validate:"required"`
+	NextCardID     *int `json:"NextCardId" validate:"required"`
+}
+
+type ColumnMoveRequest struct {
+	PreviousColumnID *int `json:"previousColumnId" validate:"required"`
+	NextColumnID     *int `json:"NextColumnId" validate:"required"`
 }

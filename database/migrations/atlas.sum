@@ -1,5 +1,6 @@
-h1:XlGGaSbMRPjlhwVsqhpctIIbflknwcx2atVkIi+R67k=
+h1:bMm4ROQzkY0liXF4I0PON/JofbFWfqRnUE1Qgh+SfhU=
 20241115153518_create_tables.up.sql h1:W96eSKMroscgv19rfcMkNBWrBjyRlH7nHxfdh13kenc=
 20241116220131_tag_attach_share_comment.up.sql h1:5SNrfFikZZlsMb9BLYnl/pbkHXqbpmmd6jLaUB9vzaw=
-20241116231100_define_roles.up.sql h1:VO1y5tWDzoDBrnh6a+wKOe9Fpica2bJWqVDlOC/Q2O4=
-20241117163200_homework_2.up.sql h1:eFFOvk5vsSoQbkVJ9dH4Zgew9ockXdpGO3X8Rh/aQQU=
+20241116231100_define_roles.up.sql h1:Coo9nRhIutPuWSpBsRmsJXZmOJeBVApoIzlsxnaVYbo=
+20241117163200_homework_2.up.sql h1:ThqO2+yx7yyT9kqY1gM03mLNQbQ7WpYeYrm86knCeZY=
+20241119150136_remove_description.up.sql h1:SdbjnX/wvLP6MEJ1IHp0UKgPrXdORS9tJACu/KOzsb8=
