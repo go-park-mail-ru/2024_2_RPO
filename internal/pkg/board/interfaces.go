@@ -46,7 +46,7 @@ type BoardUsecase interface {
 	AcceptInvite(ctx context.Context, userID int64, inviteUUID string) (board *models.Board, err error)
 }
 
-type BoardRepo interface {
+type BoardRepository interface {
 	CreateBoard(ctx context.Context, name string, userID int64) (*models.Board, error)
 	GetBoard(ctx context.Context, boardID int64, userID int64) (*models.Board, error)
 	UpdateBoard(ctx context.Context, boardID int64, userID int64, data *models.BoardRequest) (updatedBoard *models.Board, err error)

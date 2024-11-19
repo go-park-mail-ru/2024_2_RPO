@@ -6,11 +6,12 @@ RUN wget https://github.com/golang-migrate/migrate/releases/download/v4.18.1/mig
 RUN tar -xzf migrate.tar.gz
 RUN cp ./migrate /usr/bin/migrate
 RUN rm -rf migrate migrate.tar.gz
-COPY ./go.mod /go/src/pumpkin/
-COPY ./go.sum /go/src/pumpkin/
+COPY ./go.mod ./go.sum /go/src/pumpkin/
 WORKDIR /go/src/pumpkin
 RUN go mod download
-COPY . /go/src/pumpkin
+COPY ./Makefile /go/src/pumpkin/
+COPY ./internal /go/src/pumpkin/internal/
+COPY ./cmd /go/src/pumpkin/cmd/
 RUN make build
 
 # 2 шаг

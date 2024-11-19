@@ -65,9 +65,9 @@ services:
     command:
       - "postgres"
       - "-c"
-      - "config_file=/etc/postgresql.conf"
+      - "config_file=/configs/postgresql.conf"
       - "-c"
-      - "hba_file=/etc/pg_hba.conf"
+      - "hba_file=/configs/pg_hba.conf"
     container_name: postgres
     image: postgres:latest
     environment:
@@ -81,8 +81,7 @@ services:
     volumes:
       - pumpkin-db-data:/var/lib/postgresql/data
       - pumpkin-all-logs:/pg_logs
-      - ./database/postgresql.conf:/etc/postgresql.conf:ro
-      - ./database/pg_hba.conf:/etc/pg_hba.conf:ro
+      - ./database:/configs:ro
 
   redis:
     container_name: redis
@@ -103,6 +102,15 @@ services:
   grafana:
     container_name: grafana
     image: grafana/grafana
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+
+  node_exporter:
+    depends_on:
+      - prometheus
+    image: quay.io/prometheus/node-exporter:latest
 
 networks:
   Pumpkin-network:

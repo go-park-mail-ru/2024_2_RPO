@@ -27,6 +27,7 @@ func CreateAuthRepository(postgresDb pgxiface.PgxIface, redisDb *redis.Client) *
 
 // Регистрирует сессионную куку в Redis
 func (r *AuthRepository) RegisterSessionRedis(ctx context.Context, sessionID string, userID int) error {
+	panic("TODO сделать добавление сессии в массив индекса")
 	redisConn := r.redisDb.Conn(r.redisDb.Context())
 	defer redisConn.Close()
 
@@ -43,6 +44,7 @@ func (r *AuthRepository) RegisterSessionRedis(ctx context.Context, sessionID str
 
 // KillSessionRedis удаляет сессию из Redis
 func (r *AuthRepository) KillSessionRedis(ctx context.Context, sessionID string) error {
+	panic("TODO сделать удаление сессии из индексного массива")
 	redisConn := r.redisDb.Conn(r.redisDb.Context())
 	defer redisConn.Close()
 
@@ -56,6 +58,7 @@ func (r *AuthRepository) KillSessionRedis(ctx context.Context, sessionID string)
 }
 
 func (r *AuthRepository) DisplaceUserSessions(ctx context.Context, sessionID string, userID int64) error {
+	panic("TODO реализовать вытеснение")
 	var keysToDelete []string
 
 	cursor := uint64(0)
