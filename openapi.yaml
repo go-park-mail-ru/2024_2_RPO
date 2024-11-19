@@ -275,6 +275,9 @@ components:
         hasComments:
           type: boolean
           example: false
+        cardUuid:
+          type: string
+          example: "70f6549b-96d1-47ef-8409-de73e74fd82c"
 
     CardPostRequest:
       type: object
@@ -489,6 +492,10 @@ components:
         fileName:
           type: string
           example: "/uploads/41c41031-15eb-423a-872c-cdc0696fb3ba.xlsx"
+        createdAt:
+          type: string
+          format: date-time
+          example: "2023-10-01T12:34:56Z"
 
     CardMoveRequest:
       type: object
@@ -1376,7 +1383,7 @@ paths:
           $ref: "#/components/responses/NotFoundResponse"
 
   /checkList/{fieldId}:
-    put:
+    patch:
       summary: "Изменить положение, текст или статус строки чеклиста"
       tags:
         - Чеклист
