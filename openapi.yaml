@@ -288,6 +288,20 @@ components:
           type: integer
           example: 3
 
+    CardPatch:
+      type: object
+      properties:
+        title:
+          type: string
+          example: "Посадить цветок"
+        deadline:
+          type: string
+          format: date-time
+          example: "2023-10-01T12:34:56Z"
+        isDone:
+          type: boolean
+          example: false
+
     Column:
       type: object
       properties:
@@ -1064,11 +1078,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                title:
-                  type: string
-                  example: "Переустановить windows"
+              $ref: "#/components/schemas/CardPatch"
       responses:
         "200":
           description: "Карточка успешно обновлена"
@@ -1245,52 +1255,6 @@ paths:
       parameters:
         - $ref: "#/components/parameters/cardId"
         - $ref: "#/components/parameters/userId"
-      responses:
-        "200":
-          $ref: "#/components/responses/EmptyOkResponse"
-        "400":
-          $ref: "#/components/responses/BadRequestResponse"
-        "401":
-          $ref: "#/components/responses/NoAuthResponse"
-        "403":
-          $ref: "#/components/responses/ForbiddenResponse"
-        "404":
-          $ref: "#/components/responses/NotFoundResponse"
-
-  /deadline/{cardId}:
-    put:
-      summary: "Установить дедлайн на карточку"
-      tags:
-        - Дедлайн карточки
-      security:
-        - SessionCookieAuth: []
-      parameters:
-        - $ref: "#/components/parameters/cardId"
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/DeadlineRequest"
-      responses:
-        "200":
-          $ref: "#/components/responses/EmptyOkResponse"
-        "400":
-          $ref: "#/components/responses/BadRequestResponse"
-        "401":
-          $ref: "#/components/responses/NoAuthResponse"
-        "403":
-          $ref: "#/components/responses/ForbiddenResponse"
-        "404":
-          $ref: "#/components/responses/NotFoundResponse"
-    delete:
-      summary: "Убрать дедлайн с карточки"
-      tags:
-        - Дедлайн карточки
-      security:
-        - SessionCookieAuth: []
-      parameters:
-        - $ref: "#/components/parameters/cardId"
       responses:
         "200":
           $ref: "#/components/responses/EmptyOkResponse"
