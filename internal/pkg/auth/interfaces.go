@@ -12,10 +12,10 @@ const (
 //go:generate mockgen -source=interfaces.go -destination=mocks/mock.go
 
 type AuthUsecase interface {
-	LoginUser(ctx context.Context, email string, password string) (sessionID string, err error)
-	RegisterUser(ctx context.Context, user *models.UserRegisterRequest) (sessionID string, err error)
-	LogoutUser(ctx context.Context, sessionID string) error
-	ChangePassword(ctx context.Context, userID int, oldPassword string, newPassword string) error
+	CreateSession(ctx context.Context, userID int64, password string) (sessionID string, err error)
+	CheckSession(ctx context.Context, sessionID string) (userID int64, err error)
+	KillSession(ctx context.Context, sessionID string) (err error)
+	ChangePassword(ctx context.Context, oldPassword string, newPassword string) (err error)
 }
 
 type AuthRepo interface {
