@@ -32,8 +32,8 @@ func CreateBoardUsecase(boardRepository board.BoardRepo) *BoardUsecase {
 }
 
 // CreateNewBoard создаёт новую доску и возвращает информацию о ней
-func (uc *BoardUsecase) CreateNewBoard(ctx context.Context, userID int, data models.CreateBoardRequest) (newBoard *models.Board, err error) {
-	newBoard, err = uc.boardRepository.CreateBoard(ctx, data.Name, userID)
+func (uc *BoardUsecase) CreateNewBoard(ctx context.Context, userID int64, data models.BoardRequest) (newBoard *models.Board, err error) {
+	newBoard, err = uc.boardRepository.CreateBoard(ctx, data.NewName, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -49,7 +49,7 @@ func (uc *BoardUsecase) CreateNewBoard(ctx context.Context, userID int, data mod
 }
 
 // UpdateBoard обновляет информацию о доске и возвращает обновлённую информацию
-func (uc *BoardUsecase) UpdateBoard(ctx context.Context, userID int, boardID int, data models.BoardRequest) (updatedBoard *models.Board, err error) {
+func (uc *BoardUsecase) UpdateBoard(ctx context.Context, userID int64, boardID int64, data models.BoardRequest) (updatedBoard *models.Board, err error) {
 	deleterMember, err := uc.boardRepository.GetMemberPermissions(ctx, boardID, userID, false)
 	if err != nil {
 		return nil, fmt.Errorf("GetMembersPermissions (getting editor perm-s): %w", err)
@@ -62,7 +62,7 @@ func (uc *BoardUsecase) UpdateBoard(ctx context.Context, userID int, boardID int
 }
 
 // DeleteBoard удаляет доску
-func (uc *BoardUsecase) DeleteBoard(ctx context.Context, userID int, boardID int) error {
+func (uc *BoardUsecase) DeleteBoard(ctx context.Context, userID int64, boardID int64) error {
 	deleterMember, err := uc.boardRepository.GetMemberPermissions(ctx, boardID, userID, false)
 	if err != nil {
 		return fmt.Errorf("GetMembersPermissions (getting deleter perm-s): %w", err)
@@ -78,13 +78,13 @@ func (uc *BoardUsecase) DeleteBoard(ctx context.Context, userID int, boardID int
 }
 
 // GetMyBoards получает все доски для пользователя
-func (uc *BoardUsecase) GetMyBoards(ctx context.Context, userID int) (boards []models.Board, err error) {
+func (uc *BoardUsecase) GetMyBoards(ctx context.Context, userID int64) (boards []models.Board, err error) {
 	boards, err = uc.boardRepository.GetBoardsForUser(ctx, userID)
 	return
 }
 
 // GetMembersPermissions получает информацию о ролях всех участников доски
-func (uc *BoardUsecase) GetMembersPermissions(ctx context.Context, userID int, boardID int) (data []models.MemberWithPermissions, err error) {
+func (uc *BoardUsecase) GetMembersPermissions(ctx context.Context, userID int64, boardID int64) (data []models.MemberWithPermissions, err error) {
 	_, err = uc.boardRepository.GetMemberPermissions(ctx, boardID, userID, false)
 	if err != nil {
 		return nil, fmt.Errorf("GetMembersPermissions (permissions): %w", err)
@@ -97,7 +97,7 @@ func (uc *BoardUsecase) GetMembersPermissions(ctx context.Context, userID int, b
 }
 
 // AddMember добавляет участника на доску с правами "viewer" и возвращает его права
-func (uc *BoardUsecase) AddMember(ctx context.Context, userID int, boardID int, addRequest *models.AddMemberRequest) (newMember *models.MemberWithPermissions, err error) {
+func (uc *BoardUsecase) AddMember(ctx context.Context, userID int64, boardID int64, addRequest *models.AddMemberRequest) (newMember *models.MemberWithPermissions, err error) {
 	adderMember, err := uc.boardRepository.GetMemberPermissions(ctx, boardID, userID, false)
 	if err != nil {
 		return nil, fmt.Errorf("GetMembersPermissions (permissions): %w", err)
@@ -117,7 +117,7 @@ func (uc *BoardUsecase) AddMember(ctx context.Context, userID int, boardID int, 
 }
 
 // UpdateMemberRole обновляет роль участника и возвращает обновлённые права
-func (uc *BoardUsecase) UpdateMemberRole(ctx context.Context, userID int, boardID int, memberID int, newRole string) (updatedMember *models.MemberWithPermissions, err error) {
+func (uc *BoardUsecase) UpdateMemberRole(ctx context.Context, userID int64, boardID int64, memberID int64, newRole string) (updatedMember *models.MemberWithPermissions, err error) {
 	updaterMember, err := uc.boardRepository.GetMemberPermissions(ctx, boardID, userID, false)
 	if err != nil {
 		return nil, fmt.Errorf("UpdateMemberRole (updater permissions): %w", err)
@@ -145,7 +145,7 @@ func (uc *BoardUsecase) UpdateMemberRole(ctx context.Context, userID int, boardI
 }
 
 // RemoveMember удаляет участника с доски
-func (uc *BoardUsecase) RemoveMember(ctx context.Context, userID int, boardID int, memberID int) error {
+func (uc *BoardUsecase) RemoveMember(ctx context.Context, userID int64, boardID int64, memberID int64) error {
 	removerMember, err := uc.boardRepository.GetMemberPermissions(ctx, boardID, userID, false)
 	if err != nil {
 		return fmt.Errorf("RemoveMember (remover permissions): %w", err)
@@ -172,7 +172,7 @@ func (uc *BoardUsecase) RemoveMember(ctx context.Context, userID int, boardID in
 }
 
 // GetBoardContent получает все карточки и колонки с доски, а также информацию о доске
-func (uc *BoardUsecase) GetBoardContent(ctx context.Context, userID int, boardID int) (content *models.BoardContent, err error) {
+func (uc *BoardUsecase) GetBoardContent(ctx context.Context, userID int64, boardID int64) (content *models.BoardContent, err error) {
 	userPermissions, err := uc.boardRepository.GetMemberPermissions(ctx, boardID, userID, false)
 	if err != nil {
 		if errors.Is(err, errs.ErrNotPermitted) {
@@ -213,7 +213,7 @@ func (uc *BoardUsecase) GetBoardContent(ctx context.Context, userID int, boardID
 }
 
 // CreateNewCard создаёт новую карточку и возвращает её
-func (uc *BoardUsecase) CreateNewCard(ctx context.Context, userID int, boardID int, data *models.CardPatchRequest) (newCard *models.Card, err error) {
+func (uc *BoardUsecase) CreateNewCard(ctx context.Context, userID int64, boardID int64, data *models.CardPostRequest) (newCard *models.Card, err error) {
 	perms, err := uc.boardRepository.GetMemberPermissions(ctx, boardID, userID, false)
 	if err != nil {
 		if errors.Is(err, errs.ErrNotPermitted) {
@@ -228,7 +228,7 @@ func (uc *BoardUsecase) CreateNewCard(ctx context.Context, userID int, boardID i
 		return nil, fmt.Errorf("CreateNewCard (check): %w", errs.ErrNotPermitted)
 	}
 
-	card, err := uc.boardRepository.CreateNewCard(ctx, boardID, data.NewColumnID, data.NewTitle)
+	card, err := uc.boardRepository.CreateNewCard(ctx, boardID, *data.ColumnID, *data.Title)
 	if err != nil {
 		return nil, fmt.Errorf("CreateNewCard (add CreateNewCard): %w", err)
 	}
@@ -243,7 +243,7 @@ func (uc *BoardUsecase) CreateNewCard(ctx context.Context, userID int, boardID i
 }
 
 // UpdateCard обновляет карточку и возвращает обновлённую версию
-func (uc *BoardUsecase) UpdateCard(ctx context.Context, userID int, boardID int, cardID int, data *models.CardPatchRequest) (updatedCard *models.Card, err error) {
+func (uc *BoardUsecase) UpdateCard(ctx context.Context, userID int64, boardID int64, cardID int64, data *models.CardPatchRequest) (updatedCard *models.Card, err error) {
 	perms, err := uc.boardRepository.GetMemberPermissions(ctx, boardID, userID, false)
 	if err != nil {
 		if errors.Is(err, errs.ErrNotPermitted) {
@@ -273,7 +273,7 @@ func (uc *BoardUsecase) UpdateCard(ctx context.Context, userID int, boardID int,
 }
 
 // DeleteCard удаляет карточку
-func (uc *BoardUsecase) DeleteCard(ctx context.Context, userID int, boardID int, cardID int) (err error) {
+func (uc *BoardUsecase) DeleteCard(ctx context.Context, userID int64, boardID int64, cardID int64) (err error) {
 	perms, err := uc.boardRepository.GetMemberPermissions(ctx, boardID, userID, false)
 	if err != nil {
 		if errors.Is(err, errs.ErrNotPermitted) {
@@ -297,7 +297,7 @@ func (uc *BoardUsecase) DeleteCard(ctx context.Context, userID int, boardID int,
 }
 
 // CreateColumn создаёт колонку канбана на доске и возвращает её
-func (uc *BoardUsecase) CreateColumn(ctx context.Context, userID int, boardID int, data *models.ColumnRequest) (newCol *models.Column, err error) {
+func (uc *BoardUsecase) CreateColumn(ctx context.Context, userID int64, boardID int64, data *models.ColumnRequest) (newCol *models.Column, err error) {
 	perms, err := uc.boardRepository.GetMemberPermissions(ctx, boardID, userID, false)
 	if err != nil {
 		if errors.Is(err, errs.ErrNotPermitted) {
@@ -324,7 +324,7 @@ func (uc *BoardUsecase) CreateColumn(ctx context.Context, userID int, boardID in
 }
 
 // UpdateColumn изменяет колонку и возвращает её обновлённую версию
-func (uc *BoardUsecase) UpdateColumn(ctx context.Context, userID int, boardID int, columnID int, data *models.ColumnRequest) (updatedCol *models.Column, err error) {
+func (uc *BoardUsecase) UpdateColumn(ctx context.Context, userID int64, boardID int64, columnID int64, data *models.ColumnRequest) (updatedCol *models.Column, err error) {
 	perms, err := uc.boardRepository.GetMemberPermissions(ctx, boardID, userID, false)
 	if err != nil {
 		return nil, fmt.Errorf("UpdateColumn (get perms): %w", err)
@@ -345,7 +345,7 @@ func (uc *BoardUsecase) UpdateColumn(ctx context.Context, userID int, boardID in
 }
 
 // DeleteColumn удаляет колонку
-func (uc *BoardUsecase) DeleteColumn(ctx context.Context, userID int, boardID int, columnID int) (err error) {
+func (uc *BoardUsecase) DeleteColumn(ctx context.Context, userID int64, boardID int64, columnID int64) (err error) {
 	perms, err := uc.boardRepository.GetMemberPermissions(ctx, boardID, userID, false)
 	if err != nil {
 		return fmt.Errorf("DeleteColumn (get perms): %w", err)
@@ -362,7 +362,7 @@ func (uc *BoardUsecase) DeleteColumn(ctx context.Context, userID int, boardID in
 	return nil
 }
 
-func (uc *BoardUsecase) SetBoardBackground(ctx context.Context, userID int, boardID int, file *multipart.File, fileHeader *multipart.FileHeader) (updatedBoard *models.Board, err error) {
+func (uc *BoardUsecase) SetBoardBackground(ctx context.Context, userID int64, boardID int64, file *multipart.File, fileHeader *multipart.FileHeader) (updatedBoard *models.Board, err error) {
 	perms, err := uc.boardRepository.GetMemberPermissions(ctx, boardID, userID, false)
 	if err != nil {
 		return nil, fmt.Errorf("SetBoardBackground (get perms): %w", err)
@@ -375,7 +375,7 @@ func (uc *BoardUsecase) SetBoardBackground(ctx context.Context, userID int, boar
 		userID,
 		boardID,
 		uploads.ExtractFileExtension(fileHeader.Filename),
-		int(fileHeader.Size),
+		fileHeader.Size,
 	)
 	if err != nil {
 		return nil, err
@@ -395,87 +395,87 @@ func (uc *BoardUsecase) SetBoardBackground(ctx context.Context, userID int, boar
 }
 
 // AssignUser назначает карточку пользователю
-func (uc *BoardUsecase) AssignUser(ctx context.Context, userID int, cardID int, assignedUserID int) (assignedUser *models.UserProfile, err error) {
+func (uc *BoardUsecase) AssignUser(ctx context.Context, userID int64, cardID int64, assignedUserID int64) (assignedUser *models.UserProfile, err error) {
 	panic("not implemented")
 }
 
 // DeassignUser отменяет назначение карточки пользователю
-func (uc *BoardUsecase) DeassignUser(ctx context.Context, userID int, cardID int, assignedUserID int) (err error) {
+func (uc *BoardUsecase) DeassignUser(ctx context.Context, userID int64, cardID int64, assignedUserID int64) (err error) {
 	panic("not implemented")
 }
 
 // AddComment добавляет комментарий на карточку
-func (uc *BoardUsecase) AddComment(ctx context.Context, userID int, cardID int, commentReq *models.CommentRequest) (newComment *models.Comment, err error) {
+func (uc *BoardUsecase) AddComment(ctx context.Context, userID int64, cardID int64, commentReq *models.CommentRequest) (newComment *models.Comment, err error) {
 	panic("not implemented")
 }
 
 // UpdateComment редактирует существующий комментарий на карточке
-func (uc *BoardUsecase) UpdateComment(ctx context.Context, userID int, commentID int, commentReq *models.CommentRequest) (updatedComment *models.Comment, err error) {
+func (uc *BoardUsecase) UpdateComment(ctx context.Context, userID int64, commentID int64, commentReq *models.CommentRequest) (updatedComment *models.Comment, err error) {
 	panic("not implemented")
 }
 
 // DeleteComment удаляет комментарий с карточки
-func (uc *BoardUsecase) DeleteComment(ctx context.Context, userID int, commentID int) (err error) {
+func (uc *BoardUsecase) DeleteComment(ctx context.Context, userID int64, commentID int64) (err error) {
 	panic("not implemented")
 }
 
 // AddCheckListField добавляет строку чеклиста в конец списка
-func (uc *BoardUsecase) AddCheckListField(ctx context.Context, userID int, cardID int, fieldReq *models.CheckListFieldPostRequest) (newField *models.CheckListField, err error) {
+func (uc *BoardUsecase) AddCheckListField(ctx context.Context, userID int64, cardID int64, fieldReq *models.CheckListFieldPostRequest) (newField *models.CheckListField, err error) {
 	panic("not implemented")
 }
 
 // UpdateCheckListField обновляет строку чеклиста и/или её положение
-func (uc *BoardUsecase) UpdateCheckListField(ctx context.Context, userID int, fieldID int, fieldReq *models.CheckListFieldPatchRequest) (updatedField *models.CheckListField, err error) {
+func (uc *BoardUsecase) UpdateCheckListField(ctx context.Context, userID int64, fieldID int64, fieldReq *models.CheckListFieldPatchRequest) (updatedField *models.CheckListField, err error) {
 	panic("not implemented")
 }
 
 // DeleteCheckListField удаляет строку из чеклиста
-func (uc *BoardUsecase) DeleteCheckListField(ctx context.Context, userID int, fieldID int) (err error) {
+func (uc *BoardUsecase) DeleteCheckListField(ctx context.Context, userID int64, fieldID int64) (err error) {
 	panic("not implemented")
 }
 
 // SetCardCover устанавливает обложку для карточки
-func (uc *BoardUsecase) SetCardCover(ctx context.Context, userID int, cardID int, file *multipart.File, fileHeader *multipart.FileHeader) (updatedCard *models.Card, err error) {
+func (uc *BoardUsecase) SetCardCover(ctx context.Context, userID int64, cardID int64, file *multipart.File, fileHeader *multipart.FileHeader) (updatedCard *models.Card, err error) {
 	panic("not implemented")
 }
 
 // DeleteCardCover удаляет обложку с карточки
-func (uc *BoardUsecase) DeleteCardCover(ctx context.Context, userID int, cardID int) (err error) {
+func (uc *BoardUsecase) DeleteCardCover(ctx context.Context, userID int64, cardID int64) (err error) {
 	panic("not implemented")
 }
 
 // AddAttachment добавляет вложение на карточку
-func (uc *BoardUsecase) AddAttachment(ctx context.Context, userID int, cardID int, file *multipart.File, fileHeader *multipart.FileHeader) (newAttachment *models.Attachment, err error) {
+func (uc *BoardUsecase) AddAttachment(ctx context.Context, userID int64, cardID int64, file *multipart.File, fileHeader *multipart.FileHeader) (newAttachment *models.Attachment, err error) {
 	panic("not implemented")
 }
 
 // DeleteAttachment удаляет вложение с карточки
-func (uc *BoardUsecase) DeleteAttachment(ctx context.Context, userID int, attachmentID int) (err error) {
+func (uc *BoardUsecase) DeleteAttachment(ctx context.Context, userID int64, attachmentID int64) (err error) {
 	panic("not implemented")
 }
 
 // MoveCard перемещает карточку на доске
-func (uc *BoardUsecase) MoveCard(ctx context.Context, userID int, cardID int, moveReq *models.CardMoveRequest) (err error) {
+func (uc *BoardUsecase) MoveCard(ctx context.Context, userID int64, cardID int64, moveReq *models.CardMoveRequest) (err error) {
 	panic("not implemented")
 }
 
 // MoveColumn перемещает колонку на доске
-func (uc *BoardUsecase) MoveColumn(ctx context.Context, userID int, columnID int, moveReq *models.ColumnMoveRequest) (err error) {
+func (uc *BoardUsecase) MoveColumn(ctx context.Context, userID int64, columnID int64, moveReq *models.ColumnMoveRequest) (err error) {
 	panic("not implemented")
 }
 
 // GetSharedCard даёт информацию о карточке, которой поделились по ссылке
-func (uc *BoardUsecase) GetSharedCard(ctx context.Context, userID int, cardUuid string) (found *models.SharedCardFoundResponse, dummy *models.SharedCardDummyResponse, err error) {
+func (uc *BoardUsecase) GetSharedCard(ctx context.Context, userID int64, cardUuid string) (found *models.SharedCardFoundResponse, dummy *models.SharedCardDummyResponse, err error) {
 	panic("not implemented")
 }
 
 // RaiseInviteLink устанавливает ссылку-приглашение на доску
-func (uc *BoardUsecase) RaiseInviteLink(ctx context.Context, userID int, boardID int) (inviteLink *models.InviteLink, err error) {
+func (uc *BoardUsecase) RaiseInviteLink(ctx context.Context, userID int64, boardID int64) (inviteLink *models.InviteLink, err error) {
 	panic("not implemented")
 }
 
 // DeleteInviteLink удаляет ссылку-приглашение
-func (uc *BoardUsecase) DeleteInviteLink(ctx context.Context, userID int, boardID int) (err error) {
+func (uc *BoardUsecase) DeleteInviteLink(ctx context.Context, userID int64, boardID int64) (err error) {
 	panic("not implemented")
 }
 
@@ -485,6 +485,6 @@ func (uc *BoardUsecase) FetchInvite(ctx context.Context, inviteUUID string) (boa
 }
 
 // AcceptInvite добавляет пользователя как зрителя на доску
-func (uc *BoardUsecase) AcceptInvite(ctx context.Context, userID int, inviteUUID string) (board *models.Board, err error) {
+func (uc *BoardUsecase) AcceptInvite(ctx context.Context, userID int64, inviteUUID string) (board *models.Board, err error) {
 	panic("not implemented")
 }

@@ -3,7 +3,7 @@ package models
 import "time"
 
 type Board struct {
-	ID                 int       `json:"id"`
+	ID                 int64     `json:"id"`
 	Name               string    `json:"name"`
 	BackgroundImageURL string    `json:"backgroundImageUrl"`
 	CreatedAt          time.Time `json:"createdAt"`
@@ -29,10 +29,10 @@ type BoardContent struct {
 }
 
 type Card struct {
-	ID               int       `json:"id"`
+	ID               int64     `json:"id"`
 	Title            string    `json:"title"`
 	CoverImageURL    string    `json:"coverImageUrl"`
-	ColumnID         int       `json:"columnId"`
+	ColumnID         int64     `json:"columnId"`
 	CreatedAt        time.Time `json:"createdAt"`
 	UpdatedAt        time.Time `json:"updatedAt"`
 	Deadine          time.Time `json:"deadline"`
@@ -41,7 +41,7 @@ type Card struct {
 	HasAttachments   bool      `json:"hasAttachments"`
 	HasAssignedUsers bool      `json:"hasAssignedUsers"`
 	HasComments      bool      `json:"hasComments"`
-	OrderIndex       int       `json:"-"`
+	OrderIndex       int64     `json:"-"`
 }
 
 type Column struct {
@@ -50,23 +50,23 @@ type Column struct {
 }
 
 type Comment struct {
-	ID        int          `json:"id"`
-	Text      int          `json:"text"`
+	ID        int64        `json:"id"`
+	Text      int64        `json:"text"`
 	IsEdited  bool         `json:"isEdited"`
 	CreatedBy *UserProfile `json:"createdBy"`
 	CreatedAt time.Time    `json:"createdAt"`
 }
 
 type CheckListField struct {
-	ID         int       `json:"id"`
+	ID         int64     `json:"id"`
 	Title      string    `json:"title"`
 	CreatedAt  time.Time `json:"createdAt"`
 	IsDone     bool      `json:"isDone"`
-	OrderIndex int       `json:"-"`
+	OrderIndex int64     `json:"-"`
 }
 
 type Attachment struct {
-	ID           int       `json:"id"`
+	ID           int64     `json:"id"`
 	OriginalName string    `json:"originalName"`
 	FileName     string    `json:"fileName"`
 	CreatedAt    time.Time `json:"createdAt"`

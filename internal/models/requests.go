@@ -8,6 +8,11 @@ type CardPatchRequest struct {
 	IsDone      *bool      `json:"isDone"`
 }
 
+type CardPostRequest struct {
+	Title    *string `json:"title" validation:"required"`
+	ColumnID *int64  `json:"columnId"`
+}
+
 type ColumnRequest struct {
 	NewTitle string `json:"title" validate:"required"`
 }
@@ -52,8 +57,8 @@ type CommentRequest struct {
 type CheckListFieldPatchRequest struct {
 	Title           *string `json:"title" validate:"min=3,max=50"`
 	IsDone          *bool   `json:"isDone"`
-	PreviousFieldID *int    `json:"previousFieldId"`
-	NextFieldID     *int    `json:"nextFieldId"`
+	PreviousFieldID *int64  `json:"previousFieldId"`
+	NextFieldID     *int64  `json:"nextFieldId"`
 }
 
 type CheckListFieldPostRequest struct {
@@ -61,12 +66,12 @@ type CheckListFieldPostRequest struct {
 }
 
 type CardMoveRequest struct {
-	NewColumnID    *int `json:"newColumnId" validate:"required"`
-	PreviousCardID *int `json:"previousCardId" validate:"required"`
-	NextCardID     *int `json:"NextCardId" validate:"required"`
+	NewColumnID    *int64 `json:"newColumnId" validate:"required"`
+	PreviousCardID *int64 `json:"previousCardId" validate:"required"`
+	NextCardID     *int64 `json:"NextCardId" validate:"required"`
 }
 
 type ColumnMoveRequest struct {
-	PreviousColumnID *int `json:"previousColumnId" validate:"required"`
-	NextColumnID     *int `json:"NextColumnId" validate:"required"`
+	PreviousColumnID *int64 `json:"previousColumnId" validate:"required"`
+	NextColumnID     *int64 `json:"NextColumnId" validate:"required"`
 }
