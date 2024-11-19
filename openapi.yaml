@@ -402,20 +402,6 @@ components:
           format: password
           example: "reddiridabl666"
 
-    DeadlineRequest:
-      type: object
-      required:
-        - deadline
-        - isDone
-      properties:
-        deadline:
-          type: string
-          format: date-time
-          example: "2023-10-01T12:34:56Z"
-        isDone:
-          type: boolean
-          example: false
-
     CommentRequest:
       type: object
       required:
