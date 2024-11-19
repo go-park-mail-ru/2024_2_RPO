@@ -26,13 +26,12 @@ func (r *BoardRepository) CreateBoard(ctx context.Context, name string, userID i
 	query := `
 		INSERT INTO board (name, description, created_by)
 		VALUES ($1, $2, $3)
-		RETURNING board_id, name, description, created_at, updated_at
+		RETURNING board_id, name, created_at, updated_at
 	`
 	var board models.Board
 	err := r.db.QueryRow(ctx, query, name, "", userID).Scan(
 		&board.ID,
 		&board.Name,
-		&board.Description,
 		&board.CreatedAt,
 		&board.UpdatedAt,
 	)
@@ -131,7 +130,7 @@ func (r *BoardRepository) DeleteBoard(ctx context.Context, boardID int) error {
 // GetBoardsForUser возвращает все доски, к которым пользователь имеет доступ
 func (r *BoardRepository) GetBoardsForUser(ctx context.Context, userID int) (boardArray []models.Board, err error) {
 	query := `
-		SELECT b.board_id, b.name, b.description, b.created_at, b.updated_at,
+		SELECT b.board_id, b.name, b.created_at, b.updated_at,
 		COALESCE(f.file_uuid::text, ''),
 		COALESCE(f.file_extension, '')
 		FROM user_to_board AS ub
@@ -156,7 +155,6 @@ func (r *BoardRepository) GetBoardsForUser(ctx context.Context, userID int) (boa
 		err := rows.Scan(
 			&board.ID,
 			&board.Name,
-			&board.Description,
 			&board.CreatedAt,
 			&board.UpdatedAt,
 			&fileUUID,

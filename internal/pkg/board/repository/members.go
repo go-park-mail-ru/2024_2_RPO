@@ -315,3 +315,156 @@ func (r *BoardRepository) GetUserByNickname(ctx context.Context, nickname string
 	}
 	return user, nil
 }
+
+// GetMemberFromCard получает права пользователя из ID карточки
+func (r *BoardRepository) GetMemberFromCard(ctx context.Context, userID int, cardID int64) (role string, boardID int64, err error) {
+	query := `
+	SELECT
+	FROM card AS c
+	LEFT JOIN kanban_column AS col ON col.col_id=c.col_id
+	LEFT JOIN board AS b ON b.board_id=col.board_id
+	LEFT JOIN user_to_board AS ub ON ub.board_id=b.board_id
+	WHERE c.card_id=$1 AND ub.u_id=$2;
+	`
+}
+
+// GetMemberFromCheckListField получает права пользователя из ID поля чеклиста
+func (r *BoardRepository) GetMemberFromCheckListField(ctx context.Context, userID int64, fieldID int64) (role string, boardID int64, cardID int64, err error) {
+	panic("not implemented")
+}
+
+// GetMemberFromAttachment получает права пользователя из ID вложения
+func (r *BoardRepository) GetMemberFromAttachment(ctx context.Context, userID int64, attachmentID int64) (role string, boardID int64, cardID int64, err error) {
+	panic("not implemented")
+}
+
+// GetMemberFromColumn получает права пользователя из ID колонки
+func (r *BoardRepository) GetMemberFromColumn(ctx context.Context, userID int64, columnID int64) (role string, boardID int64, err error) {
+	panic("not implemented")
+}
+
+// GetMemberFromComment получает права пользователя из ID комментария
+func (r *BoardRepository) GetMemberFromComment(ctx context.Context, userID int64, commentID int64) (role string, boardID int64, cardID int64, err error) {
+	panic("not implemented")
+}
+
+// GetCardCheckList получает чеклист для карточки
+func (r *BoardRepository) GetCardCheckList(ctx context.Context, cardID int64) (err error) {
+	panic("not implemented")
+}
+
+// GetCardAssignedUsers получает пользователей, назначенных на карточку
+func (r *BoardRepository) GetCardAssignedUsers(ctx context.Context, cardID int64) (assignedUsers []models.UserProfile, err error) {
+	panic("not implemented")
+}
+
+// GetCardComments получает комментарии, оставленные на карточку
+func (r *BoardRepository) GetCardComments(ctx context.Context, cardID int64) (comments []models.Comment, err error) {
+	panic("not implemented")
+}
+
+// GetCardAttachments получает вложения к карточке
+func (r *BoardRepository) GetCardAttachments(ctx context.Context, cardID int64) (attachments []models.Attachment, err error) {
+	panic("not implemented")
+}
+
+// GetCardsForMove получает списки карточек на двух колонках.
+// Нужно для Drag-n-Drop (колонки откуда перемещаем и куда)
+func (r *BoardRepository) GetCardsForMove(ctx context.Context, colID int64) (column []models.Card, err error) {
+	panic("not implemented")
+}
+
+// GetColumnsForMove получает список всех колонок, чтобы сделать Drag-n-Drop
+func (r *BoardRepository) GetColumnsForMove(ctx context.Context, boardID int64) (columns []models.Column, err error) {
+	panic("not implemented")
+}
+
+// RearrangeCards обновляет позиции всех карточек колонки, чтобы сделать порядок, как в слайсе
+func (r *BoardRepository) RearrangeCards(ctx context.Context, columnID int64, cards []models.Card) (err error) {
+	panic("not implemented")
+}
+
+// RearrangeColumns обновляет позиции всех колонок, чтобы сделать порядок, как в слайсе
+func (r *BoardRepository) RearrangeColumns(ctx context.Context, columns []models.Column) (err error) {
+	panic("not implemented")
+}
+
+// AssignUserToCard назначает пользователя на карточку
+func (r *BoardRepository) AssignUserToCard(ctx context.Context, cardID int64, assignedUserID int64) (err error) {
+	panic("not implemented")
+}
+
+// DeassignUserFromCard убирает назначение пользователя
+func (r *BoardRepository) DeassignUserFromCard(ctx context.Context, cardID int64, assignedUserID int64) (err error) {
+	panic("not implemented")
+}
+
+// CreateComment добавляет на карточку комментарий
+func (r *BoardRepository) CreateComment(ctx context.Context, userID int64, cardID int64, comment *models.CommentRequest) (newComment *models.Comment, err error) {
+	panic("not implemented")
+}
+
+// UpdateComment редактирует комментарий
+func (r *BoardRepository) UpdateComment(ctx context.Context, commentID int64, update *models.CommentRequest) (updatedComment *models.Comment, err error) {
+	panic("not implemented")
+}
+
+// DeleteComment удаляет комментарий
+func (r *BoardRepository) DeleteComment(ctx context.Context, commentID int64) (err error) {
+	panic("not implemented")
+}
+
+// CreateCheckListField создаёт поле чеклиста и добавляет его в конец
+func (r *BoardRepository) CreateCheckListField(ctx context.Context, cardID int64, field *models.CheckListFieldPostRequest) (err error) {
+	panic("not implemented")
+}
+
+// UpdateCheckListField обновляет одно поле чеклиста
+func (r *BoardRepository) UpdateCheckListField(ctx context.Context, fieldID int64, update *models.CheckListFieldPatchRequest) (updatedField *models.CheckListField, err error) {
+	panic("not implemented")
+}
+
+// UpdateCheckList устанавливает порядок полей чеклиста как в слайсе
+func (r *BoardRepository) ReorderCheckList(ctx context.Context, fields []models.CheckListField) (err error) {
+	panic("not implemented")
+}
+
+// SetCardCover устанавливает файл обложки карточки
+func (r *BoardRepository) SetCardCover(ctx context.Context, userID int64, cardID int64, originalName string, fileID int64) (updatedCard *models.Card, err error) {
+	panic("not implemented")
+}
+
+// RemoveCardCover удаляет обложку карточки
+func (r *BoardRepository) RemoveCardCover(ctx context.Context, cardID int64) (err error) {
+	panic("not implemented")
+}
+
+// AddAttachment добавляет файл вложения в карточку
+func (r *BoardRepository) AddAttachment(ctx context.Context, userID int64, cardID int64, originalName string, fileID int64) (newAttachment *models.Attachment, err error) {
+	panic("not implemented")
+}
+
+// RemoveAttachment удаляет вложение
+func (r *BoardRepository) RemoveAttachment(ctx context.Context, attachmentID int64) (err error) {
+	panic("not implemented")
+}
+
+// PullInviteLink заменяет для доски индивидуальную ссылку-приглашение и возвращает новую ссылку
+func (r *BoardRepository) PullInviteLink(ctx context.Context, userID int64, boardID int64) (link *models.InviteLink, err error) {
+	panic("not implemented")
+}
+
+// DeleteInviteLink удаляет ссылку-приглашение
+func (r *BoardRepository) DeleteInviteLink(ctx context.Context, userID int64, boardID int64) (err error) {
+	panic("not implemented")
+}
+
+// FetchInvite возвращает информацию о доске, куда чела пригласили
+func (r *BoardRepository) FetchInvite(ctx context.Context, inviteUUID string) (board *models.Board, err error) {
+	panic("not implemented")
+}
+
+// AcceptInvite добавляет приглашённого пользователя на доску с правами зрителя
+func (r *BoardRepository) AcceptInvite(ctx context.Context, userID int64, boardID int64, invitedUserID int64, inviteUUID string) (board *models.Board, err error) {
+	panic("not implemented")
+}

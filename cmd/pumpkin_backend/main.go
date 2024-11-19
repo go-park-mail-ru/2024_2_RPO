@@ -163,7 +163,7 @@ func main() {
 	router.HandleFunc("/comments/{commentID}", boardDelivery.UpdateComment).Methods("PUT", "OPTIONS")
 	router.HandleFunc("/comments/{commentID}", boardDelivery.DeleteComment).Methods("DELETE", "OPTIONS")
 	router.HandleFunc("/checklist/{cardID}", boardDelivery.AddCheckListField).Methods("POST", "OPTIONS")
-	router.HandleFunc("/checklist/{fieldID}", boardDelivery.UpdateCheckListField).Methods("PUT", "OPTIONS")
+	router.HandleFunc("/checklist/{fieldID}", boardDelivery.UpdateCheckListField).Methods("PATCH", "OPTIONS")
 	router.HandleFunc("/checklist/{fieldID}", boardDelivery.DeleteCheckListField).Methods("DELETE", "OPTIONS")
 	router.HandleFunc("/cardCover/{cardID}", boardDelivery.SetCardCover).Methods("PUT", "OPTIONS")
 	router.HandleFunc("/cardCover/{cardID}", boardDelivery.DeleteCardCover).Methods("DELETE", "OPTIONS")

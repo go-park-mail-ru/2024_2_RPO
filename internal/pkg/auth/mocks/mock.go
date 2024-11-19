@@ -130,6 +130,20 @@ func (mr *MockAuthRepoMockRecorder) CheckSession(ctx, sessionID interface{}) *go
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CheckSession", reflect.TypeOf((*MockAuthRepo)(nil).CheckSession), ctx, sessionID)
 }
 
+// DisplaceUserSessions mocks base method.
+func (m *MockAuthRepo) DisplaceUserSessions(ctx context.Context, sessionID string, userID int64) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DisplaceUserSessions", ctx, sessionID, userID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DisplaceUserSessions indicates an expected call of DisplaceUserSessions.
+func (mr *MockAuthRepoMockRecorder) DisplaceUserSessions(ctx, sessionID, userID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DisplaceUserSessions", reflect.TypeOf((*MockAuthRepo)(nil).DisplaceUserSessions), ctx, sessionID, userID)
+}
+
 // GetUserPasswordHashForUser mocks base method.
 func (m *MockAuthRepo) GetUserPasswordHashForUser(ctx context.Context, userID int) (string, error) {
 	m.ctrl.T.Helper()

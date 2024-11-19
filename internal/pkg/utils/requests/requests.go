@@ -1,7 +1,6 @@
 package requests
 
 import (
-	"RPO_back/internal/pkg/middleware/session"
 	"RPO_back/internal/pkg/utils/responses"
 	"RPO_back/internal/pkg/utils/validate"
 	"encoding/json"
@@ -38,7 +37,7 @@ func GetRequestData(r *http.Request, requestData interface{}) error {
 }
 
 // GetIDFromRequest получает id из строки с префиксом (e.g. 'board_')
-func GetIDFromRequest(r *http.Request, requestVarName string, prefix string) (int, error) {
+func GetIDFromRequest(r *http.Request, requestVarName string, prefix string) (int64, error) {
 	vars := mux.Vars(r)
 	rawID, isExist := vars[requestVarName]
 	if !isExist {
@@ -50,7 +49,7 @@ func GetIDFromRequest(r *http.Request, requestVarName string, prefix string) (in
 		return 0, errors.New("error in the parameters")
 	}
 
-	resultID, err := strconv.Atoi(IDWithoutPrefix)
+	resultID, err := strconv.ParseInt(IDWithoutPrefix, 10, 64)
 	if err != nil {
 		return 0, errors.New("failed to convert to Int")
 	}
@@ -59,9 +58,9 @@ func GetIDFromRequest(r *http.Request, requestVarName string, prefix string) (in
 }
 
 // GetUserIDOrFail достаёт UserID из запроса. Если его нет, возвращает 401 и пишет в лог
-func GetUserIDOrFail(w http.ResponseWriter, r *http.Request, prefix string) (userID int, ok bool) {
-	userID, hasUserID := session.UserIDFromContext(r.Context())
-	if !hasUserID {
+func GetUserIDOrFail(w http.ResponseWriter, r *http.Request, prefix string) (userID int64, ok bool) {
+	panic("TODO implement auth grpc microservice")
+	if !ok {
 		responses.DoBadResponse(w, http.StatusUnauthorized, "unauthorized")
 		log.Warn(prefix, ": unauthorized")
 		return 0, false

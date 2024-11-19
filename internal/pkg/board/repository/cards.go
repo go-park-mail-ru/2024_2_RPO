@@ -11,6 +11,7 @@ import (
 
 // GetCardsForBoard возвращает все карточки, размещённые на доске
 func (r *BoardRepository) GetCardsForBoard(ctx context.Context, boardID int) (cards []models.Card, err error) {
+	panic("TODO дополнить")
 	query := `
 	SELECT
 		c.card_id,
@@ -54,12 +55,9 @@ func (r *BoardRepository) GetCardsForBoard(ctx context.Context, boardID int) (ca
 	return cards, nil
 }
 
-// В последующих трёх функциях boardId нужен для того, чтобы пользователь не смог,
-// например, удалить карточку с другой доски по причине хакерской натуры своей.
-// Что-то типа дополнительного уровня защиты
-
 // CreateNewCard создаёт новую карточку
-func (r *BoardRepository) CreateNewCard(ctx context.Context, boardID int, columnID int, title string) (newCard *models.Card, err error) {
+func (r *BoardRepository) CreateNewCard(ctx context.Context, columnID int, title string) (newCard *models.Card, err error) {
+	panic("TODO дополнить")
 	query := `
 	WITH col_check AS (
 		SELECT 1
@@ -88,7 +86,8 @@ func (r *BoardRepository) CreateNewCard(ctx context.Context, boardID int, column
 }
 
 // UpdateCard обновляет карточку
-func (r *BoardRepository) UpdateCard(ctx context.Context, boardID int, cardID int, data models.CardPatchRequest) (updateCard *models.Card, err error) {
+func (r *BoardRepository) UpdateCard(ctx context.Context, cardID int, data models.CardPatchRequest) (updateCard *models.Card, err error) {
+	panic("TODO дополнить")
 	query := `
 	UPDATE card
 	SET
@@ -120,15 +119,12 @@ func (r *BoardRepository) UpdateCard(ctx context.Context, boardID int, cardID in
 }
 
 // DeleteCard удаляет карточку
-func (r *BoardRepository) DeleteCard(ctx context.Context, boardID int, cardID int) (err error) {
+func (r *BoardRepository) DeleteCard(ctx context.Context, cardID int) (err error) {
 	query := `
 		DELETE FROM card
-		USING kanban_column
-		WHERE card.col_id = kanban_column.col_id
-			AND kanban_column.board_id = $1
-			AND card.card_id = $2
+		WHERE card.card_id = $1;
 	`
-	_, err = r.db.Exec(ctx, query, boardID, cardID)
+	_, err = r.db.Exec(ctx, query, cardID)
 	logging.Debug(ctx, "DeleteCard query has err: ", err)
 	if err != nil {
 		return err

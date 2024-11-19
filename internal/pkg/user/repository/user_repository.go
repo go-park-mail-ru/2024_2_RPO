@@ -164,7 +164,7 @@ func (r *UserRepository) GetUserByEmail(ctx context.Context, email string) (user
 }
 
 // CreateUser создаёт пользователя (или не создаёт, если повторяются креды)
-func (r *UserRepository) CreateUser(ctx context.Context, user *models.UserRegisterRequest, hashedPassword string) (newUser *models.UserProfile, err error) {
+func (r *UserRepository) CreateUser(ctx context.Context, user *models.UserRegisterRequest) (newUser *models.UserProfile, err error) {
 	newUser = &models.UserProfile{}
 	query := `INSERT INTO "user" (nickname, email, password_hash, description, joined_at, updated_at)
               VALUES ($1, $2, $3, $4, $5, $6) RETURNING u_id, nickname, email, password_hash, description, joined_at, updated_at`
@@ -183,22 +183,36 @@ func (r *UserRepository) CreateUser(ctx context.Context, user *models.UserRegist
 
 // CheckUniqueCredentials проверяет, существуют ли такие логин и email в базе
 func (r *UserRepository) CheckUniqueCredentials(ctx context.Context, nickname string, email string) error {
-	query1 := `SELECT nickname, email FROM "user" WHERE nickname = $1 OR email=$2;`
+	funcName := `UserRepository.CheckUniqueCredentials`
+	query := `SELECT nickname, email FROM "user" WHERE nickname = $1 OR email=$2;`
 	var emailCount, nicknameCount int
-	rows, err := r.db.Query(ctx, query1, nickname)
-	logging.Debug(ctx, "CheckUniqueCredentials query has err: ", err)
+	rows, err := r.db.Query(ctx, query, nickname)
+	logging.Debug(ctx, funcName, " query has err: ", err)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil
 		}
-		return fmt.Errorf("UserRepository CheckUniqueCredentials: %w", err)
+		return fmt.Errorf("%s: %w", funcName, err)
+	}
+	for rows.Next() {
+		var knownNickname, knownEmail string
+		err := rows.Scan(&knownNickname, &knownEmail)
+		if err != nil {
+			return fmt.Errorf("%s: %w", funcName, err)
+		}
+		if knownEmail == email {
+			emailCount++
+		}
+		if knownNickname == nickname {
+			nicknameCount++
+		}
 	}
 	if emailCount > 0 && nicknameCount > 0 {
-		return fmt.Errorf("UserRepository CheckUniqueCredentials: %w %w", errs.ErrBusyNickname, errs.ErrBusyEmail)
+		return fmt.Errorf("%s: %w %w", funcName, errs.ErrBusyNickname, errs.ErrBusyEmail)
 	} else if nicknameCount > 0 {
-		return fmt.Errorf("UserRepository CheckUniqueCredentials: %w", errs.ErrBusyNickname)
+		return fmt.Errorf("%s: %w", funcName, errs.ErrBusyNickname)
 	} else if emailCount > 0 {
-		return fmt.Errorf("UserRepository CheckUniqueCredentials: %w", errs.ErrBusyEmail)
+		return fmt.Errorf("%s: %w", funcName, errs.ErrBusyEmail)
 	}
 	return nil
 }
