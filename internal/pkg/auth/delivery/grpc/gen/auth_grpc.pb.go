@@ -31,8 +31,8 @@ const (
 type AuthClient interface {
 	CreateSession(ctx context.Context, in *UserDataRequest, opts ...grpc.CallOption) (*Session, error)
 	CheckSession(ctx context.Context, in *Session, opts ...grpc.CallOption) (*UserDataResponse, error)
-	DeleteSession(ctx context.Context, in *Session, opts ...grpc.CallOption) (*EmptyMessage, error)
-	ChangePassword(ctx context.Context, in *ChangePasswordRequest, opts ...grpc.CallOption) (*UserDataResponse, error)
+	DeleteSession(ctx context.Context, in *Session, opts ...grpc.CallOption) (*StatusResponse, error)
+	ChangePassword(ctx context.Context, in *ChangePasswordRequest, opts ...grpc.CallOption) (*StatusResponse, error)
 }
 
 type authClient struct {
@@ -63,9 +63,9 @@ func (c *authClient) CheckSession(ctx context.Context, in *Session, opts ...grpc
 	return out, nil
 }
 
-func (c *authClient) DeleteSession(ctx context.Context, in *Session, opts ...grpc.CallOption) (*EmptyMessage, error) {
+func (c *authClient) DeleteSession(ctx context.Context, in *Session, opts ...grpc.CallOption) (*StatusResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(EmptyMessage)
+	out := new(StatusResponse)
 	err := c.cc.Invoke(ctx, Auth_DeleteSession_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -73,9 +73,9 @@ func (c *authClient) DeleteSession(ctx context.Context, in *Session, opts ...grp
 	return out, nil
 }
 
-func (c *authClient) ChangePassword(ctx context.Context, in *ChangePasswordRequest, opts ...grpc.CallOption) (*UserDataResponse, error) {
+func (c *authClient) ChangePassword(ctx context.Context, in *ChangePasswordRequest, opts ...grpc.CallOption) (*StatusResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(UserDataResponse)
+	out := new(StatusResponse)
 	err := c.cc.Invoke(ctx, Auth_ChangePassword_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -89,8 +89,8 @@ func (c *authClient) ChangePassword(ctx context.Context, in *ChangePasswordReque
 type AuthServer interface {
 	CreateSession(context.Context, *UserDataRequest) (*Session, error)
 	CheckSession(context.Context, *Session) (*UserDataResponse, error)
-	DeleteSession(context.Context, *Session) (*EmptyMessage, error)
-	ChangePassword(context.Context, *ChangePasswordRequest) (*UserDataResponse, error)
+	DeleteSession(context.Context, *Session) (*StatusResponse, error)
+	ChangePassword(context.Context, *ChangePasswordRequest) (*StatusResponse, error)
 	mustEmbedUnimplementedAuthServer()
 }
 
@@ -107,10 +107,10 @@ func (UnimplementedAuthServer) CreateSession(context.Context, *UserDataRequest) 
 func (UnimplementedAuthServer) CheckSession(context.Context, *Session) (*UserDataResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CheckSession not implemented")
 }
-func (UnimplementedAuthServer) DeleteSession(context.Context, *Session) (*EmptyMessage, error) {
+func (UnimplementedAuthServer) DeleteSession(context.Context, *Session) (*StatusResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeleteSession not implemented")
 }
-func (UnimplementedAuthServer) ChangePassword(context.Context, *ChangePasswordRequest) (*UserDataResponse, error) {
+func (UnimplementedAuthServer) ChangePassword(context.Context, *ChangePasswordRequest) (*StatusResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ChangePassword not implemented")
 }
 func (UnimplementedAuthServer) mustEmbedUnimplementedAuthServer() {}

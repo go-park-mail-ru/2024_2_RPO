@@ -78,7 +78,7 @@ func (repo *AuthRepository) RetrieveUserIDFromSession(ctx context.Context, sessi
 }
 
 // GetUserByID получает данные пользователя из базы по id
-func (repo *AuthRepository) GetUserByID(ctx context.Context, userID int) (user *models.UserProfile, err error) {
+func (repo *AuthRepository) GetUserPasswordHash(ctx context.Context, userID int) (passwordHash string, err error) {
 	query := `
 	SELECT u_id, nickname, email, description,
 	joined_at, updated_at, password_hash
@@ -102,49 +102,6 @@ func (repo *AuthRepository) GetUserByID(ctx context.Context, userID int) (user *
 		return nil, fmt.Errorf("GetUserByID: %w", err)
 	}
 	return user, nil
-}
-
-// CreateUser создаёт пользователя (или не создаёт, если повторяются креды)
-func (repo *AuthRepository) CreateUser(ctx context.Context, user *models.UserRegistration, hashedPassword string) (newUser *models.UserProfile, err error) {
-	newUser = &models.UserProfile{}
-	query := `INSERT INTO "user" (nickname, email, password_hash, description, joined_at, updated_at)
-              VALUES ($1, $2, $3, $4, $5, $6) RETURNING u_id, nickname, email, password_hash, description, joined_at, updated_at`
-
-	err = repo.db.QueryRow(ctx, query, user.Name, user.Email, "", time.Now(), time.Now()).Scan(
-		&newUser.ID,
-		&newUser.Name,
-		&newUser.Email,
-		&newUser.Description,
-		&newUser.JoinedAt,
-		&newUser.UpdatedAt,
-	)
-	logging.Debug(ctx, "CreateUser query has err: ", err)
-	return newUser, err
-}
-
-// CheckUniqueCredentials проверяет, существуют ли такие логин и email в базе
-func (repo *AuthRepository) CheckUniqueCredentials(ctx context.Context, nickname string, email string) error {
-	query1 := `SELECT COUNT(*) FROM "user" WHERE nickname = $1;`
-	query2 := `SELECT COUNT(*) FROM "user" WHERE email = $1;`
-	var count1, count2 int
-	err := repo.db.QueryRow(ctx, query1, nickname).Scan(&count1)
-	logging.Debug(ctx, "CheckUniqueCredentials query 1 has err: ", err)
-	if err != nil {
-		return fmt.Errorf("AuthRepository CheckUniqueCredentials (query1): %w", err)
-	}
-	err = repo.db.QueryRow(ctx, query2, email).Scan(&count2)
-	logging.Debug(ctx, "CheckUniqueCredentials query 2 has err: ", err)
-	if err != nil {
-		return fmt.Errorf("AuthRepository CheckUniqueCredentials (query2): %w", err)
-	}
-	if count1 > 0 && count2 > 0 {
-		return fmt.Errorf("AuthRepository CheckUniqueCredentials: %w %w", errs.ErrBusyNickname, errs.ErrBusyEmail)
-	} else if count1 > 0 {
-		return fmt.Errorf("AuthRepository CheckUniqueCredentials: %w", errs.ErrBusyNickname)
-	} else if count1 > 0 {
-		return fmt.Errorf("AuthRepository CheckUniqueCredentials: %w", errs.ErrBusyEmail)
-	}
-	return nil
 }
 
 // SetNewPasswordHash устанавливает пользователю новый хеш пароля

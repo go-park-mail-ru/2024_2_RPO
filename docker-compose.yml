@@ -1,6 +1,6 @@
 services:
-  main:
-    container_name: main
+  auth:
+    container_name: auth_service
     build:
       context: .
       dockerfile: ./Dockerfile
@@ -13,7 +13,47 @@ services:
         condition: service_started
     restart: always
     ports:
-      - "127.0.0.1:8800:8800"
+      - "127.0.0.1:8801:8801"
+    networks:
+      - Pumpkin-network
+    volumes:
+      - pumpkin-user-uploads:${USER_UPLOADS_DIR}
+
+  board:
+    container_name: board_service
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    env_file:
+      - .env
+    depends_on:
+      postgres:
+        condition: service_started
+      redis:
+        condition: service_started
+    restart: always
+    ports:
+      - "127.0.0.1:8802:8802"
+    networks:
+      - Pumpkin-network
+    volumes:
+      - pumpkin-user-uploads:${USER_UPLOADS_DIR}
+
+  user:
+    container_name: user_service
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    env_file:
+      - .env
+    depends_on:
+      postgres:
+        condition: service_started
+      redis:
+        condition: service_started
+    restart: always
+    ports:
+      - "127.0.0.1:8803:8803"
     networks:
       - Pumpkin-network
     volumes:

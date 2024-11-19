@@ -8,6 +8,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -140,7 +141,7 @@ func (r *UserRepository) SetUserAvatar(ctx context.Context, userID int, fileExte
 func (r *UserRepository) GetUserByEmail(ctx context.Context, email string) (user *models.UserProfile, err error) {
 	query := `
 	SELECT u_id, nickname, email, description,
-	joined_at, updated_at, password_hash
+	joined_at, updated_at
 	FROM "user"
 	WHERE email=$1;`
 	user = &models.UserProfile{}
@@ -151,7 +152,6 @@ func (r *UserRepository) GetUserByEmail(ctx context.Context, email string) (user
 		&user.Description,
 		&user.JoinedAt,
 		&user.UpdatedAt,
-		&user.PasswordHash,
 	)
 	logging.Debug(ctx, "GetUserByEmail query has err: ", err)
 	if err != nil {
@@ -161,4 +161,44 @@ func (r *UserRepository) GetUserByEmail(ctx context.Context, email string) (user
 		return nil, err
 	}
 	return user, nil
+}
+
+// CreateUser создаёт пользователя (или не создаёт, если повторяются креды)
+func (r *UserRepository) CreateUser(ctx context.Context, user *models.UserRegistration, hashedPassword string) (newUser *models.UserProfile, err error) {
+	newUser = &models.UserProfile{}
+	query := `INSERT INTO "user" (nickname, email, password_hash, description, joined_at, updated_at)
+              VALUES ($1, $2, $3, $4, $5, $6) RETURNING u_id, nickname, email, password_hash, description, joined_at, updated_at`
+
+	err = repo.db.QueryRow(ctx, query, user.Name, user.Email, "", time.Now(), time.Now()).Scan(
+		&newUser.ID,
+		&newUser.Name,
+		&newUser.Email,
+		&newUser.Description,
+		&newUser.JoinedAt,
+		&newUser.UpdatedAt,
+	)
+	logging.Debug(ctx, "CreateUser query has err: ", err)
+	return newUser, err
+}
+
+// CheckUniqueCredentials проверяет, существуют ли такие логин и email в базе
+func (repo *UserRepository) CheckUniqueCredentials(ctx context.Context, nickname string, email string) error {
+	query1 := `SELECT nickname, email FROM "user" WHERE nickname = $1 OR email=$2;`
+	var emailCount, nicknameCount int
+	rows, err := repo.db.Query(ctx, query1, nickname)
+	logging.Debug(ctx, "CheckUniqueCredentials query has err: ", err)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil
+		}
+		return fmt.Errorf("UserRepository CheckUniqueCredentials: %w", err)
+	}
+	if emailCount > 0 && nicknameCount > 0 {
+		return fmt.Errorf("UserRepository CheckUniqueCredentials: %w %w", errs.ErrBusyNickname, errs.ErrBusyEmail)
+	} else if nicknameCount > 0 {
+		return fmt.Errorf("UserRepository CheckUniqueCredentials: %w", errs.ErrBusyNickname)
+	} else if emailCount > 0 {
+		return fmt.Errorf("UserRepository CheckUniqueCredentials: %w", errs.ErrBusyEmail)
+	}
+	return nil
 }
