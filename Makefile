@@ -16,15 +16,15 @@ LDFLAGS := -ldflags="-s -w" # Отключить дебаг-информацию
 
 build_auth:
 	@echo "==> Building the application..."
-	@go build $(GOFLAGS) $(LDFLAGS) -o $(BUILD_DIR)/auth ./cmd/internal/auth
+	@go build $(GOFLAGS) $(LDFLAGS) -o $(BUILD_DIR)/auth_app ./cmd/auth
 
 build_user:
 	@echo "==> Building the application..."
-	@go build $(GOFLAGS) $(LDFLAGS) -o $(BUILD_DIR)/user ./cmd/internal/user
+	@go build $(GOFLAGS) $(LDFLAGS) -o $(BUILD_DIR)/user_app ./cmd/user
 
 build_board:
 	@echo "==> Building the application..."
-	@go build $(GOFLAGS) $(LDFLAGS) -o $(BUILD_DIR)/board ./cmd/internal/board
+	@go build $(GOFLAGS) $(LDFLAGS) -o $(BUILD_DIR)/board_app ./cmd/board
 
 run_tests: generate
 	@echo "==> Running tests..."
