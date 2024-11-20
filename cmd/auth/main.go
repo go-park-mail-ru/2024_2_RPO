@@ -15,7 +15,6 @@ import (
 	UserDelivery "RPO_back/internal/pkg/user/delivery"
 	UserRepository "RPO_back/internal/pkg/user/repository"
 	UserUsecase "RPO_back/internal/pkg/user/usecase"
-	"RPO_back/internal/pkg/utils/environment"
 	"RPO_back/internal/pkg/utils/logging"
 
 	"context"

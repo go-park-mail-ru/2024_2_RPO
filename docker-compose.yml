@@ -3,7 +3,7 @@ services:
     container_name: auth_service
     build:
       context: .
-      dockerfile: ./Dockerfile
+      dockerfile: ./cmd/auth/Dockerfile
     env_file:
       - .env
     depends_on:
@@ -23,7 +23,7 @@ services:
     container_name: board_service
     build:
       context: .
-      dockerfile: ./Dockerfile
+      dockerfile: ./cmd/board/Dockerfile
     env_file:
       - .env
     depends_on:
@@ -43,7 +43,7 @@ services:
     container_name: user_service
     build:
       context: .
-      dockerfile: ./Dockerfile
+      dockerfile: ./cmd/user/Dockerfile
     env_file:
       - .env
     depends_on:

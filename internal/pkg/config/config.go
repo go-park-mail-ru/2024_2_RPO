@@ -17,17 +17,14 @@ type Config struct {
 
 type AuthConfig struct {
 	PostgresPoolSize int
-	Port             int
 	LogFile          string
 }
 type UserConfig struct {
 	PostgresPoolSize int
-	Port             int
 	LogFile          string
 }
 type BoardConfig struct {
 	PostgresPoolSize int
-	Port             int
 	LogFile          string
 }
 
@@ -74,4 +71,8 @@ func ValidateEnv() error {
 	}
 
 	return nil
+}
+
+func LoadConfig() (config *Config, err error) {
+	return nil, fmt.Errorf("not implemented")
 }

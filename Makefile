@@ -6,23 +6,25 @@ include .env
 export
 endif
 
-APP_NAME := pumpkin_backend
 BUILD_DIR := ./build
-SRC_DIR := ./cmd/pumpkin_backend
 
 GOFLAGS := # Может, когда-нибудь пригодятся
 LDFLAGS := -ldflags="-s -w" # Отключить дебаг-информацию
 
-DATABASE_URL="postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}?sslmode=${POSTGRES_SSLMODE}"
-
 # Цели Makefile, которые не привязываются к файлам
-.PHONY: all build run_tests test clean coverage run generate
+.PHONY: build_auth build_user build_board run_tests test clean coverage run generate
 
-all: build
-
-build:
+build_auth:
 	@echo "==> Building the application..."
-	@go build $(GOFLAGS) $(LDFLAGS) -o $(BUILD_DIR)/$(APP_NAME) $(SRC_DIR)
+	@go build $(GOFLAGS) $(LDFLAGS) -o $(BUILD_DIR)/auth ./cmd/internal/auth
+
+build_user:
+	@echo "==> Building the application..."
+	@go build $(GOFLAGS) $(LDFLAGS) -o $(BUILD_DIR)/user ./cmd/internal/user
+
+build_board:
+	@echo "==> Building the application..."
+	@go build $(GOFLAGS) $(LDFLAGS) -o $(BUILD_DIR)/board ./cmd/internal/board
 
 run_tests: generate
 	@echo "==> Running tests..."
@@ -43,12 +45,12 @@ clean:
 	@echo "==> Cleaning up..."
 	@rm -rf $(BUILD_DIR)
 
-run:
-	@go run ${SRC_DIR}
-
 migrate-up:
+	@which migrate
 	@echo "==> Running migrations..."
-	@migrate -path ./database/migrations -database $(DATABASE_URL) up
+	@echo "Provide DSN for migrations with superuser: >>> "
+	@read MIGRATION_DSN; echo "MIGRATION_DSN: $$MIGRATION_DSN"; \
+	migrate -path ./database/migrations -database $(MIGRATION_DSN) up
 
 make-migrations:
 	@echo "==> Let's generate migrations with Atlas!"
