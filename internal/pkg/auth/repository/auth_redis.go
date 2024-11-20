@@ -5,14 +5,12 @@ import (
 	"RPO_back/internal/pkg/utils/logging"
 	"RPO_back/internal/pkg/utils/pgxiface"
 	"context"
-	"errors"
 	"fmt"
 	"log"
 	"strconv"
 	"time"
 
 	"github.com/go-redis/redis/v8"
-	"github.com/jackc/pgx/v5"
 )
 
 const (
@@ -130,41 +128,4 @@ func (r *AuthRepository) CheckSession(ctx context.Context, sessionID string) (us
 	}
 
 	return intVal, nil
-}
-
-// SetNewPasswordHash устанавливает пользователю новый хеш пароля
-func (r *AuthRepository) SetNewPasswordHash(ctx context.Context, userID int, newPasswordHash string) error {
-	query := `
-	UPDATE "user"
-	SET password_hash=$1
-	WHERE u_id=$2;
-	`
-	tag, err := r.db.Exec(ctx, query, newPasswordHash, userID)
-	logging.Debug(ctx, "SetNewPasswordHash query has err: ", err, " tag: ", tag)
-	if err != nil {
-		return fmt.Errorf("SetNewPasswordHash: %w", err)
-	}
-	if tag.RowsAffected() == 0 {
-		return fmt.Errorf("SetNewPasswordHash: No password change done")
-	}
-	return nil
-}
-
-func (r *AuthRepository) GetUserPasswordHash(ctx context.Context, userID int) (passwordHash string, err error) {
-	query := `
-	SELECT password_hash
-	FROM "user"
-	WHERE u_id = $1
-	`
-
-	err = r.db.QueryRow(ctx, query, userID).Scan(&passwordHash)
-	logging.Debug(ctx, "GetUserPasswordHash query has err: ", err)
-	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return "", errs.ErrNotFound
-		}
-		return "", fmt.Errorf("GetUserPasswordHash: %w", err)
-	}
-
-	return passwordHash, nil
 }

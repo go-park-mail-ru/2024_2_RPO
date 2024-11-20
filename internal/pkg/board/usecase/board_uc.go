@@ -213,7 +213,7 @@ func (uc *BoardUsecase) GetBoardContent(ctx context.Context, userID int64, board
 }
 
 // CreateNewCard создаёт новую карточку и возвращает её
-func (uc *BoardUsecase) CreateNewCard(ctx context.Context, userID int64, data *models.CardPostRequest) (newCard *models.Card, err error) {
+func (uc *BoardUsecase) CreateNewCard(ctx context.Context, userID int64, boardID int64, data *models.CardPostRequest) (newCard *models.Card, err error) {
 	perms, err := uc.boardRepository.GetMemberPermissions(ctx, boardID, userID, false)
 	if err != nil {
 		if errors.Is(err, errs.ErrNotPermitted) {
@@ -222,15 +222,16 @@ func (uc *BoardUsecase) CreateNewCard(ctx context.Context, userID int64, data *m
 		if errors.Is(err, errs.ErrNotFound) {
 			return nil, fmt.Errorf("CreateNewCard (get permissions): %w", err)
 		}
-		return nil, fmt.Errorf("CreateNewCard (add GetMemberPermissions): %w", err)
+		return nil, fmt.Errorf("CreateNewCard (get permissions): %w", err)
 	}
+
 	if perms.Role == "viewer" {
 		return nil, fmt.Errorf("CreateNewCard (check): %w", errs.ErrNotPermitted)
 	}
 
 	card, err := uc.boardRepository.CreateNewCard(ctx, *data.ColumnID, *data.Title)
 	if err != nil {
-		return nil, fmt.Errorf("CreateNewCard (add CreateNewCard): %w", err)
+		return nil, fmt.Errorf("CreateNewCard (create): %w", err)
 	}
 
 	return &models.Card{
@@ -247,12 +248,12 @@ func (uc *BoardUsecase) UpdateCard(ctx context.Context, userID int64, cardID int
 	role, _, err := uc.boardRepository.GetMemberFromCard(ctx, userID, cardID)
 	if err != nil {
 		if errors.Is(err, errs.ErrNotPermitted) {
-			return nil, fmt.Errorf("UpdateCard: %w", err)
+			return nil, fmt.Errorf("UpdateCard (get permissions): %w", err)
 		}
 		if errors.Is(err, errs.ErrNotFound) {
-			return nil, fmt.Errorf("UpdateCard: %w", err)
+			return nil, fmt.Errorf("UpdateCard (get permissions): %w", err)
 		}
-		return nil, fmt.Errorf("UpdateCard (add GetMemberPermissions): %w", err)
+		return nil, fmt.Errorf("UpdateCard (get permissions): %w", err)
 	}
 	if role == "viewer" {
 		return nil, fmt.Errorf("UpdateCard (check): %w", errs.ErrNotPermitted)
@@ -260,7 +261,7 @@ func (uc *BoardUsecase) UpdateCard(ctx context.Context, userID int64, cardID int
 
 	updatedCard, err = uc.boardRepository.UpdateCard(ctx, cardID, *data)
 	if err != nil {
-		return nil, fmt.Errorf("UpdateCard (repo): %w", err)
+		return nil, fmt.Errorf("UpdateCard (update): %w", err)
 	}
 
 	return &models.Card{
@@ -284,7 +285,7 @@ func (uc *BoardUsecase) DeleteCard(ctx context.Context, userID int64, cardID int
 
 	err = uc.boardRepository.DeleteCard(ctx, cardID)
 	if err != nil {
-		return err
+		return fmt.Errorf("DeleteCard (delete): %w", err)
 	}
 
 	return nil

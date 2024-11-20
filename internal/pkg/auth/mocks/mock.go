@@ -35,24 +35,24 @@ func (m *MockAuthUsecase) EXPECT() *MockAuthUsecaseMockRecorder {
 }
 
 // ChangePassword mocks base method.
-func (m *MockAuthUsecase) ChangePassword(ctx context.Context, oldPassword, newPassword string) error {
+func (m *MockAuthUsecase) ChangePassword(ctx context.Context, oldPassword, newPassword, sessionID string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ChangePassword", ctx, oldPassword, newPassword)
+	ret := m.ctrl.Call(m, "ChangePassword", ctx, oldPassword, newPassword, sessionID)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // ChangePassword indicates an expected call of ChangePassword.
-func (mr *MockAuthUsecaseMockRecorder) ChangePassword(ctx, oldPassword, newPassword interface{}) *gomock.Call {
+func (mr *MockAuthUsecaseMockRecorder) ChangePassword(ctx, oldPassword, newPassword, sessionID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ChangePassword", reflect.TypeOf((*MockAuthUsecase)(nil).ChangePassword), ctx, oldPassword, newPassword)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ChangePassword", reflect.TypeOf((*MockAuthUsecase)(nil).ChangePassword), ctx, oldPassword, newPassword, sessionID)
 }
 
 // CheckSession mocks base method.
-func (m *MockAuthUsecase) CheckSession(ctx context.Context, sessionID string) (int64, error) {
+func (m *MockAuthUsecase) CheckSession(ctx context.Context, sessionID string) (int, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CheckSession", ctx, sessionID)
-	ret0, _ := ret[0].(int64)
+	ret0, _ := ret[0].(int)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -144,19 +144,19 @@ func (mr *MockAuthRepoMockRecorder) DisplaceUserSessions(ctx, sessionID, userID 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DisplaceUserSessions", reflect.TypeOf((*MockAuthRepo)(nil).DisplaceUserSessions), ctx, sessionID, userID)
 }
 
-// GetUserPasswordHashForUser mocks base method.
-func (m *MockAuthRepo) GetUserPasswordHashForUser(ctx context.Context, userID int) (string, error) {
+// GetUserPasswordHash mocks base method.
+func (m *MockAuthRepo) GetUserPasswordHash(ctx context.Context, userID int) (string, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetUserPasswordHashForUser", ctx, userID)
+	ret := m.ctrl.Call(m, "GetUserPasswordHash", ctx, userID)
 	ret0, _ := ret[0].(string)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GetUserPasswordHashForUser indicates an expected call of GetUserPasswordHashForUser.
-func (mr *MockAuthRepoMockRecorder) GetUserPasswordHashForUser(ctx, userID interface{}) *gomock.Call {
+// GetUserPasswordHash indicates an expected call of GetUserPasswordHash.
+func (mr *MockAuthRepoMockRecorder) GetUserPasswordHash(ctx, userID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUserPasswordHashForUser", reflect.TypeOf((*MockAuthRepo)(nil).GetUserPasswordHashForUser), ctx, userID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUserPasswordHash", reflect.TypeOf((*MockAuthRepo)(nil).GetUserPasswordHash), ctx, userID)
 }
 
 // KillSessionRedis mocks base method.

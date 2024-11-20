@@ -972,7 +972,7 @@ func (mr *MockBoardRepositoryMockRecorder) GetMemberFromAttachment(ctx, userID, 
 }
 
 // GetMemberFromCard mocks base method.
-func (m *MockBoardRepository) GetMemberFromCard(ctx context.Context, userID int, cardID int64) (string, int64, error) {
+func (m *MockBoardRepository) GetMemberFromCard(ctx context.Context, userID, cardID int64) (string, int64, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetMemberFromCard", ctx, userID, cardID)
 	ret0, _ := ret[0].(string)
