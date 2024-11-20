@@ -4,20 +4,21 @@ import (
 	"RPO_back/internal/pkg/auth"
 	"RPO_back/internal/pkg/auth/delivery/grpc/gen"
 	"context"
+	"strconv"
 )
 
-type AuthServer struct {
+type AuthDelivery struct {
 	gen.AuthServer
 	authUsecase auth.AuthUsecase
 }
 
-func CreateAuthServer(uc auth.AuthUsecase) *AuthServer {
-	return &AuthServer{
+func CreateAuthServer(uc auth.AuthUsecase) *AuthDelivery {
+	return &AuthDelivery{
 		authUsecase: uc,
 	}
 }
 
-func (d *AuthServer) CreateSession(ctx context.Context, request *gen.UserDataRequest) (*gen.Session, error) {
+func (d *AuthDelivery) CreateSession(ctx context.Context, request *gen.UserDataRequest) (*gen.Session, error) {
 	sessionID, err := d.authUsecase.CreateSession(ctx, request.UserID, request.Password)
 	if err != nil {
 		return &gen.Session{Error: gen.Error_INVALID_CREDENTIALS}, err
@@ -26,16 +27,16 @@ func (d *AuthServer) CreateSession(ctx context.Context, request *gen.UserDataReq
 	return &gen.Session{SessionID: sessionID, Error: gen.Error_NONE}, nil
 }
 
-func (d *AuthServer) CheckSession(ctx context.Context, request *gen.Session) (*gen.UserDataResponse, error) {
+func (d *AuthDelivery) CheckSession(ctx context.Context, request *gen.Session) (*gen.UserDataResponse, error) {
 	userID, err := d.authUsecase.CheckSession(ctx, request.SessionID)
 	if err != nil {
 		return &gen.UserDataResponse{Error: gen.Error_INVALID_CREDENTIALS}, err
 	}
 
-	return &gen.UserDataResponse{UserID: userID, Error: gen.Error_NONE}, nil
+	return &gen.UserDataResponse{UserID: int64(userID), Error: gen.Error_NONE}, nil
 }
 
-func (d *AuthServer) DeleteSession(ctx context.Context, request *gen.Session) (*gen.StatusResponse, error) {
+func (d *AuthDelivery) DeleteSession(ctx context.Context, request *gen.Session) (*gen.StatusResponse, error) {
 	err := d.authUsecase.KillSession(ctx, request.SessionID)
 	if err != nil {
 		return &gen.StatusResponse{Error: gen.Error_INTERNAL_SERVER_ERROR}, nil
@@ -44,8 +45,8 @@ func (d *AuthServer) DeleteSession(ctx context.Context, request *gen.Session) (*
 	return &gen.StatusResponse{Error: gen.Error_NONE}, nil
 }
 
-func (d *AuthServer) ChangePassword(ctx context.Context, request *gen.ChangePasswordRequest) (*gen.StatusResponse, error) {
-	err := d.authUsecase.ChangePassword(ctx, request.PasswordOld, request.PasswordNew)
+func (d *AuthDelivery) ChangePassword(ctx context.Context, request *gen.ChangePasswordRequest) (*gen.StatusResponse, error) {
+	err := d.authUsecase.ChangePassword(ctx, request.PasswordOld, request.PasswordNew, strconv.Itoa(int(request.SessionID)))
 	if err != nil {
 		return &gen.StatusResponse{Error: gen.Error_INTERNAL_SERVER_ERROR}, nil
 	}

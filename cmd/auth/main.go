@@ -2,28 +2,23 @@ package main
 
 import (
 	AuthDelivery "RPO_back/internal/pkg/auth/delivery"
+	"RPO_back/internal/pkg/auth/delivery/grpc/gen"
 	AuthRepository "RPO_back/internal/pkg/auth/repository"
 	AuthUsecase "RPO_back/internal/pkg/auth/usecase"
-	BoardDelivery "RPO_back/internal/pkg/board/delivery"
-	BoardRepository "RPO_back/internal/pkg/board/repository"
-	BoardUsecase "RPO_back/internal/pkg/board/usecase"
-	"RPO_back/internal/pkg/middleware/cors"
-	"RPO_back/internal/pkg/middleware/csrf"
+	"RPO_back/internal/pkg/config"
 	"RPO_back/internal/pkg/middleware/logging_middleware"
-	"RPO_back/internal/pkg/middleware/no_panic"
-	sessionMiddleware "RPO_back/internal/pkg/middleware/session"
-	UserDelivery "RPO_back/internal/pkg/user/delivery"
-	UserRepository "RPO_back/internal/pkg/user/repository"
-	UserUsecase "RPO_back/internal/pkg/user/usecase"
 	"RPO_back/internal/pkg/utils/logging"
+	"net"
+	"os/signal"
+	"syscall"
+
+	"google.golang.org/grpc"
 
 	"context"
 	"fmt"
-	"net/http"
 	"os"
 
 	"github.com/go-redis/redis/v8"
-	"github.com/gorilla/mux"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/joho/godotenv"
 	log "github.com/sirupsen/logrus"
@@ -53,7 +48,7 @@ func main() {
 	}
 
 	// Проверка переменных окружения
-	err = environment.ValidateEnv()
+	err = config.ValidateEnv()
 	if err != nil {
 		log.Fatalf("environment configuration is invalid: %s", err.Error())
 		return
@@ -109,77 +104,32 @@ func main() {
 	// Auth
 	authRepository := AuthRepository.CreateAuthRepository(postgresDb, redisDb)
 	authUsecase := AuthUsecase.CreateAuthUsecase(authRepository)
-	authDelivery := AuthDelivery.CreateAuthDelivery(authUsecase)
+	authDelivery := AuthDelivery.CreateAuthServer(authUsecase)
 
-	//Board
-	boardRepository := BoardRepository.CreateBoardRepository(postgresDb)
-	boardUsecase := BoardUsecase.CreateBoardUsecase(boardRepository)
-	boardDelivery := BoardDelivery.CreateBoardDelivery(boardUsecase)
+	LogMiddleware := logging_middleware.CreateGrpcLogMiddleware(log.StandardLogger())
 
-	//User
-	userRepository := UserRepository.CreateUserRepository(postgresDb)
-	userUsecase := UserUsecase.CreateUserUsecase(userRepository)
-	userDelivery := UserDelivery.CreateUserDelivery(userUsecase)
+	grpcServer := grpc.NewServer(
+		grpc.UnaryInterceptor(LogMiddleware.InterceptorLogger),
+	)
 
-	// Создаём новый маршрутизатор
-	router := mux.NewRouter()
+	gen.RegisterAuthServer(grpcServer, authDelivery)
 
-	// Применяем middleware
-	router.Use(no_panic.PanicMiddleware)
-	router.Use(logging_middleware.LoggingMiddleware)
-	router.Use(cors.CorsMiddleware)
-	router.Use(csrf.CSRFMiddleware)
-	sessionMWare := sessionMiddleware.CreateSessionMiddleware(authRepository)
-	router.Use(sessionMWare.Middleware)
+	listener, err := net.Listen("tcp", ":"+os.Getenv("SERVER_PORT"))
+	if err != nil {
+		log.Fatalf("failed to listen on port %s: %v", os.Getenv("SERVER_PORT"), err)
+	}
+	log.Infof("gRPC server is listening on port %s", os.Getenv("SERVER_PORT"))
 
-	// Регистрируем обработчики
-	router.HandleFunc("/auth/register", authDelivery.RegisterUser).Methods("POST", "OPTIONS")
-	router.HandleFunc("/auth/login", authDelivery.LoginUser).Methods("POST", "OPTIONS")
-	router.HandleFunc("/auth/logout", authDelivery.LogoutUser).Methods("POST", "OPTIONS")
-	router.HandleFunc("/auth/changePassword", authDelivery.ChangePassword).Methods("POST", "OPTIONS")
-	router.HandleFunc("/users/me", userDelivery.GetMyProfile).Methods("GET", "OPTIONS")
-	router.HandleFunc("/users/me", userDelivery.UpdateMyProfile).Methods("PUT", "OPTIONS")
-	router.HandleFunc("/users/me/avatar", userDelivery.SetMyAvatar).Methods("PUT", "OPTIONS")
-	router.HandleFunc("/boards", boardDelivery.CreateNewBoard).Methods("POST", "OPTIONS")
-	router.HandleFunc("/boards/{boardID}", boardDelivery.DeleteBoard).Methods("DELETE", "OPTIONS")
-	router.HandleFunc("/boards/{boardID}", boardDelivery.UpdateBoard).Methods("PUT", "OPTIONS")
-	router.HandleFunc("/boards/{boardID}/backgroundImage", boardDelivery.SetBoardBackground).Methods("PUT", "OPTIONS")
-	router.HandleFunc("/boards/my", boardDelivery.GetMyBoards).Methods("GET", "OPTIONS")
-	router.HandleFunc("/userPermissions/{boardID}", boardDelivery.GetMembersPermissions).Methods("GET", "OPTIONS")
-	router.HandleFunc("/userPermissions/{boardID}", boardDelivery.AddMember).Methods("POST", "OPTIONS")
-	router.HandleFunc("/userPermissions/{boardID}/{userID}", boardDelivery.UpdateMemberRole).Methods("PUT", "OPTIONS")
-	router.HandleFunc("/userPermissions/{boardID}/{userID}", boardDelivery.RemoveMember).Methods("DELETE", "OPTIONS")
-	router.HandleFunc("/cards/{boardID}/allContent", boardDelivery.GetBoardContent).Methods("GET", "OPTIONS")
-	router.HandleFunc("/cards/{boardID}", boardDelivery.CreateNewCard).Methods("POST", "OPTIONS")
-	router.HandleFunc("/cards/{cardID}", boardDelivery.UpdateCard).Methods("PUT", "OPTIONS")
-	router.HandleFunc("/cards/{cardID}", boardDelivery.DeleteCard).Methods("DELETE", "OPTIONS")
-	router.HandleFunc("/columns/{boardID}", boardDelivery.CreateColumn).Methods("POST", "OPTIONS")
-	router.HandleFunc("/columns/{columnID}", boardDelivery.UpdateColumn).Methods("PUT", "OPTIONS")
-	router.HandleFunc("/columns/{columnID}", boardDelivery.DeleteColumn).Methods("DELETE", "OPTIONS")
-	router.HandleFunc("/assignedUser/{cardID}/{userID}", boardDelivery.AssignUser).Methods("PUT", "OPTIONS")
-	router.HandleFunc("/assignedUser/{cardID}/{userID}", boardDelivery.DeassignUser).Methods("DELETE", "OPTIONS")
-	router.HandleFunc("/comments/{cardID}", boardDelivery.AddComment).Methods("POST", "OPTIONS")
-	router.HandleFunc("/comments/{commentID}", boardDelivery.UpdateComment).Methods("PUT", "OPTIONS")
-	router.HandleFunc("/comments/{commentID}", boardDelivery.DeleteComment).Methods("DELETE", "OPTIONS")
-	router.HandleFunc("/checklist/{cardID}", boardDelivery.AddCheckListField).Methods("POST", "OPTIONS")
-	router.HandleFunc("/checklist/{fieldID}", boardDelivery.UpdateCheckListField).Methods("PATCH", "OPTIONS")
-	router.HandleFunc("/checklist/{fieldID}", boardDelivery.DeleteCheckListField).Methods("DELETE", "OPTIONS")
-	router.HandleFunc("/cardCover/{cardID}", boardDelivery.SetCardCover).Methods("PUT", "OPTIONS")
-	router.HandleFunc("/cardCover/{cardID}", boardDelivery.DeleteCardCover).Methods("DELETE", "OPTIONS")
-	router.HandleFunc("/attachments/{cardID}", boardDelivery.AddAttachment).Methods("PUT", "OPTIONS")
-	router.HandleFunc("/attachments/{attachmentID}", boardDelivery.DeleteAttachment).Methods("DELETE", "OPTIONS")
-	router.HandleFunc("/cardOrder/{cardID}", boardDelivery.MoveCard).Methods("PUT", "OPTIONS")
-	router.HandleFunc("/columnOrder/{columnID}", boardDelivery.MoveColumn).Methods("PUT", "OPTIONS")
-	router.HandleFunc("/sharedCard/{cardUUID}", boardDelivery.GetSharedCard).Methods("GET", "OPTIONS")
-	router.HandleFunc("/inviteLink/{boardID}", boardDelivery.RaiseInviteLink).Methods("PUT", "OPTIONS")
-	router.HandleFunc("/inviteLink/{boardID}", boardDelivery.DeleteInviteLink).Methods("DELETE", "OPTIONS")
-	router.HandleFunc("/joinBoard/{inviteUUID}", boardDelivery.FetchInvite).Methods("GET", "OPTIONS")
-	router.HandleFunc("/joinBoard/{inviteUUID}", boardDelivery.AcceptInvite).Methods("POST", "OPTIONS")
+	stop := make(chan os.Signal, 1)
+	signal.Notify(stop, os.Interrupt, syscall.SIGTERM)
 
-	// Запускаем сервер
-	addr := fmt.Sprintf(":%s", os.Getenv("SERVER_PORT"))
-	log.Infof("server started at http://localhost%s", addr)
-	if err := http.ListenAndServe(addr, router); err != nil {
-		log.Fatalf("error while starting server: %v", err)
+	go func() {
+		<-stop
+		log.Info("Shutting down gRPC server...")
+		grpcServer.GracefulStop()
+	}()
+
+	if err := grpcServer.Serve(listener); err != nil {
+		log.Fatalf("failed to serve gRPC server: %v", err)
 	}
 }

@@ -12,9 +12,9 @@ const (
 
 type AuthUsecase interface {
 	CreateSession(ctx context.Context, userID int64, password string) (sessionID string, err error)
-	CheckSession(ctx context.Context, sessionID string) (userID int64, err error)
+	CheckSession(ctx context.Context, sessionID string) (userID int, err error)
 	KillSession(ctx context.Context, sessionID string) (err error)
-	ChangePassword(ctx context.Context, oldPassword string, newPassword string) (err error)
+	ChangePassword(ctx context.Context, oldPassword string, newPassword string, sessionID string) (err error)
 }
 
 type AuthRepo interface {

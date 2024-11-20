@@ -18,14 +18,17 @@ type Config struct {
 type AuthConfig struct {
 	PostgresPoolSize int
 	LogFile          string
+	GrpcServerPort   string
 }
 type UserConfig struct {
 	PostgresPoolSize int
 	LogFile          string
+	GrpcPort         string
 }
 type BoardConfig struct {
 	PostgresPoolSize int
 	LogFile          string
+	GrpcPort         string
 }
 
 // Проверить, есть ли данные переменные в env
