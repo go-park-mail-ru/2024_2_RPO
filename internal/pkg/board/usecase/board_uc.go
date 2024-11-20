@@ -423,7 +423,7 @@ func (uc *BoardUsecase) DeleteCheckListField(ctx context.Context, userID int64, 
 }
 
 // SetCardCover устанавливает обложку для карточки
-func (uc *BoardUsecase) SetCardCover(ctx context.Context, userID int64, cardID int64, file *multipart.File, fileHeader *multipart.FileHeader) (updatedCard *models.Card, err error) {
+func (uc *BoardUsecase) SetCardCover(ctx context.Context, userID int64, cardID int64, file []byte, fileHeader *multipart.FileHeader) (updatedCard *models.Card, err error) {
 	panic("not implemented")
 }
 
@@ -433,7 +433,7 @@ func (uc *BoardUsecase) DeleteCardCover(ctx context.Context, userID int64, cardI
 }
 
 // AddAttachment добавляет вложение на карточку
-func (uc *BoardUsecase) AddAttachment(ctx context.Context, userID int64, cardID int64, file *multipart.File, fileHeader *multipart.FileHeader) (newAttachment *models.Attachment, err error) {
+func (uc *BoardUsecase) AddAttachment(ctx context.Context, userID int64, cardID int64, file []byte, fileHeader *multipart.FileHeader) (newAttachment *models.Attachment, err error) {
 	panic("not implemented")
 }
 

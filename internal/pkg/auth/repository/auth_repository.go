@@ -7,11 +7,18 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
 	"strconv"
 	"time"
 
 	"github.com/go-redis/redis/v8"
 	"github.com/jackc/pgx/v5"
+)
+
+const (
+	sessionPrefix   = "s_" // Префикс для сессии
+	userPrefix      = "u_" // Префикс для сета, в котором находятся все сессии данного пользователя
+	sessionLifeTime = 7 * 24 * time.Hour
 )
 
 type AuthRepository struct {
@@ -25,18 +32,20 @@ func CreateAuthRepository(postgresDb pgxiface.PgxIface, redisDb *redis.Client) *
 	}
 }
 
-// Регистрирует сессионную куку в Redis
+// RegisterSessionRedis регистрирует сессию в Redis
 func (r *AuthRepository) RegisterSessionRedis(ctx context.Context, sessionID string, userID int) error {
-	panic("TODO сделать добавление сессии в массив индекса")
 	redisConn := r.redisDb.Conn(r.redisDb.Context())
 	defer redisConn.Close()
 
-	ttl := 7 * 24 * time.Hour
-
-	err := redisConn.Set(r.redisDb.Context(), sessionID, userID, ttl).Err()
+	err := redisConn.Set(r.redisDb.Context(), fmt.Sprintf("%s%s", sessionPrefix, sessionID), userID, sessionLifeTime).Err()
 	logging.Debug(ctx, "RegisterSessionRedis query to redis has err: ", err)
 	if err != nil {
-		return fmt.Errorf("unable to set session in Redis: %v", err)
+		return fmt.Errorf("RegisterSessionRedis (session): %w", err)
+	}
+
+	err = redisConn.SAdd(ctx, fmt.Sprintf("%s%d", userPrefix, userID), sessionID).Err()
+	if err != nil {
+		return fmt.Errorf("RegisterSessionRedis (user): %w", err)
 	}
 
 	return nil
@@ -44,72 +53,59 @@ func (r *AuthRepository) RegisterSessionRedis(ctx context.Context, sessionID str
 
 // KillSessionRedis удаляет сессию из Redis
 func (r *AuthRepository) KillSessionRedis(ctx context.Context, sessionID string) error {
-	panic("TODO сделать удаление сессии из индексного массива")
 	redisConn := r.redisDb.Conn(r.redisDb.Context())
 	defer redisConn.Close()
 
-	err := redisConn.Del(r.redisDb.Context(), sessionID).Err()
-	logging.Debug(ctx, "KillSessionRedis query to redis has err: ", err)
+	res := redisConn.Get(r.redisDb.Context(), sessionID)
+	if res.Err() != nil {
+		return fmt.Errorf("KillSessionRedis (get): %w", res.Err())
+	}
+
+	userID, err := strconv.ParseInt(res.String(), 10, 64)
 	if err != nil {
-		return err
+		return fmt.Errorf("KillSessionRedis (atoi): %w", res.Err())
+	}
+
+	err = redisConn.Del(r.redisDb.Context(), sessionID).Err()
+	if err != nil {
+		return fmt.Errorf("KillSessionRedis (del): %w", err)
+	}
+
+	userKey := fmt.Sprint("%s%d", userPrefix, userID)
+	res2 := redisConn.SRem(ctx, userKey, sessionID)
+	if res2.Err() != nil {
+		return fmt.Errorf("KillSessionRedis (srem): %w", res2.Err())
 	}
 
 	return nil
 }
 
+// DisplaceUserSessions удаляет все сессии пользователя из Redis, кроме одной сессии - sessionID
 func (r *AuthRepository) DisplaceUserSessions(ctx context.Context, sessionID string, userID int64) error {
-	panic("TODO реализовать вытеснение")
-	var keysToDelete []string
+	setKey := fmt.Sprintf("%s%d", userPrefix, userID)
 
-	cursor := uint64(0)
-	for {
-		keys, newCursor, err := r.redisDb.Scan(ctx, cursor, "*", 100).Result()
-		if err != nil {
-			return fmt.Errorf("error while scanning keys: %w", err)
-		}
+	redisConn := r.redisDb.Conn(r.redisDb.Context())
+	defer redisConn.Close()
 
-		if len(keys) > 0 {
-			pipe := r.redisDb.Pipeline()
-			cmds := make(map[string]*redis.StringCmd)
+	sessions, err := redisConn.SMembers(ctx, setKey).Result()
+	if err != nil {
+		log.Fatalf("DisplaceUserSessions (get user): %w", err)
+	}
 
-			for _, key := range keys {
-				cmds[key] = pipe.Get(ctx, key)
+	sessionsToDelete := make([]interface{}, 0)
+	for _, session := range sessions {
+		if session != sessionID {
+			sessionsToDelete = append(sessionsToDelete, session)
+			res := redisConn.Del(ctx, sessionPrefix+sessionID)
+			if res.Err() != nil {
+				log.Fatalf("DisplaceUserSessions (del): %w", res.Err())
 			}
-
-			_, err = pipe.Exec(ctx)
-			if err != nil && err != redis.Nil {
-				return fmt.Errorf("error while executing pipeline: %w", err)
-			}
-
-			for key, cmd := range cmds {
-				val, err := cmd.Result()
-				if err == nil && val == sessionID {
-					userIDFromRedisCmd := pipe.Get(ctx, fmt.Sprintf("%d", userID))
-					userIDFromRedis, err := userIDFromRedisCmd.Result()
-					if err == nil {
-						parseUserIDFromRedis, err := strconv.Atoi(userIDFromRedis)
-						if err == nil && parseUserIDFromRedis != int(userID) {
-							keysToDelete = append(keysToDelete, key)
-						}
-					}
-				}
-			}
-		}
-
-		cursor = newCursor
-		if cursor == 0 {
-			break
 		}
 	}
 
-	if len(keysToDelete) > 0 {
-		count, err := r.redisDb.Del(ctx, keysToDelete...).Result()
-		if err != nil {
-			return fmt.Errorf("error while deleting keys: %w", err)
-		}
-		logging.Info(ctx, "Deleted %d keys", count)
-	} else {
-		logging.Info(ctx, "Keys with specified value not found.")
+	res := redisConn.SRem(ctx, setKey, sessionsToDelete...)
+	if res.Err() != nil {
+		log.Fatalf("DisplaceUserSessions (srem): %w", res.Err())
 	}
 
 	return nil
@@ -120,17 +116,17 @@ func (r *AuthRepository) CheckSession(ctx context.Context, sessionID string) (us
 	redisConn := r.redisDb.Conn(r.redisDb.Context())
 	defer redisConn.Close()
 
-	val, err := redisConn.Get(r.redisDb.Context(), sessionID).Result()
-	logging.Debug(ctx, "RetrieveUserIDFromSession query to redis has err: ", err)
+	val, err := redisConn.Get(r.redisDb.Context(), sessionPrefix+sessionID).Result()
+	logging.Debug(ctx, "CheckSession query to redis has err: ", err)
 	if err == redis.Nil {
-		return 0, fmt.Errorf("RetrieveUserIDFromSession(%v): %w", sessionID, errs.ErrNotFound)
+		return 0, fmt.Errorf("CheckSession (get; err 404): %w", errs.ErrNotFound)
 	} else if err != nil {
 		return 0, err
 	}
 
 	intVal, err := strconv.Atoi(val)
 	if err != nil {
-		return 0, fmt.Errorf("error converting value to int: %v", err)
+		return 0, fmt.Errorf("CheckSession (atoi): %v", err)
 	}
 
 	return intVal, nil
@@ -154,7 +150,7 @@ func (r *AuthRepository) SetNewPasswordHash(ctx context.Context, userID int, new
 	return nil
 }
 
-func (r *AuthRepository) GetUserPasswordHashForUser(ctx context.Context, userID int) (passwordHash string, err error) {
+func (r *AuthRepository) GetUserPasswordHash(ctx context.Context, userID int) (passwordHash string, err error) {
 	query := `
 	SELECT password_hash
 	FROM "user"
@@ -162,12 +158,12 @@ func (r *AuthRepository) GetUserPasswordHashForUser(ctx context.Context, userID 
 	`
 
 	err = r.db.QueryRow(ctx, query, userID).Scan(&passwordHash)
-	logging.Debug(ctx, "GetUserPasswordHashForUser query has err: ", err)
+	logging.Debug(ctx, "GetUserPasswordHash query has err: ", err)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return "", errs.ErrNotFound
 		}
-		return "", fmt.Errorf("GetUserPasswordHashForUser: %w", err)
+		return "", fmt.Errorf("GetUserPasswordHash: %w", err)
 	}
 
 	return passwordHash, nil

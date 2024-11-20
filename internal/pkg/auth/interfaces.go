@@ -22,6 +22,6 @@ type AuthRepo interface {
 	KillSessionRedis(ctx context.Context, sessionID string) error
 	CheckSession(ctx context.Context, sessionID string) (userID int, err error)
 	SetNewPasswordHash(ctx context.Context, userID int, newPasswordHash string) error
-	GetUserPasswordHashForUser(ctx context.Context, userID int) (passwordHash string, err error)
+	GetUserPasswordHash(ctx context.Context, userID int) (passwordHash string, err error)
 	DisplaceUserSessions(ctx context.Context, sessionID string, userID int64) error
 }

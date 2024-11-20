@@ -1,17 +1,16 @@
 package main
 
 import (
-	AuthDelivery "RPO_back/internal/pkg/auth/delivery"
-	AuthRepository "RPO_back/internal/pkg/auth/repository"
-	AuthUsecase "RPO_back/internal/pkg/auth/usecase"
-	"RPO_back/internal/pkg/utils/environment"
+	"RPO_back/internal/pkg/config"
+	UserDelivery "RPO_back/internal/pkg/user/delivery"
+	UserRepository "RPO_back/internal/pkg/user/repository"
+	UserUsecase "RPO_back/internal/pkg/user/usecase"
 	"RPO_back/internal/pkg/utils/logging"
 
 	"context"
 	"fmt"
 	"os"
 
-	"github.com/go-redis/redis/v8"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/joho/godotenv"
 	log "github.com/sirupsen/logrus"
@@ -40,32 +39,17 @@ func main() {
 		log.Info(".env file loaded")
 	}
 
-	// Проверка переменных окружения
-	err = environment.ValidateEnv()
+	// Формирование конфига
+	config, err := config.LoadConfig()
 	if err != nil {
-		log.Fatalf("environment configuration is invalid: %s", err.Error())
+		log.Fatalf("environment configuration is invalid: %w", err)
 		return
 	}
 
-	//Составление URL подключения
-	os.Setenv("DATABASE_URL", fmt.Sprintf("postgresql://%s:%s@%s:%s/%s?sslmode=%s",
-		os.Getenv("POSTGRES_USER"),
-		os.Getenv("POSTGRES_PASSWORD"),
-		os.Getenv("POSTGRES_HOST"),
-		os.Getenv("POSTGRES_PORT"),
-		os.Getenv("POSTGRES_DB"),
-		os.Getenv("POSTGRES_SSLMODE"),
-	))
-	os.Setenv("REDIS_URL", fmt.Sprintf("redis://:%s@%s:%s",
-		os.Getenv("REDIS_PASSWORD"),
-		os.Getenv("REDIS_HOST"),
-		os.Getenv("REDIS_PORT"),
-	))
-
 	// Подключение к PostgreSQL
-	postgresDb, err := pgxpool.New(context.Background(), os.Getenv("DATABASE_URL"))
+	postgresDb, err := pgxpool.New(context.Background(), config.PostgresDSN)
 	if err != nil {
-		log.Error("error connecting to postgres: ", err)
+		log.Error("error connecting to PostgreSQL: ", err)
 		return
 	}
 	defer postgresDb.Close()
@@ -75,29 +59,10 @@ func main() {
 		log.Fatal("error while pinging PostgreSQL: ", err)
 	}
 
-	//Подключение к Redis
-	redisOpts, err := redis.ParseURL(os.Getenv("REDIS_URL"))
-	if err != nil {
-		log.Fatal("error connecting to Redis: ", err)
-		return
-	}
-	redisDb := redis.NewClient(redisOpts)
-	defer redisDb.Close()
-
-	// Проверка подключения к Redis
-	if pingStatus := redisDb.Ping(redisDb.Context()); pingStatus == nil || pingStatus.Err() != nil {
-		if pingStatus != nil {
-			log.Fatal("error while pinging Redis: ", pingStatus.Err())
-		} else {
-			log.Fatal("unknown error while pinging Redis")
-		}
-		return
-	}
-
-	// Auth
-	authRepository := AuthRepository.CreateAuthRepository(postgresDb, redisDb)
-	authUsecase := AuthUsecase.CreateAuthUsecase(authRepository)
-	authDelivery := AuthDelivery.CreateAuthDelivery(authUsecase)
+	// User
+	userRepository := UserRepository.CreateUserRepository(postgresDb)
+	userUsecase := UserUsecase.CreateUserUsecase(userRepository)
+	userDelivery := UserDelivery.CreateUserDelivery(userUsecase)
 
 	panic("GRPC needed")
 }

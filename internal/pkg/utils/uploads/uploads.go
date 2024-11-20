@@ -1,7 +1,10 @@
 package uploads
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
+	"io"
 	"os"
 	"strings"
 )
@@ -39,4 +42,62 @@ func JoinFilePath(fileUUID string, fileExtension string) string {
 		return fmt.Sprintf("%s.%s", fileUUID, fileExtension)
 	}
 	return fileUUID
+}
+
+func CompareFiles(fileNames []string, newFile []byte) (fileUUID string, err error) {
+	// Вычисляем хэш нового файла
+	newFileHash := sha256.Sum256(newFile)
+	newFileHashStr := hex.EncodeToString(newFileHash[:])
+	newFileSize := int64(len(newFile))
+
+	for _, filePath := range fileNames {
+		// Открываем существующий файл
+		file, err := os.Open(filePath)
+		if err != nil {
+			return "", fmt.Errorf("не удалось открыть файл %s: %w", filePath, err)
+		}
+
+		// Получаем информацию о файле
+		info, err := file.Stat()
+		if err != nil {
+			file.Close()
+			return "", fmt.Errorf("не удалось получить информацию о файле %s: %w", filePath, err)
+		}
+
+		// Сравниваем размер файлов
+		if info.Size() != newFileSize {
+			file.Close()
+			continue
+		}
+
+		// Читаем содержимое существующего файла
+		existingFileContent, err := io.ReadAll(file)
+		file.Close()
+		if err != nil {
+			return "", fmt.Errorf("не удалось прочитать файл %s: %w", filePath, err)
+		}
+
+		// Вычисляем хэш существующего файла
+		existingFileHash := sha256.Sum256(existingFileContent)
+		existingFileHashStr := hex.EncodeToString(existingFileHash[:])
+
+		// Сравниваем хэши
+		if newFileHashStr == existingFileHashStr {
+			// Извлекаем UUID из имени файла
+			uuid, err := extractUUID(filePath)
+			if err != nil {
+				return "", fmt.Errorf("не удалось извлечь UUID из файла %s: %w", filePath, err)
+			}
+			return uuid, nil
+		}
+	}
+
+	// Если не найдено совпадений
+	return "", nil
+}
+
+// extractUUID предполагает, что UUID находится в начале имени файла, разделённого символом '_'
+// Например: "123e4567-e89b-12d3-a456-426614174000_filename.ext"
+func extractUUID(filePath string) (string, error) {
+
 }

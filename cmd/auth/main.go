@@ -47,32 +47,17 @@ func main() {
 		log.Info(".env file loaded")
 	}
 
-	// Проверка переменных окружения
-	err = config.ValidateEnv()
+	// Формирование конфига
+	config, err := config.LoadConfig()
 	if err != nil {
-		log.Fatalf("environment configuration is invalid: %s", err.Error())
+		log.Fatalf("environment configuration is invalid: %w", err)
 		return
 	}
 
-	//Составление URL подключения
-	os.Setenv("DATABASE_URL", fmt.Sprintf("postgresql://%s:%s@%s:%s/%s?sslmode=%s",
-		os.Getenv("POSTGRES_USER"),
-		os.Getenv("POSTGRES_PASSWORD"),
-		os.Getenv("POSTGRES_HOST"),
-		os.Getenv("POSTGRES_PORT"),
-		os.Getenv("POSTGRES_DB"),
-		os.Getenv("POSTGRES_SSLMODE"),
-	))
-	os.Setenv("REDIS_URL", fmt.Sprintf("redis://:%s@%s:%s",
-		os.Getenv("REDIS_PASSWORD"),
-		os.Getenv("REDIS_HOST"),
-		os.Getenv("REDIS_PORT"),
-	))
-
 	// Подключение к PostgreSQL
-	postgresDb, err := pgxpool.New(context.Background(), os.Getenv("DATABASE_URL"))
+	postgresDb, err := pgxpool.New(context.Background(), config.PostgresDSN)
 	if err != nil {
-		log.Error("error connecting to postgres: ", err)
+		log.Error("error connecting to PostgreSQL: ", err)
 		return
 	}
 	defer postgresDb.Close()
@@ -83,7 +68,7 @@ func main() {
 	}
 
 	//Подключение к Redis
-	redisOpts, err := redis.ParseURL(os.Getenv("REDIS_URL"))
+	redisOpts, err := redis.ParseURL(config.RedisDSN)
 	if err != nil {
 		log.Fatal("error connecting to Redis: ", err)
 		return

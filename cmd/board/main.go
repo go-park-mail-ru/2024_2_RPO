@@ -1,21 +1,14 @@
 package main
 
 import (
-	AuthDelivery "RPO_back/internal/pkg/auth/delivery"
-	AuthRepository "RPO_back/internal/pkg/auth/repository"
-	AuthUsecase "RPO_back/internal/pkg/auth/usecase"
 	BoardDelivery "RPO_back/internal/pkg/board/delivery"
 	BoardRepository "RPO_back/internal/pkg/board/repository"
 	BoardUsecase "RPO_back/internal/pkg/board/usecase"
+	"RPO_back/internal/pkg/config"
 	"RPO_back/internal/pkg/middleware/cors"
 	"RPO_back/internal/pkg/middleware/csrf"
 	"RPO_back/internal/pkg/middleware/logging_middleware"
 	"RPO_back/internal/pkg/middleware/no_panic"
-	sessionMiddleware "RPO_back/internal/pkg/middleware/session"
-	UserDelivery "RPO_back/internal/pkg/user/delivery"
-	UserRepository "RPO_back/internal/pkg/user/repository"
-	UserUsecase "RPO_back/internal/pkg/user/usecase"
-	"RPO_back/internal/pkg/utils/environment"
 	"RPO_back/internal/pkg/utils/logging"
 
 	"context"
@@ -23,7 +16,6 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/go-redis/redis/v8"
 	"github.com/gorilla/mux"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/joho/godotenv"
@@ -47,38 +39,23 @@ func main() {
 	// Загрузка переменных окружения
 	err = godotenv.Load(".env")
 	if err != nil {
-		log.Warn("warning: no .env file loaded", err.Error())
+		log.Warn("warning: no .env file loaded: ", err.Error())
 		fmt.Print()
 	} else {
 		log.Info(".env file loaded")
 	}
 
-	// Проверка переменных окружения
-	err = environment.ValidateEnv()
+	// Формирование конфига
+	config, err := config.LoadConfig()
 	if err != nil {
-		log.Fatalf("environment configuration is invalid: %s", err.Error())
+		log.Fatalf("environment configuration is invalid: %w", err)
 		return
 	}
 
-	//Составление URL подключения
-	os.Setenv("DATABASE_URL", fmt.Sprintf("postgresql://%s:%s@%s:%s/%s?sslmode=%s",
-		os.Getenv("POSTGRES_USER"),
-		os.Getenv("POSTGRES_PASSWORD"),
-		os.Getenv("POSTGRES_HOST"),
-		os.Getenv("POSTGRES_PORT"),
-		os.Getenv("POSTGRES_DB"),
-		os.Getenv("POSTGRES_SSLMODE"),
-	))
-	os.Setenv("REDIS_URL", fmt.Sprintf("redis://:%s@%s:%s",
-		os.Getenv("REDIS_PASSWORD"),
-		os.Getenv("REDIS_HOST"),
-		os.Getenv("REDIS_PORT"),
-	))
-
 	// Подключение к PostgreSQL
-	postgresDb, err := pgxpool.New(context.Background(), os.Getenv("DATABASE_URL"))
+	postgresDb, err := pgxpool.New(context.Background(), config.PostgresDSN)
 	if err != nil {
-		log.Error("error connecting to postgres: ", err)
+		log.Error("error connecting to PostgreSQL: ", err)
 		return
 	}
 	defer postgresDb.Close()
@@ -88,39 +65,10 @@ func main() {
 		log.Fatal("error while pinging PostgreSQL: ", err)
 	}
 
-	//Подключение к Redis
-	redisOpts, err := redis.ParseURL(os.Getenv("REDIS_URL"))
-	if err != nil {
-		log.Fatal("error connecting to Redis: ", err)
-		return
-	}
-	redisDb := redis.NewClient(redisOpts)
-	defer redisDb.Close()
-
-	// Проверка подключения к Redis
-	if pingStatus := redisDb.Ping(redisDb.Context()); pingStatus == nil || pingStatus.Err() != nil {
-		if pingStatus != nil {
-			log.Fatal("error while pinging Redis: ", pingStatus.Err())
-		} else {
-			log.Fatal("unknown error while pinging Redis")
-		}
-		return
-	}
-
-	// Auth
-	authRepository := AuthRepository.CreateAuthRepository(postgresDb, redisDb)
-	authUsecase := AuthUsecase.CreateAuthUsecase(authRepository)
-	authDelivery := AuthDelivery.CreateAuthDelivery(authUsecase)
-
 	//Board
 	boardRepository := BoardRepository.CreateBoardRepository(postgresDb)
 	boardUsecase := BoardUsecase.CreateBoardUsecase(boardRepository)
 	boardDelivery := BoardDelivery.CreateBoardDelivery(boardUsecase)
-
-	//User
-	userRepository := UserRepository.CreateUserRepository(postgresDb)
-	userUsecase := UserUsecase.CreateUserUsecase(userRepository)
-	userDelivery := UserDelivery.CreateUserDelivery(userUsecase)
 
 	// Создаём новый маршрутизатор
 	router := mux.NewRouter()
@@ -130,17 +78,8 @@ func main() {
 	router.Use(logging_middleware.LoggingMiddleware)
 	router.Use(cors.CorsMiddleware)
 	router.Use(csrf.CSRFMiddleware)
-	sessionMWare := sessionMiddleware.CreateSessionMiddleware(authRepository)
-	router.Use(sessionMWare.Middleware)
 
 	// Регистрируем обработчики
-	router.HandleFunc("/auth/register", authDelivery.RegisterUser).Methods("POST", "OPTIONS")
-	router.HandleFunc("/auth/login", authDelivery.LoginUser).Methods("POST", "OPTIONS")
-	router.HandleFunc("/auth/logout", authDelivery.LogoutUser).Methods("POST", "OPTIONS")
-	router.HandleFunc("/auth/changePassword", authDelivery.ChangePassword).Methods("POST", "OPTIONS")
-	router.HandleFunc("/users/me", userDelivery.GetMyProfile).Methods("GET", "OPTIONS")
-	router.HandleFunc("/users/me", userDelivery.UpdateMyProfile).Methods("PUT", "OPTIONS")
-	router.HandleFunc("/users/me/avatar", userDelivery.SetMyAvatar).Methods("PUT", "OPTIONS")
 	router.HandleFunc("/boards", boardDelivery.CreateNewBoard).Methods("POST", "OPTIONS")
 	router.HandleFunc("/boards/{boardID}", boardDelivery.DeleteBoard).Methods("DELETE", "OPTIONS")
 	router.HandleFunc("/boards/{boardID}", boardDelivery.UpdateBoard).Methods("PUT", "OPTIONS")
@@ -179,8 +118,8 @@ func main() {
 
 	// Запускаем сервер
 	addr := fmt.Sprintf(":%s", os.Getenv("SERVER_PORT"))
-	log.Infof("server started at http://localhost%s", addr)
+	log.Infof("server started at http://0.0.0.0%s", addr)
 	if err := http.ListenAndServe(addr, router); err != nil {
-		log.Fatalf("error while starting server: %v", err)
+		log.Fatalf("error while starting server: %w", err)
 	}
 }
