@@ -332,37 +332,230 @@ func (r *BoardRepository) GetMemberFromCard(ctx context.Context, userID int, car
 
 // GetMemberFromCheckListField получает права пользователя из ID поля чеклиста
 func (r *BoardRepository) GetMemberFromCheckListField(ctx context.Context, userID int64, fieldID int64) (role string, boardID int64, cardID int64, err error) {
-	panic("not implemented")
+	query := `
+	SELECT 
+	utb.role, b.board_id, c.card_id
+	FROM checklist_field AS cf
+	JOIN card AS c ON cf.card_id = c.card_id
+	JOIN kanban_column AS kc ON kc.col_id = c.col_id
+	JOIN board AS b ON b.board_id = kc.board_id
+	JOIN user_to_board AS utb ON utb.board_id = b.board_id
+	WHERE utb.u_id = $1 AND cf.checklist_field_id = $2;
+	`
+
+	err = r.db.QueryRow(ctx, query, userID, fieldID).Scan(
+		&role, &boardID, &cardID,
+	)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return "", 0, 0, fmt.Errorf("GetMemberFromCheckListField (query): %w", errs.ErrNotFound)
+		}
+		return "", 0, 0, fmt.Errorf("GetMemberFromCheckListField (query): %w", err)
+	}
+
+	return role, boardID, cardID, err
 }
 
 // GetMemberFromAttachment получает права пользователя из ID вложения
 func (r *BoardRepository) GetMemberFromAttachment(ctx context.Context, userID int64, attachmentID int64) (role string, boardID int64, cardID int64, err error) {
-	panic("not implemented")
+	query := `
+		SELECT utb.role, b.board_id, c.card_id
+		FROM card_attachment AS ca
+		JOIN card AS c ON ca.card_id = c.card_id
+		JOIN kanban_column AS kc ON c.col_id = kc.col_id
+		JOIN board AS b ON kc.board_id = b.board_id
+		JOIN user_to_board AS utb ON utb.board_id = b.board_id
+		WHERE utb.u_id = $1 AND ca.attachment_id = $2;
+	`
+
+	err = r.db.QueryRow(ctx, query, userID, attachmentID).Scan(
+		&role, &boardID, &cardID,
+	)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return "", 0, 0, fmt.Errorf("GetMemberFromAttachment (query): %w", errs.ErrNotFound)
+		}
+		return "", 0, 0, fmt.Errorf("GetMemberFromAttachment (query): %w", err)
+	}
+
+	return role, boardID, cardID, err
 }
 
 // GetMemberFromColumn получает права пользователя из ID колонки
 func (r *BoardRepository) GetMemberFromColumn(ctx context.Context, userID int64, columnID int64) (role string, boardID int64, err error) {
-	panic("not implemented")
+	query := `
+	SELECT utb.role, b.board_id
+	FROM kanban_column AS kc
+	JOIN board AS b ON kc.board_id = b.board_id
+	JOIN user_to_board AS utb ON utb.board_id = b.board_id
+	WHERE utb.u_id = $1 AND kc.col_id = $2;
+	`
+
+	err = r.db.QueryRow(ctx, query, userID, columnID).Scan(
+		&role, &boardID,
+	)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return "", 0, fmt.Errorf("GetMemberFromColumn (query): %w", errs.ErrNotFound)
+		}
+		return "", 0, fmt.Errorf("GetMemberFromColumn (query): %w", err)
+	}
+
+	return role, boardID, err
 }
 
 // GetMemberFromComment получает права пользователя из ID комментария
 func (r *BoardRepository) GetMemberFromComment(ctx context.Context, userID int64, commentID int64) (role string, boardID int64, cardID int64, err error) {
-	panic("not implemented")
+	query := `
+		SELECT utb.role, b.board_id, c.card_id
+		FROM card_comment AS cc
+		JOIN card AS c ON cc.card_id = c.card_id
+		JOIN kanban_column AS kc ON c.col_id = kc.col_id
+		JOIN board AS b ON kc.board_id = b.board_id
+		JOIN user_to_board AS utb ON utb.board_id = b.board_id
+		WHERE utb.u_id = $1 AND cc.comment_id = $2;
+	`
+
+	err = r.db.QueryRow(ctx, query, userID, commentID).Scan(
+		&role, &boardID, &cardID,
+	)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return "", 0, 0, fmt.Errorf("GetMemberFromComment (query): %w", errs.ErrNotFound)
+		}
+		return "", 0, 0, fmt.Errorf("GetMemberFromComment (query): %w", err)
+	}
+
+	return role, boardID, cardID, err
 }
 
-// GetCardCheckList получает чеклист для карточки
-func (r *BoardRepository) GetCardCheckList(ctx context.Context, cardID int64) (err error) {
-	panic("not implemented")
+// GetCardCheckList получает чеклисты для карточки
+func (r *BoardRepository) GetCardCheckList(ctx context.Context, cardID int64) (checkList []models.CheckListField, err error) {
+	query := `
+		SELECT cf.checklist_field_id, cf.title, cf.created_at, cf.is_done 
+		FROM checklist_field AS cf
+		JOIN card AS c ON cf.card_id = cf.card_id
+		WHERE c.card_id = $1
+		ORDER BY cf.order_index;
+	`
+
+	rows, err := r.db.Query(ctx, query, cardID)
+	logging.Debug(ctx, "GetCardCheckList query has err: ", err)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, fmt.Errorf("GetCardCheckList (query): %w", errs.ErrNotFound)
+		}
+		return nil, fmt.Errorf("GetCardCheckList (query): %w", err)
+	}
+
+	for rows.Next() {
+		field := models.CheckListField{}
+		if err := rows.Scan(&field.ID, &field.Title, &field.CreatedAt, &field.IsDone); err != nil {
+			return nil, fmt.Errorf("GetCardCheckList (scan): %w", err)
+		}
+
+		checkList = append(checkList, field)
+	}
+
+	return checkList, nil
 }
 
 // GetCardAssignedUsers получает пользователей, назначенных на карточку
 func (r *BoardRepository) GetCardAssignedUsers(ctx context.Context, cardID int64) (assignedUsers []models.UserProfile, err error) {
-	panic("not implemented")
+	query := `
+		SELECT u.u_id,
+		u.nickname,
+		u.email,
+		u.joined_at,
+		u.updated_at,
+		COALESCE(f.file_uuid::text, ''),
+		COALESCE(f.file_extension::text, '')
+		FROM card_user_assignment AS cua
+		JOIN "user" AS u ON cua.u_id = u.u_id
+		LEFT JOIN user_uploaded_file AS f ON f.file_id=u.avatar_file_id 
+		WHERE cua.card_id = $1;
+	`
+	rows, err := r.db.Query(ctx, query, cardID)
+	logging.Debug(ctx, "GetCardAssignedUsers query has err: ", err)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, fmt.Errorf("GetCardAssignedUsers (query): %w", errs.ErrNotFound)
+		}
+		return nil, fmt.Errorf("GetCardAssignedUsers (query): %w", err)
+	}
+
+	assignedUsers = make([]models.UserProfile, 0)
+
+	for rows.Next() {
+		assignedProfile := models.UserProfile{}
+		var avatarUUID, avatarExt string
+		if err := rows.Scan(&assignedProfile.ID,
+			&assignedProfile.Name,
+			&assignedProfile.Email,
+			&assignedProfile.JoinedAt,
+			&assignedProfile.UpdatedAt,
+			&avatarUUID,
+			&avatarExt,
+		); err != nil {
+			return nil, fmt.Errorf("GetCardAssignedUsers (scan): %w", err)
+		}
+
+		assignedProfile.AvatarImageURL = uploads.JoinFileURL(avatarUUID, avatarExt, uploads.DefaultAvatarURL)
+		assignedUsers = append(assignedUsers, assignedProfile)
+	}
+
+	return assignedUsers, nil
 }
 
 // GetCardComments получает комментарии, оставленные на карточку
 func (r *BoardRepository) GetCardComments(ctx context.Context, cardID int64) (comments []models.Comment, err error) {
-	panic("not implemented")
+	query := `
+		SELECT cc.comment_id,
+		cc.title,
+		cc.created_by,
+		cc.created_at,
+		cc.is_edited,
+
+		u.u_id,
+		u.nickname,
+		u.email,
+		u.joined_at,
+		u.updated_at,
+		COALESCE(f.file_uuid, "")::text,
+		COALESCE(f.file_extension, "")::text
+
+		FROM card_comment AS cc
+		JOIN "user" AS u ON cc.created_by=u.u_id
+		LEFT JOIN user_uploaded_file AS f ON f.file_id=u.avatar_file_id 
+		WHERE cc.card_id = $1;
+	`
+
+	rows, err := r.db.Query(ctx, query, cardID)
+	logging.Debug(ctx, "GetCardComments query has err: ", err)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, fmt.Errorf("GetCardComments (query): %w", errs.ErrNotFound)
+		}
+		return nil, fmt.Errorf("GetCardComments (query): %w", err)
+	}
+
+	for rows.Next() {
+		uP := models.UserProfile{}
+		c := models.Comment{}
+		var avatarUUID, avatarExt string
+
+		if err := rows.Scan(&c.ID, &c.Text, &c.CreatedBy, &c.CreatedAt, &c.IsEdited, &uP.ID,
+			&uP.Name, &uP.Email, &uP.JoinedAt,
+			&uP.UpdatedAt, &avatarUUID, &avatarExt); err != nil {
+			return nil, fmt.Errorf("GetCardAssignedUsers (scan): %w", err)
+		}
+		uP.AvatarImageURL = uploads.JoinFileURL(avatarUUID, avatarExt, uploads.DefaultAvatarURL)
+		c.CreatedBy = &uP
+
+		comments = append(comments, c)
+	}
+
+	return comments, nil
 }
 
 // GetCardAttachments получает вложения к карточке

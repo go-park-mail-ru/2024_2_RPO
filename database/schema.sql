@@ -12,13 +12,14 @@ CREATE TABLE user_uploaded_file(
 CREATE TABLE "user" (
     u_id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     nickname TEXT NOT NULL UNIQUE,
-    "description" TEXT NOT NULL,
     joined_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     password_hash TEXT,
     email TEXT UNIQUE NOT NULL,
     avatar_file_id BIGINT,
-    FOREIGN KEY (avatar_file_id) REFERENCES user_uploaded_file(file_id) ON UPDATE CASCADE ON DELETE SET NULL
+    FOREIGN KEY (avatar_file_id) REFERENCES user_uploaded_file(file_id) ON UPDATE CASCADE ON DELETE
+    SET
+        NULL
 );
 
 CREATE TYPE user_role AS ENUM (
@@ -35,8 +36,12 @@ CREATE TABLE board (
     created_by BIGINT,
     background_image_id BIGINT,
     updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (created_by) REFERENCES "user"(u_id) ON UPDATE CASCADE ON DELETE SET NULL,
-    FOREIGN KEY (background_image_id) REFERENCES user_uploaded_file(file_id) ON UPDATE CASCADE ON DELETE SET NULL
+    FOREIGN KEY (created_by) REFERENCES "user"(u_id) ON UPDATE CASCADE ON DELETE
+    SET
+        NULL,
+        FOREIGN KEY (background_image_id) REFERENCES user_uploaded_file(file_id) ON UPDATE CASCADE ON DELETE
+    SET
+        NULL
 );
 
 CREATE TABLE user_to_board (
@@ -51,9 +56,13 @@ CREATE TABLE user_to_board (
     "role" user_role NOT NULL DEFAULT 'viewer',
     FOREIGN KEY (u_id) REFERENCES "user"(u_id) ON UPDATE CASCADE ON DELETE CASCADE,
     FOREIGN KEY (board_id) REFERENCES board(board_id) ON UPDATE CASCADE ON DELETE CASCADE,
-    FOREIGN KEY (added_by) REFERENCES "user"(u_id) ON UPDATE CASCADE ON DELETE SET NULL,
-    FOREIGN KEY (updated_by) REFERENCES "user"(u_id) ON UPDATE CASCADE ON DELETE SET NULL,
-    PRIMARY KEY(u_id, board_id)
+    FOREIGN KEY (added_by) REFERENCES "user"(u_id) ON UPDATE CASCADE ON DELETE
+    SET
+        NULL,
+        FOREIGN KEY (updated_by) REFERENCES "user"(u_id) ON UPDATE CASCADE ON DELETE
+    SET
+        NULL,
+        PRIMARY KEY(u_id, board_id)
 );
 
 CREATE TABLE kanban_column (
@@ -62,22 +71,28 @@ CREATE TABLE kanban_column (
     title TEXT NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    order_index INT, -- Порядковый номер колонки на доске
+    order_index INT,
+    -- Порядковый номер колонки на доске
     FOREIGN KEY (board_id) REFERENCES board(board_id) ON UPDATE CASCADE ON DELETE CASCADE
 );
 
 CREATE TABLE "card" (
     card_id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    card_uuid UUID NOT NULL DEFAULT uuid_generate_v4(), -- UUID для ссылки на карточку
+    card_uuid UUID NOT NULL DEFAULT uuid_generate_v4(),
+    -- UUID для ссылки на карточку
     col_id BIGINT NOT NULL,
-    order_index INTEGER, -- Порядковый номер карточки в колонке
+    order_index INTEGER,
+    -- Порядковый номер карточки в колонке
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     cover_file_id BIGINT,
     deadline TIMESTAMPTZ,
-    is_done BOOLEAN DEFAULT FALSE, -- Задана, когда задан deadline
+    is_done BOOLEAN DEFAULT FALSE,
+    -- Задана, когда задан deadline
     FOREIGN KEY (col_id) REFERENCES kanban_column(col_id) ON UPDATE CASCADE ON DELETE CASCADE,
-    FOREIGN KEY (cover_file_id) REFERENCES user_uploaded_file(file_id) ON UPDATE CASCADE ON DELETE SET NULL
+    FOREIGN KEY (cover_file_id) REFERENCES user_uploaded_file(file_id) ON UPDATE CASCADE ON DELETE
+    SET
+        NULL
 );
 
 CREATE TABLE card_attachment (
@@ -97,6 +112,7 @@ CREATE TABLE checklist_field (
     card_id BIGINT NOT NULL,
     title TEXT NOT NULL,
     is_done BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     order_index INTEGER,
     FOREIGN KEY (card_id) REFERENCES card(card_id) ON UPDATE CASCADE ON DELETE CASCADE
 );
@@ -108,6 +124,7 @@ CREATE TABLE card_comment (
     created_by BIGINT NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    is_edited BOOLEAN NOT NULL DEFAULT FALSE,
     FOREIGN KEY (card_id) REFERENCES card(card_id) ON UPDATE CASCADE ON DELETE CASCADE,
     FOREIGN KEY (created_by) REFERENCES "user"(u_id) ON UPDATE CASCADE ON DELETE CASCADE
 );
@@ -138,7 +155,6 @@ CREATE TABLE card_user_assignment (
 --     'set_deadline',
 --     'remove_deadline'
 -- );
-
 -- CREATE TABLE card_update (
 --     card_update_id BIGINT PRIMARY KEY ALWAYS GENERATED AS IDENTITY,
 --     card_id BIGINT NOT NULL,
