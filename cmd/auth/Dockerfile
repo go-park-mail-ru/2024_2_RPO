@@ -11,8 +11,8 @@ WORKDIR /go/src/pumpkin
 RUN go mod download
 COPY ./Makefile /go/src/pumpkin/
 COPY ./internal /go/src/pumpkin/internal/
-COPY ./cmd /go/src/pumpkin/cmd/
-RUN make build
+COPY ./cmd/auth/main.go /go/src/pumpkin/cmd/auth/
+RUN make build_auth
 
 # 2 шаг
 FROM alpine AS run_stage
@@ -20,9 +20,9 @@ RUN apk add make
 WORKDIR /app_binary
 COPY ./database /app/database
 COPY ./Makefile /app/Makefile
-COPY --from=build_stage /go/src/pumpkin/build/pumpkin_backend /app_binary/
+COPY --from=build_stage /go/src/pumpkin/build/auth_app /app_binary/
 COPY --from=build_stage /usr/bin/migrate /usr/bin/migrate
-RUN chmod +x ./pumpkin_backend
+RUN chmod +x ./auth_app
 RUN chmod +x /usr/bin/migrate
 EXPOSE 8080/tcp
-ENTRYPOINT ./pumpkin_backend
+ENTRYPOINT ./auth_app
