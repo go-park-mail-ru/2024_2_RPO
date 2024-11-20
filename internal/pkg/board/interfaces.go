@@ -69,7 +69,7 @@ type BoardRepository interface {
 	GetUserByNickname(ctx context.Context, nickname string) (user *models.UserProfile, err error)
 	SetBoardBackground(ctx context.Context, userID int64, boardID int64, fileExtension string, fileSize int64) (fileName string, err error)
 	UpdateLastVisit(ctx context.Context, userID int64, boardID int64) error
-	GetMemberFromCard(ctx context.Context, userID int, cardID int64) (role string, boardID int64, err error)
+	GetMemberFromCard(ctx context.Context, userID int64, cardID int64) (role string, boardID int64, err error)
 	GetMemberFromCheckListField(ctx context.Context, userID int64, fieldID int64) (role string, boardID int64, cardID int64, err error)
 	GetMemberFromAttachment(ctx context.Context, userID int64, attachmentID int64) (role string, boardID int64, cardID int64, err error)
 	GetMemberFromColumn(ctx context.Context, userID int64, columnID int64) (role string, boardID int64, err error)

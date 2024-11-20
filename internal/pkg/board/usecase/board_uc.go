@@ -213,7 +213,7 @@ func (uc *BoardUsecase) GetBoardContent(ctx context.Context, userID int64, board
 }
 
 // CreateNewCard создаёт новую карточку и возвращает её
-func (uc *BoardUsecase) CreateNewCard(ctx context.Context, userID int64, boardID int64, data *models.CardPostRequest) (newCard *models.Card, err error) {
+func (uc *BoardUsecase) CreateNewCard(ctx context.Context, userID int64, data *models.CardPostRequest) (newCard *models.Card, err error) {
 	perms, err := uc.boardRepository.GetMemberPermissions(ctx, boardID, userID, false)
 	if err != nil {
 		if errors.Is(err, errs.ErrNotPermitted) {
@@ -228,7 +228,7 @@ func (uc *BoardUsecase) CreateNewCard(ctx context.Context, userID int64, boardID
 		return nil, fmt.Errorf("CreateNewCard (check): %w", errs.ErrNotPermitted)
 	}
 
-	card, err := uc.boardRepository.CreateNewCard(ctx, boardID, *data.ColumnID, *data.Title)
+	card, err := uc.boardRepository.CreateNewCard(ctx, *data.ColumnID, *data.Title)
 	if err != nil {
 		return nil, fmt.Errorf("CreateNewCard (add CreateNewCard): %w", err)
 	}
@@ -243,8 +243,8 @@ func (uc *BoardUsecase) CreateNewCard(ctx context.Context, userID int64, boardID
 }
 
 // UpdateCard обновляет карточку и возвращает обновлённую версию
-func (uc *BoardUsecase) UpdateCard(ctx context.Context, userID int64, boardID int64, cardID int64, data *models.CardPatchRequest) (updatedCard *models.Card, err error) {
-	perms, err := uc.boardRepository.GetMemberPermissions(ctx, boardID, userID, false)
+func (uc *BoardUsecase) UpdateCard(ctx context.Context, userID int64, cardID int64, data *models.CardPatchRequest) (updatedCard *models.Card, err error) {
+	role, _, err := uc.boardRepository.GetMemberFromCard(ctx, userID, cardID)
 	if err != nil {
 		if errors.Is(err, errs.ErrNotPermitted) {
 			return nil, fmt.Errorf("UpdateCard: %w", err)
@@ -254,11 +254,11 @@ func (uc *BoardUsecase) UpdateCard(ctx context.Context, userID int64, boardID in
 		}
 		return nil, fmt.Errorf("UpdateCard (add GetMemberPermissions): %w", err)
 	}
-	if perms.Role == "viewer" {
+	if role == "viewer" {
 		return nil, fmt.Errorf("UpdateCard (check): %w", errs.ErrNotPermitted)
 	}
 
-	updatedCard, err = uc.boardRepository.UpdateCard(ctx, boardID, cardID, *data)
+	updatedCard, err = uc.boardRepository.UpdateCard(ctx, cardID, *data)
 	if err != nil {
 		return nil, fmt.Errorf("UpdateCard (repo): %w", err)
 	}
@@ -273,22 +273,16 @@ func (uc *BoardUsecase) UpdateCard(ctx context.Context, userID int64, boardID in
 }
 
 // DeleteCard удаляет карточку
-func (uc *BoardUsecase) DeleteCard(ctx context.Context, userID int64, boardID int64, cardID int64) (err error) {
-	perms, err := uc.boardRepository.GetMemberPermissions(ctx, boardID, userID, false)
+func (uc *BoardUsecase) DeleteCard(ctx context.Context, userID int64, cardID int64) (err error) {
+	role, _, err := uc.boardRepository.GetMemberFromCard(ctx, userID, cardID)
 	if err != nil {
-		if errors.Is(err, errs.ErrNotPermitted) {
-			return err
-		}
-		if errors.Is(err, errs.ErrNotFound) {
-			return err
-		}
 		return err
 	}
-	if perms.Role == "viewer" {
+	if role == "viewer" {
 		return fmt.Errorf("DeleteCard (check): %w", errs.ErrNotPermitted)
 	}
 
-	err = uc.boardRepository.DeleteCard(ctx, boardID, cardID)
+	err = uc.boardRepository.DeleteCard(ctx, cardID)
 	if err != nil {
 		return err
 	}
@@ -300,13 +294,7 @@ func (uc *BoardUsecase) DeleteCard(ctx context.Context, userID int64, boardID in
 func (uc *BoardUsecase) CreateColumn(ctx context.Context, userID int64, boardID int64, data *models.ColumnRequest) (newCol *models.Column, err error) {
 	perms, err := uc.boardRepository.GetMemberPermissions(ctx, boardID, userID, false)
 	if err != nil {
-		if errors.Is(err, errs.ErrNotPermitted) {
-			return nil, fmt.Errorf("CreateColumn: %w", err)
-		}
-		if errors.Is(err, errs.ErrNotFound) {
-			return nil, fmt.Errorf("CreateColumn: %w", err)
-		}
-		return nil, fmt.Errorf("CreateColumn (add GetMemberPermissions): %w", err)
+		return nil, fmt.Errorf("CreateColumn (get role): %w", err)
 	}
 	if perms.Role == "viewer" {
 		return nil, fmt.Errorf("CreateColumn (check): %w", errs.ErrNotPermitted)
@@ -314,7 +302,7 @@ func (uc *BoardUsecase) CreateColumn(ctx context.Context, userID int64, boardID 
 
 	column, err := uc.boardRepository.CreateColumn(ctx, boardID, data.NewTitle)
 	if err != nil {
-		return nil, fmt.Errorf("CreateColumn (add CreateColumn): %w", err)
+		return nil, fmt.Errorf("CreateColumn (create): %w", err)
 	}
 
 	return &models.Column{

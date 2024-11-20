@@ -326,6 +326,8 @@ func (r *BoardRepository) GetMemberFromCard(ctx context.Context, userID int, car
 	LEFT JOIN user_to_board AS ub ON ub.board_id=b.board_id
 	WHERE c.card_id=$1 AND ub.u_id=$2;
 	`
+	panic("not implemented")
+	return query, 0, nil
 }
 
 // GetMemberFromCheckListField получает права пользователя из ID поля чеклиста

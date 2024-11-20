@@ -1,4 +1,4 @@
-package environment
+package config
 
 import (
 	"errors"
@@ -6,6 +6,30 @@ import (
 	"os"
 	"strconv"
 )
+
+type Config struct {
+	RedisDSN    string
+	PostgresDSN string
+	Auth        *AuthConfig
+	User        *UserConfig
+	Board       *BoardConfig
+}
+
+type AuthConfig struct {
+	PostgresPoolSize int
+	Port             int
+	LogFile          string
+}
+type UserConfig struct {
+	PostgresPoolSize int
+	Port             int
+	LogFile          string
+}
+type BoardConfig struct {
+	PostgresPoolSize int
+	Port             int
+	LogFile          string
+}
 
 // Проверить, есть ли данные переменные в env
 func checkEnv(envVars []string) error {
