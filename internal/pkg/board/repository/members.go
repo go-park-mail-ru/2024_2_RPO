@@ -521,8 +521,8 @@ func (r *BoardRepository) GetCardComments(ctx context.Context, cardID int64) (co
 		u.email,
 		u.joined_at,
 		u.updated_at,
-		COALESCE(f.file_uuid, "")::text,
-		COALESCE(f.file_extension, "")::text
+		COALESCE(f.file_uuid::text, "")
+		COALESCE(f.file_extension::text, "")
 
 		FROM card_comment AS cc
 		JOIN "user" AS u ON cc.created_by=u.u_id
@@ -560,7 +560,39 @@ func (r *BoardRepository) GetCardComments(ctx context.Context, cardID int64) (co
 
 // GetCardAttachments получает вложения к карточке
 func (r *BoardRepository) GetCardAttachments(ctx context.Context, cardID int64) (attachments []models.Attachment, err error) {
-	panic("not implemented")
+	query := `
+		SELECT ca.attachment_id,
+		ca.original_name,
+		ca.created_at,
+		COALESCE(f.file_uuid::text, ''),
+		COALESCE(f.file_extension::text, '')
+		FROM card_attachment AS ca
+		LEFT JOIN user_uploaded_file AS f ON f.file_id=ca.file_id
+		WHERE ca.card_id = $1;   
+	`
+
+	rows, err := r.db.Query(ctx, query, cardID)
+	logging.Debug(ctx, "GetCardAttachments query has err: ", err)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, fmt.Errorf("GetCardAttachments (query): %w", errs.ErrNotFound)
+		}
+		return nil, fmt.Errorf("GetCardAttachments (query): %w", err)
+	}
+
+	for rows.Next() {
+		a := models.Attachment{}
+		var avatarUUID, avatarExt string
+
+		if err := rows.Scan(&a.ID, &a.OriginalName, &a.CreatedAt, &avatarUUID, &avatarExt); err != nil {
+			return nil, fmt.Errorf("GetCardAssignedUsers (scan): %w", err)
+		}
+		a.FileName = uploads.JoinFileURL(avatarUUID, avatarExt, uploads.DefaultAvatarURL)
+
+		attachments = append(attachments, a)
+	}
+
+	return attachments, nil
 }
 
 // GetCardsForMove получает списки карточек на двух колонках.
