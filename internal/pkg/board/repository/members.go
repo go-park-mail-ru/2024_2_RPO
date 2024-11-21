@@ -621,7 +621,33 @@ func (r *BoardRepository) GetCardsForMove(ctx context.Context, col1ID int64, col
 
 // GetColumnsForMove получает список всех колонок, чтобы сделать Drag-n-Drop
 func (r *BoardRepository) GetColumnsForMove(ctx context.Context, boardID int64) (columns []models.Column, err error) {
-	panic("not implemented")
+	query := `
+	SELECT kc.col_id, kc.title, kc.order_index
+	FROM kanban_column AS kc
+	WHERE kc.board_id = $1
+	ORDER BY kc.order_index;
+	`
+
+	rows, err := r.db.Query(ctx, query, boardID)
+	logging.Debug(ctx, "GetColumnsForMove query has err: ", err)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, fmt.Errorf("GetColumnsForMove (query): %w", errs.ErrNotFound)
+		}
+		return nil, fmt.Errorf("GetColumnsForMove (query): %w", err)
+	}
+
+	for rows.Next() {
+		c := models.Column{}
+
+		if err := rows.Scan(&c.ID, &c.Title, &c.OrderIndex); err != nil {
+			return nil, fmt.Errorf("GetColumnsForMove (scan): %w", err)
+		}
+
+		columns = append(columns, c)
+	}
+
+	return columns, nil
 }
 
 // RearrangeCards обновляет позиции всех карточек колонки, чтобы сделать порядок, как в слайсе
@@ -656,7 +682,27 @@ func (r *BoardRepository) UpdateComment(ctx context.Context, commentID int64, up
 
 // DeleteComment удаляет комментарий
 func (r *BoardRepository) DeleteComment(ctx context.Context, commentID int64) (err error) {
-	panic("not implemented")
+	query := `
+	WITH delete_comment AS (
+		DELETE FROM card_comment WHERE comment_id=$1
+	),
+	update_card AS (
+		UPDATE "card" SET updated_at=CURRENT_TIMESTAMP WHERE card_id=(
+			SELECT card_id FROM card_comment WHERE comment_id=$1
+		)
+	),
+	update_board AS (
+		UPDATE board SET updated_at=CURRENT_TIMESTAMP WHERE board_id=(
+			SELECT b.board_id FROM card_comment AS c
+			JOIN card AS cc ON c.card_id=cc.card_id
+			JOIN kanban_column AS k ON k.col_id=cc.col_id
+			JOIN board AS b ON b.board_id=k.board_id
+		)
+	)
+	SELECT;
+	`
+
+	return
 }
 
 // CreateCheckListField создаёт поле чеклиста и добавляет его в конец
@@ -681,7 +727,21 @@ func (r *BoardRepository) SetCardCover(ctx context.Context, userID int64, cardID
 
 // RemoveCardCover удаляет обложку карточки
 func (r *BoardRepository) RemoveCardCover(ctx context.Context, cardID int64) (err error) {
-	panic("not implemented")
+	query := `
+	WITH delete_cover AS (
+		UPDATE "card" SET updated_at=CURRENT_TIMESTAMP, cover_file_id=NULL WHERE card_id = $1
+	),
+	update_board AS (UPDATE board SET updated_at=CURRENT_TIMESTAMP WHERE board_id = (
+		SELECT b.board_id
+		FROM card AS c
+		JOIN kanban_column AS kc ON c.col_id=kc.col_id
+		JOIN board AS b ON b.board_id = kc.board_id 
+		)
+	)
+	SELECT;
+	`
+
+	return nil
 }
 
 // AddAttachment добавляет файл вложения в карточку
