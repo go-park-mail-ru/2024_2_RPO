@@ -697,12 +697,13 @@ func (r *BoardRepository) DeleteComment(ctx context.Context, commentID int64) (e
 			JOIN card AS cc ON c.card_id=cc.card_id
 			JOIN kanban_column AS k ON k.col_id=cc.col_id
 			JOIN board AS b ON b.board_id=k.board_id
+			WHERE c.comment_id=$1
 		)
 	)
 	SELECT;
 	`
 
-	return
+	return nil
 }
 
 // CreateCheckListField создаёт поле чеклиста и добавляет его в конец
@@ -731,11 +732,13 @@ func (r *BoardRepository) RemoveCardCover(ctx context.Context, cardID int64) (er
 	WITH delete_cover AS (
 		UPDATE "card" SET updated_at=CURRENT_TIMESTAMP, cover_file_id=NULL WHERE card_id = $1
 	),
-	update_board AS (UPDATE board SET updated_at=CURRENT_TIMESTAMP WHERE board_id = (
-		SELECT b.board_id
-		FROM card AS c
-		JOIN kanban_column AS kc ON c.col_id=kc.col_id
-		JOIN board AS b ON b.board_id = kc.board_id 
+	update_board AS (
+		UPDATE board SET updated_at=CURRENT_TIMESTAMP WHERE board_id = (
+			SELECT b.board_id
+			FROM card AS c
+			JOIN kanban_column AS kc ON c.col_id=kc.col_id
+			JOIN board AS b ON b.board_id = kc.board_id
+			WHERE c.card_id=$1
 		)
 	)
 	SELECT;
