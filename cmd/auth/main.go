@@ -48,36 +48,36 @@ func main() {
 	}
 
 	// Формирование конфига
-	config, err := config.LoadConfig()
+	err = config.LoadConfig()
 	if err != nil {
 		log.Fatalf("environment configuration is invalid: %w", err)
 		return
 	}
 
 	// Подключение к PostgreSQL
-	postgresDb, err := pgxpool.New(context.Background(), config.PostgresDSN)
+	postgresDB, err := pgxpool.New(context.Background(), config.CurrentConfig.PostgresDSN)
 	if err != nil {
 		log.Error("error connecting to PostgreSQL: ", err)
 		return
 	}
-	defer postgresDb.Close()
+	defer postgresDB.Close()
 
 	// Проверка подключения к PostgreSQL
-	if err = postgresDb.Ping(context.Background()); err != nil {
+	if err = postgresDB.Ping(context.Background()); err != nil {
 		log.Fatal("error while pinging PostgreSQL: ", err)
 	}
 
 	//Подключение к Redis
-	redisOpts, err := redis.ParseURL(config.RedisDSN)
+	redisOpts, err := redis.ParseURL(config.CurrentConfig.RedisDSN)
 	if err != nil {
 		log.Fatal("error connecting to Redis: ", err)
 		return
 	}
-	redisDb := redis.NewClient(redisOpts)
-	defer redisDb.Close()
+	redisDB := redis.NewClient(redisOpts)
+	defer redisDB.Close()
 
 	// Проверка подключения к Redis
-	if pingStatus := redisDb.Ping(redisDb.Context()); pingStatus == nil || pingStatus.Err() != nil {
+	if pingStatus := redisDB.Ping(redisDB.Context()); pingStatus == nil || pingStatus.Err() != nil {
 		if pingStatus != nil {
 			log.Fatal("error while pinging Redis: ", pingStatus.Err())
 		} else {
@@ -87,7 +87,7 @@ func main() {
 	}
 
 	// Auth
-	authRepository := AuthRepository.CreateAuthRepository(postgresDb, redisDb)
+	authRepository := AuthRepository.CreateAuthRepository(postgresDB, redisDB)
 	authUsecase := AuthUsecase.CreateAuthUsecase(authRepository)
 	authDelivery := AuthDelivery.CreateAuthServer(authUsecase)
 

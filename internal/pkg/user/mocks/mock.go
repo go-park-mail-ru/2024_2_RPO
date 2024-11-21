@@ -7,7 +7,6 @@ package mock_user
 import (
 	models "RPO_back/internal/models"
 	context "context"
-	multipart "mime/multipart"
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
@@ -37,7 +36,7 @@ func (m *MockUserUsecase) EXPECT() *MockUserUsecaseMockRecorder {
 }
 
 // ChangePassword mocks base method.
-func (m *MockUserUsecase) ChangePassword(ctx context.Context, userID int, oldPassword, newPassword string) error {
+func (m *MockUserUsecase) ChangePassword(ctx context.Context, userID int64, oldPassword, newPassword string) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ChangePassword", ctx, userID, oldPassword, newPassword)
 	ret0, _ := ret[0].(error)
@@ -51,7 +50,7 @@ func (mr *MockUserUsecaseMockRecorder) ChangePassword(ctx, userID, oldPassword, 
 }
 
 // GetMyProfile mocks base method.
-func (m *MockUserUsecase) GetMyProfile(ctx context.Context, userID int) (*models.UserProfile, error) {
+func (m *MockUserUsecase) GetMyProfile(ctx context.Context, userID int64) (*models.UserProfile, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetMyProfile", ctx, userID)
 	ret0, _ := ret[0].(*models.UserProfile)
@@ -110,22 +109,22 @@ func (mr *MockUserUsecaseMockRecorder) RegisterUser(ctx, user interface{}) *gomo
 }
 
 // SetMyAvatar mocks base method.
-func (m *MockUserUsecase) SetMyAvatar(ctx context.Context, userID int, file *multipart.File, fileHeader *multipart.FileHeader) (*models.UserProfile, error) {
+func (m *MockUserUsecase) SetMyAvatar(ctx context.Context, userID int64, file *models.UploadedFile) (*models.UserProfile, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SetMyAvatar", ctx, userID, file, fileHeader)
+	ret := m.ctrl.Call(m, "SetMyAvatar", ctx, userID, file)
 	ret0, _ := ret[0].(*models.UserProfile)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // SetMyAvatar indicates an expected call of SetMyAvatar.
-func (mr *MockUserUsecaseMockRecorder) SetMyAvatar(ctx, userID, file, fileHeader interface{}) *gomock.Call {
+func (mr *MockUserUsecaseMockRecorder) SetMyAvatar(ctx, userID, file interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetMyAvatar", reflect.TypeOf((*MockUserUsecase)(nil).SetMyAvatar), ctx, userID, file, fileHeader)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetMyAvatar", reflect.TypeOf((*MockUserUsecase)(nil).SetMyAvatar), ctx, userID, file)
 }
 
 // UpdateMyProfile mocks base method.
-func (m *MockUserUsecase) UpdateMyProfile(ctx context.Context, userID int, data *models.UserProfileUpdateRequest) (*models.UserProfile, error) {
+func (m *MockUserUsecase) UpdateMyProfile(ctx context.Context, userID int64, data *models.UserProfileUpdateRequest) (*models.UserProfile, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "UpdateMyProfile", ctx, userID, data)
 	ret0, _ := ret[0].(*models.UserProfile)
@@ -191,6 +190,21 @@ func (mr *MockUserRepoMockRecorder) CreateUser(ctx, user interface{}) *gomock.Ca
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateUser", reflect.TypeOf((*MockUserRepo)(nil).CreateUser), ctx, user)
 }
 
+// DeduplicateFile mocks base method.
+func (m *MockUserRepo) DeduplicateFile(ctx context.Context, file *models.UploadedFile) ([]string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeduplicateFile", ctx, file)
+	ret0, _ := ret[0].([]string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// DeduplicateFile indicates an expected call of DeduplicateFile.
+func (mr *MockUserRepoMockRecorder) DeduplicateFile(ctx, file interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeduplicateFile", reflect.TypeOf((*MockUserRepo)(nil).DeduplicateFile), ctx, file)
+}
+
 // GetUserByEmail mocks base method.
 func (m *MockUserRepo) GetUserByEmail(ctx context.Context, email string) (*models.UserProfile, error) {
 	m.ctrl.T.Helper()
@@ -207,7 +221,7 @@ func (mr *MockUserRepoMockRecorder) GetUserByEmail(ctx, email interface{}) *gomo
 }
 
 // GetUserProfile mocks base method.
-func (m *MockUserRepo) GetUserProfile(ctx context.Context, userID int) (*models.UserProfile, error) {
+func (m *MockUserRepo) GetUserProfile(ctx context.Context, userID int64) (*models.UserProfile, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetUserProfile", ctx, userID)
 	ret0, _ := ret[0].(*models.UserProfile)
@@ -222,22 +236,22 @@ func (mr *MockUserRepoMockRecorder) GetUserProfile(ctx, userID interface{}) *gom
 }
 
 // SetUserAvatar mocks base method.
-func (m *MockUserRepo) SetUserAvatar(ctx context.Context, userID int, fileExtension string, fileSize int) (string, error) {
+func (m *MockUserRepo) SetUserAvatar(ctx context.Context, userID int64, file *models.UploadedFile) (string, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SetUserAvatar", ctx, userID, fileExtension, fileSize)
+	ret := m.ctrl.Call(m, "SetUserAvatar", ctx, userID, file)
 	ret0, _ := ret[0].(string)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // SetUserAvatar indicates an expected call of SetUserAvatar.
-func (mr *MockUserRepoMockRecorder) SetUserAvatar(ctx, userID, fileExtension, fileSize interface{}) *gomock.Call {
+func (mr *MockUserRepoMockRecorder) SetUserAvatar(ctx, userID, file interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetUserAvatar", reflect.TypeOf((*MockUserRepo)(nil).SetUserAvatar), ctx, userID, fileExtension, fileSize)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetUserAvatar", reflect.TypeOf((*MockUserRepo)(nil).SetUserAvatar), ctx, userID, file)
 }
 
 // UpdateUserProfile mocks base method.
-func (m *MockUserRepo) UpdateUserProfile(ctx context.Context, userID int, data models.UserProfileUpdateRequest) (*models.UserProfile, error) {
+func (m *MockUserRepo) UpdateUserProfile(ctx context.Context, userID int64, data models.UserProfileUpdateRequest) (*models.UserProfile, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "UpdateUserProfile", ctx, userID, data)
 	ret0, _ := ret[0].(*models.UserProfile)

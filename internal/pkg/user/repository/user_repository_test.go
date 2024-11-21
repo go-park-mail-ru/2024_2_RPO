@@ -18,7 +18,7 @@ func TestGetUserByEmail_Success(t *testing.T) {
 	defer mock.Close(ctx)
 	email := "kaymekaydex@mail.ru"
 
-	repo := &AuthRepository{db: mock}
+	repo := &UserRepository{db: mock}
 
 	query := `SELECT u_id, nickname, email, description, joined_at, updated_at, password_hash FROM "user" WHERE email=\$1;`
 	rows := pgxmock.NewRows([]string{"u_id", "nickname", "email", "description", "joined_at", "updated_at", "password_hash"}).
@@ -41,7 +41,7 @@ func TestGetUserByID_Success(t *testing.T) {
 	defer mock.Close(ctx)
 	email := "kaymekaydex@mail.ru"
 
-	repo := &AuthRepository{db: mock}
+	repo := &UserRepository{db: mock}
 
 	query := `SELECT u_id, nickname, email, description, joined_at, updated_at, password_hash FROM "user" WHERE u_id=\$1;`
 	rows := pgxmock.NewRows([]string{"u_id", "nickname", "email", "description", "joined_at", "updated_at", "password_hash"}).
@@ -63,7 +63,7 @@ func TestCreateUser_Success(t *testing.T) {
 	}
 	defer mock.Close(ctx)
 
-	repo := &AuthRepository{db: mock}
+	repo := &UserRepository{db: mock}
 
 	query := `INSERT INTO "user" \(nickname, email, password_hash, description, joined_at, updated_at\) VALUES \(\$1, \$2, \$3, \$4, \$5, \$6\) RETURNING u_id, nickname, email, password_hash, description, joined_at, updated_at`
 	rows := pgxmock.NewRows([]string{"u_id", "nickname", "email", "password_hash", "description", "joined_at", "updated_at"}).
@@ -85,7 +85,7 @@ func TestCheckUniqueCredentials_Success(t *testing.T) {
 	}
 	defer mock.Close(ctx)
 
-	repo := &AuthRepository{db: mock}
+	repo := &UserRepository{db: mock}
 
 	query1 := `SELECT COUNT\(\*\) FROM "user" WHERE nickname = \$1;`
 	query2 := `SELECT COUNT\(\*\) FROM "user" WHERE email = \$1;`
@@ -107,7 +107,7 @@ func TestSetNewPasswordHash_Success(t *testing.T) {
 	}
 	defer mock.Close(ctx)
 
-	repo := &AuthRepository{db: mock}
+	repo := &UserRepository{db: mock}
 
 	query := `UPDATE "user" SET password_hash=\$1 WHERE u_id=\$2;`
 

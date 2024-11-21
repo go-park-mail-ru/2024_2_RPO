@@ -1,10 +1,12 @@
 package uploads
 
 import (
+	"RPO_back/internal/models"
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
 	"io"
+	"net/http"
 	"os"
 	"strings"
 )
@@ -99,5 +101,53 @@ func CompareFiles(fileNames []string, newFile []byte) (fileUUID string, err erro
 // extractUUID предполагает, что UUID находится в начале имени файла, разделённого символом '_'
 // Например: "123e4567-e89b-12d3-a456-426614174000_filename.ext"
 func extractUUID(filePath string) (string, error) {
+	// UUID состоит из 36 символов (32 цифры и 4 дефиса)
+	runes := []rune(filePath)
+	if len(runes) < 36 {
+		return "", fmt.Errorf("invalid uuid length")
+	}
+	return string(runes[:36]), nil
+}
+
+func FormFile(r http.Request) (file *models.UploadedFile, err error) {
+	r.ParseMultipartForm(10 << 20)
+
+	fileContent, fileHeader, err := r.FormFile("file")
+	if err != nil {
+		return nil, fmt.Errorf("FormFile: %w", err)
+	}
+
+	currentPos, err := file.Seek(0, io.SeekCurrent)
+	if err != nil {
+		return nil, fmt.Errorf("FormFile (seek 1): %w", err)
+	}
+
+	file = &models.UploadedFile{}
+
+	// Переходим в конец файла, чтобы определить его размер
+	size, err := fileContent.Seek(0, io.SeekEnd)
+	if err != nil {
+		return nil, fmt.Errorf("FormFile (seek 2): %w", err)
+	}
+
+	// Возвращаемся в исходную позицию чтения
+	_, err = fileContent.Seek(currentPos, io.SeekStart)
+	if err != nil {
+		return nil, fmt.Errorf("FormFile (seek 3): %w", err)
+	}
+
+	// Предварительно аллоцируем слайс байтов нужного размера
+	file.Content = make([]byte, size)
+
+	// Читаем содержимое файла в слайс
+	_, err = io.ReadFull(fileContent, file.Content)
+	if err != nil {
+		return nil, fmt.Errorf("FormFile (read): %w", err)
+	}
+
+	file.OriginalName = fileHeader.Filename
+	file.FileExtension = ExtractFileExtension(file.OriginalName)
+
+	return file, nil
 
 }

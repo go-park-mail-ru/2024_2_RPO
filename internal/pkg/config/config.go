@@ -8,11 +8,12 @@ import (
 )
 
 type Config struct {
-	RedisDSN    string
-	PostgresDSN string
-	Auth        *AuthConfig
-	User        *UserConfig
-	Board       *BoardConfig
+	RedisDSN      string
+	PostgresDSN   string
+	Auth          *AuthConfig
+	User          *UserConfig
+	Board         *BoardConfig
+	MaxUploadSize int64
 }
 
 type AuthConfig struct {
@@ -24,12 +25,18 @@ type UserConfig struct {
 	PostgresPoolSize int
 	LogFile          string
 	GrpcPort         string
+	GrpcHost         string
 }
 type BoardConfig struct {
 	PostgresPoolSize int
 	LogFile          string
 	GrpcPort         string
+	GrpcHost         string
 }
+
+var (
+	CurrentConfig *Config
+)
 
 // Проверить, есть ли данные переменные в env
 func checkEnv(envVars []string) error {
@@ -76,6 +83,6 @@ func ValidateEnv() error {
 	return nil
 }
 
-func LoadConfig() (config *Config, err error) {
+func LoadConfig() (err error) {
 	return nil, fmt.Errorf("not implemented")
 }

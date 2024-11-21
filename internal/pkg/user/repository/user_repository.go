@@ -4,6 +4,7 @@ import (
 	"RPO_back/internal/errs"
 	"RPO_back/internal/models"
 	"RPO_back/internal/pkg/utils/logging"
+	"RPO_back/internal/pkg/utils/pgxiface"
 	"RPO_back/internal/pkg/utils/uploads"
 	"context"
 	"errors"
@@ -11,33 +12,31 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type UserRepository struct {
-	db *pgxpool.Pool
+	db pgxiface.PgxIface
 }
 
-func CreateUserRepository(db *pgxpool.Pool) *UserRepository {
+func CreateUserRepository(db pgxiface.PgxIface) *UserRepository {
 	return &UserRepository{
 		db: db,
 	}
 }
 
 // GetUserProfile возвращает профиль пользователя
-func (r *UserRepository) GetUserProfile(ctx context.Context, userID int) (profile *models.UserProfile, err error) {
+func (r *UserRepository) GetUserProfile(ctx context.Context, userID int64) (profile *models.UserProfile, err error) {
 	query := `
         SELECT
 		u.u_id,
 		u.nickname,
 		u.email,
-		u.description,
 		u.joined_at,
 		u.updated_at,
 		COALESCE(f.file_uuid::text, ''),
 		COALESCE(f.file_extension, '')
         FROM "user" AS u
-		LEFT JOIN user_uploaded_file AS f ON u.avatar_file_uuid=f.file_uuid
+		LEFT JOIN user_uploaded_file AS f ON u.avatar_file_id=f.file_id
         WHERE u_id = $1;
     `
 	row := r.db.QueryRow(ctx, query, userID)
@@ -48,7 +47,6 @@ func (r *UserRepository) GetUserProfile(ctx context.Context, userID int) (profil
 		&user.ID,
 		&user.Name,
 		&user.Email,
-		&user.Description,
 		&user.JoinedAt,
 		&user.UpdatedAt,
 		&fileUUID,
@@ -67,7 +65,7 @@ func (r *UserRepository) GetUserProfile(ctx context.Context, userID int) (profil
 }
 
 // UpdateUserProfile обновляет профиль пользователя
-func (r *UserRepository) UpdateUserProfile(ctx context.Context, userID int, data models.UserProfileUpdateRequest) (newProfile *models.UserProfile, err error) {
+func (r *UserRepository) UpdateUserProfile(ctx context.Context, userID int64, data models.UserProfileUpdateRequest) (newProfile *models.UserProfile, err error) {
 	query1 := `SELECT COUNT(*) FROM "user" WHERE email=$1 AND u_id!=$2;`
 	query2 := `SELECT COUNT(*) FROM "user" WHERE nickname=$1 AND u_id!=$2;`
 	query3 := `
@@ -108,7 +106,7 @@ func (r *UserRepository) UpdateUserProfile(ctx context.Context, userID int, data
 	return
 }
 
-func (r *UserRepository) SetUserAvatar(ctx context.Context, userID int, fileExtension string, fileSize int) (fileName string, err error) {
+func (r *UserRepository) SetUserAvatar(ctx context.Context, userID int64, fileExtension string, fileSize int) (fileName string, err error) {
 	query1 := `
 	INSERT INTO user_uploaded_file
 	(file_extension, created_at, created_by, "size")
@@ -140,7 +138,7 @@ func (r *UserRepository) SetUserAvatar(ctx context.Context, userID int, fileExte
 // GetUserByEmail получает данные пользователя из базы по email
 func (r *UserRepository) GetUserByEmail(ctx context.Context, email string) (user *models.UserProfile, err error) {
 	query := `
-	SELECT u_id, nickname, email, description,
+	SELECT u_id, nickname, email,
 	joined_at, updated_at
 	FROM "user"
 	WHERE email=$1;`
@@ -149,7 +147,6 @@ func (r *UserRepository) GetUserByEmail(ctx context.Context, email string) (user
 		&user.ID,
 		&user.Name,
 		&user.Email,
-		&user.Description,
 		&user.JoinedAt,
 		&user.UpdatedAt,
 	)
@@ -166,14 +163,13 @@ func (r *UserRepository) GetUserByEmail(ctx context.Context, email string) (user
 // CreateUser создаёт пользователя (или не создаёт, если повторяются креды)
 func (r *UserRepository) CreateUser(ctx context.Context, user *models.UserRegisterRequest) (newUser *models.UserProfile, err error) {
 	newUser = &models.UserProfile{}
-	query := `INSERT INTO "user" (nickname, email, password_hash, description, joined_at, updated_at)
-              VALUES ($1, $2, $3, $4, $5, $6) RETURNING u_id, nickname, email, password_hash, description, joined_at, updated_at`
+	query := `INSERT INTO "user" (nickname, email, password_hash, joined_at, updated_at)
+              VALUES ($1, $2, $3, $4, $5, $6) RETURNING u_id, nickname, email, password_hash, joined_at, updated_at`
 
 	err = r.db.QueryRow(ctx, query, user.Name, user.Email, "", time.Now(), time.Now()).Scan(
 		&newUser.ID,
 		&newUser.Name,
 		&newUser.Email,
-		&newUser.Description,
 		&newUser.JoinedAt,
 		&newUser.UpdatedAt,
 	)

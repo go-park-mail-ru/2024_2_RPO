@@ -20,7 +20,7 @@ func CreateAuthUsecase(repo auth.AuthRepo) *AuthUsecase {
 }
 
 func (uc *AuthUsecase) CreateSession(ctx context.Context, userID int64, password string) (sessionID string, err error) {
-	passwordHash, err := uc.authRepo.GetUserPasswordHashForUser(ctx, int(userID))
+	passwordHash, err := uc.authRepo.GetUserPasswordHash(ctx, int(userID))
 	if err != nil {
 		return "", err
 	}
@@ -68,9 +68,9 @@ func (uc *AuthUsecase) ChangePassword(ctx context.Context, oldPassword string, n
 		return fmt.Errorf("ChangePassword (CheckSession): %w", err)
 	}
 
-	oldPasswordHash, err := uc.authRepo.GetUserPasswordHashForUser(ctx, int(userID))
+	oldPasswordHash, err := uc.authRepo.GetUserPasswordHash(ctx, int(userID))
 	if err != nil {
-		return fmt.Errorf("ChangePassword (GetUserPasswordHashForUser): %w", err)
+		return fmt.Errorf("ChangePassword (GetUserPasswordHash): %w", err)
 	}
 
 	ok := encrypt.CheckPassword(oldPassword, oldPasswordHash)

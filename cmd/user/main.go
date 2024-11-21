@@ -11,9 +11,12 @@ import (
 	"fmt"
 	"os"
 
+	AuthGRPC "RPO_back/internal/pkg/auth/delivery/grpc/gen"
+
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/joho/godotenv"
 	log "github.com/sirupsen/logrus"
+	"google.golang.org/grpc"
 )
 
 func main() {
@@ -40,7 +43,7 @@ func main() {
 	}
 
 	// Формирование конфига
-	config, err := config.LoadConfig()
+	err = config.LoadConfig()
 	if err != nil {
 		log.Fatalf("environment configuration is invalid: %w", err)
 		return
@@ -58,6 +61,11 @@ func main() {
 	if err = postgresDb.Ping(context.Background()); err != nil {
 		log.Fatal("error while pinging PostgreSQL: ", err)
 	}
+
+	// Подключение к GRPC сервису авторизации
+	conn, err := grpc.NewClient()
+	AuthGRPC.NewAuthClient(conn)
+	// Проверка подключения к GRPC
 
 	// User
 	userRepository := UserRepository.CreateUserRepository(postgresDb)

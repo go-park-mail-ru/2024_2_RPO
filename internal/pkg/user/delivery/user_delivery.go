@@ -124,7 +124,7 @@ func (d *UserDelivery) LoginUser(w http.ResponseWriter, r *http.Request) {
 
 // RegisterUser регистрирует пользователя
 func (d *UserDelivery) RegisterUser(w http.ResponseWriter, r *http.Request) {
-	var user models.UserRegistration
+	var user models.UserRegisterRequest
 	err := requests.GetRequestData(r, &user)
 	if err != nil {
 		log.Error("UserDelivery Parsing JSON: ", err)
