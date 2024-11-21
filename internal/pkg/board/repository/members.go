@@ -595,14 +595,14 @@ func (r *BoardRepository) GetCardAttachments(ctx context.Context, cardID int64) 
 	return attachments, nil
 }
 
-// GetCardsForMove получает списки карточек на двух колонках.
+// GetCardsForMove получает списки карточек на двух колонках. (карточки неполные)
 // Нужно для Drag-n-Drop (колонки откуда перемещаем и куда)
 func (r *BoardRepository) GetCardsForMove(ctx context.Context, col1ID int64, col2ID *int64) (column1 []models.Card, column2 []models.Card, err error) {
 	query := `
-	SELECT c.col_id, c.title, c.order_index
+	SELECT c.card_id, c.col_id, c.order_index 
 	FROM card AS c
 	WHERE c.col_id = $1 OR c.col_id = $2
-	ORDER BY kc.order_index;
+	ORDER BY c.order_index;
 	`
 
 	rows, err := r.db.Query(ctx, query, col1ID, col2ID)
@@ -615,7 +615,17 @@ func (r *BoardRepository) GetCardsForMove(ctx context.Context, col1ID int64, col
 	}
 
 	for rows.Next() {
-		c1 := models.
+		c := models.Card{}
+
+		if err := rows.Scan(&c.ID, &c.ColumnID, c.OrderIndex); err != nil {
+			return nil, nil, fmt.Errorf("GetCardsForMove (scan): %w", err)
+		}
+
+		if c.ColumnID == col1ID {
+			column1 = append(column1, c)
+		} else if col2ID != nil && c.ColumnID == *col2ID {
+			column2 = append(column2, c)
+		}
 	}
 
 	return column1, column2, nil
