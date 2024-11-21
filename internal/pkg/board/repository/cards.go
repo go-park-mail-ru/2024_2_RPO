@@ -141,7 +141,7 @@ func (r *BoardRepository) UpdateCard(ctx context.Context, cardID int, data model
 
 // DeleteCard удаляет карточку
 func (r *BoardRepository) DeleteCard(ctx context.Context, cardID int) (err error) {
-
+	funcName := "DeleteCard"
 	query := `
 		DELETE FROM card
 		WHERE card.card_id = $1;
