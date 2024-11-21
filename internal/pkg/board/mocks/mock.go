@@ -157,7 +157,7 @@ func (mr *MockBoardUsecaseMockRecorder) CreateNewBoard(ctx, userID, data interfa
 }
 
 // CreateNewCard mocks base method.
-func (m *MockBoardUsecase) CreateNewCard(ctx context.Context, userID, boardID int64, data *models.CardPatchRequest) (*models.Card, error) {
+func (m *MockBoardUsecase) CreateNewCard(ctx context.Context, userID, boardID int64, data *models.CardPostRequest) (*models.Card, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CreateNewCard", ctx, userID, boardID, data)
 	ret0, _ := ret[0].(*models.Card)
@@ -214,17 +214,17 @@ func (mr *MockBoardUsecaseMockRecorder) DeleteBoard(ctx, userID, boardID interfa
 }
 
 // DeleteCard mocks base method.
-func (m *MockBoardUsecase) DeleteCard(ctx context.Context, userID, boardID, cardID int64) error {
+func (m *MockBoardUsecase) DeleteCard(ctx context.Context, userID, cardID int64) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DeleteCard", ctx, userID, boardID, cardID)
+	ret := m.ctrl.Call(m, "DeleteCard", ctx, userID, cardID)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // DeleteCard indicates an expected call of DeleteCard.
-func (mr *MockBoardUsecaseMockRecorder) DeleteCard(ctx, userID, boardID, cardID interface{}) *gomock.Call {
+func (mr *MockBoardUsecaseMockRecorder) DeleteCard(ctx, userID, cardID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteCard", reflect.TypeOf((*MockBoardUsecase)(nil).DeleteCard), ctx, userID, boardID, cardID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteCard", reflect.TypeOf((*MockBoardUsecase)(nil).DeleteCard), ctx, userID, cardID)
 }
 
 // DeleteCardCover mocks base method.
@@ -256,17 +256,17 @@ func (mr *MockBoardUsecaseMockRecorder) DeleteCheckListField(ctx, userID, fieldI
 }
 
 // DeleteColumn mocks base method.
-func (m *MockBoardUsecase) DeleteColumn(ctx context.Context, userID, boardID, columnID int64) error {
+func (m *MockBoardUsecase) DeleteColumn(ctx context.Context, userID, columnID int64) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DeleteColumn", ctx, userID, boardID, columnID)
+	ret := m.ctrl.Call(m, "DeleteColumn", ctx, userID, columnID)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // DeleteColumn indicates an expected call of DeleteColumn.
-func (mr *MockBoardUsecaseMockRecorder) DeleteColumn(ctx, userID, boardID, columnID interface{}) *gomock.Call {
+func (mr *MockBoardUsecaseMockRecorder) DeleteColumn(ctx, userID, columnID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteColumn", reflect.TypeOf((*MockBoardUsecase)(nil).DeleteColumn), ctx, userID, boardID, columnID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteColumn", reflect.TypeOf((*MockBoardUsecase)(nil).DeleteColumn), ctx, userID, columnID)
 }
 
 // DeleteComment mocks base method.
@@ -476,18 +476,18 @@ func (mr *MockBoardUsecaseMockRecorder) UpdateBoard(ctx, userID, boardID, data i
 }
 
 // UpdateCard mocks base method.
-func (m *MockBoardUsecase) UpdateCard(ctx context.Context, userID, boardID, cardID int64, data *models.CardPatchRequest) (*models.Card, error) {
+func (m *MockBoardUsecase) UpdateCard(ctx context.Context, userID, cardID int64, data *models.CardPatchRequest) (*models.Card, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpdateCard", ctx, userID, boardID, cardID, data)
+	ret := m.ctrl.Call(m, "UpdateCard", ctx, userID, cardID, data)
 	ret0, _ := ret[0].(*models.Card)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // UpdateCard indicates an expected call of UpdateCard.
-func (mr *MockBoardUsecaseMockRecorder) UpdateCard(ctx, userID, boardID, cardID, data interface{}) *gomock.Call {
+func (mr *MockBoardUsecaseMockRecorder) UpdateCard(ctx, userID, cardID, data interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateCard", reflect.TypeOf((*MockBoardUsecase)(nil).UpdateCard), ctx, userID, boardID, cardID, data)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateCard", reflect.TypeOf((*MockBoardUsecase)(nil).UpdateCard), ctx, userID, cardID, data)
 }
 
 // UpdateCheckListField mocks base method.
@@ -506,18 +506,18 @@ func (mr *MockBoardUsecaseMockRecorder) UpdateCheckListField(ctx, userID, fieldI
 }
 
 // UpdateColumn mocks base method.
-func (m *MockBoardUsecase) UpdateColumn(ctx context.Context, userID, boardID, columnID int64, data *models.ColumnRequest) (*models.Column, error) {
+func (m *MockBoardUsecase) UpdateColumn(ctx context.Context, userID, columnID int64, data *models.ColumnRequest) (*models.Column, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpdateColumn", ctx, userID, boardID, columnID, data)
+	ret := m.ctrl.Call(m, "UpdateColumn", ctx, userID, columnID, data)
 	ret0, _ := ret[0].(*models.Column)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // UpdateColumn indicates an expected call of UpdateColumn.
-func (mr *MockBoardUsecaseMockRecorder) UpdateColumn(ctx, userID, boardID, columnID, data interface{}) *gomock.Call {
+func (mr *MockBoardUsecaseMockRecorder) UpdateColumn(ctx, userID, columnID, data interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateColumn", reflect.TypeOf((*MockBoardUsecase)(nil).UpdateColumn), ctx, userID, boardID, columnID, data)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateColumn", reflect.TypeOf((*MockBoardUsecase)(nil).UpdateColumn), ctx, userID, columnID, data)
 }
 
 // UpdateComment mocks base method.
@@ -721,17 +721,17 @@ func (mr *MockBoardRepoMockRecorder) DeassignUserFromCard(ctx, cardID, assignedU
 }
 
 // DeleteBoard mocks base method.
-func (m *MockBoardRepo) DeleteBoard(ctx context.Context, boardId int64) error {
+func (m *MockBoardRepo) DeleteBoard(ctx context.Context, boardID int64) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DeleteBoard", ctx, boardId)
+	ret := m.ctrl.Call(m, "DeleteBoard", ctx, boardID)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // DeleteBoard indicates an expected call of DeleteBoard.
-func (mr *MockBoardRepoMockRecorder) DeleteBoard(ctx, boardId interface{}) *gomock.Call {
+func (mr *MockBoardRepoMockRecorder) DeleteBoard(ctx, boardID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteBoard", reflect.TypeOf((*MockBoardRepo)(nil).DeleteBoard), ctx, boardId)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteBoard", reflect.TypeOf((*MockBoardRepo)(nil).DeleteBoard), ctx, boardID)
 }
 
 // DeleteCard mocks base method.

@@ -13,7 +13,7 @@ import (
 )
 
 // GetUserProfile получает из базы профиль пользователя
-func (r *BoardRepository) GetUserProfile(ctx context.Context, userID int) (user *models.UserProfile, err error) {
+func (r *BoardRepository) GetUserProfile(ctx context.Context, userID int64) (user *models.UserProfile, err error) {
 	query := `
 	SELECT
 	u_id,
@@ -56,7 +56,7 @@ func (r *BoardRepository) GetUserProfile(ctx context.Context, userID int) (user 
 // поля AddedBy и UpdatedBy будут установлены в nil. Но если
 // verbose равен true, ещё не факт, что указанные поля
 // будут не nil
-func (r *BoardRepository) GetMemberPermissions(ctx context.Context, boardID int, memberUserID int, verbose bool) (member *models.MemberWithPermissions, err error) {
+func (r *BoardRepository) GetMemberPermissions(ctx context.Context, boardID int64, memberUserID int64, verbose bool) (member *models.MemberWithPermissions, err error) {
 	query := `
 	WITH board_check AS (
 		SELECT 1
@@ -80,7 +80,7 @@ func (r *BoardRepository) GetMemberPermissions(ctx context.Context, boardID int,
 		return nil, fmt.Errorf("GetMemberPermissions (getting user profile): %w", err)
 	}
 	member.User = userProfile
-	var addedByID, updatedByID int
+	var addedByID, updatedByID int64
 	rows := r.db.QueryRow(ctx, query, memberUserID, boardID)
 	err = rows.Scan(
 		&member.Role,
@@ -117,7 +117,7 @@ func (r *BoardRepository) GetMemberPermissions(ctx context.Context, boardID int,
 // GetMembersWithPermissions получает всех участников на конкретной
 // доске с информацией об их правах и с разрешением профилей добавителя
 // и пользователя, внёсшего последнее обновление в роль
-func (r *BoardRepository) GetMembersWithPermissions(ctx context.Context, boardID int, userID int) (members []models.MemberWithPermissions, err error) {
+func (r *BoardRepository) GetMembersWithPermissions(ctx context.Context, boardID int64, userID int64) (members []models.MemberWithPermissions, err error) {
 	query := `
 	SELECT
 

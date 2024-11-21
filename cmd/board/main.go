@@ -46,7 +46,7 @@ func main() {
 	}
 
 	// Формирование конфига
-	err := config.LoadConfig()
+	err = config.LoadConfig()
 	if err != nil {
 		log.Fatalf("environment configuration is invalid: %w", err)
 		return

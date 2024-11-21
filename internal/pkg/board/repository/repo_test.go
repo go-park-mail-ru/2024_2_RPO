@@ -36,19 +36,18 @@ func TestCreateBoard(t *testing.T) {
 	expectedUpdatedAt := time.Now()
 
 	mock.ExpectQuery(regexp.QuoteMeta(`
-	INSERT INTO board (name, description, created_by)
-	VALUES ($1, $2, $3)
-	RETURNING board_id, name, description, created_at, updated_at
+	INSERT INTO board (name, created_by)
+	VALUES ($1, $2)
+	RETURNING board_id, name, created_at, updated_at
 `)).
 		WithArgs(name, "", userID).
-		WillReturnRows(pgxmock.NewRows([]string{"board_id", "name", "description", "created_at", "updated_at"}).
-			AddRow(expectedBoardID, name, "", expectedCreatedAt, expectedUpdatedAt))
+		WillReturnRows(pgxmock.NewRows([]string{"board_id", "name", "created_at", "updated_at"}).
+			AddRow(expectedBoardID, name, expectedCreatedAt, expectedUpdatedAt))
 
 	board, err := repo.CreateBoard(ctx, name, userID)
 	assert.NoError(t, err)
 	assert.Equal(t, expectedBoardID, board.ID)
 	assert.Equal(t, name, board.Name)
-	assert.Equal(t, "", board.Description)
 	assert.Equal(t, expectedCreatedAt, board.CreatedAt)
 	assert.Equal(t, expectedUpdatedAt, board.UpdatedAt)
 	assert.Equal(t, uploads.DefaultBackgroundURL, board.BackgroundImageURL)
