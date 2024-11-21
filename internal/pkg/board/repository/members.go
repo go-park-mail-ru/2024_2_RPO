@@ -597,8 +597,28 @@ func (r *BoardRepository) GetCardAttachments(ctx context.Context, cardID int64) 
 
 // GetCardsForMove получает списки карточек на двух колонках.
 // Нужно для Drag-n-Drop (колонки откуда перемещаем и куда)
-func (r *BoardRepository) GetCardsForMove(ctx context.Context, colID int64) (column []models.Card, err error) {
-	panic("not implemented")
+func (r *BoardRepository) GetCardsForMove(ctx context.Context, col1ID int64, col2ID *int64) (column1 []models.Card, column2 []models.Card, err error) {
+	query := `
+	SELECT c.col_id, c.title, c.order_index
+	FROM card AS c
+	WHERE c.col_id = $1 OR c.col_id = $2
+	ORDER BY kc.order_index;
+	`
+
+	rows, err := r.db.Query(ctx, query, col1ID, col2ID)
+	logging.Debug(ctx, "GetCardsForMove query has err: ", err)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, nil, fmt.Errorf("GetCardsForMove (query): %w", errs.ErrNotFound)
+		}
+		return nil, nil, fmt.Errorf("GetCardsForMove (query): %w", err)
+	}
+
+	for rows.Next() {
+		c1 := models.
+	}
+
+	return column1, column2, nil
 }
 
 // GetColumnsForMove получает список всех колонок, чтобы сделать Drag-n-Drop

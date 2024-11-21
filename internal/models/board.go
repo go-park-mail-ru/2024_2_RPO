@@ -46,8 +46,9 @@ type Card struct {
 }
 
 type Column struct {
-	ID    int    `json:"id"`
-	Title string `json:"title"`
+	ID         int    `json:"id"`
+	Title      string `json:"title"`
+	OrderIndex int64  `json:"-"`
 }
 
 type Comment struct {
