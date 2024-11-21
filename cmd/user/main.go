@@ -2,10 +2,15 @@ package main
 
 import (
 	"RPO_back/internal/pkg/config"
+	"RPO_back/internal/pkg/middleware/cors"
+	"RPO_back/internal/pkg/middleware/csrf"
+	"RPO_back/internal/pkg/middleware/logging_middleware"
+	"RPO_back/internal/pkg/middleware/no_panic"
 	UserDelivery "RPO_back/internal/pkg/user/delivery"
 	UserRepository "RPO_back/internal/pkg/user/repository"
 	UserUsecase "RPO_back/internal/pkg/user/usecase"
 	"RPO_back/internal/pkg/utils/logging"
+	"net/http"
 
 	"context"
 	"fmt"
@@ -13,6 +18,7 @@ import (
 
 	AuthGRPC "RPO_back/internal/pkg/auth/delivery/grpc/gen"
 
+	"github.com/gorilla/mux"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/joho/godotenv"
 	log "github.com/sirupsen/logrus"
@@ -50,7 +56,7 @@ func main() {
 	}
 
 	// Подключение к PostgreSQL
-	postgresDb, err := pgxpool.New(context.Background(), config.PostgresDSN)
+	postgresDb, err := pgxpool.New(context.Background(), config.CurrentConfig.PostgresDSN)
 	if err != nil {
 		log.Error("error connecting to PostgreSQL: ", err)
 		return
@@ -63,14 +69,40 @@ func main() {
 	}
 
 	// Подключение к GRPC сервису авторизации
-	conn, err := grpc.NewClient()
-	AuthGRPC.NewAuthClient(conn)
+	grpcAddr := fmt.Sprintf("%s:%s", config.CurrentConfig.AuthGRPCHost, config.CurrentConfig.AuthGRPCPort)
+	conn, err := grpc.NewClient(grpcAddr)
+	authGRPC := AuthGRPC.NewAuthClient(conn)
 	// Проверка подключения к GRPC
+	sess := &AuthGRPC.CheckSessionRequest{SessionID: "12345678"}
+	authGRPC.CheckSession(context.Background(), sess)
 
 	// User
 	userRepository := UserRepository.CreateUserRepository(postgresDb)
 	userUsecase := UserUsecase.CreateUserUsecase(userRepository)
 	userDelivery := UserDelivery.CreateUserDelivery(userUsecase)
 
-	panic("GRPC needed")
+	// Создаём новый маршрутизатор
+	router := mux.NewRouter()
+
+	// Применяем middleware
+	router.Use(no_panic.PanicMiddleware)
+	router.Use(logging_middleware.LoggingMiddleware)
+	router.Use(cors.CorsMiddleware)
+	router.Use(csrf.CSRFMiddleware)
+
+	// Регистрируем обработчики
+	router.HandleFunc("/auth/register", userDelivery.RegisterUser).Methods("POST", "OPTIONS")
+	router.HandleFunc("/auth/login", userDelivery.LoginUser).Methods("POST", "OPTIONS")
+	router.HandleFunc("/auth/logout", userDelivery.LogoutUser).Methods("POST", "OPTIONS")
+	router.HandleFunc("/auth/changePassword", userDelivery.ChangePassword).Methods("POST", "OPTIONS")
+	router.HandleFunc("/users/me", userDelivery.GetMyProfile).Methods("GET", "OPTIONS")
+	router.HandleFunc("/users/me", userDelivery.UpdateMyProfile).Methods("PUT", "OPTIONS")
+	router.HandleFunc("/users/me/avatar", userDelivery.SetMyAvatar).Methods("PUT", "OPTIONS")
+
+	// Запускаем сервер
+	addr := fmt.Sprintf(":%s", os.Getenv("SERVER_PORT"))
+	log.Infof("server started at http://0.0.0.0%s", addr)
+	if err := http.ListenAndServe(addr, router); err != nil {
+		log.Fatalf("error while starting server: %w", err)
+	}
 }

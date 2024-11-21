@@ -106,33 +106,20 @@ func (r *UserRepository) UpdateUserProfile(ctx context.Context, userID int64, da
 	return
 }
 
-func (r *UserRepository) SetUserAvatar(ctx context.Context, userID int64, fileExtension string, fileSize int) (fileName string, err error) {
-	query1 := `
-	INSERT INTO user_uploaded_file
-	(file_extension, created_at, created_by, "size")
-	VALUES ($1, CURRENT_TIMESTAMP, $2, $3)
-	RETURNING file_uuid::text;
-	`
-	query2 := `
+func (r *UserRepository) SetUserAvatar(ctx context.Context, userID int64, avatarFileID int64) error {
+	query := `
 	UPDATE "user"
-	SET avatar_file_uuid=to_uuid($1)
+	SET avatar_file_id=$1
 	WHERE u_id=$2;`
-	var fileUUID string
-	row := r.db.QueryRow(ctx, query1, fileExtension, userID, fileSize)
-	err = row.Scan(&fileUUID)
-	logging.Debug(ctx, "SetUserAvatar query 1 has err: ", err)
+	tag, err := r.db.Exec(ctx, query, avatarFileID, userID)
+	logging.Debug(ctx, "SetUserAvatar query has err: ", err)
 	if err != nil {
-		return "", fmt.Errorf("SetUserAvatar (register file): %w", err)
-	}
-	tag, err := r.db.Exec(ctx, query2, fileUUID, userID)
-	logging.Debug(ctx, "SetUserAvatar query 2 has err: ", err)
-	if err != nil {
-		return "", fmt.Errorf("SetUserAvatar (update user): %w", err)
+		return fmt.Errorf("SetUserAvatar (update): %w", err)
 	}
 	if tag.RowsAffected() == 0 {
-		return "", fmt.Errorf("SetUserAvatar (update user): no rows affected")
+		return fmt.Errorf("SetUserAvatar (update): no rows affected")
 	}
-	return uploads.JoinFilePath(fileUUID, fileExtension), nil
+	return nil
 }
 
 // GetUserByEmail получает данные пользователя из базы по email
@@ -209,6 +196,27 @@ func (r *UserRepository) CheckUniqueCredentials(ctx context.Context, nickname st
 		return fmt.Errorf("%s: %w", funcName, errs.ErrBusyNickname)
 	} else if emailCount > 0 {
 		return fmt.Errorf("%s: %w", funcName, errs.ErrBusyEmail)
+	}
+	return nil
+}
+
+func (r *UserRepository) DeduplicateFile(ctx context.Context, file *models.UploadedFile) (fileNames []string, fileIDs []int64, err error) {
+	panic("not implemented")
+}
+
+func (r *UserRepository) RegisterFile(ctx context.Context, file *models.UploadedFile) error {
+	funcName := "RegisterFile"
+	query := `
+	INSERT INTO user_uploaded_file
+	(file_extension, created_at, "size")
+	VALUES ($1, CURRENT_TIMESTAMP, $2)
+	RETURNING file_uuid::text, file_id;
+	`
+	row := r.db.QueryRow(ctx, query, file.FileExtension, len(file.Content))
+	err := row.Scan(&file.UUID, file.FileID)
+	logging.Debug(ctx, funcName, " query has err: ", err)
+	if err != nil {
+		return fmt.Errorf("%s: %w", funcName, err)
 	}
 	return nil
 }

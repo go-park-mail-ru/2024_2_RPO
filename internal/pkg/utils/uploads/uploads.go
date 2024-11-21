@@ -2,12 +2,13 @@ package uploads
 
 import (
 	"RPO_back/internal/models"
-	"crypto/sha256"
-	"encoding/hex"
+	"RPO_back/internal/pkg/config"
 	"fmt"
 	"io"
 	"net/http"
 	"os"
+	"path/filepath"
+	"slices"
 	"strings"
 )
 
@@ -46,56 +47,29 @@ func JoinFilePath(fileUUID string, fileExtension string) string {
 	return fileUUID
 }
 
-func CompareFiles(fileNames []string, newFile []byte) (fileUUID string, err error) {
-	// Вычисляем хэш нового файла
-	newFileHash := sha256.Sum256(newFile)
-	newFileHashStr := hex.EncodeToString(newFileHash[:])
-	newFileSize := int64(len(newFile))
-
-	for _, filePath := range fileNames {
-		// Открываем существующий файл
-		file, err := os.Open(filePath)
+// CompareFiles смотрит, равен ли данный файл какому-нибудь из существующих
+// загруженных файлов. Если да, возвращает fileUUID эквивалентного файла
+func CompareFiles(fileNames []string, fileIDs []int64, newFile *models.UploadedFile) (fileID *int64, err error) {
+	for idx, filePath := range fileNames {
+		// Читаем существующий файл
+		file, err := os.Open(filepath.Join(config.CurrentConfig.UploadsDir, filePath))
 		if err != nil {
-			return "", fmt.Errorf("не удалось открыть файл %s: %w", filePath, err)
+			return nil, fmt.Errorf("CompareFiles (open) %s: %w", filePath, err)
 		}
-
-		// Получаем информацию о файле
-		info, err := file.Stat()
-		if err != nil {
-			file.Close()
-			return "", fmt.Errorf("не удалось получить информацию о файле %s: %w", filePath, err)
-		}
-
-		// Сравниваем размер файлов
-		if info.Size() != newFileSize {
-			file.Close()
-			continue
-		}
-
-		// Читаем содержимое существующего файла
 		existingFileContent, err := io.ReadAll(file)
 		file.Close()
 		if err != nil {
-			return "", fmt.Errorf("не удалось прочитать файл %s: %w", filePath, err)
+			return nil, fmt.Errorf("CompareFiles (read) %s: %w", filePath, err)
 		}
 
-		// Вычисляем хэш существующего файла
-		existingFileHash := sha256.Sum256(existingFileContent)
-		existingFileHashStr := hex.EncodeToString(existingFileHash[:])
-
-		// Сравниваем хэши
-		if newFileHashStr == existingFileHashStr {
-			// Извлекаем UUID из имени файла
-			uuid, err := extractUUID(filePath)
-			if err != nil {
-				return "", fmt.Errorf("не удалось извлечь UUID из файла %s: %w", filePath, err)
-			}
-			return uuid, nil
+		// Сравнение по содержимому
+		if slices.Equal(newFile.Content, existingFileContent) {
+			return &fileIDs[idx], err
 		}
 	}
 
-	// Если не найдено совпадений
-	return "", nil
+	// Не найдено совпадений
+	return nil, nil
 }
 
 // extractUUID предполагает, что UUID находится в начале имени файла, разделённого символом '_'
@@ -109,7 +83,7 @@ func extractUUID(filePath string) (string, error) {
 	return string(runes[:36]), nil
 }
 
-func FormFile(r http.Request) (file *models.UploadedFile, err error) {
+func FormFile(r *http.Request) (file *models.UploadedFile, err error) {
 	r.ParseMultipartForm(10 << 20)
 
 	fileContent, fileHeader, err := r.FormFile("file")
@@ -117,7 +91,7 @@ func FormFile(r http.Request) (file *models.UploadedFile, err error) {
 		return nil, fmt.Errorf("FormFile: %w", err)
 	}
 
-	currentPos, err := file.Seek(0, io.SeekCurrent)
+	currentPos, err := fileContent.Seek(0, io.SeekCurrent)
 	if err != nil {
 		return nil, fmt.Errorf("FormFile (seek 1): %w", err)
 	}
@@ -149,5 +123,16 @@ func FormFile(r http.Request) (file *models.UploadedFile, err error) {
 	file.FileExtension = ExtractFileExtension(file.OriginalName)
 
 	return file, nil
+}
 
+func SaveFile(file *models.UploadedFile) (err error) {
+	if file.UUID == nil {
+		return fmt.Errorf("SaveFile: file uuid is nil")
+	}
+	fileName := JoinFilePath(*file.UUID, file.FileExtension)
+	err = os.WriteFile(filepath.Join(config.CurrentConfig.UploadsDir, fileName), file.Content, 0644)
+	if err != nil {
+		return fmt.Errorf("SaveFile: cant write to file %s: %w", fileName, err)
+	}
+	return nil
 }

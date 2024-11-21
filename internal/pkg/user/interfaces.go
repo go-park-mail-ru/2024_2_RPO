@@ -19,9 +19,10 @@ type UserUsecase interface {
 type UserRepo interface {
 	GetUserProfile(ctx context.Context, userID int64) (profile *models.UserProfile, err error)
 	UpdateUserProfile(ctx context.Context, userID int64, data models.UserProfileUpdateRequest) (newProfile *models.UserProfile, err error)
-	SetUserAvatar(ctx context.Context, userID int64, file *models.UploadedFile) (fileName string, err error)
+	SetUserAvatar(ctx context.Context, userID int64, avatarFileID int64) (err error)
 	GetUserByEmail(ctx context.Context, email string) (user *models.UserProfile, err error)
 	CreateUser(ctx context.Context, user *models.UserRegisterRequest) (newUser *models.UserProfile, err error)
 	CheckUniqueCredentials(ctx context.Context, nickname string, email string) error
-	DeduplicateFile(ctx context.Context, file *models.UploadedFile) (fileNames []string, err error)
+	DeduplicateFile(ctx context.Context, file *models.UploadedFile) (fileNames []string, fileIDs []int64, err error)
+	RegisterFile(ctx context.Context, file *models.UploadedFile) error
 }

@@ -30,7 +30,7 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type AuthClient interface {
 	CreateSession(ctx context.Context, in *UserDataRequest, opts ...grpc.CallOption) (*Session, error)
-	CheckSession(ctx context.Context, in *Session, opts ...grpc.CallOption) (*UserDataResponse, error)
+	CheckSession(ctx context.Context, in *CheckSessionRequest, opts ...grpc.CallOption) (*UserDataResponse, error)
 	DeleteSession(ctx context.Context, in *Session, opts ...grpc.CallOption) (*StatusResponse, error)
 	ChangePassword(ctx context.Context, in *ChangePasswordRequest, opts ...grpc.CallOption) (*StatusResponse, error)
 }
@@ -53,7 +53,7 @@ func (c *authClient) CreateSession(ctx context.Context, in *UserDataRequest, opt
 	return out, nil
 }
 
-func (c *authClient) CheckSession(ctx context.Context, in *Session, opts ...grpc.CallOption) (*UserDataResponse, error) {
+func (c *authClient) CheckSession(ctx context.Context, in *CheckSessionRequest, opts ...grpc.CallOption) (*UserDataResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(UserDataResponse)
 	err := c.cc.Invoke(ctx, Auth_CheckSession_FullMethodName, in, out, cOpts...)
@@ -88,7 +88,7 @@ func (c *authClient) ChangePassword(ctx context.Context, in *ChangePasswordReque
 // for forward compatibility.
 type AuthServer interface {
 	CreateSession(context.Context, *UserDataRequest) (*Session, error)
-	CheckSession(context.Context, *Session) (*UserDataResponse, error)
+	CheckSession(context.Context, *CheckSessionRequest) (*UserDataResponse, error)
 	DeleteSession(context.Context, *Session) (*StatusResponse, error)
 	ChangePassword(context.Context, *ChangePasswordRequest) (*StatusResponse, error)
 	mustEmbedUnimplementedAuthServer()
@@ -104,7 +104,7 @@ type UnimplementedAuthServer struct{}
 func (UnimplementedAuthServer) CreateSession(context.Context, *UserDataRequest) (*Session, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateSession not implemented")
 }
-func (UnimplementedAuthServer) CheckSession(context.Context, *Session) (*UserDataResponse, error) {
+func (UnimplementedAuthServer) CheckSession(context.Context, *CheckSessionRequest) (*UserDataResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CheckSession not implemented")
 }
 func (UnimplementedAuthServer) DeleteSession(context.Context, *Session) (*StatusResponse, error) {
@@ -153,7 +153,7 @@ func _Auth_CreateSession_Handler(srv interface{}, ctx context.Context, dec func(
 }
 
 func _Auth_CheckSession_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(Session)
+	in := new(CheckSessionRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -165,7 +165,7 @@ func _Auth_CheckSession_Handler(srv interface{}, ctx context.Context, dec func(i
 		FullMethod: Auth_CheckSession_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AuthServer).CheckSession(ctx, req.(*Session))
+		return srv.(AuthServer).CheckSession(ctx, req.(*CheckSessionRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }

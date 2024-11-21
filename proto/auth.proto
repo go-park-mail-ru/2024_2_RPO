@@ -6,7 +6,7 @@ option go_package = "../internal/pkg/auth/delivery/grpc/gen/;gen";
 
 service Auth {
     rpc CreateSession(UserDataRequest) returns (Session) {}
-    rpc CheckSession(Session) returns (UserDataResponse) {}
+    rpc CheckSession(CheckSessionRequest) returns (UserDataResponse) {}
     rpc DeleteSession(Session) returns (StatusResponse) {}
     rpc ChangePassword(ChangePasswordRequest) returns (StatusResponse) {}
 }
@@ -20,6 +20,10 @@ enum Error {
 message Session {
     string sessionID = 1;
     Error error = 2;
+}
+
+message CheckSessionRequest {
+    string sessionID = 1;
 }
 
 message UserDataRequest {

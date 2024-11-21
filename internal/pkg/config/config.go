@@ -14,6 +14,9 @@ type Config struct {
 	User          *UserConfig
 	Board         *BoardConfig
 	MaxUploadSize int64
+	AuthGRPCPort  string
+	AuthGRPCHost  string
+	UploadsDir    string
 }
 
 type AuthConfig struct {
@@ -24,14 +27,10 @@ type AuthConfig struct {
 type UserConfig struct {
 	PostgresPoolSize int
 	LogFile          string
-	GrpcPort         string
-	GrpcHost         string
 }
 type BoardConfig struct {
 	PostgresPoolSize int
 	LogFile          string
-	GrpcPort         string
-	GrpcHost         string
 }
 
 var (
@@ -84,5 +83,5 @@ func ValidateEnv() error {
 }
 
 func LoadConfig() (err error) {
-	return nil, fmt.Errorf("not implemented")
+	return fmt.Errorf("config not implemented")
 }

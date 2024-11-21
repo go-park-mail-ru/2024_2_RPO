@@ -6,10 +6,6 @@ import (
 	"RPO_back/internal/pkg/utils/uploads"
 	"context"
 	"fmt"
-	"io"
-	"mime/multipart"
-	"os"
-	"path/filepath"
 )
 
 type UserUsecase struct {
@@ -35,23 +31,35 @@ func (uc *UserUsecase) UpdateMyProfile(ctx context.Context, userID int64, data *
 }
 
 // SetMyAvatar устанавливает пользователю аватарку
-func (uc *UserUsecase) SetMyAvatar(ctx context.Context, userID int64, file *multipart.File, fileHeader *multipart.FileHeader) (updated *models.UserProfile, err error) {
-	fileName, err := uc.userRepo.SetUserAvatar(ctx, userID, uploads.ExtractFileExtension(fileHeader.Filename), int(fileHeader.Size))
+func (uc *UserUsecase) SetMyAvatar(ctx context.Context, userID int64, file *models.UploadedFile) (updated *models.UserProfile, err error) {
+	fileNames, fileIDs, err := uc.userRepo.DeduplicateFile(ctx, file)
+	existingID, err := uploads.CompareFiles(fileNames, fileIDs, file)
+	if existingID != nil {
+		file.FileID = existingID
+	} else {
+		uc.userRepo.RegisterFile(ctx, file)
+		uploads.SaveFile(file)
+	}
 	if err != nil {
 		return nil, fmt.Errorf("SetMyAvatar: %w", err)
 	}
-	uploadDir := os.Getenv("USER_UPLOADS_DIR")
 
-	filePath := filepath.Join(uploadDir, fileName)
-	dst, err := os.Create(filePath)
-	if err != nil {
-		return nil, fmt.Errorf("Cant create file on server side: %w", err)
-	}
-	defer dst.Close()
-
-	if _, err = io.Copy(dst, *file); err != nil {
-		return nil, fmt.Errorf("Cant copy file on server side: %w", err)
-	}
+	uploads.SaveFile(file)
 
 	return uc.userRepo.GetUserProfile(ctx, userID)
+}
+
+func (uc *UserUsecase) ChangePassword(ctx context.Context, userID int64, oldPassword string, newPassword string) error {
+	panic("not implemented")
+}
+
+func (uc *UserUsecase) LoginUser(ctx context.Context, email string, password string) (sessionID string, err error) {
+	panic("not implemented")
+}
+
+func (uc *UserUsecase) LogoutUser(ctx context.Context, sessionID string) error {
+	panic("not implemented")
+}
+func (uc *UserUsecase) RegisterUser(ctx context.Context, user *models.UserRegisterRequest) (sessionID string, err error) {
+	panic("not implemented")
 }

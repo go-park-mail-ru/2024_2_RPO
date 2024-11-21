@@ -5,8 +5,10 @@ import (
 	"RPO_back/internal/models"
 	"RPO_back/internal/pkg/auth"
 	"RPO_back/internal/pkg/user"
+	"RPO_back/internal/pkg/utils/logging"
 	"RPO_back/internal/pkg/utils/requests"
 	"RPO_back/internal/pkg/utils/responses"
+	"RPO_back/internal/pkg/utils/uploads"
 	"errors"
 	"net/http"
 	"time"
@@ -67,18 +69,14 @@ func (d *UserDelivery) SetMyAvatar(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Ограничение размера 10 МБ
-	r.ParseMultipartForm(10 << 20)
-
-	file, fileHeader, err := r.FormFile("file")
+	file, err := uploads.FormFile(r)
 	if err != nil {
-		responses.DoBadResponse(w, 400, "bad request")
-		log.Warn(funcName, ": ", err)
+		responses.DoBadResponse(w, 401, "Wrong credentials")
+		logging.Warn(r.Context(), "LoginUser (checking credentials): ", err)
 		return
 	}
-	defer file.Close()
 
-	updatedProfile, err := d.userUC.SetMyAvatar(r.Context(), userID, &file, fileHeader)
+	updatedProfile, err := d.userUC.SetMyAvatar(r.Context(), userID, file)
 	if err != nil {
 		responses.ResponseErrorAndLog(w, err, funcName)
 		return
@@ -94,7 +92,7 @@ func (d *UserDelivery) LoginUser(w http.ResponseWriter, r *http.Request) {
 	err := requests.GetRequestData(r, &loginRequest)
 	if err != nil {
 		responses.DoBadResponse(w, http.StatusBadRequest, "Invalid request")
-		log.Warn("LoginUser (getting data): ", err)
+		logging.Warn(r.Context(), "LoginUser (getting data): ", err)
 		return
 	}
 
