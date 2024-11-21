@@ -29,19 +29,20 @@ type BoardContent struct {
 }
 
 type Card struct {
-	ID               int64     `json:"id"`
-	Title            string    `json:"title"`
-	CoverImageURL    string    `json:"coverImageUrl"`
-	ColumnID         int64     `json:"columnId"`
-	CreatedAt        time.Time `json:"createdAt"`
-	UpdatedAt        time.Time `json:"updatedAt"`
-	Deadine          time.Time `json:"deadline"`
-	IsDone           bool      `json:"isDone"`
-	HasCheckList     bool      `json:"hasCheckList"`
-	HasAttachments   bool      `json:"hasAttachments"`
-	HasAssignedUsers bool      `json:"hasAssignedUsers"`
-	HasComments      bool      `json:"hasComments"`
-	OrderIndex       int64     `json:"-"`
+	ID               int64      `json:"id"`
+	UUID             int64      `json:"cardUuid"`
+	Title            string     `json:"title"`
+	CoverImageURL    string     `json:"coverImageUrl"`
+	ColumnID         int64      `json:"columnId"`
+	CreatedAt        time.Time  `json:"createdAt"`
+	UpdatedAt        time.Time  `json:"updatedAt"`
+	Deadine          *time.Time `json:"deadline"`
+	IsDone           bool       `json:"isDone"`
+	HasCheckList     bool       `json:"hasCheckList"`
+	HasAttachments   bool       `json:"hasAttachments"`
+	HasAssignedUsers bool       `json:"hasAssignedUsers"`
+	HasComments      bool       `json:"hasComments"`
+	OrderIndex       int64      `json:"-"`
 }
 
 type Column struct {

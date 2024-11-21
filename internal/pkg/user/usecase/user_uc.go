@@ -60,6 +60,7 @@ func (uc *UserUsecase) LoginUser(ctx context.Context, email string, password str
 func (uc *UserUsecase) LogoutUser(ctx context.Context, sessionID string) error {
 	panic("not implemented")
 }
+
 func (uc *UserUsecase) RegisterUser(ctx context.Context, user *models.UserRegisterRequest) (sessionID string, err error) {
 	panic("not implemented")
 }

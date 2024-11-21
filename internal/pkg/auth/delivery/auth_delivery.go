@@ -27,7 +27,7 @@ func (d *AuthDelivery) CreateSession(ctx context.Context, request *gen.UserDataR
 	return &gen.Session{SessionID: sessionID, Error: gen.Error_NONE}, nil
 }
 
-func (d *AuthDelivery) CheckSession(ctx context.Context, request *gen.Session) (*gen.UserDataResponse, error) {
+func (d *AuthDelivery) CheckSession(ctx context.Context, request *gen.CheckSessionRequest) (*gen.UserDataResponse, error) {
 	userID, err := d.authUsecase.CheckSession(ctx, request.SessionID)
 	if err != nil {
 		return &gen.UserDataResponse{Error: gen.Error_INVALID_CREDENTIALS}, err

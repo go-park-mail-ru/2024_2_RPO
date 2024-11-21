@@ -49,7 +49,6 @@ func (r *BoardRepository) GetBoard(ctx context.Context, boardID int, userID int)
     SELECT
         b.board_id,
         b.name,
-        b.description,
         b.created_at,
         b.updated_at,
         ub.last_visit_at,
@@ -66,7 +65,6 @@ func (r *BoardRepository) GetBoard(ctx context.Context, boardID int, userID int)
 	err := r.db.QueryRow(ctx, query, userID, boardID).Scan(
 		&board.ID,
 		&board.Name,
-		&board.Description,
 		&board.CreatedAt,
 		&board.UpdatedAt,
 		&board.LastVisitAt,
