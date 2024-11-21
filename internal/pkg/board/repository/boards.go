@@ -21,12 +21,29 @@ func CreateBoardRepository(db pgxiface.PgxIface) *BoardRepository {
 	return &BoardRepository{db: db}
 }
 
-// CreateBoard инсертит новую доску (ВНИМАНИЕ! ОН НЕ ДОБАВЛЯЕТ СОЗДАТЕЛЯ НА ДОСКУ!)
-func (r *BoardRepository) CreateBoard(ctx context.Context, name string, userID int) (*models.Board, error) {
+// CreateBoard создаёт новую доску и добавляет создателя на неё
+func (r *BoardRepository) CreateBoard(ctx context.Context, name string, userID int64) (*models.Board, error) {
 	query := `
-		INSERT INTO board (name, description, created_by)
-		VALUES ($1, $2, $3)
-		RETURNING board_id, name, created_at, updated_at
+	WITH create_board AS (
+		INSERT INTO board_to_user (u_id, board_id, added_by, updated_by)
+			VALUES ($3, (
+				INSERT INTO board (name, description, created_by)
+				VALUES ($1, $2, $3)
+				RETURNING board_id
+			), $3, $3) RETURNING board_id
+	)
+	SELECT
+    	b.board_id,
+    	b.name,
+    	b.created_at,
+    	b.updated_at,
+    	ub.last_visit_at,
+    	COALESCE(file.file_uuid::text,''),
+    	COALESCE(file.file_extension,'')
+    FROM board AS b
+    LEFT JOIN user_to_board AS ub ON ub.board_id = b.board_id
+    LEFT JOIN user_uploaded_file AS file ON file.file_uuid=b.background_image_uuid
+    WHERE b.board_id = create_board.board_id;
 	`
 	var board models.Board
 	err := r.db.QueryRow(ctx, query, name, "", userID).Scan(
@@ -44,7 +61,7 @@ func (r *BoardRepository) CreateBoard(ctx context.Context, name string, userID i
 }
 
 // GetBoard получает доску по ID
-func (r *BoardRepository) GetBoard(ctx context.Context, boardID int, userID int) (*models.Board, error) {
+func (r *BoardRepository) GetBoard(ctx context.Context, boardID int64, userID int64) (*models.Board, error) {
 	query := `
     SELECT
         b.board_id,
@@ -84,7 +101,7 @@ func (r *BoardRepository) GetBoard(ctx context.Context, boardID int, userID int)
 }
 
 // UpdateBoard обновляет информацию о доске
-func (r *BoardRepository) UpdateBoard(ctx context.Context, boardID int, userID int, data *models.BoardRequest) (updatedBoard *models.Board, err error) {
+func (r *BoardRepository) UpdateBoard(ctx context.Context, boardID int64, userID int64, data *models.BoardRequest) (updatedBoard *models.Board, err error) {
 	query := `
 		UPDATE board
 		SET name=$1, updated_at = CURRENT_TIMESTAMP
@@ -106,7 +123,7 @@ func (r *BoardRepository) UpdateBoard(ctx context.Context, boardID int, userID i
 }
 
 // DeleteBoard удаляет доску по ID
-func (r *BoardRepository) DeleteBoard(ctx context.Context, boardID int) error {
+func (r *BoardRepository) DeleteBoard(ctx context.Context, boardID int64) error {
 	query := `
 		DELETE FROM board
 		WHERE board_id = $1;
@@ -126,7 +143,7 @@ func (r *BoardRepository) DeleteBoard(ctx context.Context, boardID int) error {
 }
 
 // GetBoardsForUser возвращает все доски, к которым пользователь имеет доступ
-func (r *BoardRepository) GetBoardsForUser(ctx context.Context, userID int) (boardArray []models.Board, err error) {
+func (r *BoardRepository) GetBoardsForUser(ctx context.Context, userID int64) (boardArray []models.Board, err error) {
 	query := `
 		SELECT b.board_id, b.name, b.created_at, b.updated_at,
 		COALESCE(f.file_uuid::text, ''),
@@ -172,7 +189,7 @@ func (r *BoardRepository) GetBoardsForUser(ctx context.Context, userID int) (boa
 	return boardArray, nil
 }
 
-func (r *BoardRepository) SetBoardBackground(ctx context.Context, userID int, boardID int, fileExtension string, fileSize int) (fileName string, err error) {
+func (r *BoardRepository) SetBoardBackground(ctx context.Context, userID int64, boardID int64, fileExtension string, fileSize int) (fileName string, err error) {
 	query1 := `
 	INSERT INTO user_uploaded_file
 	(file_extension, created_at, created_by, "size")
@@ -202,7 +219,7 @@ func (r *BoardRepository) SetBoardBackground(ctx context.Context, userID int, bo
 	return uploads.JoinFilePath(fileUUID, fileExtension), nil
 }
 
-func (r *BoardRepository) UpdateLastVisit(ctx context.Context, userID int, boardID int) error {
+func (r *BoardRepository) UpdateLastVisit(ctx context.Context, userID int64, boardID int64) error {
 	query := `
 	UPDATE user_to_board
     SET last_visit_at = NOW()

@@ -46,14 +46,14 @@ func main() {
 	}
 
 	// Формирование конфига
-	config, err := config.LoadConfig()
+	err := config.LoadConfig()
 	if err != nil {
 		log.Fatalf("environment configuration is invalid: %w", err)
 		return
 	}
 
 	// Подключение к PostgreSQL
-	postgresDb, err := pgxpool.New(context.Background(), config.PostgresDSN)
+	postgresDb, err := pgxpool.New(context.Background(), config.CurrentConfig.PostgresDSN)
 	if err != nil {
 		log.Error("error connecting to PostgreSQL: ", err)
 		return

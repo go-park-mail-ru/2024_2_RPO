@@ -22,10 +22,10 @@ var roleLevels = map[string]int{
 }
 
 type BoardUsecase struct {
-	boardRepository board.BoardRepository
+	boardRepository board.BoardRepo
 }
 
-func CreateBoardUsecase(boardRepository board.BoardRepository) *BoardUsecase {
+func CreateBoardUsecase(boardRepository board.BoardRepo) *BoardUsecase {
 	return &BoardUsecase{
 		boardRepository: boardRepository,
 	}

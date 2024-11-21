@@ -8,7 +8,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"slices"
 
 	"github.com/jackc/pgx/v5"
 )
@@ -20,7 +19,6 @@ func (r *BoardRepository) GetUserProfile(ctx context.Context, userID int) (user 
 	u_id,
 	nickname,
 	email,
-	description,
 	joined_at,
 	updated_at,
 	COALESCE(f.file_uuid::text, ''),
@@ -33,7 +31,6 @@ func (r *BoardRepository) GetUserProfile(ctx context.Context, userID int) (user 
 	user = &models.UserProfile{}
 	var avatarUUID, avatarExt string
 	err = rows.Scan(&user.ID, &user.Name, &user.Email,
-		&user.Description,
 		&user.JoinedAt,
 		&user.UpdatedAt,
 		&avatarUUID,
@@ -125,16 +122,15 @@ func (r *BoardRepository) GetMembersWithPermissions(ctx context.Context, boardID
 	SELECT
 
 	m.u_id, m.nickname,
-	m.email, m.description,
-	m.joined_at, m.updated_at,
+	m.email, m.joined_at, m.updated_at,
 
 	ub.role, ub.added_at, ub.updated_at,
 
 	COALESCE(adder.u_id,-1), adder.nickname, adder.email,
-	adder.description, adder.joined_at, adder.updated_at,
+	adder.joined_at, adder.updated_at,
 
 	COALESCE(updater.u_id,-1), updater.nickname, updater.email,
-	updater.description, updater.joined_at, updater.updated_at,
+	updater.joined_at, updater.updated_at,
 
 	COALESCE(f_m.file_uuid::text,''), COALESCE(f_m.file_extension,''),
 	COALESCE(f_adder.file_uuid::text,''), COALESCE(f_adder.file_extension,''),
@@ -172,7 +168,6 @@ func (r *BoardRepository) GetMembersWithPermissions(ctx context.Context, boardID
 			&field.User.ID,
 			&field.User.Name,
 			&field.User.Email,
-			&field.User.Description,
 			&field.User.JoinedAt,
 			&field.User.UpdatedAt,
 
@@ -181,14 +176,12 @@ func (r *BoardRepository) GetMembersWithPermissions(ctx context.Context, boardID
 			&field.AddedBy.ID,
 			&field.AddedBy.Name,
 			&field.AddedBy.Email,
-			&field.AddedBy.Description,
 			&field.AddedBy.JoinedAt,
 			&field.AddedBy.UpdatedAt,
 
 			&field.UpdatedBy.ID,
 			&field.UpdatedBy.Name,
 			&field.UpdatedBy.Email,
-			&field.UpdatedBy.Description,
 			&field.UpdatedBy.JoinedAt,
 			&field.UpdatedBy.UpdatedAt,
 
@@ -219,38 +212,34 @@ func (r *BoardRepository) GetMembersWithPermissions(ctx context.Context, boardID
 }
 
 // SetMemberRole устанавливает существующему участнику права (роль)
-func (r *BoardRepository) SetMemberRole(ctx context.Context, boardID int, memberUserID int, newRole string) (member *models.MemberWithPermissions, err error) {
+func (r *BoardRepository) SetMemberRole(ctx context.Context, userID int64, boardID int64, memberUserID int64, newRole string) (member *models.MemberWithPermissions, err error) {
+	funcName := "SetMemberRole"
 	query := `
 	UPDATE user_to_board
-	SET role='%s',
-	updated_at=CURRENT_TIMESTAMP
-	WHERE u_id=$1
-	AND board_id=$2;
+	SET role=$1,
+		updated_at=CURRENT_TIMESTAMP,
+		updated_by=$2
+	WHERE u_id=$3
+	AND board_id=$4;
 	`
 
-	// Дополнительная проверка для защиты от SQL-инъекций
-	if !slices.Contains([]string{"viewer", "editor", "editor_chief", "admin"}, newRole) {
-		return nil, fmt.Errorf("Unknown role: %s", newRole)
-	}
-	query = fmt.Sprintf(query, newRole)
-
 	tag, err := r.db.Exec(ctx, query, memberUserID, boardID)
-	logging.Debug(ctx, "SetMemberRole query has err: ", err)
+	logging.Debug(ctx, funcName, " query has err: ", err)
 	if tag.RowsAffected() == 0 {
-		return nil, fmt.Errorf("SetMemberRole (update): %w", errs.ErrNotFound)
+		return nil, fmt.Errorf("%s (update): %w", funcName, errs.ErrNotFound)
 	}
 	if err != nil {
-		return nil, fmt.Errorf("SetMemberRole (update): %w", err)
+		return nil, fmt.Errorf("%s (update): %w", funcName, err)
 	}
 	member, err = r.GetMemberPermissions(ctx, boardID, memberUserID, true)
 	if err != nil {
-		return nil, fmt.Errorf("SetMemberRole (get updated perms): %w", err)
+		return nil, fmt.Errorf("%s (get updated perms): %w", funcName, err)
 	}
 	return member, nil
 }
 
 // RemoveMember удаляет участника с доски
-func (r *BoardRepository) RemoveMember(ctx context.Context, boardID int, memberUserID int) (err error) {
+func (r *BoardRepository) RemoveMember(ctx context.Context, boardID int64, memberUserID int64) (err error) {
 	query := `
 	DELETE FROM user_to_board
 	WHERE board_id=$1
@@ -268,7 +257,7 @@ func (r *BoardRepository) RemoveMember(ctx context.Context, boardID int, memberU
 }
 
 // AddMember добавляет участника на доску с правами "viewer"
-func (r *BoardRepository) AddMember(ctx context.Context, boardID int, adderID int, memberUserID int) (member *models.MemberWithPermissions, err error) {
+func (r *BoardRepository) AddMember(ctx context.Context, boardID int64, adderID int64, memberUserID int64) (member *models.MemberWithPermissions, err error) {
 	query := `
 	INSERT INTO user_to_board (u_id, board_id, added_at, updated_at,
 	last_visit_at, added_by, updated_by, "role") VALUES (
@@ -295,14 +284,13 @@ func (r *BoardRepository) AddMember(ctx context.Context, boardID int, adderID in
 
 // GetUserByNickname получает данные пользователя из базы по имени
 func (r *BoardRepository) GetUserByNickname(ctx context.Context, nickname string) (user *models.UserProfile, err error) {
-	query := `SELECT u_id, nickname, email, description, joined_at, updated_at FROM "user"
+	query := `SELECT u_id, nickname, email, joined_at, updated_at FROM "user"
 	WHERE nickname=$1;`
 	user = &models.UserProfile{}
 	err = r.db.QueryRow(ctx, query, nickname).Scan(
 		&user.ID,
 		&user.Name,
 		&user.Email,
-		&user.Description,
 		&user.JoinedAt,
 		&user.UpdatedAt,
 	)
@@ -317,7 +305,7 @@ func (r *BoardRepository) GetUserByNickname(ctx context.Context, nickname string
 }
 
 // GetMemberFromCard получает права пользователя из ID карточки
-func (r *BoardRepository) GetMemberFromCard(ctx context.Context, userID int, cardID int64) (role string, boardID int64, err error) {
+func (r *BoardRepository) GetMemberFromCard(ctx context.Context, userID int64, cardID int64) (role string, boardID int64, err error) {
 	query := `
 	SELECT
 	FROM card AS c
@@ -333,7 +321,7 @@ func (r *BoardRepository) GetMemberFromCard(ctx context.Context, userID int, car
 // GetMemberFromCheckListField получает права пользователя из ID поля чеклиста
 func (r *BoardRepository) GetMemberFromCheckListField(ctx context.Context, userID int64, fieldID int64) (role string, boardID int64, cardID int64, err error) {
 	query := `
-	SELECT 
+	SELECT
 	utb.role, b.board_id, c.card_id
 	FROM checklist_field AS cf
 	JOIN card AS c ON cf.card_id = c.card_id
@@ -432,7 +420,7 @@ func (r *BoardRepository) GetMemberFromComment(ctx context.Context, userID int64
 // GetCardCheckList получает чеклисты для карточки
 func (r *BoardRepository) GetCardCheckList(ctx context.Context, cardID int64) (checkList []models.CheckListField, err error) {
 	query := `
-		SELECT cf.checklist_field_id, cf.title, cf.created_at, cf.is_done 
+		SELECT cf.checklist_field_id, cf.title, cf.created_at, cf.is_done
 		FROM checklist_field AS cf
 		JOIN card AS c ON cf.card_id = cf.card_id
 		WHERE c.card_id = $1
@@ -472,7 +460,7 @@ func (r *BoardRepository) GetCardAssignedUsers(ctx context.Context, cardID int64
 		COALESCE(f.file_extension::text, '')
 		FROM card_user_assignment AS cua
 		JOIN "user" AS u ON cua.u_id = u.u_id
-		LEFT JOIN user_uploaded_file AS f ON f.file_id=u.avatar_file_id 
+		LEFT JOIN user_uploaded_file AS f ON f.file_id=u.avatar_file_id
 		WHERE cua.card_id = $1;
 	`
 	rows, err := r.db.Query(ctx, query, cardID)
@@ -526,7 +514,7 @@ func (r *BoardRepository) GetCardComments(ctx context.Context, cardID int64) (co
 
 		FROM card_comment AS cc
 		JOIN "user" AS u ON cc.created_by=u.u_id
-		LEFT JOIN user_uploaded_file AS f ON f.file_id=u.avatar_file_id 
+		LEFT JOIN user_uploaded_file AS f ON f.file_id=u.avatar_file_id
 		WHERE cc.card_id = $1;
 	`
 
@@ -568,7 +556,7 @@ func (r *BoardRepository) GetCardAttachments(ctx context.Context, cardID int64) 
 		COALESCE(f.file_extension::text, '')
 		FROM card_attachment AS ca
 		LEFT JOIN user_uploaded_file AS f ON f.file_id=ca.file_id
-		WHERE ca.card_id = $1;   
+		WHERE ca.card_id = $1;
 	`
 
 	rows, err := r.db.Query(ctx, query, cardID)
@@ -615,7 +603,6 @@ func (r *BoardRepository) GetCardsForMove(ctx context.Context, col1ID int64, col
 	}
 
 	for rows.Next() {
-		c1 := models.
 	}
 
 	return column1, column2, nil

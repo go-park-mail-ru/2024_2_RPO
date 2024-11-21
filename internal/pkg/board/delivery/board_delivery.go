@@ -28,7 +28,7 @@ func (d *BoardDelivery) CreateNewBoard(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	data := models.CreateBoardRequest{}
+	data := models.BoardRequest{}
 	err := requests.GetRequestData(r, &data)
 	if err != nil {
 		responses.DoBadResponse(w, http.StatusBadRequest, "bad request")
@@ -255,7 +255,7 @@ func (d *BoardDelivery) CreateNewCard(w http.ResponseWriter, r *http.Request) {
 		responses.DoBadResponse(w, http.StatusBadRequest, "bad request")
 		return
 	}
-	requestData := &models.CardPatchRequest{}
+	requestData := &models.CardPostRequest{}
 	err = requests.GetRequestData(r, requestData)
 	if err != nil {
 		responses.DoBadResponse(w, http.StatusBadRequest, "bad request")
@@ -279,12 +279,6 @@ func (d *BoardDelivery) UpdateCard(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	boardID, err := requests.GetIDFromRequest(r, "boardId", "board_")
-	if err != nil {
-		responses.DoBadResponse(w, http.StatusBadRequest, "bad request")
-		return
-	}
-
 	cardID, err := requests.GetIDFromRequest(r, "cardId", "card_")
 	if err != nil {
 		responses.DoBadResponse(w, http.StatusBadRequest, "bad request")
@@ -298,7 +292,7 @@ func (d *BoardDelivery) UpdateCard(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	updatedCard, err := d.boardUsecase.UpdateCard(r.Context(), userID, boardID, cardID, requestData)
+	updatedCard, err := d.boardUsecase.UpdateCard(r.Context(), userID, cardID, requestData)
 	if err != nil {
 		responses.ResponseErrorAndLog(w, err, funcName)
 		return
@@ -315,19 +309,13 @@ func (d *BoardDelivery) DeleteCard(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	boardID, err := requests.GetIDFromRequest(r, "boardId", "board_")
-	if err != nil {
-		responses.DoBadResponse(w, http.StatusBadRequest, "bad request")
-		return
-	}
-
 	cardID, err := requests.GetIDFromRequest(r, "cardId", "card_")
 	if err != nil {
 		responses.DoBadResponse(w, http.StatusBadRequest, "bad request")
 		return
 	}
 
-	err = d.boardUsecase.DeleteCard(r.Context(), userID, boardID, cardID)
+	err = d.boardUsecase.DeleteCard(r.Context(), userID, cardID)
 	if err != nil {
 		responses.ResponseErrorAndLog(w, err, funcName)
 		return
@@ -374,13 +362,6 @@ func (d *BoardDelivery) UpdateColumn(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	boardID, err := requests.GetIDFromRequest(r, "boardId", "board_")
-	if err != nil {
-		responses.DoBadResponse(w, http.StatusBadRequest, "bad request")
-		log.Warn("boardID is invalid")
-		return
-	}
-
 	columnID, err := requests.GetIDFromRequest(r, "columnId", "column_")
 	if err != nil {
 		responses.DoBadResponse(w, http.StatusBadRequest, "bad request")
@@ -395,7 +376,7 @@ func (d *BoardDelivery) UpdateColumn(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	updatedCol, err := d.boardUsecase.UpdateColumn(r.Context(), userID, boardID, columnID, requestData)
+	updatedCol, err := d.boardUsecase.UpdateColumn(r.Context(), userID, columnID, requestData)
 	if err != nil {
 		responses.ResponseErrorAndLog(w, err, funcName)
 		return
@@ -418,7 +399,7 @@ func (d *BoardDelivery) DeleteColumn(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = d.boardUsecase.DeleteColumn(r.Context(), userID, boardID, columnID)
+	err = d.boardUsecase.DeleteColumn(r.Context(), userID, columnID)
 	if err != nil {
 		responses.ResponseErrorAndLog(w, err, funcName)
 		return

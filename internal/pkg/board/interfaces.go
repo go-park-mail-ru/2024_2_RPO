@@ -18,12 +18,12 @@ type BoardUsecase interface {
 	UpdateMemberRole(ctx context.Context, userID int64, boardID int64, memberID int64, newRole string) (updatedMember *models.MemberWithPermissions, err error)
 	RemoveMember(ctx context.Context, userID int64, boardID int64, memberID int64) error
 	GetBoardContent(ctx context.Context, userID int64, boardID int64) (content *models.BoardContent, err error)
-	CreateNewCard(ctx context.Context, userID int64, boardID int64, data *models.CardPatchRequest) (newCard *models.Card, err error)
-	UpdateCard(ctx context.Context, userID int64, boardID int64, cardID int64, data *models.CardPatchRequest) (updatedCard *models.Card, err error)
-	DeleteCard(ctx context.Context, userID int64, boardID int64, cardID int64) (err error)
+	CreateNewCard(ctx context.Context, userID int64, boardID int64, data *models.CardPostRequest) (newCard *models.Card, err error)
+	UpdateCard(ctx context.Context, userID int64, cardID int64, data *models.CardPatchRequest) (updatedCard *models.Card, err error)
+	DeleteCard(ctx context.Context, userID int64, cardID int64) (err error)
 	CreateColumn(ctx context.Context, userID int64, boardID int64, data *models.ColumnRequest) (newCol *models.Column, err error)
-	UpdateColumn(ctx context.Context, userID int64, boardID int64, columnID int64, data *models.ColumnRequest) (updatedCol *models.Column, err error)
-	DeleteColumn(ctx context.Context, userID int64, boardID int64, columnID int64) (err error)
+	UpdateColumn(ctx context.Context, userID int64, columnID int64, data *models.ColumnRequest) (updatedCol *models.Column, err error)
+	DeleteColumn(ctx context.Context, userID int64, columnID int64) (err error)
 	SetBoardBackground(ctx context.Context, userID int64, boardID int64, file *multipart.File, fileHeader *multipart.FileHeader) (updatedBoard *models.Board, err error)
 	AssignUser(ctx context.Context, userID int64, cardID int64, assignedUserID int64) (assignedUser *models.UserProfile, err error)
 	DeassignUser(ctx context.Context, userID int64, cardID int64, assignedUserID int64) (err error)
@@ -50,7 +50,7 @@ type BoardRepo interface {
 	CreateBoard(ctx context.Context, name string, userID int64) (*models.Board, error)
 	GetBoard(ctx context.Context, boardID int64, userID int64) (*models.Board, error)
 	UpdateBoard(ctx context.Context, boardID int64, userID int64, data *models.BoardRequest) (updatedBoard *models.Board, err error)
-	DeleteBoard(ctx context.Context, boardId int64) error
+	DeleteBoard(ctx context.Context, boardID int64) error
 	GetBoardsForUser(ctx context.Context, userID int64) (boardArray []models.Board, err error)
 	GetCardsForBoard(ctx context.Context, boardID int64) (cards []models.Card, err error)
 	GetColumnsForBoard(ctx context.Context, boardID int64) (columns []models.Column, err error)
