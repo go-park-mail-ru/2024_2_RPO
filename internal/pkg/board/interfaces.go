@@ -87,7 +87,7 @@ type BoardRepo interface {
 	CreateComment(ctx context.Context, userID int64, cardID int64, comment *models.CommentRequest) (newComment *models.Comment, err error)
 	UpdateComment(ctx context.Context, commentID int64, update *models.CommentRequest) (updatedComment *models.Comment, err error)
 	DeleteComment(ctx context.Context, commentID int64) (err error)
-	CreateCheckListField(ctx context.Context, cardID int64, field *models.CheckListFieldPostRequest) (err error)
+	CreateCheckListField(ctx context.Context, cardID int64, field *models.CheckListFieldPostRequest) (newField *models.CheckListField, err error)
 	UpdateCheckListField(ctx context.Context, fieldID int64, update *models.CheckListFieldPatchRequest) (updatedField *models.CheckListField, err error)
 	ReorderCheckList(ctx context.Context, fields []models.CheckListField) (err error)
 	SetCardCover(ctx context.Context, userID int64, cardID int64, originalName string, fileID int64) (updatedCard *models.Card, err error)

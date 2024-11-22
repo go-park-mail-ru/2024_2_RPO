@@ -306,6 +306,8 @@ func (r *BoardRepository) GetUserByNickname(ctx context.Context, nickname string
 
 // GetMemberFromCard получает права пользователя из ID карточки
 func (r *BoardRepository) GetMemberFromCard(ctx context.Context, userID int64, cardID int64) (role string, boardID int64, err error) {
+	panic("not implemented")
+	funcName := "GetMemberFromCard"
 	query := `
 	SELECT
 	FROM card AS c
@@ -314,12 +316,18 @@ func (r *BoardRepository) GetMemberFromCard(ctx context.Context, userID int64, c
 	LEFT JOIN user_to_board AS ub ON ub.board_id=b.board_id
 	WHERE c.card_id=$1 AND ub.u_id=$2;
 	`
-	panic("not implemented")
+	row := r.db.QueryRow(ctx, query)
+	err = row.Scan()
+	logging.Debug(ctx, funcName, " query has err: ", err)
+	if err != nil {
+		return "", 0, fmt.Errorf("%s (query): %w", funcName, err)
+	}
 	return query, 0, nil
 }
 
 // GetMemberFromCheckListField получает права пользователя из ID поля чеклиста
 func (r *BoardRepository) GetMemberFromCheckListField(ctx context.Context, userID int64, fieldID int64) (role string, boardID int64, cardID int64, err error) {
+	funcName := "GetMemberFromCheckListField"
 	query := `
 	SELECT
 	utb.role, b.board_id, c.card_id
@@ -336,9 +344,9 @@ func (r *BoardRepository) GetMemberFromCheckListField(ctx context.Context, userI
 	)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return "", 0, 0, fmt.Errorf("GetMemberFromCheckListField (query): %w", errs.ErrNotFound)
+			return "", 0, 0, fmt.Errorf("%s (query): %w", funcName, errs.ErrNotFound)
 		}
-		return "", 0, 0, fmt.Errorf("GetMemberFromCheckListField (query): %w", err)
+		return "", 0, 0, fmt.Errorf("%s (query): %w", funcName, err)
 	}
 
 	return role, boardID, cardID, err
@@ -346,6 +354,7 @@ func (r *BoardRepository) GetMemberFromCheckListField(ctx context.Context, userI
 
 // GetMemberFromAttachment получает права пользователя из ID вложения
 func (r *BoardRepository) GetMemberFromAttachment(ctx context.Context, userID int64, attachmentID int64) (role string, boardID int64, cardID int64, err error) {
+	funcName := "GetMemberFromAttachment"
 	query := `
 		SELECT utb.role, b.board_id, c.card_id
 		FROM card_attachment AS ca
@@ -361,9 +370,9 @@ func (r *BoardRepository) GetMemberFromAttachment(ctx context.Context, userID in
 	)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return "", 0, 0, fmt.Errorf("GetMemberFromAttachment (query): %w", errs.ErrNotFound)
+			return "", 0, 0, fmt.Errorf("%s (query): %w", funcName, errs.ErrNotFound)
 		}
-		return "", 0, 0, fmt.Errorf("GetMemberFromAttachment (query): %w", err)
+		return "", 0, 0, fmt.Errorf("%s (query): %w", funcName, err)
 	}
 
 	return role, boardID, cardID, err
@@ -371,6 +380,7 @@ func (r *BoardRepository) GetMemberFromAttachment(ctx context.Context, userID in
 
 // GetMemberFromColumn получает права пользователя из ID колонки
 func (r *BoardRepository) GetMemberFromColumn(ctx context.Context, userID int64, columnID int64) (role string, boardID int64, err error) {
+	funcName := "GetMemberFromColumn"
 	query := `
 	SELECT utb.role, b.board_id
 	FROM kanban_column AS kc
@@ -384,9 +394,9 @@ func (r *BoardRepository) GetMemberFromColumn(ctx context.Context, userID int64,
 	)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return "", 0, fmt.Errorf("GetMemberFromColumn (query): %w", errs.ErrNotFound)
+			return "", 0, fmt.Errorf("%s (query): %w", funcName, errs.ErrNotFound)
 		}
-		return "", 0, fmt.Errorf("GetMemberFromColumn (query): %w", err)
+		return "", 0, fmt.Errorf("%s (query): %w", funcName, err)
 	}
 
 	return role, boardID, err
@@ -394,6 +404,7 @@ func (r *BoardRepository) GetMemberFromColumn(ctx context.Context, userID int64,
 
 // GetMemberFromComment получает права пользователя из ID комментария
 func (r *BoardRepository) GetMemberFromComment(ctx context.Context, userID int64, commentID int64) (role string, boardID int64, cardID int64, err error) {
+	funcName := "GetMemberFromComment"
 	query := `
 		SELECT utb.role, b.board_id, c.card_id
 		FROM card_comment AS cc
@@ -409,9 +420,9 @@ func (r *BoardRepository) GetMemberFromComment(ctx context.Context, userID int64
 	)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return "", 0, 0, fmt.Errorf("GetMemberFromComment (query): %w", errs.ErrNotFound)
+			return "", 0, 0, fmt.Errorf("%s (query): %w", funcName, errs.ErrNotFound)
 		}
-		return "", 0, 0, fmt.Errorf("GetMemberFromComment (query): %w", err)
+		return "", 0, 0, fmt.Errorf("%s (query): %w", funcName, err)
 	}
 
 	return role, boardID, cardID, err
@@ -419,6 +430,7 @@ func (r *BoardRepository) GetMemberFromComment(ctx context.Context, userID int64
 
 // GetCardCheckList получает чеклисты для карточки
 func (r *BoardRepository) GetCardCheckList(ctx context.Context, cardID int64) (checkList []models.CheckListField, err error) {
+	funcName := "GetCardCheckList"
 	query := `
 		SELECT cf.checklist_field_id, cf.title, cf.created_at, cf.is_done
 		FROM checklist_field AS cf
@@ -428,18 +440,18 @@ func (r *BoardRepository) GetCardCheckList(ctx context.Context, cardID int64) (c
 	`
 
 	rows, err := r.db.Query(ctx, query, cardID)
-	logging.Debug(ctx, "GetCardCheckList query has err: ", err)
+	logging.Debug(ctx, funcName, " query has err: ", err)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, fmt.Errorf("GetCardCheckList (query): %w", errs.ErrNotFound)
+			return nil, fmt.Errorf("%s (query): %w", funcName, errs.ErrNotFound)
 		}
-		return nil, fmt.Errorf("GetCardCheckList (query): %w", err)
+		return nil, fmt.Errorf("%s (query): %w", funcName, err)
 	}
 
 	for rows.Next() {
 		field := models.CheckListField{}
 		if err := rows.Scan(&field.ID, &field.Title, &field.CreatedAt, &field.IsDone); err != nil {
-			return nil, fmt.Errorf("GetCardCheckList (scan): %w", err)
+			return nil, fmt.Errorf("%s (scan): %w", funcName, err)
 		}
 
 		checkList = append(checkList, field)
@@ -621,6 +633,7 @@ func (r *BoardRepository) GetCardsForMove(ctx context.Context, col1ID int64, col
 
 // GetColumnsForMove получает список всех колонок, чтобы сделать Drag-n-Drop
 func (r *BoardRepository) GetColumnsForMove(ctx context.Context, boardID int64) (columns []models.Column, err error) {
+	funcName := "GetColumnsForMove"
 	query := `
 	SELECT kc.col_id, kc.title, kc.order_index
 	FROM kanban_column AS kc
@@ -629,19 +642,19 @@ func (r *BoardRepository) GetColumnsForMove(ctx context.Context, boardID int64) 
 	`
 
 	rows, err := r.db.Query(ctx, query, boardID)
-	logging.Debug(ctx, "GetColumnsForMove query has err: ", err)
+	logging.Debug(ctx, funcName, " query has err: ", err)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, fmt.Errorf("GetColumnsForMove (query): %w", errs.ErrNotFound)
+			return nil, fmt.Errorf("%s (query): %w", funcName, errs.ErrNotFound)
 		}
-		return nil, fmt.Errorf("GetColumnsForMove (query): %w", err)
+		return nil, fmt.Errorf("%s (query): %w", funcName, err)
 	}
 
 	for rows.Next() {
 		c := models.Column{}
 
 		if err := rows.Scan(&c.ID, &c.Title, &c.OrderIndex); err != nil {
-			return nil, fmt.Errorf("GetColumnsForMove (scan): %w", err)
+			return nil, fmt.Errorf("%s (scan): %w", funcName, err)
 		}
 
 		columns = append(columns, c)
@@ -653,35 +666,127 @@ func (r *BoardRepository) GetColumnsForMove(ctx context.Context, boardID int64) 
 // RearrangeCards обновляет позиции всех карточек колонки, чтобы сделать порядок, как в слайсе
 func (r *BoardRepository) RearrangeCards(ctx context.Context, columnID int64, cards []models.Card) (err error) {
 	panic("not implemented")
+	funcName := "RearrangeCards"
+	query := ``
+	batch := &pgx.Batch{}
+	for _, card := range cards {
+		batch.Queue(query, card.OrderIndex)
+	}
+
+	br := r.db.SendBatch(ctx, batch)
+	err = br.Close()
+	logging.Debug(ctx, funcName, " batch query has err: ", err)
+	if err != nil {
+		return fmt.Errorf("%s (batch query): %w", funcName, err)
+	}
+	return nil
 }
 
 // RearrangeColumns обновляет позиции всех колонок, чтобы сделать порядок, как в слайсе
 func (r *BoardRepository) RearrangeColumns(ctx context.Context, columns []models.Column) (err error) {
 	panic("not implemented")
+	funcName := "RearrangeColumns"
+	query := ``
+	batch := &pgx.Batch{}
+	for _, col := range columns {
+		batch.Queue(query, col.OrderIndex)
+	}
+
+	br := r.db.SendBatch(ctx, batch)
+	err = br.Close()
+	logging.Debug(ctx, funcName, " batch query has err: ", err)
+	if err != nil {
+		return fmt.Errorf("%s (batch query): %w", funcName, err)
+	}
+	return nil
+}
+
+// RearrangeCheckList устанавливает порядок полей чеклиста как в слайсе
+func (r *BoardRepository) RearrangeCheckList(ctx context.Context, fields []models.CheckListField) (err error) {
+	panic("not implemented")
+	funcName := "RearrangeCheckList"
+	query := ``
+	batch := &pgx.Batch{}
+	for _, col := range fields {
+		batch.Queue(query, col.OrderIndex)
+	}
+
+	br := r.db.SendBatch(ctx, batch)
+	err = br.Close()
+	logging.Debug(ctx, funcName, " batch query has err: ", err)
+	if err != nil {
+		return fmt.Errorf("%s (batch query): %w", funcName, err)
+	}
+	return nil
 }
 
 // AssignUserToCard назначает пользователя на карточку
 func (r *BoardRepository) AssignUserToCard(ctx context.Context, cardID int64, assignedUserID int64) (err error) {
 	panic("not implemented")
+	funcName := "AssignUserToCard"
+	query := ``
+	tag, err := r.db.Exec(ctx, query)
+	logging.Debug(ctx, funcName, " query has err: ", err)
+	if err != nil {
+		return fmt.Errorf("%s (query): %w", funcName, err)
+	}
+	if tag.RowsAffected() == 0 {
+		return fmt.Errorf("%s (query): no rows affected", funcName)
+	}
+	return nil
 }
 
 // DeassignUserFromCard убирает назначение пользователя
 func (r *BoardRepository) DeassignUserFromCard(ctx context.Context, cardID int64, assignedUserID int64) (err error) {
 	panic("not implemented")
+	funcName := "DeassignUserFromCard"
+	query := ``
+	tag, err := r.db.Exec(ctx, query)
+	logging.Debug(ctx, funcName, " query has err: ", err)
+	if err != nil {
+		return fmt.Errorf("%s (query): %w", funcName, err)
+	}
+	if tag.RowsAffected() == 0 {
+		return fmt.Errorf("%s (query): no rows affected", funcName)
+	}
+	return nil
 }
 
 // CreateComment добавляет на карточку комментарий
 func (r *BoardRepository) CreateComment(ctx context.Context, userID int64, cardID int64, comment *models.CommentRequest) (newComment *models.Comment, err error) {
 	panic("not implemented")
+	funcName := "CreateComment"
+	query := `` //TODO
+
+	newComment = &models.Comment{}
+	row := r.db.QueryRow(ctx, query)
+	err = row.Scan() //TODO
+	logging.Debug(ctx, funcName, " query has err: ", err)
+	if err != nil {
+		return nil, fmt.Errorf("%s (query): %w", err)
+	}
+	return newComment, err
 }
 
 // UpdateComment редактирует комментарий
 func (r *BoardRepository) UpdateComment(ctx context.Context, commentID int64, update *models.CommentRequest) (updatedComment *models.Comment, err error) {
 	panic("not implemented")
+	funcName := "UpdateComment"
+	query := ``
+
+	updatedComment = &models.Comment{}
+	row := r.db.QueryRow(ctx, query)
+	err = row.Scan()
+	logging.Debug(ctx, funcName, " query has err: ", err)
+	if err != nil {
+		return nil, fmt.Errorf("%s (query): %w", err)
+	}
+	return updatedComment, nil
 }
 
 // DeleteComment удаляет комментарий
 func (r *BoardRepository) DeleteComment(ctx context.Context, commentID int64) (err error) {
+	funcName := "DeleteComment"
 	query := `
 	WITH delete_comment AS (
 		DELETE FROM card_comment WHERE comment_id=$1
@@ -703,31 +808,68 @@ func (r *BoardRepository) DeleteComment(ctx context.Context, commentID int64) (e
 	SELECT;
 	`
 
+	tag, err := r.db.Exec(ctx, query)
+	logging.Debug(ctx, funcName, " query has err: ", err)
+	if err != nil {
+		return fmt.Errorf("%s (query): %w", funcName, err)
+	}
+	if tag.RowsAffected() == 0 {
+		return fmt.Errorf("%s (query): no rows affected", funcName)
+	}
 	return nil
 }
 
 // CreateCheckListField создаёт поле чеклиста и добавляет его в конец
-func (r *BoardRepository) CreateCheckListField(ctx context.Context, cardID int64, field *models.CheckListFieldPostRequest) (err error) {
+func (r *BoardRepository) CreateCheckListField(ctx context.Context, cardID int64, field *models.CheckListFieldPostRequest) (newField *models.CheckListField, err error) {
 	panic("not implemented")
+	funcName := "CreateCheckListField"
+	query := ``
+
+	newField = &models.CheckListField{}
+	row := r.db.QueryRow(ctx, query)
+	err = row.Scan()
+	logging.Debug(ctx, funcName, " query has err: ", err)
+	if err != nil {
+		return nil, fmt.Errorf("%s (query): %w", err)
+	}
+	return newField, nil
 }
 
 // UpdateCheckListField обновляет одно поле чеклиста
 func (r *BoardRepository) UpdateCheckListField(ctx context.Context, fieldID int64, update *models.CheckListFieldPatchRequest) (updatedField *models.CheckListField, err error) {
 	panic("not implemented")
-}
+	funcName := "UpdateCheckListField"
+	query := ``
 
-// UpdateCheckList устанавливает порядок полей чеклиста как в слайсе
-func (r *BoardRepository) ReorderCheckList(ctx context.Context, fields []models.CheckListField) (err error) {
-	panic("not implemented")
+	updatedField = &models.CheckListField{}
+	row := r.db.QueryRow(ctx, query)
+	err = row.Scan()
+	logging.Debug(ctx, funcName, " query has err: ", err)
+	if err != nil {
+		return nil, fmt.Errorf("%s (query): %w", err)
+	}
+	return updatedField, nil
 }
 
 // SetCardCover устанавливает файл обложки карточки
-func (r *BoardRepository) SetCardCover(ctx context.Context, userID int64, cardID int64, originalName string, fileID int64) (updatedCard *models.Card, err error) {
+func (r *BoardRepository) SetCardCover(ctx context.Context, userID int64, cardID int64, file *models.UploadedFile) (updatedCard *models.Card, err error) {
 	panic("not implemented")
+	funcName := "SetCardCover"
+	query := ``
+
+	updatedCard = &models.Card{}
+	row := r.db.QueryRow(ctx, query)
+	err = row.Scan()
+	logging.Debug(ctx, funcName, " query has err: ", err)
+	if err != nil {
+		return nil, fmt.Errorf("%s (query): %w", err)
+	}
+	return updatedCard, nil
 }
 
 // RemoveCardCover удаляет обложку карточки
 func (r *BoardRepository) RemoveCardCover(ctx context.Context, cardID int64) (err error) {
+	funcName := "RemoveCardCover"
 	query := `
 	WITH delete_cover AS (
 		UPDATE "card" SET updated_at=CURRENT_TIMESTAMP, cover_file_id=NULL WHERE card_id = $1
@@ -744,35 +886,110 @@ func (r *BoardRepository) RemoveCardCover(ctx context.Context, cardID int64) (er
 	SELECT;
 	`
 
+	tag, err := r.db.Exec(ctx, query)
+	logging.Debug(ctx, funcName, " query has err: ", err)
+	if err != nil {
+		return fmt.Errorf("%s (query): %w", funcName, err)
+	}
+	if tag.RowsAffected() == 0 {
+		return fmt.Errorf("%s (query): no rows affected", funcName)
+	}
 	return nil
 }
 
 // AddAttachment добавляет файл вложения в карточку
 func (r *BoardRepository) AddAttachment(ctx context.Context, userID int64, cardID int64, originalName string, fileID int64) (newAttachment *models.Attachment, err error) {
 	panic("not implemented")
+	funcName := "AddAttachment"
+	query := ``
+
+	newAttachment = &models.Attachment{}
+	row := r.db.QueryRow(ctx, query)
+	err = row.Scan()
+	logging.Debug(ctx, funcName, " query has err: ", err)
+	if err != nil {
+		return nil, fmt.Errorf("%s (query): %w", err)
+	}
+	return newAttachment, nil
 }
 
 // RemoveAttachment удаляет вложение
 func (r *BoardRepository) RemoveAttachment(ctx context.Context, attachmentID int64) (err error) {
 	panic("not implemented")
+	funcName := "RemoveAttachment"
+	query := ``
+	tag, err := r.db.Exec(ctx, query)
+	logging.Debug(ctx, funcName, " query has err: ", err)
+	if err != nil {
+		return fmt.Errorf("%s (query): %w", funcName, err)
+	}
+	if tag.RowsAffected() == 0 {
+		return fmt.Errorf("%s (query): no rows affected", funcName)
+	}
+	return nil
 }
 
 // PullInviteLink заменяет для доски индивидуальную ссылку-приглашение и возвращает новую ссылку
 func (r *BoardRepository) PullInviteLink(ctx context.Context, userID int64, boardID int64) (link *models.InviteLink, err error) {
 	panic("not implemented")
+	funcName := "PullInviteLink"
+	query := ``
+
+	link = &models.InviteLink{}
+	row := r.db.QueryRow(ctx, query)
+	err = row.Scan()
+	logging.Debug(ctx, funcName, " query has err: ", err)
+	if err != nil {
+		return nil, fmt.Errorf("%s (query): %w", err)
+	}
+	return link, nil
 }
 
 // DeleteInviteLink удаляет ссылку-приглашение
 func (r *BoardRepository) DeleteInviteLink(ctx context.Context, userID int64, boardID int64) (err error) {
 	panic("not implemented")
+	funcName := "DeleteInviteLink"
+	query := ``
+
+	tag, err := r.db.Exec(ctx, query)
+	logging.Debug(ctx, funcName, " query has err: ", err)
+	if err != nil {
+		return fmt.Errorf("%s (query): %w", funcName, err)
+	}
+	if tag.RowsAffected() == 0 {
+		return fmt.Errorf("%s (query): no rows affected", funcName)
+	}
+	return nil
 }
 
 // FetchInvite возвращает информацию о доске, куда чела пригласили
 func (r *BoardRepository) FetchInvite(ctx context.Context, inviteUUID string) (board *models.Board, err error) {
 	panic("not implemented")
+	funcName := "FetchInvite"
+	query := ``
+
+	board = &models.Board{}
+	row := r.db.QueryRow(ctx, query)
+	err = row.Scan()
+	logging.Debug(ctx, funcName, " query has err: ", err)
+	if err != nil {
+		return nil, fmt.Errorf("%s (query): %w", err)
+	}
+	return board, nil
 }
 
 // AcceptInvite добавляет приглашённого пользователя на доску с правами зрителя
 func (r *BoardRepository) AcceptInvite(ctx context.Context, userID int64, boardID int64, invitedUserID int64, inviteUUID string) (board *models.Board, err error) {
 	panic("not implemented")
+	funcName := "AcceptInvite"
+	query := ``
+
+	board = &models.Board{}
+	row := r.db.QueryRow(ctx, query)
+	err = row.Scan()
+	logging.Debug(ctx, funcName, " query has err: ", err)
+	if err != nil {
+		return nil, fmt.Errorf("%s (query): %w", err)
+	}
+	return board, nil
 }
