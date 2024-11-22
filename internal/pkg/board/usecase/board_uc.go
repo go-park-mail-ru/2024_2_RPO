@@ -8,10 +8,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io"
-	"mime/multipart"
-	"os"
-	"path/filepath"
 )
 
 var roleLevels = map[string]int{
@@ -37,14 +33,7 @@ func (uc *BoardUsecase) CreateNewBoard(ctx context.Context, userID int64, data m
 	if err != nil {
 		return nil, err
 	}
-	_, err = uc.boardRepository.AddMember(ctx, newBoard.ID, userID, userID)
-	if err != nil {
-		return nil, err
-	}
-	_, err = uc.boardRepository.SetMemberRole(ctx, newBoard.ID, userID, "admin")
-	if err != nil {
-		return nil, err
-	}
+
 	return newBoard, nil
 }
 
@@ -122,10 +111,12 @@ func (uc *BoardUsecase) UpdateMemberRole(ctx context.Context, userID int64, boar
 	if err != nil {
 		return nil, fmt.Errorf("UpdateMemberRole (updater permissions): %w", err)
 	}
+
 	memberToUpdate, err := uc.boardRepository.GetMemberPermissions(ctx, boardID, memberID, false)
 	if err != nil {
 		return nil, fmt.Errorf("UpdateMemberRole (member permissions): %w", err)
 	}
+
 	if updaterMember.Role != "admin" {
 		if (updaterMember.Role != "admin") && (updaterMember.Role != "editor_chief") {
 			return nil, fmt.Errorf("UpdateMemberRole (check1): %w", errs.ErrNotPermitted)
@@ -137,10 +128,12 @@ func (uc *BoardUsecase) UpdateMemberRole(ctx context.Context, userID int64, boar
 			return nil, fmt.Errorf("UpdateMemberRole (check3): %w", errs.ErrNotPermitted)
 		}
 	}
-	updatedMember, err = uc.boardRepository.SetMemberRole(ctx, boardID, memberID, newRole)
+
+	updatedMember, err = uc.boardRepository.SetMemberRole(ctx, userID, boardID, memberID, newRole)
 	if err != nil {
 		return nil, fmt.Errorf("UpdateMemberRole (action): %w", err)
 	}
+
 	return updatedMember, nil
 }
 
@@ -313,45 +306,45 @@ func (uc *BoardUsecase) CreateColumn(ctx context.Context, userID int64, boardID 
 }
 
 // UpdateColumn изменяет колонку и возвращает её обновлённую версию
-func (uc *BoardUsecase) UpdateColumn(ctx context.Context, userID int64, boardID int64, columnID int64, data *models.ColumnRequest) (updatedCol *models.Column, err error) {
-	perms, err := uc.boardRepository.GetMemberPermissions(ctx, boardID, userID, false)
+func (uc *BoardUsecase) UpdateColumn(ctx context.Context, userID int64, columnID int64, data *models.ColumnRequest) (updatedCol *models.Column, err error) {
+	role, _, err := uc.boardRepository.GetMemberFromColumn(ctx, userID, columnID)
 	if err != nil {
 		return nil, fmt.Errorf("UpdateColumn (get perms): %w", err)
 	}
-	if perms.Role == "viewer" {
+
+	if role == "viewer" {
 		return nil, fmt.Errorf("UpdateColumn (check): %w", errs.ErrNotPermitted)
 	}
 
-	updatedCol, err = uc.boardRepository.UpdateColumn(ctx, boardID, columnID, *data)
+	updatedCol, err = uc.boardRepository.UpdateColumn(ctx, columnID, *data)
 	if err != nil {
 		return nil, fmt.Errorf("UpdateColumn (add UpdateColumn): %w", err)
 	}
 
-	return &models.Column{
-		ID:    updatedCol.ID,
-		Title: updatedCol.Title,
-	}, nil
+	return updatedCol, nil
 }
 
 // DeleteColumn удаляет колонку
-func (uc *BoardUsecase) DeleteColumn(ctx context.Context, userID int64, boardID int64, columnID int64) (err error) {
-	perms, err := uc.boardRepository.GetMemberPermissions(ctx, boardID, userID, false)
+func (uc *BoardUsecase) DeleteColumn(ctx context.Context, userID int64, columnID int64) (err error) {
+	role, _, err := uc.boardRepository.GetMemberFromColumn(ctx, userID, columnID)
 	if err != nil {
 		return fmt.Errorf("DeleteColumn (get perms): %w", err)
 	}
-	if perms.Role == "viewer" {
+
+	if role == "viewer" {
 		return fmt.Errorf("DeleteColumn (check): %w", errs.ErrNotPermitted)
 	}
 
-	err = uc.boardRepository.DeleteColumn(ctx, boardID, columnID)
+	err = uc.boardRepository.DeleteColumn(ctx, columnID)
 	if err != nil {
-		return err
+		return fmt.Errorf("DeleteColumn (delete): %w", errs.ErrNotPermitted)
 	}
 
 	return nil
 }
 
-func (uc *BoardUsecase) SetBoardBackground(ctx context.Context, userID int64, boardID int64, file *multipart.File, fileHeader *multipart.FileHeader) (updatedBoard *models.Board, err error) {
+func (uc *BoardUsecase) SetBoardBackground(ctx context.Context, userID int64, boardID int64, file *models.UploadedFile) (updatedBoard *models.Board, err error) {
+	funcName := "SetBoardBackground"
 	perms, err := uc.boardRepository.GetMemberPermissions(ctx, boardID, userID, false)
 	if err != nil {
 		return nil, fmt.Errorf("SetBoardBackground (get perms): %w", err)
@@ -359,28 +352,32 @@ func (uc *BoardUsecase) SetBoardBackground(ctx context.Context, userID int64, bo
 	if perms.Role != "admin" && perms.Role != "editor_chief" {
 		return nil, fmt.Errorf("UpdateColumn (check): %w", errs.ErrNotPermitted)
 	}
-	uploadTo, err := uc.boardRepository.SetBoardBackground(
-		ctx,
-		userID,
-		boardID,
-		uploads.ExtractFileExtension(fileHeader.Filename),
-		fileHeader.Size,
-	)
-	if err != nil {
-		return nil, err
-	}
-	uploadDir := os.Getenv("USER_UPLOADS_DIR")
-	filePath := filepath.Join(uploadDir, uploadTo)
-	dst, err := os.Create(filePath)
-	if err != nil {
-		return nil, fmt.Errorf("cant create file on server side: %w", err)
-	}
-	defer dst.Close()
 
-	if _, err = io.Copy(dst, *file); err != nil {
-		return nil, fmt.Errorf("cant copy file on server side: %w", err)
+	fileNames, fileIDs, err := uc.boardRepository.DeduplicateFile(ctx, file)
+	if err != nil {
+		return nil, fmt.Errorf("%s (deduplicate): %w", funcName, err)
 	}
-	return uc.boardRepository.GetBoard(ctx, boardID, userID)
+
+	fileID, err := uploads.CompareFiles(fileNames, fileIDs, file)
+	if err != nil {
+		return nil, fmt.Errorf("%s (compare): %w", funcName, err)
+	}
+
+	if fileID == nil {
+		err = uc.boardRepository.RegisterFile(ctx, file)
+		if err != nil {
+			return nil, fmt.Errorf("%s (save file): %w", funcName, err)
+		}
+		fileID = file.FileID
+	}
+	file.FileID = fileID
+
+	newBoard, err := uc.boardRepository.SetBoardBackground(ctx, userID, boardID, file)
+	if err != nil {
+		return nil, fmt.Errorf("%s (): %w", funcName, err)
+	}
+
+	return newBoard, nil
 }
 
 // AssignUser назначает карточку пользователю
@@ -424,7 +421,7 @@ func (uc *BoardUsecase) DeleteCheckListField(ctx context.Context, userID int64, 
 }
 
 // SetCardCover устанавливает обложку для карточки
-func (uc *BoardUsecase) SetCardCover(ctx context.Context, userID int64, cardID int64, file []byte, fileHeader *multipart.FileHeader) (updatedCard *models.Card, err error) {
+func (uc *BoardUsecase) SetCardCover(ctx context.Context, userID int64, cardID int64, file *models.UploadedFile) (updatedCard *models.Card, err error) {
 	panic("not implemented")
 }
 
@@ -434,7 +431,7 @@ func (uc *BoardUsecase) DeleteCardCover(ctx context.Context, userID int64, cardI
 }
 
 // AddAttachment добавляет вложение на карточку
-func (uc *BoardUsecase) AddAttachment(ctx context.Context, userID int64, cardID int64, file []byte, fileHeader *multipart.FileHeader) (newAttachment *models.Attachment, err error) {
+func (uc *BoardUsecase) AddAttachment(ctx context.Context, userID int64, cardID int64, file *models.UploadedFile) (newAttachment *models.Attachment, err error) {
 	panic("not implemented")
 }
 

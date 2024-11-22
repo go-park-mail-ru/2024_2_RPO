@@ -3,6 +3,11 @@ package uploads
 import (
 	"RPO_back/internal/models"
 	"RPO_back/internal/pkg/config"
+	"RPO_back/internal/pkg/utils/logging"
+	"RPO_back/internal/pkg/utils/pgxiface"
+	"context"
+	"crypto/sha1"
+	"encoding/hex"
 	"fmt"
 	"io"
 	"net/http"
@@ -133,6 +138,54 @@ func SaveFile(file *models.UploadedFile) (err error) {
 	err = os.WriteFile(filepath.Join(config.CurrentConfig.UploadsDir, fileName), file.Content, 0644)
 	if err != nil {
 		return fmt.Errorf("SaveFile: cant write to file %s: %w", fileName, err)
+	}
+	return nil
+}
+
+// DeduplicateFile возвращает список файлов с таким же расширением, ID и размером
+func DeduplicateFile(ctx context.Context, db pgxiface.PgxIface, file *models.UploadedFile) (fileNames []string, fileIDs []int64, err error) {
+	funcName := "DeduplicateFile"
+	query := `
+	SELECT file_id, file_uuid, file_extension
+	FROM user_uploaded_file
+	WHERE file_hash=$1 AND "size"=$2 AND file_extension=$3;
+	`
+
+	h := sha1.New()
+	h.Write(file.Content)
+	fileHash := hex.EncodeToString(h.Sum(nil))
+
+	rows, err := db.Query(ctx, query, fileHash, len(file.Content), file.FileExtension)
+	if err != nil {
+		return nil, nil, fmt.Errorf("%s (query): %w", funcName, err)
+	}
+	for rows.Next() {
+		var fileUUID, fileExtension string
+		var fileID int64
+		err = rows.Scan(&fileID, &fileUUID, &fileExtension)
+		if err != nil {
+			return nil, nil, fmt.Errorf("%s (scan): %w", funcName, err)
+		}
+		fileIDs = append(fileIDs, fileID)
+		fileNames = append(fileNames, JoinFilePath(fileUUID, fileExtension))
+	}
+	return fileNames, fileIDs, nil
+}
+
+// RegisterFile заносит информацию о файле в таблицу и по указателю меняет поля FileID и UUID в структуре file
+func RegisterFile(ctx context.Context, db pgxiface.PgxIface, file *models.UploadedFile) error {
+	funcName := "RegisterFile"
+	query := `
+	INSERT INTO user_uploaded_file
+	(file_extension, created_at, "size")
+	VALUES ($1, CURRENT_TIMESTAMP, $2)
+	RETURNING file_uuid::text, file_id;
+	`
+	row := db.QueryRow(ctx, query, file.FileExtension, len(file.Content))
+	err := row.Scan(&file.UUID, file.FileID)
+	logging.Debug(ctx, funcName, " query has err: ", err)
+	if err != nil {
+		return fmt.Errorf("%s: %w", funcName, err)
 	}
 	return nil
 }

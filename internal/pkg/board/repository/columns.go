@@ -12,7 +12,7 @@ import (
 )
 
 // GetColumnsForBoard возвращает все колонки, которые есть на доске
-func (r *BoardRepository) GetColumnsForBoard(ctx context.Context, boardID int) (columns []models.Column, err error) {
+func (r *BoardRepository) GetColumnsForBoard(ctx context.Context, boardID int64) (columns []models.Column, err error) {
 	funcName := "GetColumnsForBoard"
 	query := `
 	SELECT
@@ -49,7 +49,7 @@ func (r *BoardRepository) GetColumnsForBoard(ctx context.Context, boardID int) (
 }
 
 // CreateColumn создаёт колонку на канбане
-func (r *BoardRepository) CreateColumn(ctx context.Context, boardID int, title string) (newColumn *models.Column, err error) {
+func (r *BoardRepository) CreateColumn(ctx context.Context, boardID int64, title string) (newColumn *models.Column, err error) {
 	funcName := "CreateColumn"
 	query := `
 		INSERT INTO kanban_column (board_id, title, created_at, updated_at)
@@ -71,17 +71,17 @@ func (r *BoardRepository) CreateColumn(ctx context.Context, boardID int, title s
 }
 
 // UpdateColumn обновляет колонку на канбане
-func (r *BoardRepository) UpdateColumn(ctx context.Context, boardID int, columnID int, data models.ColumnRequest) (updateColumn *models.Column, err error) {
+func (r *BoardRepository) UpdateColumn(ctx context.Context, columnID int64, data models.ColumnRequest) (updateColumn *models.Column, err error) {
 	funcName := "UpdateColumn"
 	query := `
 		UPDATE kanban_column
 		SET title = $1, updated_at = CURRENT_TIMESTAMP
-		WHERE col_id = $2 AND board_id = $3
+		WHERE col_id = $2
 		RETURNING col_id, title;
 	`
 
 	updateColumn = &models.Column{}
-	err = r.db.QueryRow(ctx, query, data.NewTitle, columnID, boardID).Scan(
+	err = r.db.QueryRow(ctx, query, data.NewTitle, columnID).Scan(
 		&updateColumn.ID,
 		&updateColumn.Title,
 	)
@@ -94,14 +94,14 @@ func (r *BoardRepository) UpdateColumn(ctx context.Context, boardID int, columnI
 }
 
 // DeleteColumn убирает колонку с канбана
-func (r *BoardRepository) DeleteColumn(ctx context.Context, boardID int64, columnID int64) (err error) {
+func (r *BoardRepository) DeleteColumn(ctx context.Context, columnID int64) (err error) {
 	funcName := "DeleteColumn"
 	query := `
 		DELETE FROM kanban_column
-		WHERE col_id = $1 AND board_id = $2;
+		WHERE col_id = $1;
 	`
 
-	tag, err := r.db.Exec(ctx, query, columnID, boardID)
+	tag, err := r.db.Exec(ctx, query, columnID)
 	logging.Debug(ctx, funcName, " query has err: ", err)
 	if err != nil {
 		return fmt.Errorf("%s (query): %w", funcName, err)

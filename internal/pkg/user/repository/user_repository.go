@@ -201,22 +201,8 @@ func (r *UserRepository) CheckUniqueCredentials(ctx context.Context, nickname st
 }
 
 func (r *UserRepository) DeduplicateFile(ctx context.Context, file *models.UploadedFile) (fileNames []string, fileIDs []int64, err error) {
-	panic("not implemented")
+	return uploads.DeduplicateFile(ctx, r.db, file)
 }
-
 func (r *UserRepository) RegisterFile(ctx context.Context, file *models.UploadedFile) error {
-	funcName := "RegisterFile"
-	query := `
-	INSERT INTO user_uploaded_file
-	(file_extension, created_at, "size")
-	VALUES ($1, CURRENT_TIMESTAMP, $2)
-	RETURNING file_uuid::text, file_id;
-	`
-	row := r.db.QueryRow(ctx, query, file.FileExtension, len(file.Content))
-	err := row.Scan(&file.UUID, file.FileID)
-	logging.Debug(ctx, funcName, " query has err: ", err)
-	if err != nil {
-		return fmt.Errorf("%s: %w", funcName, err)
-	}
-	return nil
+	return uploads.RegisterFile(ctx, r.db, file)
 }

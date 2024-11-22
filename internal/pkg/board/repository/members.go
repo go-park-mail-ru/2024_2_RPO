@@ -898,7 +898,7 @@ func (r *BoardRepository) RemoveCardCover(ctx context.Context, cardID int64) (er
 }
 
 // AddAttachment добавляет файл вложения в карточку
-func (r *BoardRepository) AddAttachment(ctx context.Context, userID int64, cardID int64, originalName string, fileID int64) (newAttachment *models.Attachment, err error) {
+func (r *BoardRepository) AddAttachment(ctx context.Context, userID int64, cardID int64, file *models.UploadedFile) (newAttachment *models.Attachment, err error) {
 	panic("not implemented")
 	funcName := "AddAttachment"
 	query := ``

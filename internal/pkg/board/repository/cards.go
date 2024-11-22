@@ -11,7 +11,7 @@ import (
 )
 
 // GetCardsForBoard возвращает все карточки, размещённые на доске
-func (r *BoardRepository) GetCardsForBoard(ctx context.Context, boardID int) (cards []models.Card, err error) {
+func (r *BoardRepository) GetCardsForBoard(ctx context.Context, boardID int64) (cards []models.Card, err error) {
 	panic("TODO дополнить")
 	query := `
 	SELECT
@@ -57,7 +57,7 @@ func (r *BoardRepository) GetCardsForBoard(ctx context.Context, boardID int) (ca
 }
 
 // CreateNewCard создаёт новую карточку
-func (r *BoardRepository) CreateNewCard(ctx context.Context, columnID int, title string) (newCard *models.Card, err error) {
+func (r *BoardRepository) CreateNewCard(ctx context.Context, columnID int64, title string) (newCard *models.Card, err error) {
 	funcName := "CreateNewCard"
 	query := `
 	WITH new_card AS (
@@ -95,7 +95,7 @@ func (r *BoardRepository) CreateNewCard(ctx context.Context, columnID int, title
 }
 
 // UpdateCard обновляет карточку
-func (r *BoardRepository) UpdateCard(ctx context.Context, cardID int, data models.CardPatchRequest) (updateCard *models.Card, err error) {
+func (r *BoardRepository) UpdateCard(ctx context.Context, cardID int64, data models.CardPatchRequest) (updateCard *models.Card, err error) {
 	funcName := "UpdateCard"
 	query := `
 	WITH update_card AS (
@@ -140,7 +140,7 @@ func (r *BoardRepository) UpdateCard(ctx context.Context, cardID int, data model
 }
 
 // DeleteCard удаляет карточку
-func (r *BoardRepository) DeleteCard(ctx context.Context, cardID int) (err error) {
+func (r *BoardRepository) DeleteCard(ctx context.Context, cardID int64) (err error) {
 	funcName := "DeleteCard"
 	query := `
 		DELETE FROM card

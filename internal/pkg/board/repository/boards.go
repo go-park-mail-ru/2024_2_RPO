@@ -25,12 +25,13 @@ func CreateBoardRepository(db pgxiface.PgxIface) *BoardRepository {
 func (r *BoardRepository) CreateBoard(ctx context.Context, name string, userID int64) (*models.Board, error) {
 	query := `
 	WITH create_board AS (
-		INSERT INTO board_to_user (u_id, board_id, added_by, updated_by)
-			VALUES ($3, (
-				INSERT INTO board (name, description, created_by)
-				VALUES ($1, $2, $3)
-				RETURNING board_id
-			), $3, $3) RETURNING board_id
+		INSERT INTO board_to_user (u_id, board_id, added_by, updated_by, role)
+		VALUES ($3, (
+			INSERT INTO board (name, description, created_by)
+			VALUES ($1, $2, $3)
+			RETURNING board_id
+			), $3, $3, 'admin')
+		RETURNING board_id
 	)
 	SELECT
     	b.board_id,
@@ -189,34 +190,42 @@ func (r *BoardRepository) GetBoardsForUser(ctx context.Context, userID int64) (b
 	return boardArray, nil
 }
 
-func (r *BoardRepository) SetBoardBackground(ctx context.Context, userID int64, boardID int64, fileExtension string, fileSize int) (fileName string, err error) {
-	query1 := `
-	INSERT INTO user_uploaded_file
-	(file_extension, created_at, created_by, "size")
-	VALUES ($1, CURRENT_TIMESTAMP, $2, $3)
-	RETURNING file_uuid::text;
+// SetBoardBackground задаёт файл заднего фона доски
+func (r *BoardRepository) SetBoardBackground(ctx context.Context, userID int64, boardID int64, file *models.UploadedFile) (newBoard *models.Board, err error) {
+	funcName := "SetBoardBackground"
+	query := `
+	WITH update_board AS (
+		UPDATE board
+		SET background_image_id=$1,
+			updated_at=CURRENT_TIMESTAMP
+		WHERE board_id=$2
+		RETURNING board_id, name, created_at, b.updated_at,
+	)
+	SELECT ub.board_id, ub.name, ub.created_at, ub.updated_at,
+		COALESCE(f.file_uuid::text, ''),
+		COALESCE(f.file_extension, '')
+	FROM user_uploaded_file AS f
+	WHERE f.file_id=$1;
 	`
-	query2 := `
-	UPDATE board
-	SET background_image_uuid=to_uuid($1)
-	WHERE board_id=$2;
-	`
-	var fileUUID string
-	row := r.db.QueryRow(ctx, query1, fileExtension, userID, fileSize)
-	err = row.Scan(&fileUUID)
-	logging.Debug(ctx, "SetBoardBackground query 1 has err: ", err)
+
+	newBoard = &models.Board{}
+	var fileUUID, fileExtension string
+
+	row := r.db.QueryRow(ctx, query, fileUUID, boardID)
+	err = row.Scan(
+		&newBoard.ID,
+		&newBoard.Name,
+		&newBoard.CreatedAt,
+		&newBoard.UpdatedAt,
+		&fileUUID,
+		&fileExtension,
+	)
+	logging.Debug(ctx, funcName, " query has err: ", err)
 	if err != nil {
-		return "", fmt.Errorf("SetBoardBackground (register file): %w", err)
+		return nil, fmt.Errorf("%s (query): %w", funcName, err)
 	}
-	tag, err := r.db.Exec(ctx, query2, fileUUID, boardID)
-	logging.Debug(ctx, "SetBoardBackground query 2 has err: ", err, "tag: ", tag)
-	if err != nil {
-		return "", fmt.Errorf("SetBoardBackground (update board): %w", err)
-	}
-	if tag.RowsAffected() == 0 {
-		return "", fmt.Errorf("SetBoardBackground (update board): no rows affected")
-	}
-	return uploads.JoinFilePath(fileUUID, fileExtension), nil
+	newBoard.BackgroundImageURL = uploads.JoinFileURL(fileUUID, fileExtension, uploads.DefaultBackgroundURL)
+	return newBoard, nil
 }
 
 func (r *BoardRepository) UpdateLastVisit(ctx context.Context, userID int64, boardID int64) error {

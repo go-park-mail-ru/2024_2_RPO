@@ -6,6 +6,7 @@ import (
 	"RPO_back/internal/pkg/utils/logging"
 	"RPO_back/internal/pkg/utils/requests"
 	"RPO_back/internal/pkg/utils/responses"
+	"RPO_back/internal/pkg/utils/uploads"
 	"net/http"
 	"slices"
 
@@ -425,15 +426,13 @@ func (d *BoardDelivery) SetBoardBackground(w http.ResponseWriter, r *http.Reques
 	// Ограничение размера 10 МБ
 	r.ParseMultipartForm(10 << 20)
 
-	file, fileHeader, err := r.FormFile("file")
+	file, err := uploads.FormFile(r)
 	if err != nil {
-		responses.DoBadResponse(w, 400, "bad request")
-		log.Warn(funcName, ": ", err)
+		responses.DoBadResponse(w, http.StatusBadRequest, "no file")
 		return
 	}
-	defer file.Close()
 
-	updatedBoard, err := d.boardUsecase.SetBoardBackground(r.Context(), userID, boardID, &file, fileHeader)
+	updatedBoard, err := d.boardUsecase.SetBoardBackground(r.Context(), userID, boardID, file)
 	if err != nil {
 		responses.ResponseErrorAndLog(w, err, funcName)
 		return
