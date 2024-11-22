@@ -14,12 +14,13 @@ services:
         condition: service_started
     restart: always
     ports:
-      - "127.0.0.1:8801:8801"
+      - "127.0.0.1:8801:80"
     networks:
       - Pumpkin-network
     volumes:
       - pumpkin-redis-socket:/tmp/redis/redis.sock
       - pumpkin-postgres-socket:/tmp/postgres/postgres.sock
+      - pumpkin-all-logs:/pumpkin_logs
 
   board:
     container_name: board_service
@@ -42,6 +43,7 @@ services:
     volumes:
       - pumpkin-user-uploads:/pumpkin_user_uploads
       - pumpkin-postgres-socket:/tmp/postgres/postgres.sock
+      - pumpkin-all-logs:/pumpkin_logs
 
   user:
     container_name: user_service
@@ -64,18 +66,16 @@ services:
     volumes:
       - pumpkin-user-uploads:/pumpkin_user_uploads
       - pumpkin-postgres-socket:/tmp/postgres/postgres.sock
+      - pumpkin-all-logs:/pumpkin_logs
 
   postgres:
     env_file:
       - .env
     command:
-      - "postgres"
-      - "-c"
-      - "config_file=/configs/postgresql.conf"
-      - "-c"
-      - "hba_file=/configs/pg_hba.conf"
+      - "bash"
+      - "/pg_setup/start-postgres.sh"
     container_name: postgres
-    image: postgres:latest
+    image: postgres:bookworm
     environment:
       POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_USER: ${POSTGRES_USER}
@@ -85,10 +85,10 @@ services:
     networks:
       - Pumpkin-network
     volumes:
-      - pumpkin-db-data:/var/lib/postgresql/data
-      - pumpkin-all-logs:/pg_logs
+      - pumpkin-db-data:/pg_data
+      - pumpkin-all-logs:/pg_logs/
       - pumpkin-postgres-socket:/tmp/postgres/postgres.sock
-      - ./database:/configs:ro
+      - ./database/postgres:/pg_setup
 
   redis:
     container_name: redis

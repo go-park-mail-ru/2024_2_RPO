@@ -18,39 +18,26 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/joho/godotenv"
 	log "github.com/sirupsen/logrus"
 )
 
 func main() {
-	// Настройка движка логов
-	if _, exists := os.LookupEnv("LOGS_FILE"); exists == false {
-		fmt.Printf("You should provide log file env variable: LOGS_FILE\n")
+	// Формирование конфига
+	err := config.LoadConfig()
+	if err != nil {
+		log.Fatalf("environment configuration is invalid: %v", err)
 		return
 	}
-	logsFile, err := os.OpenFile(os.Getenv("LOGS_FILE"), os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+
+	// Настройка движка логов
+	logsFile, err := os.OpenFile(config.CurrentConfig.Board.LogFile, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
 	if err != nil {
-		fmt.Printf("Error while opening log file %s: %s\n", os.Getenv("LOGS_FILE"), err.Error())
+		fmt.Printf("Error while opening log file %s: %s\n", config.CurrentConfig.Board.LogFile, err.Error())
 		return
 	}
 	defer logsFile.Close()
 	logging.SetupLogger(logsFile)
-
-	// Загрузка переменных окружения
-	err = godotenv.Load(".env")
-	if err != nil {
-		log.Warn("warning: no .env file loaded: ", err.Error())
-		fmt.Print()
-	} else {
-		log.Info(".env file loaded")
-	}
-
-	// Формирование конфига
-	err = config.LoadConfig()
-	if err != nil {
-		log.Fatalf("environment configuration is invalid: %w", err)
-		return
-	}
+	log.Info("Config: ", config.CurrentConfig)
 
 	// Подключение к PostgreSQL
 	postgresDb, err := pgxpool.New(context.Background(), config.CurrentConfig.PostgresDSN)

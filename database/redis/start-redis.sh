@@ -1,5 +1,3 @@
-#!/usr/bin/env bash
-
 # Define cleanup function
 stop_redis() {
     echo "==========   Stopping Redis server...   =========="

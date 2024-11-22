@@ -20,39 +20,26 @@ import (
 
 	"github.com/go-redis/redis/v8"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/joho/godotenv"
 	log "github.com/sirupsen/logrus"
 )
 
 func main() {
-	// Загрузка переменных окружения
-	err := godotenv.Load(".env")
-	if err != nil {
-		fmt.Println("warning: no .env file loaded", err.Error())
-		fmt.Print()
-	} else {
-		log.Info(".env file loaded")
-	}
-
 	// Формирование конфига
-	err = config.LoadConfig()
+	err := config.LoadConfig()
 	if err != nil {
 		log.Fatalf("environment configuration is invalid: %v", err)
 		return
 	}
 
 	// Настройка движка логов
-	if _, exists := os.LookupEnv("LOGS_FILE"); exists == false {
-		fmt.Printf("You should provide log file env variable: LOGS_FILE\n")
-		return
-	}
-	logsFile, err := os.OpenFile(os.Getenv("LOGS_FILE"), os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+	logsFile, err := os.OpenFile(config.CurrentConfig.Auth.LogFile, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
 	if err != nil {
-		fmt.Printf("Error while opening log file %s: %s\n", os.Getenv("LOGS_FILE"), err.Error())
+		fmt.Printf("Error while opening log file %s: %s\n", config.CurrentConfig.Auth.LogFile, err.Error())
 		return
 	}
 	defer logsFile.Close()
 	logging.SetupLogger(logsFile)
+	log.Info("Config: ", config.CurrentConfig)
 
 	// Подключение к PostgreSQL
 	postgresDB, err := pgxpool.New(context.Background(), config.CurrentConfig.PostgresDSN)
