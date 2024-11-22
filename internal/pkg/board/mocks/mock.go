@@ -618,11 +618,12 @@ func (mr *MockBoardRepoMockRecorder) AddMember(ctx, boardID, adderID, memberUser
 }
 
 // AssignUserToCard mocks base method.
-func (m *MockBoardRepo) AssignUserToCard(ctx context.Context, cardID, assignedUserID int64) error {
+func (m *MockBoardRepo) AssignUserToCard(ctx context.Context, cardID, assignedUserID int64) (*models.UserProfile, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "AssignUserToCard", ctx, cardID, assignedUserID)
-	ret0, _ := ret[0].(error)
-	return ret0
+	ret0, _ := ret[0].(*models.UserProfile)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
 // AssignUserToCard indicates an expected call of AssignUserToCard.

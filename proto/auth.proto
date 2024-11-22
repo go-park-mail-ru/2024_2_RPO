@@ -40,7 +40,7 @@ message UserDataResponse {
 message ChangePasswordRequest {
     string passwordOld = 1;
     string passwordNew = 2;
-    int64 sessionID = 3;
+    string sessionID = 3;
 }
 
 message StatusResponse {

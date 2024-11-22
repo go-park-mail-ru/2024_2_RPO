@@ -1,10 +1,12 @@
 package delivery
 
 import (
+	"RPO_back/internal/errs"
 	"RPO_back/internal/pkg/auth"
 	"RPO_back/internal/pkg/auth/delivery/grpc/gen"
 	"context"
-	"strconv"
+	"errors"
+	"fmt"
 )
 
 type AuthDelivery struct {
@@ -30,7 +32,10 @@ func (d *AuthDelivery) CreateSession(ctx context.Context, request *gen.UserDataR
 func (d *AuthDelivery) CheckSession(ctx context.Context, request *gen.CheckSessionRequest) (*gen.UserDataResponse, error) {
 	userID, err := d.authUsecase.CheckSession(ctx, request.SessionID)
 	if err != nil {
-		return &gen.UserDataResponse{Error: gen.Error_INVALID_CREDENTIALS}, err
+		if errors.Is(err, errs.ErrNotFound) {
+			return &gen.UserDataResponse{Error: gen.Error_INVALID_CREDENTIALS}, nil
+		}
+		return nil, fmt.Errorf("CheckSession: %w", err)
 	}
 
 	return &gen.UserDataResponse{UserID: int64(userID), Error: gen.Error_NONE}, nil
@@ -46,7 +51,7 @@ func (d *AuthDelivery) DeleteSession(ctx context.Context, request *gen.Session) 
 }
 
 func (d *AuthDelivery) ChangePassword(ctx context.Context, request *gen.ChangePasswordRequest) (*gen.StatusResponse, error) {
-	err := d.authUsecase.ChangePassword(ctx, request.PasswordOld, request.PasswordNew, strconv.Itoa(int(request.SessionID)))
+	err := d.authUsecase.ChangePassword(ctx, request.PasswordOld, request.PasswordNew, request.SessionID)
 	if err != nil {
 		return &gen.StatusResponse{Error: gen.Error_INTERNAL_SERVER_ERROR}, nil
 	}

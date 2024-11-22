@@ -15,8 +15,8 @@ COPY ./cmd/auth/main.go /go/src/pumpkin/cmd/auth/
 RUN make build_auth
 
 # 2 шаг
-FROM alpine AS run_stage
-RUN apk add make
+FROM ubuntu AS run_stage
+RUN apt update && apt install make -y
 WORKDIR /app_binary
 COPY ./database /app/database
 COPY ./Makefile /app/Makefile

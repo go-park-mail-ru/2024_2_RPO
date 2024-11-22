@@ -13,6 +13,7 @@ import (
 	"syscall"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 
 	"context"
 	"fmt"
@@ -78,19 +79,24 @@ func main() {
 	authUsecase := AuthUsecase.CreateAuthUsecase(authRepository)
 	authDelivery := AuthDelivery.CreateAuthServer(authUsecase)
 
+	if authDelivery == nil {
+		panic("authDelivery is nil")
+	}
+
 	LogMiddleware := logging_middleware.CreateGrpcLogMiddleware(log.StandardLogger())
 
 	grpcServer := grpc.NewServer(
+		grpc.Creds(insecure.NewCredentials()),
 		grpc.UnaryInterceptor(LogMiddleware.InterceptorLogger),
 	)
 
 	gen.RegisterAuthServer(grpcServer, authDelivery)
 
-	listener, err := net.Listen("tcp", ":"+os.Getenv("SERVER_PORT"))
+	listener, err := net.Listen("tcp4", ":"+config.CurrentConfig.ServerPort)
 	if err != nil {
-		log.Fatalf("failed to listen on port %s: %v", os.Getenv("SERVER_PORT"), err)
+		log.Fatalf("failed to listen on port %s: %v", config.CurrentConfig.ServerPort, err)
 	}
-	log.Infof("gRPC server is listening on port %s", os.Getenv("SERVER_PORT"))
+	log.Infof("gRPC server is listening on port %s", config.CurrentConfig.ServerPort)
 
 	stop := make(chan os.Signal, 1)
 	signal.Notify(stop, os.Interrupt, syscall.SIGTERM)

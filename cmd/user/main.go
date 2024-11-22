@@ -23,6 +23,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 )
 
 func main() {
@@ -58,7 +59,7 @@ func main() {
 
 	// Подключение к GRPC сервису авторизации
 	grpcAddr := config.CurrentConfig.AuthURL
-	conn, err := grpc.NewClient(grpcAddr)
+	conn, err := grpc.NewClient(grpcAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		log.Fatal("error connecting to GRPC: ", err)
 	}

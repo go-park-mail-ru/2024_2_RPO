@@ -2,6 +2,7 @@
 
 chmod 777 /pg_logs
 chmod 777 /tmp/postgres/postgres.sock/
+rm /tmp/postgres/postgres.sock/*
 
 chown postgres /pg_setup/server.key
 chown postgres /pg_setup/server.crt
@@ -11,6 +12,7 @@ su postgres -c "chmod 600 /pg_setup/server.crt"
 terminate() {
     echo "Gracefully stop PostgreSQL server..."
     kill -TERM "$POSTGRES_PID"
+    rm /tmp/postgres/postgres.sock/*
 }
 
 trap terminate SIGINT SIGTERM

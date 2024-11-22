@@ -13,8 +13,6 @@ services:
       redis:
         condition: service_started
     restart: always
-    ports:
-      - "127.0.0.1:8801:80"
     networks:
       - Pumpkin-network
     volumes:
@@ -35,9 +33,11 @@ services:
         condition: service_started
       redis:
         condition: service_started
+      auth:
+        condition: service_started
     restart: always
     ports:
-      - "127.0.0.1:8802:8802"
+      - "127.0.0.1:8802:8888"
     networks:
       - Pumpkin-network
     volumes:
@@ -58,9 +58,11 @@ services:
         condition: service_started
       redis:
         condition: service_started
+      auth:
+        condition: service_started
     restart: always
     ports:
-      - "127.0.0.1:8803:8803"
+      - "127.0.0.1:8803:8888"
     networks:
       - Pumpkin-network
     volumes:

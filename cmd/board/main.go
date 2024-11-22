@@ -12,6 +12,8 @@ import (
 	"RPO_back/internal/pkg/middleware/no_panic"
 	"RPO_back/internal/pkg/middleware/session"
 	"RPO_back/internal/pkg/utils/logging"
+	"net"
+	"time"
 
 	"context"
 	"fmt"
@@ -22,13 +24,14 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 )
 
 func main() {
 	// Формирование конфига
 	err := config.LoadConfig()
 	if err != nil {
-		log.Fatalf("environment configuration is invalid: %v", err)
+		log.Fatalf("environment configuration is invalid: %s", err.Error())
 		return
 	}
 
@@ -55,9 +58,15 @@ func main() {
 		log.Fatal("error while pinging PostgreSQL: ", err)
 	}
 
-	// Подключение к GRPC сервису авторизации
+	// Подключение к GRPC сервису авторизаци
+	dialer := func(ctx context.Context, addr string) (net.Conn, error) {
+		d := net.Dialer{
+			Timeout: 5 * time.Second, // Установите подходящее время ожидания
+		}
+		return d.DialContext(ctx, "tcp4", addr) // Используем "tcp4" для IPv4
+	}
 	grpcAddr := config.CurrentConfig.AuthURL
-	conn, err := grpc.NewClient(grpcAddr)
+	conn, err := grpc.NewClient(grpcAddr, grpc.WithTransportCredentials(insecure.NewCredentials()), grpc.WithContextDialer(dialer))
 	if err != nil {
 		log.Fatal("error connecting to GRPC: ", err)
 	}

@@ -6,6 +6,7 @@ ls /tmp/redis/redis.sock
 terminate() {
     echo "==========   Stopping Redis server...   =========="
     redis-cli SHUTDOWN SAVE
+    rm /tmp/redis/redis.sock/*
     exit 0
 }
 
