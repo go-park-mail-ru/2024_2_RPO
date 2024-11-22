@@ -7,16 +7,22 @@ import (
 	"strconv"
 )
 
+// Эта структура нужна, чтобы все 3 сервиса могли
+// подтягивать настройки из одной среды. Соответственно,
+// то, что может быть использовано несколькими сервисами,
+// кладём в общий конфиг, а индивидуальные параметры - в
+// конфиг для отдельно взятого сервиса
 type Config struct {
 	RedisDSN      string
 	PostgresDSN   string
-	Auth          *AuthConfig
-	User          *UserConfig
-	Board         *BoardConfig
 	MaxUploadSize int64
-	AuthGRPCPort  string
-	AuthGRPCHost  string
+	AuthURL       string
 	UploadsDir    string
+	ServerPort    string
+
+	Auth  *AuthConfig
+	User  *UserConfig
+	Board *BoardConfig
 }
 
 type AuthConfig struct {
@@ -58,13 +64,16 @@ func checkEnv(envVars []string) error {
 // Удостовериться, что в env лежат все необходимые для работы приложения переменные
 func ValidateEnv() error {
 
-	err := checkEnv([]string{"POSTGRES_HOST",
+	err := checkEnv([]string{
+		"POSTGRES_HOST",
 		"POSTGRES_PORT",
 		"POSTGRES_USER",
 		"POSTGRES_PASSWORD",
 		"POSTGRES_DB",
 		"POSTGRES_SSLMODE",
+
 		"SERVER_PORT",
+
 		"REDIS_HOST",
 		"REDIS_PORT",
 		"REDIS_PASSWORD",

@@ -25,6 +25,22 @@ import (
 )
 
 func main() {
+	// Загрузка переменных окружения
+	err := godotenv.Load(".env")
+	if err != nil {
+		fmt.Println("warning: no .env file loaded", err.Error())
+		fmt.Print()
+	} else {
+		log.Info(".env file loaded")
+	}
+
+	// Формирование конфига
+	err = config.LoadConfig()
+	if err != nil {
+		log.Fatalf("environment configuration is invalid: %v", err)
+		return
+	}
+
 	// Настройка движка логов
 	if _, exists := os.LookupEnv("LOGS_FILE"); exists == false {
 		fmt.Printf("You should provide log file env variable: LOGS_FILE\n")
@@ -37,22 +53,6 @@ func main() {
 	}
 	defer logsFile.Close()
 	logging.SetupLogger(logsFile)
-
-	// Загрузка переменных окружения
-	err = godotenv.Load(".env")
-	if err != nil {
-		log.Warn("warning: no .env file loaded", err.Error())
-		fmt.Print()
-	} else {
-		log.Info(".env file loaded")
-	}
-
-	// Формирование конфига
-	err = config.LoadConfig()
-	if err != nil {
-		log.Fatalf("environment configuration is invalid: %w", err)
-		return
-	}
 
 	// Подключение к PostgreSQL
 	postgresDB, err := pgxpool.New(context.Background(), config.CurrentConfig.PostgresDSN)

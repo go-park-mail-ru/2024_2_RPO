@@ -5,6 +5,7 @@ services:
       context: .
       dockerfile: ./cmd/auth/Dockerfile
     env_file:
+      - docker_compose.env
       - .env
     depends_on:
       postgres:
@@ -17,7 +18,8 @@ services:
     networks:
       - Pumpkin-network
     volumes:
-      - pumpkin-user-uploads:${USER_UPLOADS_DIR}
+      - pumpkin-redis-socket:/tmp/redis/redis.sock
+      - pumpkin-postgres-socket:/tmp/postgres/postgres.sock
 
   board:
     container_name: board_service
@@ -25,6 +27,7 @@ services:
       context: .
       dockerfile: ./cmd/board/Dockerfile
     env_file:
+      - docker_compose.env
       - .env
     depends_on:
       postgres:
@@ -37,7 +40,8 @@ services:
     networks:
       - Pumpkin-network
     volumes:
-      - pumpkin-user-uploads:${USER_UPLOADS_DIR}
+      - pumpkin-user-uploads:/pumpkin_user_uploads
+      - pumpkin-postgres-socket:/tmp/postgres/postgres.sock
 
   user:
     container_name: user_service
@@ -45,6 +49,7 @@ services:
       context: .
       dockerfile: ./cmd/user/Dockerfile
     env_file:
+      - docker_compose.env
       - .env
     depends_on:
       postgres:
@@ -57,7 +62,8 @@ services:
     networks:
       - Pumpkin-network
     volumes:
-      - pumpkin-user-uploads:${USER_UPLOADS_DIR}
+      - pumpkin-user-uploads:/pumpkin_user_uploads
+      - pumpkin-postgres-socket:/tmp/postgres/postgres.sock
 
   postgres:
     env_file:
@@ -81,19 +87,19 @@ services:
     volumes:
       - pumpkin-db-data:/var/lib/postgresql/data
       - pumpkin-all-logs:/pg_logs
+      - pumpkin-postgres-socket:/tmp/postgres/postgres.sock
       - ./database:/configs:ro
 
   redis:
     container_name: redis
     image: redis:latest
     command:
-      - /bin/sh
-      - -c
-      - redis-server --requirepass ${REDIS_PASSWORD}
+      - /pumpkin/redis/start-redis.sh
     volumes:
-      - pumpkin-redis-data:/var/lib/redis/data
-    ports:
-      - "${REDIS_PORT}:6379"
+      - ./database/redis:/pumpkin/redis/
+      - pumpkin-all-logs:/pumpkin_logs
+      - pumpkin-redis-data:/var/lib/redis
+      - pumpkin-redis-socket:/tmp/redis/redis.sock
     env_file:
       - .env
     networks:
@@ -122,3 +128,5 @@ volumes:
   pumpkin-redis-data:
   pumpkin-user-uploads:
   pumpkin-all-logs:
+  pumpkin-postgres-socket:
+  pumpkin-redis-socket:

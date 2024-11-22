@@ -69,9 +69,10 @@ func main() {
 	}
 
 	// Подключение к GRPC сервису авторизации
-	grpcAddr := fmt.Sprintf("%s:%s", config.CurrentConfig.AuthGRPCHost, config.CurrentConfig.AuthGRPCPort)
+	grpcAddr := config.CurrentConfig.AuthGRPC_URL
 	conn, err := grpc.NewClient(grpcAddr)
 	authGRPC := AuthGRPC.NewAuthClient(conn)
+
 	// Проверка подключения к GRPC
 	sess := &AuthGRPC.CheckSessionRequest{SessionID: "12345678"}
 	authGRPC.CheckSession(context.Background(), sess)
