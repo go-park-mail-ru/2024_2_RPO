@@ -423,12 +423,9 @@ func (d *BoardDelivery) SetBoardBackground(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	// Ограничение размера 10 МБ
-	r.ParseMultipartForm(10 << 20)
-
 	file, err := uploads.FormFile(r)
 	if err != nil {
-		responses.DoBadResponse(w, http.StatusBadRequest, "no file")
+		responses.DoBadResponse(w, http.StatusBadRequest, "no file found")
 		return
 	}
 

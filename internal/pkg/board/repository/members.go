@@ -95,7 +95,7 @@ func (r *BoardRepository) GetMemberPermissions(ctx context.Context, boardID int6
 		}
 		return nil, fmt.Errorf("GetMemberPermissions (getting user perms): %w", err)
 	}
-	if verbose == true {
+	if verbose {
 		if addedByID != -1 {
 			adder, err := r.GetUserProfile(ctx, addedByID)
 			if err != nil {
@@ -306,7 +306,6 @@ func (r *BoardRepository) GetUserByNickname(ctx context.Context, nickname string
 
 // GetMemberFromCard получает права пользователя из ID карточки
 func (r *BoardRepository) GetMemberFromCard(ctx context.Context, userID int64, cardID int64) (role string, boardID int64, err error) {
-	panic("not implemented")
 	funcName := "GetMemberFromCard"
 	query := `
 	SELECT
@@ -665,9 +664,18 @@ func (r *BoardRepository) GetColumnsForMove(ctx context.Context, boardID int64) 
 
 // RearrangeCards обновляет позиции всех карточек колонки, чтобы сделать порядок, как в слайсе
 func (r *BoardRepository) RearrangeCards(ctx context.Context, columnID int64, cards []models.Card) (err error) {
-	panic("not implemented")
 	funcName := "RearrangeCards"
-	query := ``
+	query := `
+	WITH update_position_cards AS (
+		UPDATE card SET order_index = $1 WHERE col_id = $2
+	),
+	update_board AS (
+		UPDATE board SET updated_at = CURRENT_TIMESTAMP WHERE board_id = (
+			SELECT board_id FROM kanban_column WHERE col_id = $2
+		)
+	)
+	SELECT;
+	`
 	batch := &pgx.Batch{}
 	for _, card := range cards {
 		batch.Queue(query, card.OrderIndex)
@@ -686,7 +694,7 @@ func (r *BoardRepository) RearrangeCards(ctx context.Context, columnID int64, ca
 func (r *BoardRepository) RearrangeColumns(ctx context.Context, columns []models.Column) (err error) {
 	panic("not implemented")
 	funcName := "RearrangeColumns"
-	query := ``
+	query := ` WITH`
 	batch := &pgx.Batch{}
 	for _, col := range columns {
 		batch.Queue(query, col.OrderIndex)
@@ -722,9 +730,25 @@ func (r *BoardRepository) RearrangeCheckList(ctx context.Context, fields []model
 
 // AssignUserToCard назначает пользователя на карточку
 func (r *BoardRepository) AssignUserToCard(ctx context.Context, cardID int64, assignedUserID int64) (err error) {
-	panic("not implemented")
 	funcName := "AssignUserToCard"
-	query := ``
+	query := `
+		WITH update_card_user_assignment AS (
+			UPDATE card_user_assignment SET u_id = $2 WHERE card_id = $1
+		),
+		update_card AS (
+			UPDATE "card" SET updated_at=CURRENT_TIMESTAMP WHERE card_id = $1
+		),
+		update_board AS (
+			UPDATE board SET updated_at=CURRENT_TIMESTAMP WHERE board_id = (
+				SELECT b.board_id
+				FROM card AS c
+				JOIN kanban_column AS kc ON c.col_id=kc.col_id
+				JOIN board AS b ON b.board_id = kc.board_id
+				WHERE c.card_id=$1
+			)
+		)
+		SELECT;
+	`
 	tag, err := r.db.Exec(ctx, query)
 	logging.Debug(ctx, funcName, " query has err: ", err)
 	if err != nil {
@@ -740,7 +764,25 @@ func (r *BoardRepository) AssignUserToCard(ctx context.Context, cardID int64, as
 func (r *BoardRepository) DeassignUserFromCard(ctx context.Context, cardID int64, assignedUserID int64) (err error) {
 	panic("not implemented")
 	funcName := "DeassignUserFromCard"
-	query := ``
+	query := `
+		WITH delete_card_user_assignment AS (
+			DELETE FROM card_user_assignment WHERE card_id = $1 AND u_id = $2
+		),
+		update_card AS (
+			UPDATE "card" SET updated_at=CURRENT_TIMESTAMP WHERE card_id = $1
+		),
+		update_board AS (
+			UPDATE board SET updated_at=CURRENT_TIMESTAMP WHERE board_id = (
+				SELECT b.board_id	
+				FROM card AS c
+				JOIN kanban_column AS kc ON c.col_id=kc.col_id
+				JOIN board AS b ON b.board_id = kc.board_id
+				WHERE c.card_id=$1
+			)
+		)
+		)
+		)
+	`
 	tag, err := r.db.Exec(ctx, query)
 	logging.Debug(ctx, funcName, " query has err: ", err)
 	if err != nil {
@@ -754,9 +796,26 @@ func (r *BoardRepository) DeassignUserFromCard(ctx context.Context, cardID int64
 
 // CreateComment добавляет на карточку комментарий
 func (r *BoardRepository) CreateComment(ctx context.Context, userID int64, cardID int64, comment *models.CommentRequest) (newComment *models.Comment, err error) {
-	panic("not implemented")
 	funcName := "CreateComment"
-	query := `` //TODO
+	query := `
+		WITH insert_comment AS (
+			INSERT INTO card_comment (card_id, created_by, title) VALUES ($1, $2, $3) RETURNING comment_id, title, is_edited, created_by, created_at
+		),
+		update_card AS (
+			UPDATE "card" SET updated_at=CURRENT_TIMESTAMP WHERE card_id = $1
+		),
+		update_board AS (
+			UPDATE board SET updated_at=CURRENT_TIMESTAMP WHERE board_id = (
+				SELECT b.board_id
+				FROM card AS c
+				JOIN kanban_column AS kc ON c.col_id=kc.col_id
+				JOIN board AS b ON b.board_id = kc.board_id
+				WHERE c.card_id=$1
+			)
+		)
+		SELECT;
+
+	`
 
 	newComment = &models.Comment{}
 	row := r.db.QueryRow(ctx, query)
@@ -770,9 +829,28 @@ func (r *BoardRepository) CreateComment(ctx context.Context, userID int64, cardI
 
 // UpdateComment редактирует комментарий
 func (r *BoardRepository) UpdateComment(ctx context.Context, commentID int64, update *models.CommentRequest) (updatedComment *models.Comment, err error) {
-	panic("not implemented")
 	funcName := "UpdateComment"
-	query := ``
+	query := `
+	WITH insert_comment AS (
+			UPDATE card_comment SET updated_at=CURRENT_TIMESTAMP, title=$2 WHERE comment_id = $1
+		),
+		update_card AS (
+			UPDATE "card" SET updated_at=CURRENT_TIMESTAMP WHERE card_id = (
+				SELECT card_id FROM card_comment WHERE comment_id=$1
+			)
+		),
+		update_board AS (
+			UPDATE board SET updated_at=CURRENT_TIMESTAMP WHERE board_id = (
+				SELECT b.board_id
+				FROM card_comment AS cc
+				JOIN card AS c ON cc.card_id=c.card_id
+				JOIN kanban_column AS kc ON c.col_id=kc.col_id
+				JOIN board AS b ON b.board_id = kc.board_id
+				WHERE cc.comment_id=$1
+			)
+		)
+		SELECT;
+	`
 
 	updatedComment = &models.Comment{}
 	row := r.db.QueryRow(ctx, query)
@@ -821,9 +899,26 @@ func (r *BoardRepository) DeleteComment(ctx context.Context, commentID int64) (e
 
 // CreateCheckListField создаёт поле чеклиста и добавляет его в конец
 func (r *BoardRepository) CreateCheckListField(ctx context.Context, cardID int64, field *models.CheckListFieldPostRequest) (newField *models.CheckListField, err error) {
-	panic("not implemented")
 	funcName := "CreateCheckListField"
-	query := ``
+	query := `
+	WITH insert_field AS (
+		INSERT INTO checklist_field (card_id, title, order_index) VALUES ($1, $2, (SELECT COUNT(*) FROM "checklist_field" WHERE card_id=$1))
+		RETURNING checklist_field_id, title, created_at, is_done, order_index
+	),
+	update_card AS (
+		UPDATE "card" SET updated_at=CURRENT_TIMESTAMP WHERE card_id=$1	
+	),
+	update_board AS (
+		UPDATE board SET updated_at=CURRENT_TIMESTAMP WHERE board_id=(
+			SELECT b.board_id
+			FROM card AS c
+			JOIN kanban_column AS kc ON c.col_id=kc.col_id
+			JOIN board AS b ON b.board_id = kc.board_id
+			WHERE c.card_id=$1
+		)
+	)
+	SELECT;
+	`
 
 	newField = &models.CheckListField{}
 	row := r.db.QueryRow(ctx, query)
@@ -839,7 +934,26 @@ func (r *BoardRepository) CreateCheckListField(ctx context.Context, cardID int64
 func (r *BoardRepository) UpdateCheckListField(ctx context.Context, fieldID int64, update *models.CheckListFieldPatchRequest) (updatedField *models.CheckListField, err error) {
 	panic("not implemented")
 	funcName := "UpdateCheckListField"
-	query := ``
+	query := `
+		WITH update_field AS (
+			UPDATE checklist_field SET updated_at=CURRENT_TIMESTAMP, title=$2, is_done=$3 WHERE checklist_field_id = $1
+		),
+		update_card AS (
+			UPDATE "card" SET updated_at=CURRENT_TIMESTAMP WHERE card_id = (
+				SELECT card_id FROM checklist_field WHERE checklist_field_id=$1
+		),
+		update_board AS (
+			UPDATE board SET updated_at=CURRENT_TIMESTAMP WHERE board_id = (
+				SELECT b.board_id
+				FROM checklist_field AS cf
+				JOIN card AS c ON cf.card_id=c.card_id
+				JOIN kanban_column AS kc ON c.col_id=kc.col_id
+				JOIN board AS b ON b.board_id = kc.board_id
+				WHERE cf.checklist_field_id=$1
+		)
+	)
+	SELECT;
+	`
 
 	updatedField = &models.CheckListField{}
 	row := r.db.QueryRow(ctx, query)
@@ -853,9 +967,22 @@ func (r *BoardRepository) UpdateCheckListField(ctx context.Context, fieldID int6
 
 // SetCardCover устанавливает файл обложки карточки
 func (r *BoardRepository) SetCardCover(ctx context.Context, userID int64, cardID int64, file *models.UploadedFile) (updatedCard *models.Card, err error) {
-	panic("not implemented")
 	funcName := "SetCardCover"
-	query := ``
+	query := `
+	WITH update_cover AS (
+		UPDATE "card" SET updated_at=CURRENT_TIMESTAMP, cover_file_id=$1 WHERE card_id = $2
+	),
+	update_board AS (
+		UPDATE board SET updated_at=CURRENT_TIMESTAMP WHERE board_id = (
+			SELECT b.board_id
+			FROM card AS c
+			JOIN kanban_column AS kc ON c.col_id=kc.col_id
+			JOIN board AS b ON b.board_id = kc.board_id
+			WHERE c.card_id=$1
+		)
+	)
+	SELECT;
+	`
 
 	updatedCard = &models.Card{}
 	row := r.db.QueryRow(ctx, query)
@@ -899,9 +1026,30 @@ func (r *BoardRepository) RemoveCardCover(ctx context.Context, cardID int64) (er
 
 // AddAttachment добавляет файл вложения в карточку
 func (r *BoardRepository) AddAttachment(ctx context.Context, userID int64, cardID int64, file *models.UploadedFile) (newAttachment *models.Attachment, err error) {
-	panic("not implemented")
 	funcName := "AddAttachment"
-	query := ``
+	query := `
+	WITH insert_attachment AS (
+		INSERT INTO card_attachment (card_id, file_id, original_name, attached_by) VALUES ($1, $2, $3, $4)
+		RETURNING attachment_id
+	),
+	update_card AS (
+		UPDATE "card" SET updated_at=CURRENT_TIMESTAMP WHERE card_id = $1
+	),
+	update_board AS (
+		UPDATE board SET updated_at=CURRENT_TIMESTAMP WHERE board_id = (
+			SELECT b.board_id
+			FROM card_attachment AS ca
+			JOIN card AS c ON ca.card_id=c.card_id
+			JOIN kanban_column AS kc ON c.col_id=kc.col_id
+			JOIN board AS b ON b.board_id = kc.board_id
+			WHERE ca.attachment_id=$1
+		)
+	)
+	SELECT uuf.file_uuid, uuf.file_extension
+	FROM card_attachment AS ca
+	JOIN user_uploaded_file AS uuf ON ca.file_id = uuf.file_id
+	WHERE ca.file_id = $2; 
+	`
 
 	newAttachment = &models.Attachment{}
 	row := r.db.QueryRow(ctx, query)
@@ -915,9 +1063,28 @@ func (r *BoardRepository) AddAttachment(ctx context.Context, userID int64, cardI
 
 // RemoveAttachment удаляет вложение
 func (r *BoardRepository) RemoveAttachment(ctx context.Context, attachmentID int64) (err error) {
-	panic("not implemented")
 	funcName := "RemoveAttachment"
-	query := ``
+	query := `
+	WITH delete_attachment AS (
+		DELETE FROM card_attachment WHERE attachment_id = $1
+	),
+	update_card AS (
+		UPDATE card SET updated_at=CURRENT_TIMESTAMP WHERE card_id = (
+			SELECT card_id FROM card_attachment WHERE attachment_id=$1
+		)
+	),
+	update_board AS (
+		UPDATE board SET updated_at=CURRENT_TIMESTAMP WHERE board_id = (
+			SELECT b.board_id
+			FROM card_attachment AS ca
+			JOIN card AS c ON ca.card_id=c.card_id
+			JOIN kanban_column AS kc ON c.col_id=kc.col_id
+			JOIN board AS b ON b.board_id = kc.board_id
+			WHERE ca.attachment_id=$1
+		)
+	)
+	SELECT;
+	`
 	tag, err := r.db.Exec(ctx, query)
 	logging.Debug(ctx, funcName, " query has err: ", err)
 	if err != nil {
@@ -931,9 +1098,13 @@ func (r *BoardRepository) RemoveAttachment(ctx context.Context, attachmentID int
 
 // PullInviteLink заменяет для доски индивидуальную ссылку-приглашение и возвращает новую ссылку
 func (r *BoardRepository) PullInviteLink(ctx context.Context, userID int64, boardID int64) (link *models.InviteLink, err error) {
-	panic("not implemented")
 	funcName := "PullInviteLink"
-	query := ``
+	query := `
+	WITH update_invite_link AS (
+		UPDATE user_to_board SET invite_uuid = uuid_generate_v4() WHERE u_id = $1 AND board_id = $2
+	)
+	SELECT;
+	`
 
 	link = &models.InviteLink{}
 	row := r.db.QueryRow(ctx, query)
@@ -947,9 +1118,13 @@ func (r *BoardRepository) PullInviteLink(ctx context.Context, userID int64, boar
 
 // DeleteInviteLink удаляет ссылку-приглашение
 func (r *BoardRepository) DeleteInviteLink(ctx context.Context, userID int64, boardID int64) (err error) {
-	panic("not implemented")
 	funcName := "DeleteInviteLink"
-	query := ``
+	query := `
+	WITH delete_invite_link AS (
+		UPDATE user_to_board SET invite_uuid = NULL WHERE u_id = $1 AND board_id = $2
+	)
+	SELECT;
+	`
 
 	tag, err := r.db.Exec(ctx, query)
 	logging.Debug(ctx, funcName, " query has err: ", err)
@@ -964,9 +1139,13 @@ func (r *BoardRepository) DeleteInviteLink(ctx context.Context, userID int64, bo
 
 // FetchInvite возвращает информацию о доске, куда чела пригласили
 func (r *BoardRepository) FetchInvite(ctx context.Context, inviteUUID string) (board *models.Board, err error) {
-	panic("not implemented")
 	funcName := "FetchInvite"
-	query := ``
+	query := `
+		SELECT b.board_id, b.name, b.background_image_uuid, b.created_at, b.updated_at, ub.last_visit_at
+		FROM user_to_board AS utb
+		JOIN board AS b ON utb.board_id = b.board_id
+		WHERE utb.invite_uuid = $1;
+	`
 
 	board = &models.Board{}
 	row := r.db.QueryRow(ctx, query)
@@ -980,9 +1159,27 @@ func (r *BoardRepository) FetchInvite(ctx context.Context, inviteUUID string) (b
 
 // AcceptInvite добавляет приглашённого пользователя на доску с правами зрителя
 func (r *BoardRepository) AcceptInvite(ctx context.Context, userID int64, boardID int64, invitedUserID int64, inviteUUID string) (board *models.Board, err error) {
-	panic("not implemented")
 	funcName := "AcceptInvite"
-	query := ``
+	query := `
+	WITH update_board AS (
+		UPDATE board SET updated_at=CURRENT_TIMESTAMP WHERE board_id = $1
+	),
+	update_user_to_board AS (
+		INSERT INTO user_to_board (u_id, board_id, role) VALUES ($2, $1, 'viewer')
+	)
+	SELECT
+		b.board_id,
+        b.name,
+        b.created_at,
+        b.updated_at,
+        ub.last_visit_at,
+        COALESCE(file.file_uuid::text,''),
+        COALESCE(file.file_extension,'')
+    FROM board AS b
+    LEFT JOIN user_to_board AS ub ON ub.board_id = b.board_id AND ub.u_id = $1
+    LEFT JOIN user_uploaded_file AS file ON file.file_id=b.background_image_id
+    WHERE b.board_id = $1;
+	`
 
 	board = &models.Board{}
 	row := r.db.QueryRow(ctx, query)
