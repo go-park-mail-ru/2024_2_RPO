@@ -1,6 +1,7 @@
 package main
 
 import (
+	AuthGRPC "RPO_back/internal/pkg/auth/delivery/grpc/gen"
 	BoardDelivery "RPO_back/internal/pkg/board/delivery"
 	BoardRepository "RPO_back/internal/pkg/board/repository"
 	BoardUsecase "RPO_back/internal/pkg/board/usecase"
@@ -9,6 +10,7 @@ import (
 	"RPO_back/internal/pkg/middleware/csrf"
 	"RPO_back/internal/pkg/middleware/logging_middleware"
 	"RPO_back/internal/pkg/middleware/no_panic"
+	"RPO_back/internal/pkg/middleware/session"
 	"RPO_back/internal/pkg/utils/logging"
 
 	"context"
@@ -19,6 +21,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/jackc/pgx/v5/pgxpool"
 	log "github.com/sirupsen/logrus"
+	"google.golang.org/grpc"
 )
 
 func main() {
@@ -52,6 +55,21 @@ func main() {
 		log.Fatal("error while pinging PostgreSQL: ", err)
 	}
 
+	// Подключение к GRPC сервису авторизации
+	grpcAddr := config.CurrentConfig.AuthURL
+	conn, err := grpc.NewClient(grpcAddr)
+	if err != nil {
+		log.Fatal("error connecting to GRPC: ", err)
+	}
+	authGRPC := AuthGRPC.NewAuthClient(conn)
+
+	// Проверка подключения к GRPC
+	sess := &AuthGRPC.CheckSessionRequest{SessionID: "12345678"}
+	_, err = authGRPC.CheckSession(context.Background(), sess)
+	if err != nil {
+		log.Fatal("error while pinging GRPC: ", err)
+	}
+
 	//Board
 	boardRepository := BoardRepository.CreateBoardRepository(postgresDb)
 	boardUsecase := BoardUsecase.CreateBoardUsecase(boardRepository)
@@ -65,6 +83,8 @@ func main() {
 	router.Use(logging_middleware.LoggingMiddleware)
 	router.Use(cors.CorsMiddleware)
 	router.Use(csrf.CSRFMiddleware)
+	sm := session.CreateSessionMiddleware(authGRPC)
+	router.Use(sm.Middleware)
 
 	// Регистрируем обработчики
 	router.HandleFunc("/boards", boardDelivery.CreateNewBoard).Methods("POST", "OPTIONS")

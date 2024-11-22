@@ -6,6 +6,7 @@ import (
 	"RPO_back/internal/pkg/middleware/csrf"
 	"RPO_back/internal/pkg/middleware/logging_middleware"
 	"RPO_back/internal/pkg/middleware/no_panic"
+	"RPO_back/internal/pkg/middleware/session"
 	UserDelivery "RPO_back/internal/pkg/user/delivery"
 	UserRepository "RPO_back/internal/pkg/user/repository"
 	UserUsecase "RPO_back/internal/pkg/user/usecase"
@@ -58,11 +59,17 @@ func main() {
 	// Подключение к GRPC сервису авторизации
 	grpcAddr := config.CurrentConfig.AuthURL
 	conn, err := grpc.NewClient(grpcAddr)
+	if err != nil {
+		log.Fatal("error connecting to GRPC: ", err)
+	}
 	authGRPC := AuthGRPC.NewAuthClient(conn)
 
 	// Проверка подключения к GRPC
 	sess := &AuthGRPC.CheckSessionRequest{SessionID: "12345678"}
-	authGRPC.CheckSession(context.Background(), sess)
+	_, err = authGRPC.CheckSession(context.Background(), sess)
+	if err != nil {
+		log.Fatal("error while pinging GRPC: ", err)
+	}
 
 	// User
 	userRepository := UserRepository.CreateUserRepository(postgresDb)
@@ -77,6 +84,8 @@ func main() {
 	router.Use(logging_middleware.LoggingMiddleware)
 	router.Use(cors.CorsMiddleware)
 	router.Use(csrf.CSRFMiddleware)
+	sm := session.CreateSessionMiddleware(authGRPC)
+	router.Use(sm.Middleware)
 
 	// Регистрируем обработчики
 	router.HandleFunc("/auth/register", userDelivery.RegisterUser).Methods("POST", "OPTIONS")
