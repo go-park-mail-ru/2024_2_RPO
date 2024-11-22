@@ -1,14 +1,27 @@
+chmod 777 /tmp/redis/redis.sock/
+
+ls /tmp/redis/redis.sock
+
 # Define cleanup function
-stop_redis() {
+terminate() {
     echo "==========   Stopping Redis server...   =========="
     redis-cli SHUTDOWN SAVE
     exit 0
 }
 
-# Trap SIGINT and SIGTERM signals and run cleanup function
-trap stop_redis SIGINT
-trap stop_redis SIGTERM
+trap terminate TERM
+trap terminate INT
+
+echo "==========   Starting Redis server...   =========="
 
 # Start redis
 redis-server /pumpkin/redis/redis.conf &
-wait %?redis-server
+
+REDIS_PID=$!
+echo "==========   Redis PID: $REDIS_PID  =========="
+
+wait $REDIS_PID
+
+EXIT_CODE=$?
+
+echo "==========   Redis exit code: $EXIT_CODE  =========="

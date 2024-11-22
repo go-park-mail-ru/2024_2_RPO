@@ -41,7 +41,7 @@ func main() {
 	}
 	defer logsFile.Close()
 	logging.SetupLogger(logsFile)
-	log.Info("Config: ", config.CurrentConfig)
+	log.Info("Config: ", fmt.Sprintf("%#v", config.CurrentConfig))
 
 	// Подключение к PostgreSQL
 	postgresDb, err := pgxpool.New(context.Background(), config.CurrentConfig.PostgresDSN)

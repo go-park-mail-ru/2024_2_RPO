@@ -98,7 +98,7 @@ services:
     volumes:
       - ./database/redis:/pumpkin/redis/
       - pumpkin-all-logs:/pumpkin_logs
-      - pumpkin-redis-data:/var/lib/redis
+      - pumpkin-redis-data:/redis_data
       - pumpkin-redis-socket:/tmp/redis/redis.sock
     env_file:
       - .env
