@@ -382,17 +382,63 @@ func (uc *BoardUsecase) SetBoardBackground(ctx context.Context, userID int64, bo
 
 // AssignUser назначает карточку пользователю
 func (uc *BoardUsecase) AssignUser(ctx context.Context, userID int64, cardID int64, assignedUserID int64) (assignedUser *models.UserProfile, err error) {
-	panic("not implemented")
+	funcName := "AssignUser"
+	perms, _, err := uc.boardRepository.GetMemberFromCard(ctx, userID, cardID)
+	if err != nil {
+		return nil, fmt.Errorf("%s (get perms): %w", funcName, err)
+	}
+
+	if perms == "viewer" {
+		return nil, fmt.Errorf("%s (check): %w", funcName, errs.ErrNotPermitted)
+	}
+
+	assignedUser, err = uc.boardRepository.AssignUserToCard(ctx, cardID, assignedUserID)
+	if err != nil {
+		return nil, fmt.Errorf("%s (assign user): %w", funcName, err)
+	}
+
+	return assignedUser, nil
 }
 
 // DeassignUser отменяет назначение карточки пользователю
 func (uc *BoardUsecase) DeassignUser(ctx context.Context, userID int64, cardID int64, assignedUserID int64) (err error) {
-	panic("not implemented")
+	funcName := "DeassignUser"
+	perms, _, err := uc.boardRepository.GetMemberFromCard(ctx, userID, cardID)
+	if err != nil {
+		return fmt.Errorf("%s (get perms): %w", funcName, err)
+	}
+
+	if perms == "viewer" {
+		return fmt.Errorf("%s (check): %w", funcName, errs.ErrNotPermitted)
+	}
+
+	err = uc.boardRepository.DeassignUserFromCard(ctx, cardID, assignedUserID)
+	if err != nil {
+		return fmt.Errorf("%s (deassign user): %w", funcName, err)
+	}
+
+	return nil
 }
 
 // AddComment добавляет комментарий на карточку
 func (uc *BoardUsecase) AddComment(ctx context.Context, userID int64, cardID int64, commentReq *models.CommentRequest) (newComment *models.Comment, err error) {
-	panic("not implemented")
+	funcName := "AddComment"
+
+	perms, _, err := uc.boardRepository.GetMemberFromCard(ctx, userID, cardID)
+	if err != nil {
+		return nil, fmt.Errorf("%s (get perms): %w", funcName, err)
+	}
+
+	if perms == "viewer" {
+		return nil, fmt.Errorf("%s (check): %w", funcName, errs.ErrNotPermitted)
+	}
+
+	newComment, err = uc.boardRepository.CreateComment(ctx, userID, cardID, commentReq)
+	if err != nil {
+		return nil, fmt.Errorf("%s (add comment): %w", funcName, err)
+	}
+
+	return newComment, nil
 }
 
 // UpdateComment редактирует существующий комментарий на карточке

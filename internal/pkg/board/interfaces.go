@@ -82,7 +82,7 @@ type BoardRepo interface {
 	RearrangeCards(ctx context.Context, columnID int64, cards []models.Card) (err error)
 	RearrangeColumns(ctx context.Context, columns []models.Column) (err error)
 	RearrangeCheckList(ctx context.Context, fields []models.CheckListField) (err error)
-	AssignUserToCard(ctx context.Context, cardID int64, assignedUserID int64) (err error)
+	AssignUserToCard(ctx context.Context, cardID int64, assignedUserID int64) (assignedUser *models.UserProfile, err error)
 	DeassignUserFromCard(ctx context.Context, cardID int64, assignedUserID int64) (err error)
 	CreateComment(ctx context.Context, userID int64, cardID int64, comment *models.CommentRequest) (newComment *models.Comment, err error)
 	UpdateComment(ctx context.Context, commentID int64, update *models.CommentRequest) (updatedComment *models.Comment, err error)

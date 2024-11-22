@@ -729,7 +729,7 @@ func (r *BoardRepository) RearrangeCheckList(ctx context.Context, fields []model
 }
 
 // AssignUserToCard назначает пользователя на карточку
-func (r *BoardRepository) AssignUserToCard(ctx context.Context, cardID int64, assignedUserID int64) (err error) {
+func (r *BoardRepository) AssignUserToCard(ctx context.Context, cardID int64, assignedUserID int64) (assignedUser *models.UserProfile, err error) {
 	funcName := "AssignUserToCard"
 	query := `
 		WITH update_card_user_assignment AS (
@@ -747,17 +747,23 @@ func (r *BoardRepository) AssignUserToCard(ctx context.Context, cardID int64, as
 				WHERE c.card_id=$1
 			)
 		)
-		SELECT;
+		SELECT u.u_id, u.nickname, u.email, u.joined_at, u.updated_at, COALESCE(f.file_uuid::text, "")
+		COALESCE(f.file_extension::text, "")
+		FROM card_user_assignment AS cua
+		JOIN "user" AS u ON cua.u_id = u.u_id
+		LEFT JOIN user_uploaded_file AS f ON f.file_id=u.avatar_file_id
+		WHERE cua.card_id = $1;
 	`
+
 	tag, err := r.db.Exec(ctx, query)
 	logging.Debug(ctx, funcName, " query has err: ", err)
 	if err != nil {
-		return fmt.Errorf("%s (query): %w", funcName, err)
+		return nil, fmt.Errorf("%s (query): %w", funcName, err)
 	}
 	if tag.RowsAffected() == 0 {
-		return fmt.Errorf("%s (query): no rows affected", funcName)
+		return nil, fmt.Errorf("%s (query): no rows affected", funcName)
 	}
-	return nil
+	return assignedUser, nil
 }
 
 // DeassignUserFromCard убирает назначение пользователя
