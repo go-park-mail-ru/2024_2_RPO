@@ -225,9 +225,10 @@ func (r *UserRepository) SubmitPoll(ctx context.Context, userID int64, PollSubmi
 func (r *UserRepository) GetRatingResults(ctx context.Context) (results []models.RatingResults, err error) {
 	funcName := "GetRatingResults"
 	query := `
-	SELECT cq.questioon_text, AVG(cr.rating) AS rating FROM csat_results AS cr
+	SELECT cq.question_text, AVG(cr.rating) AS rating FROM csat_results AS cr
 	JOIN csat_question AS cq ON cr.question_id = cq.question_id
-	GROUP BY cr.question_id, cr.rating;
+	WHERE cr.created_at >= CURRENT_TIMESTAMP - INTERVAL '7 days' AND cq.type='answer_rating'
+	GROUP BY cq.question_id, cr.rating;	
 	`
 
 	rows, err := r.db.Query(ctx, query)
@@ -250,9 +251,10 @@ func (r *UserRepository) GetRatingResults(ctx context.Context) (results []models
 func (r *UserRepository) GetTextResults(ctx context.Context) (results []models.AnswerResults, err error) {
 	funcName := "GetTextResults"
 	query := `
-	SELECT cq.comment, cq.questioon_text FROM csat_results AS cr
+	SELECT cr.comment, cq.question_text FROM csat_results AS cr
 	JOIN csat_question AS cq ON cr.question_id = cq.question_id
-	GROUP BY cr.question_id, cr.comment;
+	WHERE cr.created_at >= CURRENT_TIMESTAMP - INTERVAL '7 days' AND cq.type='answer_text'
+	ORDER BY cq.question_id;
 	`
 
 	rows, err := r.db.Query(ctx, query)
@@ -262,11 +264,25 @@ func (r *UserRepository) GetTextResults(ctx context.Context) (results []models.A
 	}
 
 	for rows.Next() {
-		result := models.AnswerResults{}
-		if err := rows.Scan(&result.Text, &result.Question); err != nil {
+		var q, a string
+		if err := rows.Scan(&a, &q); err != nil {
 			return nil, fmt.Errorf("GetTextResults (scan): %w", err)
 		}
-		results = append(results, result)
+		if len(results) == 0 {
+			results = append(results, models.AnswerResults{
+				Question: q,
+				Text:     []string{a},
+			})
+		} else {
+			if results[len(results)-1].Question == q {
+				results[len(results)-1].Text = append(results[len(results)-1].Text, a)
+			} else {
+				results = append(results, models.AnswerResults{
+					Question: q,
+					Text:     []string{a},
+				})
+			}
+		}
 	}
 
 	return results, nil
