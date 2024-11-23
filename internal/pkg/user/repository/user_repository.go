@@ -231,7 +231,7 @@ func (r *UserRepository) SetNextPollDT(ctx context.Context, userID int64) error 
 	panic("not implemented")
 }
 
-func (r *UserRepository) PickPollQuestions(ctx context.Context) error {
+func (r *UserRepository) PickPollQuestions(ctx context.Context) (pollQuestions []models.PollQuestion, err error) {
 	funcName := "PickPollQuestions"
 	fmt.Print(funcName)
 	panic("not implemented")

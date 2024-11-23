@@ -211,15 +211,17 @@ func (d *UserDelivery) SubmitPoll(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	pollQuestion := models.PollQuestion{}
-	err := requests.GetRequestData(r, &pollQuestion)
+	pollSubmit := models.PollSubmit{}
+	err := requests.GetRequestData(r, &pollSubmit)
 	if err != nil {
+		logging.Warn(r.Context(), err)
 		responses.DoBadResponse(w, http.StatusBadRequest, "bad request")
 		return
 	}
 
-	err = d.userUC.SubmitPoll(r.Context(), userID, &pollQuestion)
+	err = d.userUC.SubmitPoll(r.Context(), userID, &pollSubmit)
 	if err != nil {
+		logging.Warn(r.Context(), err)
 		responses.DoBadResponse(w, http.StatusInternalServerError, "internal error")
 		return
 	}
@@ -236,6 +238,7 @@ func (d *UserDelivery) GetPollResults(w http.ResponseWriter, r *http.Request) {
 
 	pollResults, err := d.userUC.GetPollResults(r.Context())
 	if err != nil {
+		logging.Warn(r.Context(), err)
 		responses.ResponseErrorAndLog(w, err, funcName)
 		return
 	}

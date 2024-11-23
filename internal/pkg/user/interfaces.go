@@ -31,4 +31,5 @@ type UserRepo interface {
 	GetRatingResults(ctx context.Context) (results []models.RatingResults, err error)
 	GetTextResults(ctx context.Context) (results []models.AnswerResults, err error)
 	SetNextPollDT(ctx context.Context, userID int64) error
+	PickPollQuestions(ctx context.Context) (pollQuestions []models.PollQuestion, err error)
 }
