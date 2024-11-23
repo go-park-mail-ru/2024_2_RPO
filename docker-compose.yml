@@ -70,6 +70,31 @@ services:
       - pumpkin-postgres-socket:/tmp/postgres/postgres.sock
       - pumpkin-all-logs:/pumpkin_logs
 
+  poll:
+    container_name: poll_service
+    build:
+      context: .
+      dockerfile: ./cmd/poll/Dockerfile
+    env_file:
+      - docker_compose.env
+      - .env
+    depends_on:
+      postgres:
+        condition: service_started
+      redis:
+        condition: service_started
+      auth:
+        condition: service_started
+    restart: always
+    ports:
+      - "127.0.0.1:8804:8888"
+    networks:
+      - Pumpkin-network
+    volumes:
+      - pumpkin-user-uploads:/pumpkin_user_uploads
+      - pumpkin-postgres-socket:/tmp/postgres/postgres.sock
+      - pumpkin-all-logs:/pumpkin_logs    
+
   postgres:
     env_file:
       - .env
