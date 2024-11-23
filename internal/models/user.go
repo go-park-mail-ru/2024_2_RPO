@@ -9,4 +9,5 @@ type UserProfile struct {
 	JoinedAt       time.Time `json:"joinedAt"`
 	UpdatedAt      time.Time `json:"updatedAt"`
 	AvatarImageURL string    `json:"avatarImageUrl"`
+	CsatPollDT     time.Time `json:"-"`
 }
