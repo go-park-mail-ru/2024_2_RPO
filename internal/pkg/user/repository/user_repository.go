@@ -210,30 +210,103 @@ func (r *UserRepository) RegisterFile(ctx context.Context, file *models.Uploaded
 func (r *UserRepository) SubmitPoll(ctx context.Context, userID int64, PollSubmit *models.PollSubmit) error {
 	funcName := "SubmitPoll"
 	query := `
-	INSERT INTO csat_results (question_text, "type") VALUES ($1, $2);
+	INSERT INTO csat_results (question_id, rating, comment, u_id, created_at) VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP);
 	`
+
+	_, err := r.db.Exec(ctx, query, PollSubmit.QuestionID, PollSubmit.Rating, PollSubmit.Text, userID)
+	logging.Debug(ctx, funcName, " query has err: ", err)
+	if err != nil {
+		return fmt.Errorf("SubmitPoll (query): %w", err)
+	}
+
+	return nil
 }
 
 func (r *UserRepository) GetRatingResults(ctx context.Context) (results []models.RatingResults, err error) {
 	funcName := "GetRatingResults"
-	fmt.Print(funcName)
-	panic("not implemented")
+	query := `
+	SELECT cq.questioon_text, AVG(cr.rating) AS rating FROM csat_results AS cr
+	JOIN csat_question AS cq ON cr.question_id = cq.question_id
+	GROUP BY cr.question_id, cr.rating;
+	`
+
+	rows, err := r.db.Query(ctx, query)
+	logging.Debug(ctx, funcName, " query has err: ", err)
+	if err != nil {
+		return nil, fmt.Errorf("GetRatingResults (query): %w", err)
+	}
+
+	for rows.Next() {
+		result := models.RatingResults{}
+		if err := rows.Scan(&result.Question, &result.Rating); err != nil {
+			return nil, fmt.Errorf("GetRatingResults (scan): %w", err)
+		}
+		results = append(results, result)
+	}
+
+	return results, nil
 }
 
 func (r *UserRepository) GetTextResults(ctx context.Context) (results []models.AnswerResults, err error) {
 	funcName := "GetTextResults"
-	fmt.Print(funcName)
-	panic("not implemented")
+	query := `
+	SELECT cq.comment, cq.questioon_text FROM csat_results AS cr
+	JOIN csat_question AS cq ON cr.question_id = cq.question_id
+	GROUP BY cr.question_id, cr.comment;
+	`
+
+	rows, err := r.db.Query(ctx, query)
+	logging.Debug(ctx, funcName, " query has err: ", err)
+	if err != nil {
+		return nil, fmt.Errorf("GetTextResults (query): %w", err)
+	}
+
+	for rows.Next() {
+		result := models.AnswerResults{}
+		if err := rows.Scan(&result.Text, &result.Question); err != nil {
+			return nil, fmt.Errorf("GetTextResults (scan): %w", err)
+		}
+		results = append(results, result)
+	}
+
+	return results, nil
 }
 
 func (r *UserRepository) SetNextPollDT(ctx context.Context, userID int64) error {
 	funcName := "SetNextPollDate"
-	fmt.Print(funcName)
-	panic("not implemented")
+	query := `
+	UPDATE "user" SET csat_poll_dt=(CURRENT_TIMESTAMP+$2) WHERE u_id=$1;
+	`
+
+	_, err := r.db.Exec(ctx, query, userID, 24*7*time.Hour)
+	logging.Debug(ctx, funcName, " query has err: ", err)
+	if err != nil {
+		return fmt.Errorf("SetNextPollDate (query): %w", err)
+	}
+
+	return nil
 }
 
 func (r *UserRepository) PickPollQuestions(ctx context.Context) (pollQuestions []models.PollQuestion, err error) {
 	funcName := "PickPollQuestions"
-	fmt.Print(funcName)
-	panic("not implemented")
+	query := `
+	SELECT cq.question_id, cq.question_text, cq.type
+	FROM csat_question AS cq;
+	`
+
+	rows, err := r.db.Query(ctx, query)
+	logging.Debug(ctx, funcName, " query has err: ", err)
+	if err != nil {
+		return nil, fmt.Errorf("PickPollQuestions (query): %w", err)
+	}
+
+	for rows.Next() {
+		pollQuestion := models.PollQuestion{}
+		if err := rows.Scan(&pollQuestion.QuestionID, &pollQuestion.QuestionText, &pollQuestion.QuestionType); err != nil {
+			return nil, fmt.Errorf("PickPollQuestions (scan): %w", err)
+		}
+		pollQuestions = append(pollQuestions, pollQuestion)
+	}
+
+	return pollQuestions, nil
 }
