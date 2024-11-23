@@ -801,7 +801,7 @@ paths:
         "401":
           $ref: "#/components/responses/NoAuthResponse"
 
-  /users/poll:
+  /poll/submit:
     post:
       summary: "Отправить ответ пользователя на опрос"
       security:
