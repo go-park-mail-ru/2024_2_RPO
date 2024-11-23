@@ -163,6 +163,10 @@ components:
         avatarImageUrl:
           type: string
           example: "/uploads/550e8400-e29b-41d4-a716-446655440000.png"
+        questions:
+          type: array
+          items:
+            $ref: "#/components/schemas/PollQuestion"
 
     UserPut:
       type: object
@@ -555,6 +559,61 @@ components:
         inviteLinkUuid:
           type: string
           example: "1b7123a0-c604-4667-9377-99b51cc982c9"
+    
+    PollQuestion:
+      type: object
+      properties:
+        questionId:
+          type: integer
+          example: 777
+        questionText:
+          type: string
+          example: "Насколько вы довольны нашим проектом?"
+        questionType:
+          type: string
+          enum: ["answer_text", "answer_rating"]
+          example: "answer_text"
+          
+    PollSubmit:
+      type: object
+      properties:
+        questionId:
+          type: integer
+          example: 777
+        questionType:
+          type: string
+          enum: ["answer_text", "answer_rating"]
+          example: "answer_text"
+    
+    PollResults:
+      type: object
+      properties:
+        ratingResults:
+          type: array
+          items:
+            type: object
+            properties:
+              question:
+                type: string
+                example: "Насколько вы довольны нашим сервисом?"
+              score:
+                type: string
+                example: "4.7"
+        textResults:
+          type: array
+          items:
+            type: object
+            properties:
+              question:
+                type: string
+                example: "Вам нравится наш сервис?"
+              answers:
+                type: array
+                items:
+                  type: string
+                example:
+                  - "Да"
+                  - "Нет"
 
 paths:
   /auth/register:
@@ -738,6 +797,53 @@ paths:
           $ref: "#/components/responses/BadRequestResponse"
         "401":
           $ref: "#/components/responses/NoAuthResponse"
+          
+  /users/poll:
+    post:
+      summary: "Отправить ответ пользователя на опрос"
+      security:
+        - SessionCookieAuth: []
+      tags:
+        - Опрос
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PollSubmit"
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EmptyOkResponse"
+        "401": 
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BadResponse"  
+  
+  /poll/results:
+    get:
+      summary: "Получить результаты опроса"
+      security:
+        - SessionCookieAuth: []
+      tags:
+        - Опрос
+      responses:
+        "200":
+          description: Возвращает результаты опроса
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PollResults"
+        "400":
+          $ref: "#/components/responses/BadRequestResponse"
+        "401":
+          $ref: "#/components/responses/NoAuthResponse" 
+        
 
   /boards:
     post:
