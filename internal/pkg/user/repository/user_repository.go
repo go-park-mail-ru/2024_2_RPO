@@ -9,6 +9,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/jackc/pgx/v5"
 )
@@ -150,9 +151,9 @@ func (r *UserRepository) GetUserByEmail(ctx context.Context, email string) (user
 func (r *UserRepository) CreateUser(ctx context.Context, user *models.UserRegisterRequest) (newUser *models.UserProfile, err error) {
 	newUser = &models.UserProfile{}
 	query := `INSERT INTO "user" (nickname, email, password_hash, csat_poll_dt)
-              VALUES ($1, $2, NULL, CURRENT_TIMESTAMP + INTERVAL $3) RETURNING u_id, nickname, email, joined_at, updated_at`
+              VALUES ($1, $2, NULL, (CURRENT_TIMESTAMP+$3)) RETURNING u_id, nickname, email, joined_at, updated_at`
 
-	err = r.db.QueryRow(ctx, query, user.Name, user.Email, "1 week").Scan(
+	err = r.db.QueryRow(ctx, query, user.Name, user.Email, 24*7*time.Hour).Scan(
 		&newUser.ID,
 		&newUser.Name,
 		&newUser.Email,
@@ -208,25 +209,30 @@ func (r *UserRepository) RegisterFile(ctx context.Context, file *models.Uploaded
 
 func (r *UserRepository) SubmitPoll(ctx context.Context, userID int64, PollSubmit *models.PollSubmit) error {
 	funcName := "SubmitPoll"
+	fmt.Print(funcName)
 	panic("not implemented")
 }
 
 func (r *UserRepository) GetRatingResults(ctx context.Context) (results []models.RatingResults, err error) {
 	funcName := "GetRatingResults"
+	fmt.Print(funcName)
 	panic("not implemented")
 }
 
 func (r *UserRepository) GetTextResults(ctx context.Context) (results []models.AnswerResults, err error) {
 	funcName := "GetTextResults"
+	fmt.Print(funcName)
 	panic("not implemented")
 }
 
 func (r *UserRepository) SetNextPollDT(ctx context.Context, userID int64) error {
 	funcName := "SetNextPollDate"
+	fmt.Print(funcName)
 	panic("not implemented")
 }
 
 func (r *UserRepository) PickPollQuestions(ctx context.Context) error {
 	funcName := "PickPollQuestions"
+	fmt.Print(funcName)
 	panic("not implemented")
 }
