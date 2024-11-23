@@ -19,6 +19,7 @@ type Config struct {
 	AuthURL       string
 	UploadsDir    string
 	ServerPort    string // Порт для всех TCP Listen-ов, в том числе GRPC
+	CorsOriging   string
 
 	Auth  *AuthConfig
 	User  *UserConfig
@@ -70,6 +71,7 @@ func ValidateEnv() error {
 		"AUTH_GRPC_URL",
 		"UPLOAD_DIR",
 		"SERVER_PORT",
+		"CORS_ORIGIN",
 
 		"LOG_ROOT",
 
@@ -118,6 +120,7 @@ func LoadConfig() (err error) {
 	CurrentConfig.Auth.LogFile = filepath.Join(logRoot, os.Getenv("AUTH_LOG_FILE"))
 	CurrentConfig.User.LogFile = filepath.Join(logRoot, os.Getenv("USER_LOG_FILE"))
 	CurrentConfig.Board.LogFile = filepath.Join(logRoot, os.Getenv("BOARD_LOG_FILE"))
+	CurrentConfig.CorsOriging = os.Getenv("CORS_ORIGIN")
 
 	return nil
 }

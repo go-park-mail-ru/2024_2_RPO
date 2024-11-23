@@ -74,7 +74,7 @@ func main() {
 
 	// User
 	userRepository := UserRepository.CreateUserRepository(postgresDb)
-	userUsecase := UserUsecase.CreateUserUsecase(userRepository)
+	userUsecase := UserUsecase.CreateUserUsecase(userRepository, authGRPC)
 	userDelivery := UserDelivery.CreateUserDelivery(userUsecase)
 
 	// Создаём новый маршрутизатор

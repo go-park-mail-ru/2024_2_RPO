@@ -9,7 +9,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"time"
 
 	"github.com/jackc/pgx/v5"
 )
@@ -150,10 +149,10 @@ func (r *UserRepository) GetUserByEmail(ctx context.Context, email string) (user
 // CreateUser создаёт пользователя (или не создаёт, если повторяются креды)
 func (r *UserRepository) CreateUser(ctx context.Context, user *models.UserRegisterRequest) (newUser *models.UserProfile, err error) {
 	newUser = &models.UserProfile{}
-	query := `INSERT INTO "user" (nickname, email, password_hash, joined_at, updated_at)
-              VALUES ($1, $2, $3, $4, $5, $6) RETURNING u_id, nickname, email, password_hash, joined_at, updated_at`
+	query := `INSERT INTO "user" (nickname, email, password_hash, csat_poll_dt)
+              VALUES ($1, $2, NULL, CURRENT_TIMESTAMP + INTERVAL $3) RETURNING u_id, nickname, email, joined_at, updated_at`
 
-	err = r.db.QueryRow(ctx, query, user.Name, user.Email, "", time.Now(), time.Now()).Scan(
+	err = r.db.QueryRow(ctx, query, user.Name, user.Email, "1 week").Scan(
 		&newUser.ID,
 		&newUser.Name,
 		&newUser.Email,

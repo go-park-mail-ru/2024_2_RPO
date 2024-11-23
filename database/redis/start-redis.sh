@@ -1,6 +1,5 @@
 chmod 777 /tmp/redis/redis.sock/
-
-ls /tmp/redis/redis.sock
+rm /tmp/redis/redis.sock/*
 
 # Define cleanup function
 terminate() {

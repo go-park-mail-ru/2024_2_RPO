@@ -101,7 +101,7 @@ services:
       - ./database/redis:/pumpkin/redis/
       - pumpkin-all-logs:/pumpkin_logs
       - pumpkin-redis-data:/redis_data
-      - pumpkin-redis-socket:/tmp/redis/redis.sock
+      - pumpkin-redis-socket:/tmp/redis/redis.sock/
     env_file:
       - .env
     networks:
