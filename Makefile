@@ -48,9 +48,7 @@ clean:
 migrate-up:
 	@which migrate
 	@echo "==> Running migrations..."
-	@echo "Provide DSN for migrations with superuser: >>> "
-	@read MIGRATION_DSN; echo "MIGRATION_DSN: $$MIGRATION_DSN"; \
-	migrate -path ./database/migrations -database $(MIGRATION_DSN) up
+	@migrate -path ./database/migrations -database $(SUPERUSER_DSN) up
 
 make-migrations:
 	@echo "==> Let's generate migrations with Atlas!"

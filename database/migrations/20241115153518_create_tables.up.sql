@@ -1,5 +1,8 @@
 CREATE EXTENSION "uuid-ossp";
 
+CREATE ROLE "3kybika";
+CREATE ROLE tarasovxx;
+
 -- Create enum type "user_role"
 CREATE TYPE "public"."user_role" AS ENUM ('viewer', 'editor', 'editor_chief', 'admin');
 -- Create "board" table

@@ -11,6 +11,7 @@ import (
 	"net"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -25,6 +26,10 @@ import (
 )
 
 func main() {
+	// Костыль
+	log.Info("Sleeping 10 seconds waiting Postgres to start...")
+	time.Sleep(10 * time.Second)
+
 	// Формирование конфига
 	err := config.LoadConfig()
 	if err != nil {
@@ -52,7 +57,10 @@ func main() {
 
 	// Проверка подключения к PostgreSQL
 	if err = postgresDB.Ping(context.Background()); err != nil {
-		log.Fatal("error while pinging PostgreSQL: ", err)
+		log.Error("error while pinging PostgreSQL: ", err)
+		log.Error("Sleeping 100 seconds when you apply migrations")
+		time.Sleep(100 * time.Second)
+		os.Exit(1)
 	}
 
 	//Подключение к Redis
