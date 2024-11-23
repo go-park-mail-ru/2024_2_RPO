@@ -584,6 +584,13 @@ components:
           type: string
           enum: ["answer_text", "answer_rating"]
           example: "answer_text"
+        rating:
+          type: string
+          example: "4.7"
+        question:
+                type: string
+                example: "Насколько вы довольны нашим сервисом?"  
+        
     
     PollResults:
       type: object
@@ -596,10 +603,10 @@ components:
               question:
                 type: string
                 example: "Насколько вы довольны нашим сервисом?"
-              score:
+              rating:
                 type: string
                 example: "4.7"
-        textResults:
+        answerResults:
           type: array
           items:
             type: object
