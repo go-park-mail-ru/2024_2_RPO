@@ -204,3 +204,13 @@ func (d *UserDelivery) ChangePassword(w http.ResponseWriter, r *http.Request) {
 	}
 	responses.DoEmptyOkResponse(w)
 }
+
+func (d *UserDelivery) SubmitPoll(w http.ResponseWriter, r *http.Request) {
+	funcName := "SubmitPoll"
+	_, ok := requests.GetUserIDOrFail(w, r, funcName)
+	if !ok {
+		return
+	}
+
+	panic("not implemented")
+}

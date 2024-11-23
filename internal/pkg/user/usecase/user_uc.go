@@ -146,3 +146,11 @@ func (uc *UserUsecase) RegisterUser(ctx context.Context, user *models.UserRegist
 
 	return sessionID, nil
 }
+
+func (uc *UserUsecase) SubmitPoll(ctx context.Context, userID int64, pollQuestion *models.PollQuestion) error {
+	panic("not implemented")
+}
+
+func (uc *UserUsecase) GetPollResults(ctx context.Context) (pollResults *models.PollResult, err error) {
+	panic("not implemented")
+}

@@ -14,6 +14,8 @@ type UserUsecase interface {
 	RegisterUser(ctx context.Context, user *models.UserRegisterRequest) (sessionID string, err error)
 	LogoutUser(ctx context.Context, sessionID string) error
 	ChangePassword(ctx context.Context, userID int64, oldPassword string, newPassword string) error
+	SubmitPoll(ctx context.Context, userID int64, pollQuestion *models.PollQuestion) error
+	GetPollResults(ctx context.Context) (pollResults *models.PollResult, err error)
 }
 
 type UserRepo interface {
