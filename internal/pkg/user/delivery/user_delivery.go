@@ -211,26 +211,34 @@ func (d *UserDelivery) SubmitPoll(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-
-	data := models.PollSubmit{}
-	err := requests.GetRequestData(r, &data)
+	pollQuestion := models.PollQuestion{}
+	err := requests.GetRequestData(r, &pollQuestion)
 	if err != nil {
 		responses.DoBadResponse(w, http.StatusBadRequest, "bad request")
 		return
 	}
 
-	err = d.userUC.SubmitPoll(r.Context(), userID, *data)
+	err = d.userUC.SubmitPoll(r.Context(), userID, &pollQuestion)
 	if err != nil {
-		if errors.Is(err, errs.ErrWrongCredentials) {
-			responses.DoBadResponse(w, http.StatusUnauthorized, "Wrong credentials")
-			logging.Warn(r.Context(), funcName+" (checking credentials): ", err)
-			return
-		}
-		responses.DoBadResponse(w, http.StatusInternalServerError, "Internal Server Error")
-		logging.Error(r.Context(), funcName+" (checking credentials): ", err)
+		responses.DoBadResponse(w, http.StatusInternalServerError, "internal error")
 		return
 	}
 
 	responses.DoEmptyOkResponse(w)
+}
 
+func (d *UserDelivery) GetPollResults(w http.ResponseWriter, r *http.Request) {
+	funcName := "GetPollResults"
+	_, ok := requests.GetUserIDOrFail(w, r, funcName)
+	if !ok {
+		return
+	}
+
+	pollResults, err := d.userUC.GetPollResults(r.Context())
+	if err != nil {
+		responses.ResponseErrorAndLog(w, err, funcName)
+		return
+	}
+
+	responses.DoJSONResponse(w, pollResults, http.StatusOK)
 }

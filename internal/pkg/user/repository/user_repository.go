@@ -206,22 +206,27 @@ func (r *UserRepository) RegisterFile(ctx context.Context, file *models.Uploaded
 	return uploads.RegisterFile(ctx, r.db, file)
 }
 
-func (r *UserRepository) SubmitPoll(ctx, userID int64, pollQuestion *models.PollQuestion) error {
+func (r *UserRepository) SubmitPoll(ctx context.Context, userID int64, PollSubmit *models.PollSubmit) error {
 	funcName := "SubmitPoll"
 	panic("not implemented")
 }
 
-func (r *UserRepository) GetRatingResults(ctx context.Context, userID int64) (results *models.RatingResults, err error) {
+func (r *UserRepository) GetRatingResults(ctx context.Context) (results []models.RatingResults, err error) {
 	funcName := "GetRatingResults"
 	panic("not implemented")
 }
 
-func (r *UserRepository) GetTextResults(ctx context.Context, userID int64) (results *models.TextResults, err error) {
+func (r *UserRepository) GetTextResults(ctx context.Context) (results []models.AnswerResults, err error) {
 	funcName := "GetTextResults"
 	panic("not implemented")
 }
 
 func (r *UserRepository) SetNextPollDT(ctx context.Context, userID int64) error {
 	funcName := "SetNextPollDate"
+	panic("not implemented")
+}
+
+func (r *UserRepository) PickPollQuestions(ctx context.Context) error {
+	funcName := "PickPollQuestions"
 	panic("not implemented")
 }

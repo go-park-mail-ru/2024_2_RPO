@@ -25,12 +25,20 @@ func CreateUserUsecase(userRepo user.UserRepo, authClient authGRPC.AuthClient) *
 // GetMyProfile возвращает пользователю его профиль
 func (uc *UserUsecase) GetMyProfile(ctx context.Context, userID int64) (profile *models.UserProfile, err error) {
 	profile, err = uc.userRepo.GetUserProfile(ctx, userID)
+	if err != nil {
+		return nil, fmt.Errorf("GetMyProfile: %w", err)
+	}
+
 	return
 }
 
 // UpdateMyProfile обновляет профиль пользователя и возвращает обновлённый профиль
 func (uc *UserUsecase) UpdateMyProfile(ctx context.Context, userID int64, data *models.UserProfileUpdateRequest) (updatedProfile *models.UserProfile, err error) {
 	updatedProfile, err = uc.userRepo.UpdateUserProfile(ctx, userID, *data)
+	if err != nil {
+		return nil, fmt.Errorf("GetMyProfile: %w", err)
+	}
+
 	return
 }
 
@@ -147,10 +155,30 @@ func (uc *UserUsecase) RegisterUser(ctx context.Context, user *models.UserRegist
 	return sessionID, nil
 }
 
-func (uc *UserUsecase) SubmitPoll(ctx context.Context, userID int64, pollQuestion *models.PollQuestion) error {
-	panic("not implemented")
+func (uc *UserUsecase) SubmitPoll(ctx context.Context, userID int64, pollSubmit *models.PollSubmit) error {
+	err := uc.userRepo.SubmitPoll(ctx, userID, pollSubmit)
+	if err != nil {
+		return fmt.Errorf("SubmitPoll: %w", err)
+	}
+
+	return nil
 }
 
 func (uc *UserUsecase) GetPollResults(ctx context.Context) (pollResults *models.PollResults, err error) {
-	panic("not implemented")
+	pollRating, err := uc.userRepo.GetRatingResults(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("GetPollResults (GetRatingResults): %w", err)
+	}
+
+	pollText, err := uc.userRepo.GetTextResults(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("GetPollResults (GetTextResults): %w", err)
+	}
+
+	pollResults = &models.PollResults{
+		RatingResults: pollRating,
+		TextResults:   pollText,
+	}
+
+	return pollResults, nil
 }
