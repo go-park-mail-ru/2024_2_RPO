@@ -209,8 +209,9 @@ func (r *UserRepository) RegisterFile(ctx context.Context, file *models.Uploaded
 
 func (r *UserRepository) SubmitPoll(ctx context.Context, userID int64, PollSubmit *models.PollSubmit) error {
 	funcName := "SubmitPoll"
-	fmt.Print(funcName)
-	panic("not implemented")
+	query := `
+	INSERT INTO csat_results (question_text, "type") VALUES ($1, $2);
+	`
 }
 
 func (r *UserRepository) GetRatingResults(ctx context.Context) (results []models.RatingResults, err error) {
