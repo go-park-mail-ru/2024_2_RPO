@@ -15,7 +15,7 @@ CREATE TABLE "user" (
     joined_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     password_hash TEXT,
-    csat_poll_dt TIMESTAMPTZ NOT NULL, 
+    csat_poll_dt TIMESTAMPTZ NOT NULL,
     email TEXT UNIQUE NOT NULL,
     avatar_file_id BIGINT,
     FOREIGN KEY (avatar_file_id) REFERENCES user_uploaded_file(file_id) ON UPDATE CASCADE ON DELETE SET NULL
@@ -82,7 +82,7 @@ CREATE TABLE "card" (
     is_done BOOLEAN NOT NULL DEFAULT FALSE, -- Видна, когда задан deadline или чеклист
 
     FOREIGN KEY (col_id) REFERENCES kanban_column(col_id) ON UPDATE CASCADE ON DELETE CASCADE,
-    FOREIGN KEY (cover_file_id) REFERENCES user_uploaded_file(file_id) ON UPDATE CASCADE ON DELETE SET NULL,
+    FOREIGN KEY (cover_file_id) REFERENCES user_uploaded_file(file_id) ON UPDATE CASCADE ON DELETE SET NULL
 );
 
 CREATE TABLE card_attachment (
@@ -107,8 +107,7 @@ CREATE TABLE checklist_field (
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     order_index INTEGER,
 
-    FOREIGN KEY (card_id) REFERENCES card(card_id) ON UPDATE CASCADE ON DELETE CASCADE,
-    UNIQUE (card_id, order_index) DEFERRABLE INITIALLY DEFERRED
+    FOREIGN KEY (card_id) REFERENCES card(card_id) ON UPDATE CASCADE ON DELETE CASCADE
 );
 
 CREATE TABLE card_comment (
@@ -133,6 +132,19 @@ CREATE TABLE card_user_assignment (
     FOREIGN KEY (u_id) REFERENCES "user"(u_id) ON UPDATE CASCADE ON DELETE CASCADE
 );
 
+CREATE TYPE question_type AS ENUM (
+    'answer_text',
+    'answer_rating'
+);
+
+CREATE TABLE csat_question (
+    question_id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    question_text TEXT NOT NULL,
+    "type" question_type NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
 CREATE TABLE csat_results (
     result_id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     question_id BIGINT NOT NULL,
@@ -143,18 +155,4 @@ CREATE TABLE csat_results (
 
     FOREIGN KEY (u_id) REFERENCES "user"(u_id) ON UPDATE CASCADE ON DELETE CASCADE,
     FOREIGN KEY (question_id) REFERENCES csat_question(question_id) ON UPDATE CASCADE ON DELETE CASCADE
-);
-
-CREATE TYPE question_type AS ENUM (
-    "answer_text", 
-    "answer_rating",
-);
-
-
-CREATE TABLE csat_question (
-    question_id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    is_active BOOLEAN NOT NULL DEFAULT TRUE,
-    text TEXT NOT NULL,
-    "type" question_type NOT NULL,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
