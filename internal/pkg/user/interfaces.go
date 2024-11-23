@@ -15,7 +15,7 @@ type UserUsecase interface {
 	LogoutUser(ctx context.Context, sessionID string) error
 	ChangePassword(ctx context.Context, userID int64, oldPassword string, newPassword string) error
 	SubmitPoll(ctx context.Context, userID int64, pollQuestion *models.PollQuestion) error
-	GetPollResults(ctx context.Context) (pollResults *models.PollResult, err error)
+	GetPollResults(ctx context.Context) (pollResults *models.PollResults, err error)
 }
 
 type UserRepo interface {

@@ -151,6 +151,6 @@ func (uc *UserUsecase) SubmitPoll(ctx context.Context, userID int64, pollQuestio
 	panic("not implemented")
 }
 
-func (uc *UserUsecase) GetPollResults(ctx context.Context) (pollResults *models.PollResult, err error) {
+func (uc *UserUsecase) GetPollResults(ctx context.Context) (pollResults *models.PollResults, err error) {
 	panic("not implemented")
 }

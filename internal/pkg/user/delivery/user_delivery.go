@@ -207,10 +207,30 @@ func (d *UserDelivery) ChangePassword(w http.ResponseWriter, r *http.Request) {
 
 func (d *UserDelivery) SubmitPoll(w http.ResponseWriter, r *http.Request) {
 	funcName := "SubmitPoll"
-	_, ok := requests.GetUserIDOrFail(w, r, funcName)
+	userID, ok := requests.GetUserIDOrFail(w, r, funcName)
 	if !ok {
 		return
 	}
 
-	panic("not implemented")
+	data := models.PollSubmit{}
+	err := requests.GetRequestData(r, &data)
+	if err != nil {
+		responses.DoBadResponse(w, http.StatusBadRequest, "bad request")
+		return
+	}
+
+	err = d.userUC.SubmitPoll(r.Context(), userID, *data)
+	if err != nil {
+		if errors.Is(err, errs.ErrWrongCredentials) {
+			responses.DoBadResponse(w, http.StatusUnauthorized, "Wrong credentials")
+			logging.Warn(r.Context(), funcName+" (checking credentials): ", err)
+			return
+		}
+		responses.DoBadResponse(w, http.StatusInternalServerError, "Internal Server Error")
+		logging.Error(r.Context(), funcName+" (checking credentials): ", err)
+		return
+	}
+
+	responses.DoEmptyOkResponse(w)
+
 }

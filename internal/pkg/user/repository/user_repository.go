@@ -205,3 +205,23 @@ func (r *UserRepository) DeduplicateFile(ctx context.Context, file *models.Uploa
 func (r *UserRepository) RegisterFile(ctx context.Context, file *models.UploadedFile) error {
 	return uploads.RegisterFile(ctx, r.db, file)
 }
+
+func (r *UserRepository) SubmitPoll(ctx, userID int64, pollQuestion *models.PollQuestion) error {
+	funcName := "SubmitPoll"
+	panic("not implemented")
+}
+
+func (r *UserRepository) GetRatingResults(ctx context.Context, userID int64) (results *models.RatingResults, err error) {
+	funcName := "GetRatingResults"
+	panic("not implemented")
+}
+
+func (r *UserRepository) GetTextResults(ctx context.Context, userID int64) (results *models.TextResults, err error) {
+	funcName := "GetTextResults"
+	panic("not implemented")
+}
+
+func (r *UserRepository) SetNextPollDT(ctx context.Context, userID int64) error {
+	funcName := "SetNextPollDate"
+	panic("not implemented")
+}
