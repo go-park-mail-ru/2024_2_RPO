@@ -15,6 +15,7 @@ CREATE TABLE "user" (
     joined_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     password_hash TEXT,
+    csat_poll_dt TIMESTAMPTZ NOT NULL, 
     email TEXT UNIQUE NOT NULL,
     avatar_file_id BIGINT,
     FOREIGN KEY (avatar_file_id) REFERENCES user_uploaded_file(file_id) ON UPDATE CASCADE ON DELETE SET NULL
@@ -82,7 +83,6 @@ CREATE TABLE "card" (
 
     FOREIGN KEY (col_id) REFERENCES kanban_column(col_id) ON UPDATE CASCADE ON DELETE CASCADE,
     FOREIGN KEY (cover_file_id) REFERENCES user_uploaded_file(file_id) ON UPDATE CASCADE ON DELETE SET NULL,
-    UNIQUE (col_id, order_index) DEFERRABLE INITIALLY DEFERRED
 );
 
 CREATE TABLE card_attachment (
@@ -131,4 +131,30 @@ CREATE TABLE card_user_assignment (
 
     FOREIGN KEY (card_id) REFERENCES card(card_id) ON UPDATE CASCADE ON DELETE CASCADE,
     FOREIGN KEY (u_id) REFERENCES "user"(u_id) ON UPDATE CASCADE ON DELETE CASCADE
+);
+
+CREATE TABLE csat_results (
+    result_id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    question_id BIGINT NOT NULL,
+    rating INTEGER,
+    comment TEXT,
+    u_id BIGINT NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    FOREIGN KEY (u_id) REFERENCES "user"(u_id) ON UPDATE CASCADE ON DELETE CASCADE,
+    FOREIGN KEY (question_id) REFERENCES csat_question(question_id) ON UPDATE CASCADE ON DELETE CASCADE
+);
+
+CREATE TYPE question_type AS ENUM (
+    "answer_text", 
+    "answer_rating",
+);
+
+
+CREATE TABLE csat_question (
+    question_id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    text TEXT NOT NULL,
+    "type" question_type NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
