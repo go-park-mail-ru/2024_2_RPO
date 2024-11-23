@@ -26,6 +26,10 @@ build_board:
 	@echo "==> Building the application..."
 	@go build $(GOFLAGS) $(LDFLAGS) -o $(BUILD_DIR)/board_app ./cmd/board
 
+build_poll:
+	@echo "==> Building the application..."
+	@go build $(GOFLAGS) $(LDFLAGS) -o $(BUILD_DIR)/poll_app ./cmd/poll
+
 run_tests: generate
 	@echo "==> Running tests..."
 	@go test $(GOFLAGS) -coverprofile coverage_raw.out -v ./...
