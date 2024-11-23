@@ -21,7 +21,7 @@ func CreateGrpcLogMiddleware(gL *log.Logger) *GrpcLogMiddleware {
 
 func (glm *GrpcLogMiddleware) InterceptorLogger(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
 	logging.Infof(ctx, "gRPC method called: %s", info.FullMethod)
-	logging.Debugf(ctx, "Request payload: %+v", req)
+	logging.Infof(ctx, "Request payload: %+v", req)
 
 	resp, err := handler(ctx, req)
 

@@ -1,6 +1,7 @@
 package requests
 
 import (
+	"RPO_back/internal/pkg/middleware/session"
 	"RPO_back/internal/pkg/utils/responses"
 	"RPO_back/internal/pkg/utils/validate"
 	"encoding/json"
@@ -59,6 +60,8 @@ func GetIDFromRequest(r *http.Request, requestVarName string, prefix string) (in
 
 // GetUserIDOrFail достаёт UserID из запроса. Если его нет, возвращает 401 и пишет в лог
 func GetUserIDOrFail(w http.ResponseWriter, r *http.Request, prefix string) (userID int64, ok bool) {
+	userID, ok = session.UserIDFromContext(r.Context())
+
 	if !ok {
 		responses.DoBadResponse(w, http.StatusUnauthorized, "unauthorized")
 		log.Warn(prefix, ": unauthorized")

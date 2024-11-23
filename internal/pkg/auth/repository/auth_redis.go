@@ -35,6 +35,8 @@ func (r *AuthRepository) RegisterSessionRedis(ctx context.Context, sessionID str
 	redisConn := r.redisDb.Conn(r.redisDb.Context())
 	defer redisConn.Close()
 
+	fmt.Print("REGISTER SESSION user ", userID, "   session ", sessionID)
+
 	err := redisConn.Set(r.redisDb.Context(), fmt.Sprintf("%s%s", sessionPrefix, sessionID), userID, sessionLifeTime).Err()
 	logging.Debug(ctx, "RegisterSessionRedis query to redis has err: ", err)
 	if err != nil {
@@ -69,7 +71,7 @@ func (r *AuthRepository) KillSessionRedis(ctx context.Context, sessionID string)
 		return fmt.Errorf("KillSessionRedis (del): %w", err)
 	}
 
-	userKey := fmt.Sprint("%s%d", userPrefix, userID)
+	userKey := fmt.Sprintf("%s%d", userPrefix, userID)
 	res2 := redisConn.SRem(ctx, userKey, sessionID)
 	if res2.Err() != nil {
 		return fmt.Errorf("KillSessionRedis (srem): %w", res2.Err())
@@ -80,6 +82,9 @@ func (r *AuthRepository) KillSessionRedis(ctx context.Context, sessionID string)
 
 // DisplaceUserSessions удаляет все сессии пользователя из Redis, кроме одной сессии - sessionID
 func (r *AuthRepository) DisplaceUserSessions(ctx context.Context, sessionID string, userID int64) error {
+	if 1 == 1 {
+		return nil
+	}
 	setKey := fmt.Sprintf("%s%d", userPrefix, userID)
 
 	redisConn := r.redisDb.Conn(r.redisDb.Context())
@@ -96,14 +101,14 @@ func (r *AuthRepository) DisplaceUserSessions(ctx context.Context, sessionID str
 			sessionsToDelete = append(sessionsToDelete, session)
 			res := redisConn.Del(ctx, sessionPrefix+sessionID)
 			if res.Err() != nil {
-				log.Fatalf("DisplaceUserSessions (del): %w", res.Err())
+				log.Fatalf("DisplaceUserSessions (del): %v", res.Err())
 			}
 		}
 	}
 
 	res := redisConn.SRem(ctx, setKey, sessionsToDelete...)
 	if res.Err() != nil {
-		log.Fatalf("DisplaceUserSessions (srem): %w", res.Err())
+		log.Fatalf("DisplaceUserSessions (srem): %v", res.Err())
 	}
 
 	return nil
@@ -115,6 +120,7 @@ func (r *AuthRepository) CheckSession(ctx context.Context, sessionID string) (us
 	defer redisConn.Close()
 
 	val, err := redisConn.Get(r.redisDb.Context(), sessionPrefix+sessionID).Result()
+	fmt.Printf("VALUE: %v\n", val)
 	logging.Debug(ctx, "CheckSession query to redis has err: ", err)
 	if err == redis.Nil {
 		return 0, fmt.Errorf("CheckSession (get; err 404): %w", errs.ErrNotFound)

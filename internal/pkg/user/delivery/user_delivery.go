@@ -10,6 +10,7 @@ import (
 	"RPO_back/internal/pkg/utils/responses"
 	"RPO_back/internal/pkg/utils/uploads"
 	"errors"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -31,6 +32,7 @@ func (d *UserDelivery) GetMyProfile(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
+	fmt.Println("USER ID IN GETMYPROFILE: ", userID)
 	profile, err := d.userUC.GetMyProfile(r.Context(), userID)
 	if err != nil {
 		responses.ResponseErrorAndLog(w, err, funcName)
