@@ -29,9 +29,9 @@ func (r *AuthRepository) SetNewPasswordHash(ctx context.Context, userID int, new
 }
 
 // GetUserPasswordHash получает хеш пароля пользователя
-func (r *AuthRepository) GetUserPasswordHash(ctx context.Context, userID int) (passwordHash string, err error) {
+func (r *AuthRepository) GetUserPasswordHash(ctx context.Context, userID int) (passwordHash *string, err error) {
 	query := `
-	SELECT COALESCE(password_hash,'')
+	SELECT password_hash
 	FROM "user"
 	WHERE u_id = $1;
 	`
@@ -40,9 +40,9 @@ func (r *AuthRepository) GetUserPasswordHash(ctx context.Context, userID int) (p
 	logging.Debug(ctx, "GetUserPasswordHash query has err: ", err)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return "", fmt.Errorf("GetUserPasswordHash: %w", errs.ErrNotFound)
+			return nil, fmt.Errorf("GetUserPasswordHash: %w", errs.ErrNotFound)
 		}
-		return "", fmt.Errorf("GetUserPasswordHash: %w", err)
+		return nil, fmt.Errorf("GetUserPasswordHash: %w", err)
 	}
 
 	return passwordHash, nil

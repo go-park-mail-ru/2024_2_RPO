@@ -72,7 +72,7 @@ func Error(ctx context.Context, data ...interface{}) {
 
 func Debug(ctx context.Context, data ...interface{}) {
 	logData := append([]interface{}{fmt.Sprintf("rid=%d ", GetRequestID(ctx))}, data...)
-	log.Debug(logData...)
+	log.Info(logData...)
 }
 
 func Warnf(ctx context.Context, format string, data ...interface{}) {
