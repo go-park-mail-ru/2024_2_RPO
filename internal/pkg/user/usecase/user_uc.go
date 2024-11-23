@@ -8,6 +8,7 @@ import (
 	"RPO_back/internal/pkg/utils/uploads"
 	"context"
 	"fmt"
+	"time"
 )
 
 type UserUsecase struct {
@@ -29,9 +30,14 @@ func (uc *UserUsecase) GetMyProfile(ctx context.Context, userID int64) (profile 
 		return nil, fmt.Errorf("GetMyProfile: %w", err)
 	}
 
-	// понять нужно ли вернуть опрос для полльзователя или нет
-	// вытащить время
-	// сравить его с текущем временем если больше 7 дней выдать опрос
+	if profile.CsatPollDT.Second() < time.Now().Second() {
+		uc.userRepo.SetNextPollDT(ctx, userID)
+		poll, err := uc.userRepo.PickPollQuestions(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("GetMyProfile: %w", err)
+		}
+		profile.PollQuestions = poll
+	}
 
 	return
 }

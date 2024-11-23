@@ -151,7 +151,7 @@ func (r *BoardRepository) GetBoardsForUser(ctx context.Context, userID int64) (b
 		COALESCE(f.file_extension, '')
 		FROM user_to_board AS ub
 		JOIN board AS b ON b.board_id = ub.board_id
-		LEFT JOIN user_uploaded_file AS f ON f.file_uuid=b.background_image_uuid
+		LEFT JOIN user_uploaded_file AS f ON f.file_id=b.background_image_id
 		WHERE ub.u_id = $1
 	`
 	rows, err := r.db.Query(ctx, query, userID)

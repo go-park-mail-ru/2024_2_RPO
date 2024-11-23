@@ -1,7 +1,5 @@
 package models
 
-import "time"
-
 type RatingResults struct {
 	Question string `json:"question"`
 	Rating   string `json:"rating"`
@@ -19,12 +17,10 @@ type PollQuestion struct {
 }
 
 type PollSubmit struct {
-	QuestionID   int64     `json:"questionId"`
-	QuestionType string    `json:"questionType" `
-	Rating       string    `json:"rating" `
-	Text         string    `json:"question" `
-	UserID       int64     `json:"userId" `
-	CreatedAt    time.Time `json:"createdAt" `
+	QuestionID   int64   `json:"questionId"`
+	QuestionType string  `json:"questionType" `
+	Rating       *int    `json:"rating" `
+	Text         *string `json:"text" `
 }
 
 type PollResults struct {

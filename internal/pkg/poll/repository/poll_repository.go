@@ -39,9 +39,12 @@ func (r *PollRepository) GetRatingResults(ctx context.Context) (results []models
 	query := `
 	SELECT cq.question_text, AVG(cr.rating) AS rating FROM csat_results AS cr
 	JOIN csat_question AS cq ON cr.question_id = cq.question_id
-	WHERE cr.created_at >= CURRENT_TIMESTAMP - INTERVAL '7 days' AND cq.type='answer_rating'
-	GROUP BY cq.question_id, cr.rating;	
+	WHERE cq.type='answer_rating'
+	AND cr.rating IS NOT NULL
+	GROUP BY cq.question_id, cr.rating;
 	`
+
+	results = make([]models.RatingResults, 0)
 
 	rows, err := r.db.Query(ctx, query)
 	logging.Debug(ctx, funcName, " query has err: ", err)
@@ -54,6 +57,7 @@ func (r *PollRepository) GetRatingResults(ctx context.Context) (results []models
 		if err := rows.Scan(&result.Question, &result.Rating); err != nil {
 			return nil, fmt.Errorf("GetRatingResults (scan): %w", err)
 		}
+		fmt.Printf("RATING RES: %#v\n", result)
 		results = append(results, result)
 	}
 
@@ -65,10 +69,12 @@ func (r *PollRepository) GetTextResults(ctx context.Context) (results []models.A
 	query := `
 	SELECT cr.comment, cq.question_text FROM csat_results AS cr
 	JOIN csat_question AS cq ON cr.question_id = cq.question_id
-	WHERE cr.created_at >= CURRENT_TIMESTAMP - INTERVAL '7 days' AND cq.type='answer_text'
+	WHERE cq.type='answer_text'
+	AND cr.comment IS NOT NULL
 	ORDER BY cq.question_id;
 	`
 
+	results = make([]models.AnswerResults, 0)
 	rows, err := r.db.Query(ctx, query)
 	logging.Debug(ctx, funcName, " query has err: ", err)
 	if err != nil {
@@ -80,6 +86,7 @@ func (r *PollRepository) GetTextResults(ctx context.Context) (results []models.A
 		if err := rows.Scan(&a, &q); err != nil {
 			return nil, fmt.Errorf("GetTextResults (scan): %w", err)
 		}
+		fmt.Println("TEXT RESULT: ", q, "  ", a)
 		if len(results) == 0 {
 			results = append(results, models.AnswerResults{
 				Question: q,
