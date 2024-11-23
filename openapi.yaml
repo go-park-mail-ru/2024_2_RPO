@@ -559,7 +559,7 @@ components:
         inviteLinkUuid:
           type: string
           example: "1b7123a0-c604-4667-9377-99b51cc982c9"
-    
+
     PollQuestion:
       type: object
       properties:
@@ -573,25 +573,21 @@ components:
           type: string
           enum: ["answer_text", "answer_rating"]
           example: "answer_text"
-          
+
     PollSubmit:
       type: object
       properties:
         questionId:
           type: integer
           example: 777
-        questionType:
-          type: string
-          enum: ["answer_text", "answer_rating"]
-          example: "answer_text"
         rating:
+          type: integer
+          example: 4.7
+        text:
           type: string
-          example: "4.7"
-        question:
-                type: string
-                example: "Насколько вы довольны нашим сервисом?"  
-        
-    
+          example: "Да, всё нормально"
+
+
     PollResults:
       type: object
       properties:
@@ -804,7 +800,7 @@ paths:
           $ref: "#/components/responses/BadRequestResponse"
         "401":
           $ref: "#/components/responses/NoAuthResponse"
-          
+
   /users/poll:
     post:
       summary: "Отправить ответ пользователя на опрос"
@@ -825,13 +821,13 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/EmptyOkResponse"
-        "401": 
+        "401":
           description: ""
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/BadResponse"  
-  
+                $ref: "#/components/schemas/BadResponse"
+
   /poll/results:
     get:
       summary: "Получить результаты опроса"
@@ -849,8 +845,8 @@ paths:
         "400":
           $ref: "#/components/responses/BadRequestResponse"
         "401":
-          $ref: "#/components/responses/NoAuthResponse" 
-        
+          $ref: "#/components/responses/NoAuthResponse"
+
 
   /boards:
     post:
