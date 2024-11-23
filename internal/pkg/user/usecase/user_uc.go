@@ -29,6 +29,16 @@ func (uc *UserUsecase) GetMyProfile(ctx context.Context, userID int64) (profile 
 		return nil, fmt.Errorf("GetMyProfile: %w", err)
 	}
 
+	// понять нужно ли вернуть опрос для полльзователя или нет
+	// вытащить время
+	// сравить его с текущем временем если больше 7 дней выдать опрос
+
+	pollDate := profile.CsatPollDT
+
+	if pollDate != nil {
+
+	}
+
 	return
 }
 
