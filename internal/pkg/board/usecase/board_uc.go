@@ -438,12 +438,41 @@ func (uc *BoardUsecase) AddComment(ctx context.Context, userID int64, cardID int
 
 // UpdateComment редактирует существующий комментарий на карточке
 func (uc *BoardUsecase) UpdateComment(ctx context.Context, userID int64, commentID int64, commentReq *models.CommentRequest) (updatedComment *models.Comment, err error) {
-	panic("not implemented")
+	funcName := "UpdateComment"
+	role, _, _, err := uc.boardRepository.GetMemberFromComment(ctx, userID, commentID)
+	if err != nil {
+		return nil, fmt.Errorf("%s (get perms): %w", funcName, err)
+	}
+
+	if role == "viewer" {
+		return nil, fmt.Errorf("%s (check): %w", funcName, errs.ErrNotPermitted)
+	}
+	updatedComment, err = uc.boardRepository.UpdateComment(ctx, commentID, commentReq)
+	if err != nil {
+		return nil, fmt.Errorf("%s (update comment): %w", funcName, err)
+	}
+
+	return updatedComment, nil
 }
 
 // DeleteComment удаляет комментарий с карточки
 func (uc *BoardUsecase) DeleteComment(ctx context.Context, userID int64, commentID int64) (err error) {
-	panic("not implemented")
+	funcName := "DeleteComment"
+	role, _, _, err := uc.boardRepository.GetMemberFromComment(ctx, userID, commentID)
+	if err != nil {
+		return fmt.Errorf("%s (get perms): %w", funcName, err)
+	}
+
+	if role == "viewer" {
+		return fmt.Errorf("%s (check): %w", funcName, errs.ErrNotPermitted)
+	}
+
+	err = uc.boardRepository.DeleteComment(ctx, commentID)
+	if err != nil {
+		return fmt.Errorf("%s (delete comment): %w", funcName, err)
+	}
+
+	return nil
 }
 
 // AddCheckListField добавляет строку чеклиста в конец списка
@@ -502,22 +531,82 @@ func (uc *BoardUsecase) DeleteCheckListField(ctx context.Context, userID int64, 
 
 // SetCardCover устанавливает обложку для карточки
 func (uc *BoardUsecase) SetCardCover(ctx context.Context, userID int64, cardID int64, file *models.UploadedFile) (updatedCard *models.Card, err error) {
-	panic("not implemented")
+	funcName := "SetCardCover"
+	role, _, err := uc.boardRepository.GetMemberFromCard(ctx, userID, cardID)
+	if err != nil {
+		return nil, fmt.Errorf("%s (member): %w", funcName, err)
+	}
+
+	if role == "viewer" {
+		return nil, fmt.Errorf("%s (check): %w", funcName, errs.ErrNotPermitted)
+	}
+
+	updatedCard, err = uc.boardRepository.SetCardCover(ctx, userID, cardID, file)
+	if err != nil {
+		return nil, fmt.Errorf("%s (update): %w", funcName, err)
+	}
+
+	return updatedCard, nil
 }
 
 // DeleteCardCover удаляет обложку с карточки
 func (uc *BoardUsecase) DeleteCardCover(ctx context.Context, userID int64, cardID int64) (err error) {
-	panic("not implemented")
+	funcName := "DeleteCardCover"
+	role, _, err := uc.boardRepository.GetMemberFromCard(ctx, userID, cardID)
+	if err != nil {
+		return fmt.Errorf("%s (member): %w", funcName, err)
+	}
+
+	if role == "viewer" {
+		return fmt.Errorf("%s (check): %w", funcName, errs.ErrNotPermitted)
+	}
+
+	err = uc.boardRepository.RemoveCardCover(ctx, cardID)
+	if err != nil {
+		return fmt.Errorf("%s (delete): %w", funcName, err)
+	}
+
+	return nil
 }
 
 // AddAttachment добавляет вложение на карточку
 func (uc *BoardUsecase) AddAttachment(ctx context.Context, userID int64, cardID int64, file *models.UploadedFile) (newAttachment *models.Attachment, err error) {
-	panic("not implemented")
+	funcName := "AddAttachment"
+	role, _, err := uc.boardRepository.GetMemberFromCard(ctx, userID, cardID)
+	if err != nil {
+		return nil, fmt.Errorf("%s (member): %w", funcName, err)
+	}
+
+	if role == "viewer" {
+		return nil, fmt.Errorf("%s (check): %w", funcName, errs.ErrNotPermitted)
+	}
+
+	newAttachment, err = uc.boardRepository.AddAttachment(ctx, userID, cardID, file)
+	if err != nil {
+		return nil, fmt.Errorf("%s (update): %w", funcName, err)
+	}
+
+	return newAttachment, nil
 }
 
 // DeleteAttachment удаляет вложение с карточки
 func (uc *BoardUsecase) DeleteAttachment(ctx context.Context, userID int64, attachmentID int64) (err error) {
-	panic("not implemented")
+	funcName := "DeleteAttachment"
+	role, _, _, err := uc.boardRepository.GetMemberFromAttachment(ctx, userID, attachmentID)
+	if err != nil {
+		return fmt.Errorf("%s (member): %w", funcName, err)
+	}
+
+	if role == "viewer" {
+		return fmt.Errorf("%s (check): %w", funcName, errs.ErrNotPermitted)
+	}
+
+	err = uc.boardRepository.RemoveAttachment(ctx, attachmentID)
+	if err != nil {
+		return fmt.Errorf("%s (delete): %w", funcName, err)
+	}
+
+	return nil
 }
 
 // MoveCard перемещает карточку на доске
@@ -537,17 +626,53 @@ func (uc *BoardUsecase) GetSharedCard(ctx context.Context, userID int64, cardUui
 
 // RaiseInviteLink устанавливает ссылку-приглашение на доску
 func (uc *BoardUsecase) RaiseInviteLink(ctx context.Context, userID int64, boardID int64) (inviteLink *models.InviteLink, err error) {
-	panic("not implemented")
+	funcName := "RaiseInviteLink"
+	member, err := uc.boardRepository.GetMemberPermissions(ctx, boardID, userID, false)
+	if err != nil {
+		return nil, fmt.Errorf("%s (member): %w", funcName, err)
+	}
+
+	if member.Role == "viewer" {
+		return nil, fmt.Errorf("%s (check): %w", funcName, errs.ErrNotPermitted)
+	}
+
+	inviteLink, err = uc.boardRepository.PullInviteLink(ctx, userID, boardID)
+	if err != nil {
+		return nil, fmt.Errorf("%s (update): %w", funcName, err)
+	}
+
+	return inviteLink, nil
 }
 
 // DeleteInviteLink удаляет ссылку-приглашение
 func (uc *BoardUsecase) DeleteInviteLink(ctx context.Context, userID int64, boardID int64) (err error) {
-	panic("not implemented")
+	funcName := "DeleteInviteLink"
+	member, err := uc.boardRepository.GetMemberPermissions(ctx, boardID, userID, false)
+	if err != nil {
+		return fmt.Errorf("%s (member): %w", funcName, err)
+	}
+
+	if member.Role == "viewer" {
+		return fmt.Errorf("%s (check): %w", funcName, errs.ErrNotPermitted)
+	}
+
+	err = uc.boardRepository.DeleteInviteLink(ctx, userID, boardID)
+	if err != nil {
+		return fmt.Errorf("%s (delete): %w", funcName, err)
+	}
+
+	return nil
 }
 
 // FetchInvite возвращает информацию о приглашении на доску
 func (uc *BoardUsecase) FetchInvite(ctx context.Context, inviteUUID string) (board *models.Board, err error) {
-	panic("not implemented")
+	funcName := "FetchInvite"
+	board, err = uc.boardRepository.FetchInvite(ctx, inviteUUID)
+	if err != nil {
+		return nil, fmt.Errorf("%s (fetch): %w", funcName, err)
+	}
+
+	return board, nil
 }
 
 // AcceptInvite добавляет пользователя как зрителя на доску
