@@ -191,9 +191,6 @@ components:
         name:
           type: string
           example: "Любимый проект"
-        description:
-          type: string
-          example: "На этой доске размещены задачи любимого проекта! <3"
         backgroundImageUrl:
           type: string
           example: "/static/backgroundImage.png"
