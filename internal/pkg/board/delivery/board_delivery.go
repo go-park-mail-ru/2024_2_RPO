@@ -7,6 +7,7 @@ import (
 	"RPO_back/internal/pkg/utils/requests"
 	"RPO_back/internal/pkg/utils/responses"
 	"RPO_back/internal/pkg/utils/uploads"
+	"encoding/json"
 	"net/http"
 	"slices"
 
@@ -440,28 +441,143 @@ func (d *BoardDelivery) SetBoardBackground(w http.ResponseWriter, r *http.Reques
 
 // AssignUser назначает карточку пользователю
 func (d *BoardDelivery) AssignUser(w http.ResponseWriter, r *http.Request) {
-	panic("not implemented")
+	funcName := "AssignUser"
+	userID, ok := requests.GetUserIDOrFail(w, r, funcName)
+	if !ok {
+		return
+	}
 
+	cardID, err := requests.GetIDFromRequest(r, "cardID", "card_")
+	if err != nil {
+		responses.DoBadResponse(w, http.StatusBadRequest, "bad request")
+		return
+	}
+
+	assignedUserID, err := requests.GetIDFromRequest(r, "userID", "user_")
+	if err != nil {
+		responses.DoBadResponse(w, http.StatusBadRequest, "bad request")
+		return
+	}
+
+	assignedUser, err := d.boardUsecase.AssignUser(r.Context(), userID, cardID, assignedUserID)
+	if err != nil {
+		responses.ResponseErrorAndLog(w, err, funcName)
+		return
+	}
+
+	responses.DoJSONResponse(w, assignedUser, http.StatusOK)
 }
 
 // DeassignUser отменяет назначение карточки пользователю
 func (d *BoardDelivery) DeassignUser(w http.ResponseWriter, r *http.Request) {
-	panic("not implemented")
+	funcName := "DeassignUser"
+	userID, ok := requests.GetUserIDOrFail(w, r, funcName)
+	if !ok {
+		return
+	}
+
+	cardID, err := requests.GetIDFromRequest(r, "cardID", "card_")
+	if err != nil {
+		responses.DoBadResponse(w, http.StatusBadRequest, "bad request")
+		return
+	}
+
+	assignedUserID, err := requests.GetIDFromRequest(r, "userID", "user_")
+	if err != nil {
+		responses.DoBadResponse(w, http.StatusBadRequest, "bad request")
+		return
+	}
+
+	err = d.boardUsecase.DeassignUser(r.Context(), userID, cardID, assignedUserID)
+	if err != nil {
+		responses.ResponseErrorAndLog(w, err, funcName)
+		return
+	}
+
+	responses.DoEmptyOkResponse(w)
 }
 
 // AddComment добавляет комментарий на карточку
 func (d *BoardDelivery) AddComment(w http.ResponseWriter, r *http.Request) {
-	panic("not implemented")
+	funcName := "AddComment"
+	userID, ok := requests.GetUserIDOrFail(w, r, funcName)
+	if !ok {
+		return
+	}
+
+	cardID, err := requests.GetIDFromRequest(r, "cardID", "card_")
+	if err != nil {
+		responses.DoBadResponse(w, http.StatusBadRequest, "bad request")
+		return
+	}
+
+	commentReq := &models.CommentRequest{}
+	err = json.NewDecoder(r.Body).Decode(commentReq)
+	if err != nil {
+		responses.DoBadResponse(w, http.StatusBadRequest, "bad request")
+		return
+	}
+
+	newComment, err := d.boardUsecase.AddComment(r.Context(), userID, cardID, commentReq)
+	if err != nil {
+		responses.ResponseErrorAndLog(w, err, funcName)
+		return
+	}
+
+	responses.DoJSONResponse(w, newComment, http.StatusOK)
 }
 
 // UpdateComment редактирует существующий комментарий на карточке
 func (d *BoardDelivery) UpdateComment(w http.ResponseWriter, r *http.Request) {
-	panic("not implemented")
+	funcName := "UpdateComment"
+	userID, ok := requests.GetUserIDOrFail(w, r, funcName)
+	if !ok {
+		return
+	}
+
+	commentID, err := requests.GetIDFromRequest(r, "commentID", "comment_")
+	if err != nil {
+		responses.DoBadResponse(w, http.StatusBadRequest, "bad request")
+		return
+	}
+
+	commentReq := &models.CommentRequest{}
+	err = json.NewDecoder(r.Body).Decode(commentReq)
+	if err != nil {
+		responses.DoBadResponse(w, http.StatusBadRequest, "bad request")
+		return
+	}
+
+	updatedComment, err := d.boardUsecase.UpdateComment(r.Context(), userID, commentID, commentReq)
+	if err != nil {
+		responses.ResponseErrorAndLog(w, err, funcName)
+		return
+	}
+
+	responses.DoJSONResponse(w, updatedComment, http.StatusOK)
 }
 
 // DeleteComment удаляет комментарий с карточки
 func (d *BoardDelivery) DeleteComment(w http.ResponseWriter, r *http.Request) {
-	panic("not implemented")
+	funcName := "DeleteComment"
+	userID, ok := requests.GetUserIDOrFail(w, r, funcName)
+	if !ok {
+		return
+	}
+
+	commentID, err := requests.GetIDFromRequest(r, "commentID", "comment_")
+	if err != nil {
+		responses.DoBadResponse(w, http.StatusBadRequest, "bad request")
+		return
+	}
+
+	err = d.boardUsecase.DeleteComment(r.Context(), userID, commentID)
+	if err != nil {
+		responses.ResponseErrorAndLog(w, err, funcName)
+		return
+	}
+
+	responses.DoEmptyOkResponse(w)
 }
 
 // AddCheckListField добавляет строку чеклиста в конец списка
@@ -547,57 +663,276 @@ func (d *BoardDelivery) DeleteCheckListField(w http.ResponseWriter, r *http.Requ
 
 // SetCardCover устанавливает обложку для карточки
 func (d *BoardDelivery) SetCardCover(w http.ResponseWriter, r *http.Request) {
-	panic("not implemented")
+	funcName := "SetCardCover"
+	userID, ok := requests.GetUserIDOrFail(w, r, funcName)
+	if !ok {
+		return
+	}
+
+	cardID, err := requests.GetIDFromRequest(r, "cardID", "card_")
+	if err != nil {
+		responses.DoBadResponse(w, http.StatusBadRequest, "bad request")
+		return
+	}
+
+	file, err := uploads.FormFile(r)
+	if err != nil {
+		responses.DoBadResponse(w, http.StatusBadRequest, "no file found")
+		return
+	}
+
+	updatedCard, err := d.boardUsecase.SetCardCover(r.Context(), userID, cardID, file)
+	if err != nil {
+		responses.ResponseErrorAndLog(w, err, funcName)
+		return
+	}
+
+	responses.DoJSONResponse(w, updatedCard, http.StatusOK)
 }
 
 // DeleteCardCover удаляет обложку с карточки
 func (d *BoardDelivery) DeleteCardCover(w http.ResponseWriter, r *http.Request) {
-	panic("not implemented")
+	funcName := "DeleteCardCover"
+	userID, ok := requests.GetUserIDOrFail(w, r, funcName)
+	if !ok {
+		return
+	}
+
+	cardID, err := requests.GetIDFromRequest(r, "cardID", "card_")
+	if err != nil {
+		responses.DoBadResponse(w, http.StatusBadRequest, "bad request")
+		return
+	}
+
+	err = d.boardUsecase.DeleteCardCover(r.Context(), userID, cardID)
+	if err != nil {
+		responses.ResponseErrorAndLog(w, err, funcName)
+		return
+	}
+
+	responses.DoEmptyOkResponse(w)
 }
 
 // AddAttachment добавляет вложение на карточку
 func (d *BoardDelivery) AddAttachment(w http.ResponseWriter, r *http.Request) {
-	panic("not implemented")
+	funcName := "AddAttachment"
+	userID, ok := requests.GetUserIDOrFail(w, r, funcName)
+	if !ok {
+		return
+	}
+
+	cardID, err := requests.GetIDFromRequest(r, "cardID", "card_")
+	if err != nil {
+		responses.DoBadResponse(w, http.StatusBadRequest, "bad request")
+		return
+	}
+
+	file, err := uploads.FormFile(r)
+	if err != nil {
+		responses.DoBadResponse(w, http.StatusBadRequest, "no file found")
+		return
+	}
+
+	d.boardUsecase.AddAttachment(r.Context(), userID, cardID, file)
 }
 
 // DeleteAttachment удаляет вложение с карточки
 func (d *BoardDelivery) DeleteAttachment(w http.ResponseWriter, r *http.Request) {
-	panic("not implemented")
+	funcName := "DeleteAttachment"
+	userID, ok := requests.GetUserIDOrFail(w, r, funcName)
+	if !ok {
+		return
+	}
+
+	attachmentID, err := requests.GetIDFromRequest(r, "attachmentID", "attachment_")
+	if err != nil {
+		responses.DoBadResponse(w, http.StatusBadRequest, "bad request")
+	}
+
+	err = d.boardUsecase.DeleteAttachment(r.Context(), userID, attachmentID)
+	if err != nil {
+		responses.ResponseErrorAndLog(w, err, funcName)
+		return
+	}
+
+	responses.DoEmptyOkResponse(w)
 }
 
 // MoveCard перемещает карточку на доске
 func (d *BoardDelivery) MoveCard(w http.ResponseWriter, r *http.Request) {
-	panic("not implemented")
+	funcName := "MoveCard"
+	userID, ok := requests.GetUserIDOrFail(w, r, funcName)
+	if !ok {
+		return
+	}
+
+	cardID, err := requests.GetIDFromRequest(r, "cardID", "card_")
+	if err != nil {
+		responses.DoBadResponse(w, http.StatusBadRequest, "bad request")
+		return
+	}
+
+	moveReq := &models.CardMoveRequest{}
+	err = json.NewDecoder(r.Body).Decode(moveReq)
+	if err != nil {
+		responses.DoBadResponse(w, http.StatusBadRequest, "bad request")
+		return
+	}
+
+	err = d.boardUsecase.MoveCard(r.Context(), userID, cardID, moveReq)
+	if err != nil {
+		responses.ResponseErrorAndLog(w, err, funcName)
+		return
+	}
+
+	responses.DoEmptyOkResponse(w)
 }
 
 // MoveColumn перемещает колонку на доске
 func (d *BoardDelivery) MoveColumn(w http.ResponseWriter, r *http.Request) {
-	panic("not implemented")
+	funcName := "MoveColumn"
+	userID, ok := requests.GetUserIDOrFail(w, r, funcName)
+	if !ok {
+		return
+	}
+
+	columnID, err := requests.GetIDFromRequest(r, "columnID", "column_")
+	if err != nil {
+		responses.DoBadResponse(w, http.StatusBadRequest, "bad request")
+		return
+	}
+
+	moveReq := &models.ColumnMoveRequest{}
+	err = json.NewDecoder(r.Body).Decode(moveReq)
+	if err != nil {
+		responses.DoBadResponse(w, http.StatusBadRequest, "bad request")
+		return
+	}
+
+	err = d.boardUsecase.MoveColumn(r.Context(), userID, columnID, moveReq)
+	if err != nil {
+		responses.ResponseErrorAndLog(w, err, funcName)
+		return
+	}
+
+	responses.DoEmptyOkResponse(w)
 }
 
 // GetSharedCard даёт информацию о карточке, которой поделились по ссылке
 func (d *BoardDelivery) GetSharedCard(w http.ResponseWriter, r *http.Request) {
-	panic("not implemented")
+	funcName := "GetSharedCard"
+	userID, ok := requests.GetUserIDOrFail(w, r, funcName)
+	if !ok {
+		return
+	}
+
+	//cardUuid: 4421f872-6945-42ac-b7e4-88842327c76f
+
+	cardUuid, err := requests.GetUUIDFromRequest(r, "cardUuid")
+	if err != nil {
+		responses.DoBadResponse(w, http.StatusBadRequest, "bad request")
+		return
+	}
+
+	found, dummy, err := d.boardUsecase.GetSharedCard(r.Context(), userID, cardUuid)
+	if err != nil {
+		responses.ResponseErrorAndLog(w, err, funcName)
+		return
+	}
+
+	if found == nil {
+		responses.DoJSONResponse(w, dummy, http.StatusOK)
+		return
+	}
+
+	responses.DoJSONResponse(w, found, http.StatusOK)
 }
 
 // RaiseInviteLink устанавливает ссылку-приглашение на доску
 func (d *BoardDelivery) RaiseInviteLink(w http.ResponseWriter, r *http.Request) {
-	panic("not implemented")
+	funcName := "RaiseInviteLink"
+	userID, ok := requests.GetUserIDOrFail(w, r, funcName)
+	if !ok {
+		return
+	}
+
+	boardID, err := requests.GetIDFromRequest(r, "boardID", "board_")
+	if err != nil {
+		responses.DoBadResponse(w, http.StatusBadRequest, "bad request")
+		return
+	}
+
+	inviteLink, err := d.boardUsecase.RaiseInviteLink(r.Context(), userID, boardID)
+	if err != nil {
+		responses.ResponseErrorAndLog(w, err, funcName)
+		return
+	}
+
+	responses.DoJSONResponse(w, inviteLink, http.StatusOK)
 }
 
 // DeleteInviteLink удаляет ссылку-приглашение
 func (d *BoardDelivery) DeleteInviteLink(w http.ResponseWriter, r *http.Request) {
-	panic("not implemented")
+	funcName := "DeleteInviteLink"
+	userID, ok := requests.GetUserIDOrFail(w, r, funcName)
+	if !ok {
+		return
+	}
+
+	boardID, err := requests.GetIDFromRequest(r, "boardID", "board_")
+	if err != nil {
+		responses.DoBadResponse(w, http.StatusBadRequest, "bad request")
+		return
+	}
+
+	err = d.boardUsecase.DeleteInviteLink(r.Context(), userID, boardID)
+	if err != nil {
+		responses.ResponseErrorAndLog(w, err, funcName)
+		return
+	}
+
+	responses.DoEmptyOkResponse(w)
 }
 
 // FetchInvite возвращает информацию о приглашении на доску
 func (d *BoardDelivery) FetchInvite(w http.ResponseWriter, r *http.Request) {
-	panic("not implemented")
+	funcName := "FetchInvite"
+	inviteUUID, err := requests.GetUUIDFromRequest(r, "inviteUUID")
+	if err != nil {
+		responses.DoBadResponse(w, http.StatusBadRequest, "bad request")
+		return
+	}
+
+	board, err := d.boardUsecase.FetchInvite(r.Context(), inviteUUID)
+	if err != nil {
+		responses.ResponseErrorAndLog(w, err, funcName)
+		return
+	}
+
+	responses.DoJSONResponse(w, board, http.StatusOK)
 }
 
 // AcceptInvite добавляет пользователя как зрителя на доску
 func (d *BoardDelivery) AcceptInvite(w http.ResponseWriter, r *http.Request) {
-	panic("not implemented")
+	funcName := "AcceptInvite"
+	userID, ok := requests.GetUserIDOrFail(w, r, funcName)
+	if !ok {
+		return
+	}
+
+	inviteUUID, err := requests.GetUUIDFromRequest(r, "inviteUUID")
+	if err != nil {
+		responses.DoBadResponse(w, http.StatusBadRequest, "bad request")
+		return
+	}
+
+	board, err := d.boardUsecase.AcceptInvite(r.Context(), userID, inviteUUID)
+	if err != nil {
+		responses.ResponseErrorAndLog(w, err, funcName)
+		return
+	}
+
+	responses.DoJSONResponse(w, board, http.StatusOK)
 }
 
 // GetCardDetails возвращает подробное содержание карточки

@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"regexp"
 	"strconv"
 	"strings"
 
@@ -56,6 +57,22 @@ func GetIDFromRequest(r *http.Request, requestVarName string, prefix string) (in
 	}
 
 	return resultID, nil
+}
+
+// GetUUIDFromRequest получает UUID из параметра запроса.
+func GetUUIDFromRequest(r *http.Request, requestVarName string) (string, error) {
+	uuidRegex := regexp.MustCompile(`^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$`)
+	vars := mux.Vars(r)
+	rawID, isExist := vars[requestVarName]
+	if !isExist {
+		return "", errors.New("there is no such parameter: " + requestVarName)
+	}
+
+	if !uuidRegex.MatchString(rawID) {
+		return "", errors.New("invalid UUID format")
+	}
+
+	return rawID, nil
 }
 
 // GetUserIDOrFail достаёт UserID из запроса. Если его нет, возвращает 401 и пишет в лог
