@@ -93,7 +93,7 @@ services:
     volumes:
       - pumpkin-user-uploads:/pumpkin_user_uploads
       - pumpkin-postgres-socket:/tmp/postgres/postgres.sock
-      - pumpkin-all-logs:/pumpkin_logs    
+      - pumpkin-all-logs:/pumpkin_logs
 
   postgres:
     env_file:
@@ -103,12 +103,8 @@ services:
       - "/pg_setup/start-postgres.sh"
     container_name: postgres
     image: postgres:bookworm
-    environment:
-      POSTGRES_DB: ${POSTGRES_DB}
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     ports:
-      - "${POSTGRES_PORT}:5432"
+      - "0.0.0.0:5432:5432"
     networks:
       - Pumpkin-network
     volumes:

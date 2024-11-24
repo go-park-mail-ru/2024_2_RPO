@@ -53,7 +53,7 @@ func (d *BoardDelivery) UpdateBoard(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	boardID, err := requests.GetIDFromRequest(r, "boardId", "board_")
+	boardID, err := requests.GetIDFromRequest(r, "boardID", "board_")
 	if err != nil {
 		logging.Warn(r.Context(), err)
 		responses.DoBadResponse(w, http.StatusBadRequest, "bad request")
@@ -81,7 +81,7 @@ func (d *BoardDelivery) DeleteBoard(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	boardID, err := requests.GetIDFromRequest(r, "boardId", "board_")
+	boardID, err := requests.GetIDFromRequest(r, "boardID", "board_")
 	if err != nil {
 		responses.DoBadResponse(w, http.StatusBadRequest, "bad request")
 		return
@@ -116,7 +116,7 @@ func (d *BoardDelivery) GetMembersPermissions(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	boardID, err := requests.GetIDFromRequest(r, "boardId", "board_")
+	boardID, err := requests.GetIDFromRequest(r, "boardID", "board_")
 	if err != nil {
 		responses.DoBadResponse(w, http.StatusBadRequest, "bad request")
 		return
@@ -136,7 +136,7 @@ func (d *BoardDelivery) AddMember(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	boardID, err := requests.GetIDFromRequest(r, "boardId", "board_")
+	boardID, err := requests.GetIDFromRequest(r, "boardID", "board_")
 	if err != nil {
 		responses.DoBadResponse(w, http.StatusBadRequest, "bad request")
 		return
@@ -163,12 +163,12 @@ func (d *BoardDelivery) UpdateMemberRole(w http.ResponseWriter, r *http.Request)
 	if !ok {
 		return
 	}
-	boardID, err := requests.GetIDFromRequest(r, "boardId", "board_")
+	boardID, err := requests.GetIDFromRequest(r, "boardID", "board_")
 	if err != nil {
 		responses.DoBadResponse(w, http.StatusBadRequest, "bad request")
 		return
 	}
-	memberID, err := requests.GetIDFromRequest(r, "userId", "user_")
+	memberID, err := requests.GetIDFromRequest(r, "userID", "user_")
 	if err != nil {
 		responses.DoBadResponse(w, http.StatusBadRequest, "bad request")
 		return
@@ -200,13 +200,13 @@ func (d *BoardDelivery) RemoveMember(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	boardID, err := requests.GetIDFromRequest(r, "boardId", "board_")
+	boardID, err := requests.GetIDFromRequest(r, "boardID", "board_")
 	if err != nil {
 		responses.DoBadResponse(w, http.StatusBadRequest, "bad request")
 		return
 	}
 
-	memberID, err := requests.GetIDFromRequest(r, "userId", "user_")
+	memberID, err := requests.GetIDFromRequest(r, "userID", "user_")
 	if err != nil {
 		responses.DoBadResponse(w, http.StatusBadRequest, "bad request")
 		return
@@ -228,7 +228,7 @@ func (d *BoardDelivery) GetBoardContent(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	boardID, err := requests.GetIDFromRequest(r, "boardId", "board_")
+	boardID, err := requests.GetIDFromRequest(r, "boardID", "board_")
 	if err != nil {
 		responses.DoBadResponse(w, http.StatusBadRequest, "bad request")
 		return
@@ -251,7 +251,7 @@ func (d *BoardDelivery) CreateNewCard(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	boardID, err := requests.GetIDFromRequest(r, "boardId", "board_")
+	boardID, err := requests.GetIDFromRequest(r, "boardID", "board_")
 	if err != nil {
 		responses.DoBadResponse(w, http.StatusBadRequest, "bad request")
 		return
@@ -280,7 +280,7 @@ func (d *BoardDelivery) UpdateCard(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	cardID, err := requests.GetIDFromRequest(r, "cardId", "card_")
+	cardID, err := requests.GetIDFromRequest(r, "cardID", "card_")
 	if err != nil {
 		responses.DoBadResponse(w, http.StatusBadRequest, "bad request")
 		return
@@ -310,7 +310,7 @@ func (d *BoardDelivery) DeleteCard(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	cardID, err := requests.GetIDFromRequest(r, "cardId", "card_")
+	cardID, err := requests.GetIDFromRequest(r, "cardID", "card_")
 	if err != nil {
 		responses.DoBadResponse(w, http.StatusBadRequest, "bad request")
 		return
@@ -333,7 +333,7 @@ func (d *BoardDelivery) CreateColumn(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	boardID, err := requests.GetIDFromRequest(r, "boardId", "board_")
+	boardID, err := requests.GetIDFromRequest(r, "boardID", "board_")
 	if err != nil {
 		responses.DoBadResponse(w, http.StatusBadRequest, "bad request")
 		return
@@ -466,17 +466,83 @@ func (d *BoardDelivery) DeleteComment(w http.ResponseWriter, r *http.Request) {
 
 // AddCheckListField добавляет строку чеклиста в конец списка
 func (d *BoardDelivery) AddCheckListField(w http.ResponseWriter, r *http.Request) {
-	panic("not implemented")
+	funcName := "AddCheckListField"
+	userID, ok := requests.GetUserIDOrFail(w, r, funcName)
+	if !ok {
+		return
+	}
+
+	cardID, err := requests.GetIDFromRequest(r, "cardID", "card_")
+	if err != nil {
+		responses.DoBadResponse(w, http.StatusBadRequest, "bad request")
+		return
+	}
+
+	data := &models.CheckListFieldPostRequest{}
+	err = requests.GetRequestData(r, data)
+	if err != nil {
+		responses.DoBadResponse(w, 404, "bad request")
+	}
+
+	cd, err := d.boardUsecase.AddCheckListField(r.Context(), userID, cardID, data)
+	if err != nil {
+		responses.ResponseErrorAndLog(w, err, funcName)
+		return
+	}
+
+	responses.DoJSONResponse(w, cd, http.StatusCreated)
 }
 
 // UpdateCheckListField обновляет строку чеклиста и/или её положение
 func (d *BoardDelivery) UpdateCheckListField(w http.ResponseWriter, r *http.Request) {
-	panic("not implemented")
+	funcName := "UpdateCheckListField"
+	userID, ok := requests.GetUserIDOrFail(w, r, funcName)
+	if !ok {
+		return
+	}
+
+	fieldID, err := requests.GetIDFromRequest(r, "fieldID", "field_")
+	if err != nil {
+		responses.DoBadResponse(w, http.StatusBadRequest, "bad request")
+		return
+	}
+
+	data := &models.CheckListFieldPatchRequest{}
+	err = requests.GetRequestData(r, data)
+	if err != nil {
+		responses.DoBadResponse(w, 404, "bad request")
+	}
+
+	cd, err := d.boardUsecase.UpdateCheckListField(r.Context(), userID, fieldID, data)
+	if err != nil {
+		responses.ResponseErrorAndLog(w, err, funcName)
+		return
+	}
+
+	responses.DoJSONResponse(w, cd, http.StatusOK)
 }
 
 // DeleteCheckListField удаляет строку из чеклиста
 func (d *BoardDelivery) DeleteCheckListField(w http.ResponseWriter, r *http.Request) {
-	panic("not implemented")
+	funcName := "DeleteCheckListField"
+	userID, ok := requests.GetUserIDOrFail(w, r, funcName)
+	if !ok {
+		return
+	}
+
+	fieldID, err := requests.GetIDFromRequest(r, "fieldID", "field_")
+	if err != nil {
+		responses.DoBadResponse(w, http.StatusBadRequest, "bad request")
+		return
+	}
+
+	err = d.boardUsecase.DeleteCheckListField(r.Context(), userID, fieldID)
+	if err != nil {
+		responses.ResponseErrorAndLog(w, err, funcName)
+		return
+	}
+
+	responses.DoEmptyOkResponse(w)
 }
 
 // SetCardCover устанавливает обложку для карточки
@@ -532,4 +598,27 @@ func (d *BoardDelivery) FetchInvite(w http.ResponseWriter, r *http.Request) {
 // AcceptInvite добавляет пользователя как зрителя на доску
 func (d *BoardDelivery) AcceptInvite(w http.ResponseWriter, r *http.Request) {
 	panic("not implemented")
+}
+
+// GetCardDetails возвращает подробное содержание карточки
+func (d *BoardDelivery) GetCardDetails(w http.ResponseWriter, r *http.Request) {
+	funcName := "GetCardDetails"
+	userID, ok := requests.GetUserIDOrFail(w, r, funcName)
+	if !ok {
+		return
+	}
+
+	cardID, err := requests.GetIDFromRequest(r, "cardID", "card_")
+	if err != nil {
+		responses.DoBadResponse(w, http.StatusBadRequest, "bad request")
+		return
+	}
+
+	cd, err := d.boardUsecase.GetCardDetails(r.Context(), userID, cardID)
+	if err != nil {
+		responses.ResponseErrorAndLog(w, err, funcName)
+		return
+	}
+
+	responses.DoJSONResponse(w, cd, http.StatusOK)
 }

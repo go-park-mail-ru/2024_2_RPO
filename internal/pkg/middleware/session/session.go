@@ -4,7 +4,6 @@ import (
 	auth "RPO_back/internal/pkg/auth"
 	AuthGRPC "RPO_back/internal/pkg/auth/delivery/grpc/gen"
 	"context"
-	"fmt"
 	"net/http"
 )
 
@@ -43,7 +42,6 @@ func (mw *SessionMiddleware) Middleware(next http.Handler) http.Handler {
 		}
 
 		userID := responce.GetUserID()
-		fmt.Println("MIDDLEWARE USER_ID=", userID)
 
 		ctx := context.WithValue(r.Context(), UserIDContextKey, userID)
 		r = r.WithContext(ctx)
@@ -53,11 +51,7 @@ func (mw *SessionMiddleware) Middleware(next http.Handler) http.Handler {
 
 // UserIDFromContext получает userID из контекста запроса
 func UserIDFromContext(ctx context.Context) (int64, bool) {
-	if ctx.Value(UserIDContextKey) == nil {
-		fmt.Println("GET FROM CONTEXT: NO KEY")
-	}
 	userID, ok := ctx.Value(UserIDContextKey).(int64)
-	fmt.Println("GET FROM CONTEXT: ", userID)
 
 	return userID, ok
 }

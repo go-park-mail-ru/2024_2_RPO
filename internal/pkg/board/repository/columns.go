@@ -52,8 +52,8 @@ func (r *BoardRepository) GetColumnsForBoard(ctx context.Context, boardID int64)
 func (r *BoardRepository) CreateColumn(ctx context.Context, boardID int64, title string) (newColumn *models.Column, err error) {
 	funcName := "CreateColumn"
 	query := `
-		INSERT INTO kanban_column (board_id, title, created_at, updated_at)
-		VALUES ($1, $2, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+		INSERT INTO kanban_column (board_id, title, order_index)
+		VALUES ($1, $2, (SELECT COUNT(*) FROM kanban_column WHERE board_id=$1))
 		RETURNING col_id, title;
 	`
 

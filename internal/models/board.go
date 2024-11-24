@@ -30,7 +30,7 @@ type BoardContent struct {
 
 type Card struct {
 	ID               int64      `json:"id"`
-	UUID             int64      `json:"cardUuid"`
+	UUID             string     `json:"cardUuid"`
 	Title            string     `json:"title"`
 	CoverImageURL    string     `json:"coverImageUrl"`
 	ColumnID         int64      `json:"columnId"`

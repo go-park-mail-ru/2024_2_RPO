@@ -177,11 +177,6 @@ func (uc *BoardUsecase) GetBoardContent(ctx context.Context, userID int64, board
 		return nil, fmt.Errorf("GetBoardContent (add GetMemberPermissions): %w", err)
 	}
 
-	err = uc.boardRepository.UpdateLastVisit(ctx, userID, boardID)
-	if err != nil {
-		return nil, fmt.Errorf("GetBoardContent (UpdateLastVisit): %w", err)
-	}
-
 	cards, err := uc.boardRepository.GetCardsForBoard(ctx, boardID)
 	if err != nil {
 		return nil, fmt.Errorf("GetBoardContent (add GetCardsForBoard): %w", err)
@@ -453,17 +448,56 @@ func (uc *BoardUsecase) DeleteComment(ctx context.Context, userID int64, comment
 
 // AddCheckListField добавляет строку чеклиста в конец списка
 func (uc *BoardUsecase) AddCheckListField(ctx context.Context, userID int64, cardID int64, fieldReq *models.CheckListFieldPostRequest) (newField *models.CheckListField, err error) {
-	panic("not implemented")
+	funcName := "AddCheckListField"
+	role, _, err := uc.boardRepository.GetMemberFromCard(ctx, userID, cardID)
+	if err != nil {
+		return nil, fmt.Errorf("%s (member): %w", funcName, err)
+	}
+	if role == "viewer" {
+		return nil, fmt.Errorf("%s (check): %w", funcName, errs.ErrNotPermitted)
+	}
+
+	field, err := uc.boardRepository.CreateCheckListField(ctx, cardID, fieldReq)
+	if err != nil {
+		return nil, fmt.Errorf("%s (create): %w", funcName, err)
+	}
+	return field, nil
 }
 
 // UpdateCheckListField обновляет строку чеклиста и/или её положение
 func (uc *BoardUsecase) UpdateCheckListField(ctx context.Context, userID int64, fieldID int64, fieldReq *models.CheckListFieldPatchRequest) (updatedField *models.CheckListField, err error) {
-	panic("not implemented")
+	funcName := "UpdateCheckListField"
+	role, _, _, err := uc.boardRepository.GetMemberFromCheckListField(ctx, userID, fieldID)
+	if err != nil {
+		return nil, fmt.Errorf("%s (member): %w", funcName, err)
+	}
+	if role == "viewer" {
+		return nil, fmt.Errorf("%s (check): %w", funcName, errs.ErrNotPermitted)
+	}
+
+	field, err := uc.boardRepository.UpdateCheckListField(ctx, fieldID, fieldReq)
+	if err != nil {
+		return nil, fmt.Errorf("%s (update): %w", funcName, err)
+	}
+	return field, nil
 }
 
 // DeleteCheckListField удаляет строку из чеклиста
 func (uc *BoardUsecase) DeleteCheckListField(ctx context.Context, userID int64, fieldID int64) (err error) {
-	panic("not implemented")
+	funcName := "DeleteCheckListField"
+	role, _, _, err := uc.boardRepository.GetMemberFromCheckListField(ctx, userID, fieldID)
+	if err != nil {
+		return fmt.Errorf("%s (member): %w", funcName, err)
+	}
+	if role == "viewer" {
+		return fmt.Errorf("%s (check): %w", funcName, errs.ErrNotPermitted)
+	}
+
+	err = uc.boardRepository.DeleteCheckListField(ctx, fieldID)
+	if err != nil {
+		return fmt.Errorf("%s (delete): %w", funcName, err)
+	}
+	return nil
 }
 
 // SetCardCover устанавливает обложку для карточки
@@ -519,4 +553,47 @@ func (uc *BoardUsecase) FetchInvite(ctx context.Context, inviteUUID string) (boa
 // AcceptInvite добавляет пользователя как зрителя на доску
 func (uc *BoardUsecase) AcceptInvite(ctx context.Context, userID int64, inviteUUID string) (board *models.Board, err error) {
 	panic("not implemented")
+}
+
+// GetCardDetails возвращает подробное содержание карточки
+func (d *BoardUsecase) GetCardDetails(ctx context.Context, userID int64, cardID int64) (details *models.CardDetails, err error) {
+	funcName := "GetCardDetails"
+	_, _, err = d.boardRepository.GetMemberFromCard(ctx, userID, cardID)
+	if err != nil {
+		return nil, fmt.Errorf("%s: %w", funcName, err)
+	}
+
+	assignedUsers, err := d.boardRepository.GetCardAssignedUsers(ctx, cardID)
+	if err != nil {
+		return nil, fmt.Errorf("%s (assigned): %w", funcName, err)
+	}
+
+	attachments, err := d.boardRepository.GetCardAttachments(ctx, cardID)
+	if err != nil {
+		return nil, fmt.Errorf("%s (attachments): %w", funcName, err)
+	}
+
+	checkList, err := d.boardRepository.GetCardCheckList(ctx, cardID)
+	if err != nil {
+		return nil, fmt.Errorf("%s (checklist): %w", funcName, err)
+	}
+
+	comments, err := d.boardRepository.GetCardComments(ctx, cardID)
+	if err != nil {
+		return nil, fmt.Errorf("%s (comments): %w", funcName, err)
+	}
+
+	//TODO убрать это позорище
+	card, err := d.boardRepository.UpdateCard(ctx, cardID, models.CardPatchRequest{})
+	if err != nil {
+		return nil, fmt.Errorf("%s (card): %w", funcName, err)
+	}
+
+	return &models.CardDetails{
+		Attachments:   attachments,
+		CheckList:     checkList,
+		Comments:      comments,
+		AssignedUsers: assignedUsers,
+		Card:          card,
+	}, nil
 }

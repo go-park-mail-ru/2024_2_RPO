@@ -23,42 +23,30 @@ func CreateBoardRepository(db pgxiface.PgxIface) *BoardRepository {
 
 // CreateBoard создаёт новую доску и добавляет создателя на неё
 func (r *BoardRepository) CreateBoard(ctx context.Context, name string, userID int64) (*models.Board, error) {
+	funcName := "CreateBoard"
 	query := `
-	WITH create_board AS (
-		INSERT INTO board_to_user (u_id, board_id, added_by, updated_by, role)
-		VALUES ($3, (
-			INSERT INTO board (name, description, created_by)
-			VALUES ($1, $2, $3)
-			RETURNING board_id
-			), $3, $3, 'admin')
+	WITH inserted_board AS (
+		INSERT INTO board (name, created_by)
+		VALUES ($1, $2)
 		RETURNING board_id
+	),
+	create_board AS (
+		INSERT INTO user_to_board (u_id, board_id, added_by, updated_by, role)
+		SELECT $2, board_id, $2, $2, 'admin'
+		FROM inserted_board
 	)
-	SELECT
-    	b.board_id,
-    	b.name,
-    	b.created_at,
-    	b.updated_at,
-    	ub.last_visit_at,
-    	COALESCE(file.file_uuid::text,''),
-    	COALESCE(file.file_extension,'')
-    FROM board AS b
-    LEFT JOIN user_to_board AS ub ON ub.board_id = b.board_id
-    LEFT JOIN user_uploaded_file AS file ON file.file_uuid=b.background_image_uuid
-    WHERE b.board_id = create_board.board_id;
+	SELECT board_id FROM inserted_board;
 	`
-	var board models.Board
-	err := r.db.QueryRow(ctx, query, name, "", userID).Scan(
-		&board.ID,
-		&board.Name,
-		&board.CreatedAt,
-		&board.UpdatedAt,
+	var boardID int64
+	err := r.db.QueryRow(ctx, query, name, userID).Scan(
+		&boardID,
 	)
-	logging.Debug(ctx, "CreateBoard query has err: ", err)
+	logging.Debug(ctx, funcName, " query has err: ", err)
 	if err != nil {
-		return nil, fmt.Errorf("CreateBoard: %w", err)
+		return nil, fmt.Errorf("%s: %w", funcName, err)
 	}
-	board.BackgroundImageURL = uploads.DefaultBackgroundURL
-	return &board, nil
+	board, err := r.GetBoard(ctx, boardID, userID)
+	return board, err
 }
 
 // GetBoard получает доску по ID
@@ -74,7 +62,7 @@ func (r *BoardRepository) GetBoard(ctx context.Context, boardID int64, userID in
         COALESCE(file.file_extension,'')
     FROM board AS b
     LEFT JOIN user_to_board AS ub ON ub.board_id = b.board_id AND ub.u_id = $1
-    LEFT JOIN user_uploaded_file AS file ON file.file_uuid=b.background_image_uuid
+    LEFT JOIN user_uploaded_file AS file ON file.file_id=b.background_image_id
     WHERE b.board_id = $2;
     `
 	var board models.Board
@@ -226,15 +214,4 @@ func (r *BoardRepository) SetBoardBackground(ctx context.Context, userID int64, 
 	}
 	newBoard.BackgroundImageURL = uploads.JoinFileURL(fileUUID, fileExtension, uploads.DefaultBackgroundURL)
 	return newBoard, nil
-}
-
-func (r *BoardRepository) UpdateLastVisit(ctx context.Context, userID int64, boardID int64) error {
-	query := `
-	UPDATE user_to_board
-    SET last_visit_at = NOW()
-    WHERE u_id = $1 AND board_id = $2;
-	`
-
-	_, err := r.db.Exec(ctx, query, userID, boardID)
-	return err
 }

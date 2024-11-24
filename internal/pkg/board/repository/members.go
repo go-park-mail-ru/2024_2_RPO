@@ -24,7 +24,7 @@ func (r *BoardRepository) GetUserProfile(ctx context.Context, userID int64) (use
 	COALESCE(f.file_uuid::text, ''),
 	COALESCE(f.file_extension, '')
 	FROM "user" AS u
-	LEFT JOIN user_uploaded_file AS f ON f.file_uuid=u.avatar_file_uuid
+	LEFT JOIN user_uploaded_file AS f ON f.file_id=u.avatar_file_id
 	WHERE u_id=$1;
 	`
 	rows := r.db.QueryRow(ctx, query, userID)
@@ -141,9 +141,9 @@ func (r *BoardRepository) GetMembersWithPermissions(ctx context.Context, boardID
 	LEFT JOIN "user" AS adder ON adder.u_id=ub.added_by
 	LEFT JOIN "user" AS updater ON updater.u_id=ub.updated_by
 
-	LEFT JOIN user_uploaded_file AS f_m ON f_m.file_uuid=m.avatar_file_uuid
-	LEFT JOIN user_uploaded_file AS f_adder ON f_adder.file_uuid=adder.avatar_file_uuid
-	LEFT JOIN user_uploaded_file AS f_updater ON f_updater.file_uuid=updater.avatar_file_uuid
+	LEFT JOIN user_uploaded_file AS f_m ON f_m.file_id=m.avatar_file_id
+	LEFT JOIN user_uploaded_file AS f_adder ON f_adder.file_id=adder.avatar_file_id
+	LEFT JOIN user_uploaded_file AS f_updater ON f_updater.file_id=updater.avatar_file_id
 	WHERE ub.board_id=$1;
 	`
 	_, err = r.GetBoard(ctx, boardID, userID)
@@ -309,19 +309,25 @@ func (r *BoardRepository) GetMemberFromCard(ctx context.Context, userID int64, c
 	funcName := "GetMemberFromCard"
 	query := `
 	SELECT
+		ub.role,
+		ub.board_id
 	FROM card AS c
 	LEFT JOIN kanban_column AS col ON col.col_id=c.col_id
 	LEFT JOIN board AS b ON b.board_id=col.board_id
 	LEFT JOIN user_to_board AS ub ON ub.board_id=b.board_id
 	WHERE c.card_id=$1 AND ub.u_id=$2;
 	`
-	row := r.db.QueryRow(ctx, query)
-	err = row.Scan()
+
+	row := r.db.QueryRow(ctx, query, cardID, userID)
+	err = row.Scan(
+		&role,
+		&boardID,
+	)
 	logging.Debug(ctx, funcName, " query has err: ", err)
 	if err != nil {
 		return "", 0, fmt.Errorf("%s (query): %w", funcName, err)
 	}
-	return query, 0, nil
+	return role, boardID, nil
 }
 
 // GetMemberFromCheckListField получает права пользователя из ID поля чеклиста
@@ -438,6 +444,8 @@ func (r *BoardRepository) GetCardCheckList(ctx context.Context, cardID int64) (c
 		ORDER BY cf.order_index;
 	`
 
+	checkList = make([]models.CheckListField, 0)
+
 	rows, err := r.db.Query(ctx, query, cardID)
 	logging.Debug(ctx, funcName, " query has err: ", err)
 	if err != nil {
@@ -520,14 +528,16 @@ func (r *BoardRepository) GetCardComments(ctx context.Context, cardID int64) (co
 		u.email,
 		u.joined_at,
 		u.updated_at,
-		COALESCE(f.file_uuid::text, "")
-		COALESCE(f.file_extension::text, "")
+		COALESCE(f.file_uuid::text, ''),
+		COALESCE(f.file_extension::text, '')
 
 		FROM card_comment AS cc
 		JOIN "user" AS u ON cc.created_by=u.u_id
 		LEFT JOIN user_uploaded_file AS f ON f.file_id=u.avatar_file_id
 		WHERE cc.card_id = $1;
 	`
+
+	comments = make([]models.Comment, 0)
 
 	rows, err := r.db.Query(ctx, query, cardID)
 	logging.Debug(ctx, "GetCardComments query has err: ", err)
@@ -569,6 +579,8 @@ func (r *BoardRepository) GetCardAttachments(ctx context.Context, cardID int64) 
 		LEFT JOIN user_uploaded_file AS f ON f.file_id=ca.file_id
 		WHERE ca.card_id = $1;
 	`
+
+	attachments = make([]models.Attachment, 0)
 
 	rows, err := r.db.Query(ctx, query, cardID)
 	logging.Debug(ctx, "GetCardAttachments query has err: ", err)
@@ -779,7 +791,7 @@ func (r *BoardRepository) DeassignUserFromCard(ctx context.Context, cardID int64
 		),
 		update_board AS (
 			UPDATE board SET updated_at=CURRENT_TIMESTAMP WHERE board_id = (
-				SELECT b.board_id	
+				SELECT b.board_id
 				FROM card AS c
 				JOIN kanban_column AS kc ON c.col_id=kc.col_id
 				JOIN board AS b ON b.board_id = kc.board_id
@@ -908,27 +920,17 @@ func (r *BoardRepository) CreateCheckListField(ctx context.Context, cardID int64
 	funcName := "CreateCheckListField"
 	query := `
 	WITH insert_field AS (
-		INSERT INTO checklist_field (card_id, title, order_index) VALUES ($1, $2, (SELECT COUNT(*) FROM "checklist_field" WHERE card_id=$1))
-		RETURNING checklist_field_id, title, created_at, is_done, order_index
-	),
-	update_card AS (
-		UPDATE "card" SET updated_at=CURRENT_TIMESTAMP WHERE card_id=$1	
-	),
-	update_board AS (
-		UPDATE board SET updated_at=CURRENT_TIMESTAMP WHERE board_id=(
-			SELECT b.board_id
-			FROM card AS c
-			JOIN kanban_column AS kc ON c.col_id=kc.col_id
-			JOIN board AS b ON b.board_id = kc.board_id
-			WHERE c.card_id=$1
-		)
+		INSERT INTO checklist_field (card_id, title, order_index) VALUES ($1, $2, 12345)
+		RETURNING checklist_field_id AS id
 	)
-	SELECT;
+	SELECT id FROM insert_field;
 	`
 
 	newField = &models.CheckListField{}
-	row := r.db.QueryRow(ctx, query)
-	err = row.Scan()
+	row := r.db.QueryRow(ctx, query, cardID, field.Title)
+	err = row.Scan(&newField.ID) //&newField.Title, &newField.CreatedAt, &newField.IsDone,
+	newField.Title = field.Title
+
 	logging.Debug(ctx, funcName, " query has err: ", err)
 	if err != nil {
 		return nil, fmt.Errorf("%s (query): %w", err)
@@ -938,7 +940,6 @@ func (r *BoardRepository) CreateCheckListField(ctx context.Context, cardID int64
 
 // UpdateCheckListField обновляет одно поле чеклиста
 func (r *BoardRepository) UpdateCheckListField(ctx context.Context, fieldID int64, update *models.CheckListFieldPatchRequest) (updatedField *models.CheckListField, err error) {
-	panic("not implemented")
 	funcName := "UpdateCheckListField"
 	query := `
 		WITH update_field AS (
@@ -958,17 +959,36 @@ func (r *BoardRepository) UpdateCheckListField(ctx context.Context, fieldID int6
 				WHERE cf.checklist_field_id=$1
 		)
 	)
-	SELECT;
+	SELECT checklist_field_id, title, created_at, is_done
+	FROM checklist_field AS f
+	WHERE f.checklist_field_id=$1;
 	`
 
 	updatedField = &models.CheckListField{}
 	row := r.db.QueryRow(ctx, query)
-	err = row.Scan()
+	err = row.Scan(&updatedField.ID, &updatedField.Title, &updatedField.CreatedAt, &updatedField.IsDone)
 	logging.Debug(ctx, funcName, " query has err: ", err)
 	if err != nil {
 		return nil, fmt.Errorf("%s (query): %w", err)
 	}
 	return updatedField, nil
+}
+
+func (r *BoardRepository) DeleteCheckListField(ctx context.Context, fieldID int64) error {
+	funcName := "UpdateCheckListField"
+	query := `
+	DELETE FROM checklist_field
+	WHERE checklist_field_id=$1;`
+
+	tag, err := r.db.Exec(ctx, query, fieldID)
+	logging.Debug(ctx, funcName, " query has err: ", err)
+	if err != nil {
+		return fmt.Errorf("%s (query): %w", funcName, err)
+	}
+	if tag.RowsAffected() == 0 {
+		return fmt.Errorf("%s (query): no rows affected", funcName)
+	}
+	return nil
 }
 
 // SetCardCover устанавливает файл обложки карточки
@@ -1054,7 +1074,7 @@ func (r *BoardRepository) AddAttachment(ctx context.Context, userID int64, cardI
 	SELECT uuf.file_uuid, uuf.file_extension
 	FROM card_attachment AS ca
 	JOIN user_uploaded_file AS uuf ON ca.file_id = uuf.file_id
-	WHERE ca.file_id = $2; 
+	WHERE ca.file_id = $2;
 	`
 
 	newAttachment = &models.Attachment{}
@@ -1147,9 +1167,11 @@ func (r *BoardRepository) DeleteInviteLink(ctx context.Context, userID int64, bo
 func (r *BoardRepository) FetchInvite(ctx context.Context, inviteUUID string) (board *models.Board, err error) {
 	funcName := "FetchInvite"
 	query := `
-		SELECT b.board_id, b.name, b.background_image_uuid, b.created_at, b.updated_at, ub.last_visit_at
+		SELECT b.board_id, b.name, b.created_at, b.updated_at, ub.last_visit_at,
+		COALESCE(f.file_uuid::text, ''), COALESCE(f.file_extension, '')
 		FROM user_to_board AS utb
 		JOIN board AS b ON utb.board_id = b.board_id
+		LEFT JOIN user_uploaded_file AS f ON f.file_id=b.background_image_id
 		WHERE utb.invite_uuid = $1;
 	`
 

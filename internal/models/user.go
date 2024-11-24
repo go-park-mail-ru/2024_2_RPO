@@ -10,5 +10,5 @@ type UserProfile struct {
 	UpdatedAt      time.Time      `json:"updatedAt"`
 	AvatarImageURL string         `json:"avatarImageUrl"`
 	CsatPollDT     time.Time      `json:"-"`
-	PollQuestions  []PollQuestion `json:"pollQuestions"`
+	PollQuestions  []PollQuestion `json:"pollQuestions,omitempty"`
 }
