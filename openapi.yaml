@@ -584,7 +584,6 @@ components:
           type: string
           example: "Да, всё нормально"
 
-
     PollResults:
       type: object
       properties:
@@ -614,6 +613,13 @@ components:
                 example:
                   - "Да"
                   - "Нет"
+
+    CardUserAssignRequest:
+      type: object
+      properties:
+        nickname:
+          type: string
+          example: "reddiridabl666"
 
 paths:
   /auth/register:
@@ -843,7 +849,6 @@ paths:
           $ref: "#/components/responses/BadRequestResponse"
         "401":
           $ref: "#/components/responses/NoAuthResponse"
-
 
   /boards:
     post:
@@ -1318,7 +1323,7 @@ paths:
         "404":
           $ref: "#/components/responses/NotFoundResponse"
 
-  /assignedUser/{cardId}/{userId}:
+  /assignedUser/{cardId}:
     put:
       summary: "Назначить пользователя на карточку"
       tags:
@@ -1327,7 +1332,12 @@ paths:
         - SessionCookieAuth: []
       parameters:
         - $ref: "#/components/parameters/cardId"
-        - $ref: "#/components/parameters/userId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CardUserAssignRequest"
       responses:
         "200":
           description: "Пользователь назначен на карточку"
@@ -1345,6 +1355,8 @@ paths:
           $ref: "#/components/responses/NotFoundResponse"
         "409":
           $ref: "#/components/responses/ConflictResponse"
+
+  /assignedUser/{cardId}/{userId}:
     delete:
       summary: "Убрать назначение пользователя на карточку"
       tags:
