@@ -8,6 +8,7 @@ import (
 	"RPO_back/internal/pkg/config"
 	"RPO_back/internal/pkg/middleware/logging_middleware"
 	"RPO_back/internal/pkg/utils/logging"
+	"RPO_back/internal/pkg/utils/misc"
 	"net"
 	"os/signal"
 	"syscall"
@@ -16,12 +17,10 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 
-	"context"
 	"fmt"
 	"os"
 
 	"github.com/go-redis/redis/v8"
-	"github.com/jackc/pgx/v5/pgxpool"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -48,20 +47,14 @@ func main() {
 	log.Info("Config: ", fmt.Sprintf("%#v", config.CurrentConfig))
 
 	// Подключение к PostgreSQL
-	postgresDB, err := pgxpool.New(context.Background(), config.CurrentConfig.PostgresDSN)
+	postgresDB, err := misc.ConnectToPgx(config.CurrentConfig.Auth.PostgresPoolSize)
 	if err != nil {
 		log.Error("error connecting to PostgreSQL: ", err)
+		log.Error("Sleeping 100 seconds (maybe it will helpful if you need to do migrations)")
+		time.Sleep(100 * time.Second)
 		return
 	}
 	defer postgresDB.Close()
-
-	// Проверка подключения к PostgreSQL
-	if err = postgresDB.Ping(context.Background()); err != nil {
-		log.Error("error while pinging PostgreSQL: ", err)
-		log.Error("Sleeping 100 seconds when you apply migrations")
-		time.Sleep(100 * time.Second)
-		os.Exit(1)
-	}
 
 	//Подключение к Redis
 	redisOpts, err := redis.ParseURL(config.CurrentConfig.RedisDSN)
@@ -107,8 +100,7 @@ func main() {
 	log.Infof("gRPC server is listening on port %s", config.CurrentConfig.ServerPort)
 
 	stop := make(chan os.Signal, 1)
-	signal.Notify(stop, os.Interrupt, syscall.SIGTERM)
-
+	signal.Notify(stop, os.Interrupt, syscall.SIGTERM, syscall.SIGINT)
 	go func() {
 		<-stop
 		log.Info("Shutting down gRPC server...")

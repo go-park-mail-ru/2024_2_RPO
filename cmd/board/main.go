@@ -12,6 +12,7 @@ import (
 	"RPO_back/internal/pkg/middleware/no_panic"
 	"RPO_back/internal/pkg/middleware/session"
 	"RPO_back/internal/pkg/utils/logging"
+	"RPO_back/internal/pkg/utils/misc"
 	"net"
 	"time"
 
@@ -21,7 +22,6 @@ import (
 	"os"
 
 	"github.com/gorilla/mux"
-	"github.com/jackc/pgx/v5/pgxpool"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -50,17 +50,12 @@ func main() {
 	log.Info("Config: ", fmt.Sprintf("%#v", config.CurrentConfig))
 
 	// Подключение к PostgreSQL
-	postgresDb, err := pgxpool.New(context.Background(), config.CurrentConfig.PostgresDSN)
+	postgresDB, err := misc.ConnectToPgx(config.CurrentConfig.Board.PostgresPoolSize)
 	if err != nil {
-		log.Error("error connecting to PostgreSQL: ", err)
+		log.Fatal("error connecting to PostgreSQL: ", err)
 		return
 	}
-	defer postgresDb.Close()
-
-	// Проверка подключения к PostgreSQL
-	if err = postgresDb.Ping(context.Background()); err != nil {
-		log.Fatal("error while pinging PostgreSQL: ", err)
-	}
+	defer postgresDB.Close()
 
 	// Подключение к GRPC сервису авторизаци
 	dialer := func(ctx context.Context, addr string) (net.Conn, error) {
@@ -84,7 +79,7 @@ func main() {
 	}
 
 	//Board
-	boardRepository := BoardRepository.CreateBoardRepository(postgresDb)
+	boardRepository := BoardRepository.CreateBoardRepository(postgresDB)
 	boardUsecase := BoardUsecase.CreateBoardUsecase(boardRepository)
 	boardDelivery := BoardDelivery.CreateBoardDelivery(boardUsecase)
 

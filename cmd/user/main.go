@@ -11,6 +11,7 @@ import (
 	UserRepository "RPO_back/internal/pkg/user/repository"
 	UserUsecase "RPO_back/internal/pkg/user/usecase"
 	"RPO_back/internal/pkg/utils/logging"
+	"RPO_back/internal/pkg/utils/misc"
 	"net/http"
 	"time"
 
@@ -21,7 +22,6 @@ import (
 	AuthGRPC "RPO_back/internal/pkg/auth/delivery/grpc/gen"
 
 	"github.com/gorilla/mux"
-	"github.com/jackc/pgx/v5/pgxpool"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -50,17 +50,12 @@ func main() {
 	log.Info("Config: ", fmt.Sprintf("%#v", config.CurrentConfig))
 
 	// Подключение к PostgreSQL
-	postgresDb, err := pgxpool.New(context.Background(), config.CurrentConfig.PostgresDSN)
+	postgresDB, err := misc.ConnectToPgx(config.CurrentConfig.User.PostgresPoolSize)
 	if err != nil {
-		log.Error("error connecting to PostgreSQL: ", err)
+		log.Fatal("error connecting to PostgreSQL: ", err)
 		return
 	}
-	defer postgresDb.Close()
-
-	// Проверка подключения к PostgreSQL
-	if err = postgresDb.Ping(context.Background()); err != nil {
-		log.Fatal("error while pinging PostgreSQL: ", err)
-	}
+	defer postgresDB.Close()
 
 	// Подключение к GRPC сервису авторизации
 	grpcAddr := config.CurrentConfig.AuthURL
@@ -78,7 +73,7 @@ func main() {
 	}
 
 	// User
-	userRepository := UserRepository.CreateUserRepository(postgresDb)
+	userRepository := UserRepository.CreateUserRepository(postgresDB)
 	userUsecase := UserUsecase.CreateUserUsecase(userRepository, authGRPC)
 	userDelivery := UserDelivery.CreateUserDelivery(userUsecase)
 
