@@ -41,7 +41,7 @@ func ExtractFileExtension(fileName string) string {
 	if lastDotIndex == -1 || lastDotIndex == len(fileName)-1 {
 		return ""
 	}
-	return fileName[lastDotIndex+1:]
+	return strings.ToLower(fileName[lastDotIndex+1:])
 }
 
 // JoinFilePath восстанавливает имя файла из UUID
@@ -181,6 +181,13 @@ func RegisterFile(ctx context.Context, db pgxiface.PgxIface, file *models.Upload
 	VALUES ($1, CURRENT_TIMESTAMP, $2)
 	RETURNING file_uuid::text, file_id;
 	`
+
+	if file == nil {
+		panic(funcName + ": file should not be nil")
+	}
+	file.FileID = new(int64)
+	file.UUID = new(string)
+
 	row := db.QueryRow(ctx, query, file.FileExtension, len(file.Content))
 	err := row.Scan(&file.UUID, file.FileID)
 	logging.Debug(ctx, funcName, " query has err: ", err)

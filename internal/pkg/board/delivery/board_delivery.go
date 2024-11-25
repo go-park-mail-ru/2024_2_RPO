@@ -367,7 +367,7 @@ func (d *BoardDelivery) UpdateColumn(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	columnID, err := requests.GetIDFromRequest(r, "columnId", "column_")
+	columnID, err := requests.GetIDFromRequest(r, "columnID", "column_")
 	if err != nil {
 		responses.DoBadResponse(w, http.StatusBadRequest, "bad request")
 		log.Warn("columnID is invalid")
@@ -430,6 +430,11 @@ func (d *BoardDelivery) SetBoardBackground(w http.ResponseWriter, r *http.Reques
 	file, err := uploads.FormFile(r)
 	if err != nil {
 		responses.DoBadResponse(w, http.StatusBadRequest, "no file found")
+		return
+	}
+	if file == nil {
+		logging.Error(r.Context(), "file is nil, but no error")
+		responses.DoBadResponse(w, http.StatusInternalServerError, "internal error")
 		return
 	}
 
