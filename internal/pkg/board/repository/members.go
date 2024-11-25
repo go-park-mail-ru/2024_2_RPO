@@ -439,9 +439,8 @@ func (r *BoardRepository) GetCardCheckList(ctx context.Context, cardID int64) (c
 	query := `
 		SELECT cf.checklist_field_id, cf.title, cf.created_at, cf.is_done
 		FROM checklist_field AS cf
-		JOIN card AS c ON cf.card_id = cf.card_id
-		WHERE c.card_id = $1
-		ORDER BY cf.order_index;
+		JOIN card AS c ON c.card_id = cf.card_id
+		WHERE c.card_id = $1;
 	`
 
 	checkList = make([]models.CheckListField, 0)
@@ -746,7 +745,7 @@ func (r *BoardRepository) AssignUserToCard(ctx context.Context, cardID int64, as
 	funcName := "AssignUserToCard"
 	query := `
 		WITH update_card_user_assignment AS (
-			UPDATE card_user_assignment SET u_id = $2 WHERE card_id = $1
+			INSERT INTO card_user_assignment (card_id, u_id) VALUES ($1, $2)
 		),
 		update_card AS (
 			UPDATE "card" SET updated_at=CURRENT_TIMESTAMP WHERE card_id = $1
@@ -761,54 +760,49 @@ func (r *BoardRepository) AssignUserToCard(ctx context.Context, cardID int64, as
 			)
 		)
 		SELECT u.u_id, u.nickname, u.email, u.joined_at, u.updated_at,
-		COALESCE(f.file_uuid::text, ''), COALESCE(f.file_extension::text, '')
-		FROM card_user_assignment AS cua
-		JOIN "user" AS u ON cua.u_id = u.u_id
+			COALESCE(f.file_uuid::text, ''), COALESCE(f.file_extension::text, '')
+		FROM "user" AS u
 		LEFT JOIN user_uploaded_file AS f ON f.file_id=u.avatar_file_id
-		WHERE cua.card_id = $1;
+		WHERE u.u_id=$2;
 	`
 
-	tag, err := r.db.Exec(ctx, query)
+	assignedUser = &models.UserProfile{}
+	var fileUUID, fileExt string
+	row := r.db.QueryRow(ctx, query, cardID, assignedUserID)
+	err = row.Scan(&assignedUser.ID, &assignedUser.Name, &assignedUser.Email, &assignedUser.JoinedAt, &assignedUser.UpdatedAt, &fileUUID, &fileExt)
 	logging.Debug(ctx, funcName, " query has err: ", err)
 	if err != nil {
 		return nil, fmt.Errorf("%s (query): %w", funcName, err)
 	}
-	if tag.RowsAffected() == 0 {
-		return nil, fmt.Errorf("%s (query): no rows affected", funcName)
-	}
+	assignedUser.AvatarImageURL = uploads.JoinFileURL(fileUUID, fileExt, uploads.DefaultAvatarURL)
 	return assignedUser, nil
 }
 
 // DeassignUserFromCard убирает назначение пользователя
 func (r *BoardRepository) DeassignUserFromCard(ctx context.Context, cardID int64, assignedUserID int64) (err error) {
-	panic("not implemented")
 	funcName := "DeassignUserFromCard"
 	query := `
-		WITH delete_card_user_assignment AS (
-			DELETE FROM card_user_assignment WHERE card_id = $1 AND u_id = $2
-		),
-		update_card AS (
-			UPDATE "card" SET updated_at=CURRENT_TIMESTAMP WHERE card_id = $1
-		),
-		update_board AS (
-			UPDATE board SET updated_at=CURRENT_TIMESTAMP WHERE board_id = (
-				SELECT b.board_id
-				FROM card AS c
-				JOIN kanban_column AS kc ON c.col_id=kc.col_id
-				JOIN board AS b ON b.board_id = kc.board_id
-				WHERE c.card_id=$1
-			)
+	WITH delete_card_user_assignment AS (
+		DELETE FROM card_user_assignment WHERE card_id = $1 AND u_id = $2
+	),
+	update_card AS (
+		UPDATE "card" SET updated_at=CURRENT_TIMESTAMP WHERE card_id = $1
+	),
+	update_board AS (
+		UPDATE board SET updated_at=CURRENT_TIMESTAMP WHERE board_id = (
+			SELECT b.board_id
+			FROM card AS c
+			JOIN kanban_column AS kc ON c.col_id=kc.col_id
+			JOIN board AS b ON b.board_id = kc.board_id
+			WHERE c.card_id=$1
 		)
-		)
-		)
+	)
+	SELECT;
 	`
-	tag, err := r.db.Exec(ctx, query)
+	_, err = r.db.Exec(ctx, query, cardID, assignedUserID)
 	logging.Debug(ctx, funcName, " query has err: ", err)
 	if err != nil {
 		return fmt.Errorf("%s (query): %w", funcName, err)
-	}
-	if tag.RowsAffected() == 0 {
-		return fmt.Errorf("%s (query): no rows affected", funcName)
 	}
 	return nil
 }
@@ -938,13 +932,10 @@ func (r *BoardRepository) DeleteComment(ctx context.Context, commentID int64) (e
 	SELECT;
 	`
 
-	tag, err := r.db.Exec(ctx, query)
+	_, err = r.db.Exec(ctx, query, commentID)
 	logging.Debug(ctx, funcName, " query has err: ", err)
 	if err != nil {
 		return fmt.Errorf("%s (query): %w", funcName, err)
-	}
-	if tag.RowsAffected() == 0 {
-		return fmt.Errorf("%s (query): no rows affected", funcName)
 	}
 	return nil
 }

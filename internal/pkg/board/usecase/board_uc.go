@@ -376,7 +376,7 @@ func (uc *BoardUsecase) SetBoardBackground(ctx context.Context, userID int64, bo
 }
 
 // AssignUser назначает карточку пользователю
-func (uc *BoardUsecase) AssignUser(ctx context.Context, userID int64, cardID int64, assignedUserID int64) (assignedUser *models.UserProfile, err error) {
+func (uc *BoardUsecase) AssignUser(ctx context.Context, userID int64, cardID int64, data *models.AssignUserRequest) (assignedUser *models.UserProfile, err error) {
 	funcName := "AssignUser"
 	perms, _, err := uc.boardRepository.GetMemberFromCard(ctx, userID, cardID)
 	if err != nil {
@@ -387,7 +387,12 @@ func (uc *BoardUsecase) AssignUser(ctx context.Context, userID int64, cardID int
 		return nil, fmt.Errorf("%s (check): %w", funcName, errs.ErrNotPermitted)
 	}
 
-	assignedUser, err = uc.boardRepository.AssignUserToCard(ctx, cardID, assignedUserID)
+	assignedUserID, err := uc.boardRepository.GetUserByNickname(ctx, data.NickName)
+	if err != nil {
+		return nil, fmt.Errorf("%s (check): %w", funcName, err)
+	}
+
+	assignedUser, err = uc.boardRepository.AssignUserToCard(ctx, cardID, assignedUserID.ID)
 	if err != nil {
 		return nil, fmt.Errorf("%s (assign user): %w", funcName, err)
 	}
@@ -713,6 +718,8 @@ func (d *BoardUsecase) GetCardDetails(ctx context.Context, userID int64, cardID 
 	if err != nil {
 		return nil, fmt.Errorf("%s (card): %w", funcName, err)
 	}
+
+	fmt.Printf("%#v\n", card)
 
 	return &models.CardDetails{
 		Attachments:   attachments,

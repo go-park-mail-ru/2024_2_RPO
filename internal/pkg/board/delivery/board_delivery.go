@@ -283,6 +283,7 @@ func (d *BoardDelivery) UpdateCard(w http.ResponseWriter, r *http.Request) {
 
 	cardID, err := requests.GetIDFromRequest(r, "cardID", "card_")
 	if err != nil {
+		logging.Error(r.Context(), err)
 		responses.DoBadResponse(w, http.StatusBadRequest, "bad request")
 		return
 	}
@@ -290,12 +291,14 @@ func (d *BoardDelivery) UpdateCard(w http.ResponseWriter, r *http.Request) {
 	requestData := &models.CardPatchRequest{}
 	err = requests.GetRequestData(r, requestData)
 	if err != nil {
+		logging.Error(r.Context(), err)
 		responses.DoBadResponse(w, http.StatusBadRequest, "bad request")
 		return
 	}
 
 	updatedCard, err := d.boardUsecase.UpdateCard(r.Context(), userID, cardID, requestData)
 	if err != nil {
+		logging.Error(r.Context(), err)
 		responses.ResponseErrorAndLog(w, err, funcName)
 		return
 	}
@@ -449,18 +452,22 @@ func (d *BoardDelivery) AssignUser(w http.ResponseWriter, r *http.Request) {
 
 	cardID, err := requests.GetIDFromRequest(r, "cardID", "card_")
 	if err != nil {
+		logging.Error(r.Context(), err)
 		responses.DoBadResponse(w, http.StatusBadRequest, "bad request")
 		return
 	}
 
-	assignedUserID, err := requests.GetIDFromRequest(r, "userID", "user_")
+	data := &models.AssignUserRequest{}
+	err = requests.GetRequestData(r, data)
 	if err != nil {
+		logging.Error(r.Context(), err)
 		responses.DoBadResponse(w, http.StatusBadRequest, "bad request")
 		return
 	}
 
-	assignedUser, err := d.boardUsecase.AssignUser(r.Context(), userID, cardID, assignedUserID)
+	assignedUser, err := d.boardUsecase.AssignUser(r.Context(), userID, cardID, data)
 	if err != nil {
+		logging.Error(r.Context(), err)
 		responses.ResponseErrorAndLog(w, err, funcName)
 		return
 	}

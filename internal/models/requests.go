@@ -75,3 +75,7 @@ type ColumnMoveRequest struct {
 	PreviousColumnID *int64 `json:"previousColumnId" validate:"required"`
 	NextColumnID     *int64 `json:"NextColumnId" validate:"required"`
 }
+
+type AssignUserRequest struct {
+	NickName string `json:"nickname" validate:"required"`
+}

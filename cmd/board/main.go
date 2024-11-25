@@ -112,7 +112,7 @@ func main() {
 	router.HandleFunc("/columns/{boardID}", boardDelivery.CreateColumn).Methods("POST", "OPTIONS")
 	router.HandleFunc("/columns/{columnID}", boardDelivery.UpdateColumn).Methods("PUT", "OPTIONS")
 	router.HandleFunc("/columns/{columnID}", boardDelivery.DeleteColumn).Methods("DELETE", "OPTIONS")
-	router.HandleFunc("/assignedUser/{cardID}/{userID}", boardDelivery.AssignUser).Methods("PUT", "OPTIONS")
+	router.HandleFunc("/assignedUser/{cardID}", boardDelivery.AssignUser).Methods("PUT", "OPTIONS")
 	router.HandleFunc("/assignedUser/{cardID}/{userID}", boardDelivery.DeassignUser).Methods("DELETE", "OPTIONS")
 	router.HandleFunc("/comments/{cardID}", boardDelivery.AddComment).Methods("POST", "OPTIONS")
 	router.HandleFunc("/comments/{commentID}", boardDelivery.UpdateComment).Methods("PUT", "OPTIONS")

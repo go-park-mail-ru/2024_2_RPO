@@ -140,12 +140,14 @@ func (r *BoardRepository) UpdateCard(ctx context.Context, cardID int64, data mod
 		c.is_done,
 		(SELECT (NOT COUNT(*)=0) FROM checklist_field AS f WHERE f.card_id=c.card_id),
 		(SELECT (NOT COUNT(*)=0) FROM card_attachment AS f WHERE f.card_id=c.card_id),
-		(SELECT (NOT COUNT(*)=0 )FROM card_user_assignment AS f WHERE f.card_id=c.card_id),
+		(SELECT (NOT COUNT(*)=0) FROM card_user_assignment AS f WHERE f.card_id=c.card_id),
 		(SELECT (NOT COUNT(*)=0) FROM card_comment AS f WHERE f.card_id=c.card_id)
 	FROM card AS c
 	WHERE c.card_id=$1;
 	`
 	updateCard = &models.Card{}
+
+	fmt.Printf("%#v\n", data)
 
 	err = r.db.QueryRow(ctx, query, cardID, data.NewTitle, data.NewDeadline, data.IsDone).Scan(
 		&updateCard.ID,
