@@ -1,7 +1,6 @@
 package auth
 
 import (
-	"RPO_back/internal/models"
 	"context"
 )
 
@@ -12,19 +11,17 @@ const (
 //go:generate mockgen -source=interfaces.go -destination=mocks/mock.go
 
 type AuthUsecase interface {
-	LoginUser(ctx context.Context, email string, password string) (sessionID string, err error)
-	RegisterUser(ctx context.Context, user *models.UserRegistration) (sessionID string, err error)
-	LogoutUser(ctx context.Context, sessionID string) error
-	ChangePassword(ctx context.Context, userID int, oldPassword string, newPassword string) error
+	CreateSession(ctx context.Context, userID int64, password string) (sessionID string, err error)
+	CheckSession(ctx context.Context, sessionID string) (userID int, err error)
+	KillSession(ctx context.Context, sessionID string) (err error)
+	ChangePassword(ctx context.Context, oldPassword string, newPassword string, sessionID string) (err error)
 }
 
 type AuthRepo interface {
 	RegisterSessionRedis(ctx context.Context, cookie string, userID int) error
 	KillSessionRedis(ctx context.Context, sessionID string) error
-	RetrieveUserIdFromSessionId(ctx context.Context, sessionId string) (userID int, err error)
-	GetUserByEmail(ctx context.Context, email string) (user *models.UserProfile, err error)
-	GetUserByID(ctx context.Context, userID int) (user *models.UserProfile, err error)
-	CreateUser(ctx context.Context, user *models.UserRegistration, hashedPassword string) (newUser *models.UserProfile, err error)
-	CheckUniqueCredentials(ctx context.Context, nickname string, email string) error
+	CheckSession(ctx context.Context, sessionID string) (userID int, err error)
 	SetNewPasswordHash(ctx context.Context, userID int, newPasswordHash string) error
+	GetUserPasswordHash(ctx context.Context, userID int) (passwordHash *string, err error)
+	DisplaceUserSessions(ctx context.Context, sessionID string, userID int64) error
 }

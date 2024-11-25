@@ -1,10 +1,11 @@
 services:
-  main:
-    container_name: main
+  auth:
+    container_name: auth_service
     build:
       context: .
-      dockerfile: ./Dockerfile
+      dockerfile: ./cmd/auth/Dockerfile
     env_file:
+      - docker_compose.env
       - .env
     depends_on:
       postgres:
@@ -12,44 +13,133 @@ services:
       redis:
         condition: service_started
     restart: always
-    ports:
-      - "127.0.0.1:8800:8800"
     networks:
       - Pumpkin-network
     volumes:
-      - pumpkin-user-uploads:${USER_UPLOADS_DIR}
+      - pumpkin-redis-socket:/tmp/redis/redis.sock
+      - pumpkin-postgres-socket:/tmp/postgres/postgres.sock
+      - pumpkin-all-logs:/pumpkin_logs
+
+  board:
+    container_name: board_service
+    build:
+      context: .
+      dockerfile: ./cmd/board/Dockerfile
+    env_file:
+      - docker_compose.env
+      - .env
+    depends_on:
+      postgres:
+        condition: service_started
+      redis:
+        condition: service_started
+      auth:
+        condition: service_started
+    restart: always
+    ports:
+      - "127.0.0.1:8802:8888"
+    networks:
+      - Pumpkin-network
+    volumes:
+      - pumpkin-user-uploads:/pumpkin_user_uploads
+      - pumpkin-postgres-socket:/tmp/postgres/postgres.sock
+      - pumpkin-all-logs:/pumpkin_logs
+
+  user:
+    container_name: user_service
+    build:
+      context: .
+      dockerfile: ./cmd/user/Dockerfile
+    env_file:
+      - docker_compose.env
+      - .env
+    depends_on:
+      postgres:
+        condition: service_started
+      redis:
+        condition: service_started
+      auth:
+        condition: service_started
+    restart: always
+    ports:
+      - "127.0.0.1:8803:8888"
+    networks:
+      - Pumpkin-network
+    volumes:
+      - pumpkin-user-uploads:/pumpkin_user_uploads
+      - pumpkin-postgres-socket:/tmp/postgres/postgres.sock
+      - pumpkin-all-logs:/pumpkin_logs
+
+  poll:
+    container_name: poll_service
+    build:
+      context: .
+      dockerfile: ./cmd/poll/Dockerfile
+    env_file:
+      - docker_compose.env
+      - .env
+    depends_on:
+      postgres:
+        condition: service_started
+      redis:
+        condition: service_started
+      auth:
+        condition: service_started
+    restart: always
+    ports:
+      - "127.0.0.1:8804:8888"
+    networks:
+      - Pumpkin-network
+    volumes:
+      - pumpkin-user-uploads:/pumpkin_user_uploads
+      - pumpkin-postgres-socket:/tmp/postgres/postgres.sock
+      - pumpkin-all-logs:/pumpkin_logs
 
   postgres:
     env_file:
       - .env
+    command:
+      - "bash"
+      - "/pg_setup/start-postgres.sh"
     container_name: postgres
-    image: postgres:latest
-    environment:
-      POSTGRES_DB: ${POSTGRES_DB}
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    image: postgres:bookworm
     ports:
-      - "${POSTGRES_PORT}:5432"
+      - "0.0.0.0:5432:5432"
     networks:
       - Pumpkin-network
     volumes:
-      - pumpkin-db-data:/var/lib/postgresql/data
+      - pumpkin-db-data:/pg_data
+      - pumpkin-all-logs:/pg_logs/
+      - pumpkin-postgres-socket:/tmp/postgres/postgres.sock
+      - ./database/postgres:/pg_setup
 
   redis:
     container_name: redis
     image: redis:latest
     command:
-      - /bin/sh
-      - -c
-      - redis-server --requirepass ${REDIS_PASSWORD}
+      - /pumpkin/redis/start-redis.sh
     volumes:
-      - pumpkin-redis-data:/var/lib/redis/data
-    ports:
-      - "${REDIS_PORT}:6379"
+      - ./database/redis:/pumpkin/redis/
+      - pumpkin-all-logs:/pumpkin_logs
+      - pumpkin-redis-data:/redis_data
+      - pumpkin-redis-socket:/tmp/redis/redis.sock/
     env_file:
       - .env
     networks:
       - Pumpkin-network
+
+  grafana:
+    container_name: grafana
+    image: grafana/grafana
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+
+  node_exporter:
+    depends_on:
+      - prometheus
+    image: quay.io/prometheus/node-exporter:latest
 
 networks:
   Pumpkin-network:
@@ -60,3 +150,6 @@ volumes:
   pumpkin-db-data:
   pumpkin-redis-data:
   pumpkin-user-uploads:
+  pumpkin-all-logs:
+  pumpkin-postgres-socket:
+  pumpkin-redis-socket:

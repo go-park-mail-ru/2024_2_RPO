@@ -114,14 +114,14 @@ func TestAuthUsecase_RegisterUser(t *testing.T) {
 
 	tests := []struct {
 		name                  string
-		user                  *models.UserRegistration
+		user                  *models.UserRegisterRequest
 		setupMock             func()
 		expectedError         bool
 		expectedResultChecker func(string) bool
 	}{
 		{
 			name: "successful registration",
-			user: &models.UserRegistration{
+			user: &models.UserRegisterRequest{
 				Name:     "Test User",
 				Email:    "test@example.com",
 				Password: "11111111",
@@ -136,7 +136,7 @@ func TestAuthUsecase_RegisterUser(t *testing.T) {
 		},
 		{
 			name: "non-unique credentials",
-			user: &models.UserRegistration{
+			user: &models.UserRegisterRequest{
 				Name:     "Test User",
 				Email:    "test@example.com",
 				Password: "11111111",
@@ -149,7 +149,7 @@ func TestAuthUsecase_RegisterUser(t *testing.T) {
 		},
 		{
 			name: "failed to create user",
-			user: &models.UserRegistration{
+			user: &models.UserRegisterRequest{
 				Name:     "Test User",
 				Email:    "test@example.com",
 				Password: "11111111",
@@ -163,7 +163,7 @@ func TestAuthUsecase_RegisterUser(t *testing.T) {
 		},
 		{
 			name: "failed to register session",
-			user: &models.UserRegistration{
+			user: &models.UserRegisterRequest{
 				Name:     "Test User",
 				Email:    "test@example.com",
 				Password: "11111111",

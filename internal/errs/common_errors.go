@@ -2,6 +2,6 @@ package errs
 
 import "fmt"
 
-var ErrNotFound = fmt.Errorf("Not found")
-var ErrNotPermitted = fmt.Errorf("Not permitted")
-var ErrAlreadyExists = fmt.Errorf("Already exists")
+var ErrNotFound = fmt.Errorf("not found")
+var ErrNotPermitted = fmt.Errorf("not permitted")
+var ErrAlreadyExists = fmt.Errorf("already exists")

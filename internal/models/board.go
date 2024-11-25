@@ -2,33 +2,23 @@ package models
 
 import "time"
 
-type CreateBoardRequest struct {
-	Name string `json:"name"`
-}
-
 type Board struct {
-	ID                 int       `json:"id"`
+	ID                 int64     `json:"id"`
 	Name               string    `json:"name"`
-	Description        string    `json:"description"`
-	BackgroundImageURL string    `json:"backgroundImageUrl,omitempty"`
+	BackgroundImageURL string    `json:"backgroundImageUrl"`
 	CreatedAt          time.Time `json:"createdAt"`
 	UpdatedAt          time.Time `json:"updatedAt"`
+	LastVisitAt        time.Time `json:"lastVisitAt"`
 }
 
 // MemberWithPermissions - пользователь с правами (в контексте доски)
 type MemberWithPermissions struct {
-	User              *UserProfile      `json:"user"`
-	Role              string            `json:"role"`
-	AddedAt           time.Time         `json:"addedAt"`
-	UpdatedAt         time.Time         `json:"updatedAt"`
-	AddedBy           *UserProfile      `json:"addedBy"`
-	UpdatedBy         *UserProfile      `json:"updatedBy"`
-}
-
-
-type BoardPutRequest struct {
-	NewName        string `json:"name"`
-	NewDescription string `json:"description"`
+	User      *UserProfile `json:"user"`
+	Role      string       `json:"role"`
+	AddedAt   time.Time    `json:"addedAt"`
+	UpdatedAt time.Time    `json:"updatedAt"`
+	AddedBy   *UserProfile `json:"addedBy"`
+	UpdatedBy *UserProfile `json:"updatedBy"`
 }
 
 type BoardContent struct {
@@ -38,10 +28,60 @@ type BoardContent struct {
 	BoardInfo *Board   `json:"boardInfo"`
 }
 
-type AddMemberRequest struct {
-	MemberNickname string `json:"nickname"`
+type Card struct {
+	ID               int64      `json:"id"`
+	UUID             string     `json:"cardUuid"`
+	Title            string     `json:"title"`
+	CoverImageURL    string     `json:"coverImageUrl"`
+	ColumnID         int64      `json:"columnId"`
+	CreatedAt        time.Time  `json:"createdAt"`
+	UpdatedAt        time.Time  `json:"updatedAt"`
+	Deadine          *time.Time `json:"deadline,omitempty"`
+	IsDone           bool       `json:"isDone"`
+	HasCheckList     bool       `json:"hasCheckList"`
+	HasAttachments   bool       `json:"hasAttachments"`
+	HasAssignedUsers bool       `json:"hasAssignedUsers"`
+	HasComments      bool       `json:"hasComments"`
+	OrderIndex       int64      `json:"-"`
 }
 
-type UpdateMemberRequest struct {
-	NewRole string `json:"newRole"`
+type Column struct {
+	ID         int    `json:"id"`
+	Title      string `json:"title"`
+	OrderIndex int64  `json:"-"`
+}
+
+type Comment struct {
+	ID        int64        `json:"id"`
+	Text      string       `json:"text"`
+	IsEdited  bool         `json:"isEdited"`
+	CreatedBy *UserProfile `json:"createdBy"`
+	CreatedAt time.Time    `json:"createdAt"`
+}
+
+type CheckListField struct {
+	ID         int64     `json:"id"`
+	Title      string    `json:"title"`
+	CreatedAt  time.Time `json:"createdAt"`
+	IsDone     bool      `json:"isDone"`
+	OrderIndex int64     `json:"-"`
+}
+
+type Attachment struct {
+	ID           int64     `json:"id"`
+	OriginalName string    `json:"originalName"`
+	FileName     string    `json:"fileName"`
+	CreatedAt    time.Time `json:"createdAt"`
+}
+
+type CardDetails struct {
+	Card          *Card            `json:"card"`
+	CheckList     []CheckListField `json:"checkList"`
+	Attachments   []Attachment     `json:"attachments"`
+	Comments      []Comment        `json:"comments"`
+	AssignedUsers []UserProfile    `json:"assignedUsers"`
+}
+
+type InviteLink struct {
+	InviteLinkUUID string `json:"inviteLinkUuid"`
 }

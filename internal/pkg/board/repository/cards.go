@@ -5,31 +5,39 @@ import (
 	"RPO_back/internal/pkg/utils/logging"
 	"context"
 	"errors"
+	"fmt"
 
 	"github.com/jackc/pgx/v5"
 )
 
 // GetCardsForBoard возвращает все карточки, размещённые на доске
-func (r *BoardRepository) GetCardsForBoard(ctx context.Context, boardID int) (cards []models.Card, err error) {
+func (r *BoardRepository) GetCardsForBoard(ctx context.Context, boardID int64) (cards []models.Card, err error) {
+	funcName := "GetCardsForBoard"
 	query := `
 	SELECT
 		c.card_id,
 		c.col_id,
 		c.title,
 		c.created_at,
-		c.updated_at
+		c.updated_at,
+		c.deadline,
+    	c.is_done,
+		(SELECT (NOT COUNT(*)=0) FROM checklist_field AS f WHERE f.card_id=c.card_id),
+    	(SELECT (NOT COUNT(*)=0) FROM card_attachment AS f WHERE f.card_id=c.card_id),
+    	(SELECT (NOT COUNT(*)=0 )FROM card_user_assignment AS f WHERE f.card_id=c.card_id),
+    	(SELECT (NOT COUNT(*)=0) FROM card_comment AS f WHERE f.card_id=c.card_id)
 	FROM card c
 	JOIN kanban_column kc ON c.col_id = kc.col_id
 	WHERE kc.board_id = $1;
 `
 	rows, err := r.db.Query(ctx, query, boardID)
-	logging.Debug(ctx, "GetCardsForBoard query has err: ", err)
+	logging.Debug(ctx, funcName, " query has err: ", err)
 
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, nil
+			return make([]models.Card, 0), nil
 		}
-		return nil, err
+		return nil, fmt.Errorf("%s (query): %w", funcName, err)
 	}
 
 	defer rows.Close()
@@ -44,9 +52,15 @@ func (r *BoardRepository) GetCardsForBoard(ctx context.Context, boardID int) (ca
 			&card.Title,
 			&card.CreatedAt,
 			&card.UpdatedAt,
+			&card.Deadine,
+			&card.IsDone,
+			&card.HasCheckList,
+			&card.HasAttachments,
+			&card.HasAssignedUsers,
+			&card.HasComments,
 		)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("%s (scan): %w", funcName, err)
 		}
 		cards = append(cards, card)
 	}
@@ -54,64 +68,99 @@ func (r *BoardRepository) GetCardsForBoard(ctx context.Context, boardID int) (ca
 	return cards, nil
 }
 
-// В последующих трёх функциях boardId нужен для того, чтобы пользователь не смог,
-// например, удалить карточку с другой доски по причине хакерской натуры своей.
-// Что-то типа дополнительного уровня защиты
-
 // CreateNewCard создаёт новую карточку
-func (r *BoardRepository) CreateNewCard(ctx context.Context, boardID int, columnID int, title string) (newCard *models.Card, err error) {
+func (r *BoardRepository) CreateNewCard(ctx context.Context, columnID int64, title string) (newCard *models.Card, err error) {
+	funcName := "CreateNewCard"
 	query := `
-	WITH col_check AS (
-		SELECT 1
-		FROM kanban_column
-		WHERE col_id = $2 AND board_id = $1
+	WITH new_card AS (
+		INSERT INTO card (col_id, order_index, title)
+		VALUES ($1, (SELECT COUNT(*) FROM "card" WHERE col_id=$1), $2)
+		RETURNING card_id, card_uuid, col_id, title, created_at, updated_at
+	), update_board AS (
+		UPDATE board
+		SET updated_at=CURRENT_TIMESTAMP
+		WHERE board_id=(
+			SELECT board_id
+			FROM kanban_column AS c
+			JOIN board AS b USING(board_id)
+			WHERE c.col_id=$1
+		)
 	)
-	INSERT INTO card (col_id, title, created_at, updated_at, order_index)
-	VALUES ($2, $3, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0) -- Временное решение, TODO для drag-n-drop сделать подзапрос
-	RETURNING card_id, col_id, title, created_at, updated_at;
+	SELECT card_id, card_uuid::text, col_id, title, created_at, updated_at FROM new_card;
 	`
 
 	newCard = &models.Card{}
-	err = r.db.QueryRow(ctx, query, boardID, columnID, title).Scan(
+	err = r.db.QueryRow(ctx, query, columnID, title).Scan(
 		&newCard.ID,
+		&newCard.UUID,
 		&newCard.ColumnID,
 		&newCard.Title,
 		&newCard.CreatedAt,
 		&newCard.UpdatedAt,
 	)
-	logging.Debug(ctx, "CreateNewCard query has err: ", err)
+	logging.Debug(ctx, funcName, " query has err: ", err)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("%s (query): %w", funcName, err)
 	}
 
 	return newCard, nil
 }
 
 // UpdateCard обновляет карточку
-func (r *BoardRepository) UpdateCard(ctx context.Context, boardID int, cardID int, data models.CardPutRequest) (updateCard *models.Card, err error) {
+func (r *BoardRepository) UpdateCard(ctx context.Context, cardID int64, data models.CardPatchRequest) (updateCard *models.Card, err error) {
+	funcName := "UpdateCard"
 	query := `
-	UPDATE card
-	SET
-		title = $1,
-		col_id = $2,
+	WITH update_card AS (
+		UPDATE card
+		SET
+		title = COALESCE($2,title),
+		deadline = COALESCE($3, deadline),
+		is_done = COALESCE($4, is_done),
 		updated_at = CURRENT_TIMESTAMP
-	FROM kanban_column
-	WHERE card.col_id = kanban_column.col_id
-		AND kanban_column.board_id = $3
-		AND card.card_id = $4
-	RETURNING
-		card.card_id, card.title, card.col_id, card.created_at, card.updated_at
+		WHERE card_id=$1
+		RETURNING card_id
+	), update_board AS (
+		UPDATE board
+		SET updated_at=CURRENT_TIMESTAMP
+		WHERE board_id=(
+			SELECT b.board_id
+			FROM card AS c
+			JOIN kanban_column AS cc ON cc.col_id=c.col_id
+			JOIN board AS b ON b.board_id=cc.board_id
+			WHERE c.card_id=$1
+		)
+	)
+	SELECT
+		c.card_id,
+		c.col_id,
+		c.title,
+		c.created_at,
+		c.updated_at,
+		c.deadline,
+		c.is_done,
+		(SELECT (NOT COUNT(*)=0) FROM checklist_field AS f WHERE f.card_id=c.card_id),
+		(SELECT (NOT COUNT(*)=0) FROM card_attachment AS f WHERE f.card_id=c.card_id),
+		(SELECT (NOT COUNT(*)=0 )FROM card_user_assignment AS f WHERE f.card_id=c.card_id),
+		(SELECT (NOT COUNT(*)=0) FROM card_comment AS f WHERE f.card_id=c.card_id)
+	FROM card AS c
+	WHERE c.card_id=$1;
 	`
 	updateCard = &models.Card{}
 
-	err = r.db.QueryRow(ctx, query, data.NewTitle, data.NewColumnId, boardID, cardID).Scan(
+	err = r.db.QueryRow(ctx, query, cardID, data.NewTitle, data.NewDeadline, data.IsDone).Scan(
 		&updateCard.ID,
-		&updateCard.Title,
 		&updateCard.ColumnID,
+		&updateCard.Title,
 		&updateCard.CreatedAt,
 		&updateCard.UpdatedAt,
+		&updateCard.Deadine,
+		&updateCard.IsDone,
+		&updateCard.HasCheckList,
+		&updateCard.HasAttachments,
+		&updateCard.HasAssignedUsers,
+		&updateCard.HasComments,
 	)
-	logging.Debug(ctx, "UpdateCard query has err: ", err)
+	logging.Debug(ctx, funcName, " query has err: ", err)
 	if err != nil {
 		return nil, err
 	}
@@ -120,16 +169,14 @@ func (r *BoardRepository) UpdateCard(ctx context.Context, boardID int, cardID in
 }
 
 // DeleteCard удаляет карточку
-func (r *BoardRepository) DeleteCard(ctx context.Context, boardID int, cardID int) (err error) {
+func (r *BoardRepository) DeleteCard(ctx context.Context, cardID int64) (err error) {
+	funcName := "DeleteCard"
 	query := `
 		DELETE FROM card
-		USING kanban_column
-		WHERE card.col_id = kanban_column.col_id
-			AND kanban_column.board_id = $1
-			AND card.card_id = $2
+		WHERE card.card_id = $1;
 	`
-	_, err = r.db.Exec(ctx, query, boardID, cardID)
-	logging.Debug(ctx, "DeleteCard query has err: ", err)
+	_, err = r.db.Exec(ctx, query, cardID)
+	logging.Debug(ctx, funcName, " query has err: ", err)
 	if err != nil {
 		return err
 	}

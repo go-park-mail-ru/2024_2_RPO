@@ -136,7 +136,7 @@ func TestRegisterUser_Success(t *testing.T) {
 	mockAuthUsecase := mocks.NewMockAuthUsecase(ctrl)
 	authDelivery := AuthDelivery{authUsecase: mockAuthUsecase}
 
-	user := models.UserRegistration{
+	user := models.UserRegisterRequest{
 		Email:    "user@example.com",
 		Name:     "nickname",
 		Password: "password",
@@ -187,7 +187,7 @@ func TestRegisterUser_EmailBusy(t *testing.T) {
 	mockAuthUsecase := mocks.NewMockAuthUsecase(ctrl)
 	authDelivery := AuthDelivery{authUsecase: mockAuthUsecase}
 
-	user := models.UserRegistration{
+	user := models.UserRegisterRequest{
 		Email:    "user@example.com",
 		Name:     "nickname",
 		Password: "password",
@@ -215,7 +215,7 @@ func TestRegisterUser_NicknameBusy(t *testing.T) {
 	mockAuthUsecase := mocks.NewMockAuthUsecase(ctrl)
 	authDelivery := AuthDelivery{authUsecase: mockAuthUsecase}
 
-	user := models.UserRegistration{
+	user := models.UserRegisterRequest{
 		Email:    "user@example.com",
 		Name:     "nickname",
 		Password: "password",
@@ -243,7 +243,7 @@ func TestRegisterUser_InternalServerError(t *testing.T) {
 	mockAuthUsecase := mocks.NewMockAuthUsecase(ctrl)
 	authDelivery := AuthDelivery{authUsecase: mockAuthUsecase}
 
-	user := models.UserRegistration{
+	user := models.UserRegisterRequest{
 		Email:    "user@example.com",
 		Name:     "nickname",
 		Password: "password",

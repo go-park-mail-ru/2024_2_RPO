@@ -38,7 +38,7 @@ func TestMiddleware_InvalidCookie(t *testing.T) {
 	defer ctrl.Finish()
 
 	mockAuthRepo := mocks.NewMockAuthRepo(ctrl)
-	mockAuthRepo.EXPECT().RetrieveUserIdFromSessionId(gomock.Any(), "invalid-session-id").Return(0, errors.New("Invalid session id"))
+	mockAuthRepo.EXPECT().RetrieveUserIDFromSession(gomock.Any(), "invalid-session-id").Return(0, errors.New("Invalid session id"))
 
 	mw := CreateSessionMiddleware(mockAuthRepo)
 
@@ -60,7 +60,7 @@ func TestMiddleware_ValidCookie(t *testing.T) {
 
 	mockAuthRepo := mocks.NewMockAuthRepo(ctrl)
 	userID := 123
-	mockAuthRepo.EXPECT().RetrieveUserIdFromSessionId(gomock.Any(), "valid-session-id").Return(userID, nil)
+	mockAuthRepo.EXPECT().RetrieveUserIDFromSession(gomock.Any(), "valid-session-id").Return(userID, nil)
 
 	mw := CreateSessionMiddleware(mockAuthRepo)
 

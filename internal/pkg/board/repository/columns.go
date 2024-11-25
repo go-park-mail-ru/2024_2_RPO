@@ -12,7 +12,8 @@ import (
 )
 
 // GetColumnsForBoard возвращает все колонки, которые есть на доске
-func (r *BoardRepository) GetColumnsForBoard(ctx context.Context, boardID int) (columns []models.Column, err error) {
+func (r *BoardRepository) GetColumnsForBoard(ctx context.Context, boardID int64) (columns []models.Column, err error) {
+	funcName := "GetColumnsForBoard"
 	query := `
 	SELECT
 		col_id,
@@ -21,7 +22,7 @@ func (r *BoardRepository) GetColumnsForBoard(ctx context.Context, boardID int) (
 	WHERE board_id = $1;
 	`
 	rows, err := r.db.Query(ctx, query, boardID)
-	logging.Debug(ctx, "GetColumnsForBoard query has err: ", err)
+	logging.Debug(ctx, funcName, " query has err: ", err)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, nil
@@ -48,10 +49,11 @@ func (r *BoardRepository) GetColumnsForBoard(ctx context.Context, boardID int) (
 }
 
 // CreateColumn создаёт колонку на канбане
-func (r *BoardRepository) CreateColumn(ctx context.Context, boardID int, title string) (newColumn *models.Column, err error) {
+func (r *BoardRepository) CreateColumn(ctx context.Context, boardID int64, title string) (newColumn *models.Column, err error) {
+	funcName := "CreateColumn"
 	query := `
-		INSERT INTO kanban_column (board_id, title, created_at, updated_at)
-		VALUES ($1, $2, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+		INSERT INTO kanban_column (board_id, title, order_index)
+		VALUES ($1, $2, (SELECT COUNT(*) FROM kanban_column WHERE board_id=$1))
 		RETURNING col_id, title;
 	`
 
@@ -60,7 +62,7 @@ func (r *BoardRepository) CreateColumn(ctx context.Context, boardID int, title s
 		&newColumn.ID,
 		&newColumn.Title,
 	)
-	logging.Debug(ctx, "CreateColumn query has err: ", err)
+	logging.Debug(ctx, funcName, " query has err: ", err)
 	if err != nil {
 		return nil, err
 	}
@@ -69,41 +71,43 @@ func (r *BoardRepository) CreateColumn(ctx context.Context, boardID int, title s
 }
 
 // UpdateColumn обновляет колонку на канбане
-func (r *BoardRepository) UpdateColumn(ctx context.Context, boardID int, columnID int, data models.ColumnRequest) (updateColumn *models.Column, err error) {
+func (r *BoardRepository) UpdateColumn(ctx context.Context, columnID int64, data models.ColumnRequest) (updateColumn *models.Column, err error) {
+	funcName := "UpdateColumn"
 	query := `
 		UPDATE kanban_column
 		SET title = $1, updated_at = CURRENT_TIMESTAMP
-		WHERE col_id = $2 AND board_id = $3
+		WHERE col_id = $2
 		RETURNING col_id, title;
 	`
 
 	updateColumn = &models.Column{}
-	err = r.db.QueryRow(ctx, query, data.NewTitle, columnID, boardID).Scan(
+	err = r.db.QueryRow(ctx, query, data.NewTitle, columnID).Scan(
 		&updateColumn.ID,
 		&updateColumn.Title,
 	)
-	logging.Debug(ctx, "UpdateColumn query has err: ", err)
+	logging.Debug(ctx, funcName, " query has err: ", err)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("%s (query): %w", funcName, err)
 	}
 
 	return updateColumn, nil
 }
 
 // DeleteColumn убирает колонку с канбана
-func (r *BoardRepository) DeleteColumn(ctx context.Context, boardID int, columnID int) (err error) {
+func (r *BoardRepository) DeleteColumn(ctx context.Context, columnID int64) (err error) {
+	funcName := "DeleteColumn"
 	query := `
 		DELETE FROM kanban_column
-		WHERE col_id = $1 AND board_id = $2;
+		WHERE col_id = $1;
 	`
 
-	tag, err := r.db.Exec(ctx, query, columnID, boardID)
-	logging.Debug(ctx, "DeleteColumns query has err: ", err)
+	tag, err := r.db.Exec(ctx, query, columnID)
+	logging.Debug(ctx, funcName, " query has err: ", err)
 	if err != nil {
-		return fmt.Errorf("DeleteColumn (query): %w", err)
+		return fmt.Errorf("%s (query): %w", funcName, err)
 	}
 	if tag.RowsAffected() == 0 {
-		return fmt.Errorf("DeleteColumn (query): %w", errs.ErrNotFound)
+		return fmt.Errorf("%s (query): %w", funcName, errs.ErrNotFound)
 	}
 	// Лишние карточки удалятся каскадно (за счёт ограничения FOREIGN KEY)
 

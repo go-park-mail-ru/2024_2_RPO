@@ -2,6 +2,7 @@ package session
 
 import (
 	auth "RPO_back/internal/pkg/auth"
+	AuthGRPC "RPO_back/internal/pkg/auth/delivery/grpc/gen"
 	"context"
 	"net/http"
 )
@@ -9,16 +10,16 @@ import (
 type contextKey string
 
 const (
-	UserIDContextKey contextKey = "userId"
+	UserIDContextKey contextKey = "userID"
 )
 
 type SessionMiddleware struct {
-	authRepo auth.AuthRepo
+	authGRPC AuthGRPC.AuthClient
 }
 
-func CreateSessionMiddleware(authRepo auth.AuthRepo) *SessionMiddleware {
+func CreateSessionMiddleware(authGRPC AuthGRPC.AuthClient) *SessionMiddleware {
 	return &SessionMiddleware{
-		authRepo: authRepo,
+		authGRPC: authGRPC,
 	}
 }
 
@@ -30,7 +31,7 @@ func (mw *SessionMiddleware) Middleware(next http.Handler) http.Handler {
 			return
 		}
 
-		userID, err := mw.authRepo.RetrieveUserIdFromSessionId(r.Context(), cookie.Value)
+		responce, err := mw.authGRPC.CheckSession(r.Context(), &AuthGRPC.CheckSessionRequest{SessionID: cookie.Value})
 		if err != nil {
 			http.SetCookie(w, &http.Cookie{
 				Name:   auth.SessionCookieName,
@@ -40,6 +41,8 @@ func (mw *SessionMiddleware) Middleware(next http.Handler) http.Handler {
 			return
 		}
 
+		userID := responce.GetUserID()
+
 		ctx := context.WithValue(r.Context(), UserIDContextKey, userID)
 		r = r.WithContext(ctx)
 		next.ServeHTTP(w, r)
@@ -47,8 +50,8 @@ func (mw *SessionMiddleware) Middleware(next http.Handler) http.Handler {
 }
 
 // UserIDFromContext получает userID из контекста запроса
-func UserIDFromContext(ctx context.Context) (int, bool) {
-	userID, ok := ctx.Value(UserIDContextKey).(int)
+func UserIDFromContext(ctx context.Context) (int64, bool) {
+	userID, ok := ctx.Value(UserIDContextKey).(int64)
 
 	return userID, ok
 }

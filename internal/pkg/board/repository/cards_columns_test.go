@@ -51,9 +51,9 @@ func TestUpdateCard(t *testing.T) {
 		WithArgs("Updated Title", 2, 1, 1).
 		WillReturnError(errors.New("some error"))
 
-	data := models.CardPutRequest{
+	data := models.CardPatchRequest{
 		NewTitle:    "Updated Title",
-		NewColumnId: 2,
+		NewColumnID: 2,
 	}
 
 	_, err = repo.UpdateCard(context.Background(), 1, 1, data)

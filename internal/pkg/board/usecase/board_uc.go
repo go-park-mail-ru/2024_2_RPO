@@ -8,19 +8,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io"
-	"mime/multipart"
-	"os"
-	"path/filepath"
 )
 
-var roleLevels = make(map[string]int)
-
-func init() {
-	roleLevels["viewer"] = 0
-	roleLevels["editor"] = 1
-	roleLevels["editor_chief"] = 2
-	roleLevels["admin"] = 3
+var roleLevels = map[string]int{
+	"viewer":       0,
+	"editor":       1,
+	"editor_chief": 2,
+	"admin":        3,
 }
 
 type BoardUsecase struct {
@@ -34,24 +28,17 @@ func CreateBoardUsecase(boardRepository board.BoardRepo) *BoardUsecase {
 }
 
 // CreateNewBoard создаёт новую доску и возвращает информацию о ней
-func (uc *BoardUsecase) CreateNewBoard(ctx context.Context, userID int, data models.CreateBoardRequest) (newBoard *models.Board, err error) {
-	newBoard, err = uc.boardRepository.CreateBoard(ctx, data.Name, userID)
+func (uc *BoardUsecase) CreateNewBoard(ctx context.Context, userID int64, data models.BoardRequest) (newBoard *models.Board, err error) {
+	newBoard, err = uc.boardRepository.CreateBoard(ctx, data.NewName, userID)
 	if err != nil {
 		return nil, err
 	}
-	_, err = uc.boardRepository.AddMember(ctx, newBoard.ID, userID, userID)
-	if err != nil {
-		return nil, err
-	}
-	_, err = uc.boardRepository.SetMemberRole(ctx, newBoard.ID, userID, "admin")
-	if err != nil {
-		return nil, err
-	}
+
 	return newBoard, nil
 }
 
 // UpdateBoard обновляет информацию о доске и возвращает обновлённую информацию
-func (uc *BoardUsecase) UpdateBoard(ctx context.Context, userID int, boardID int, data models.BoardPutRequest) (updatedBoard *models.Board, err error) {
+func (uc *BoardUsecase) UpdateBoard(ctx context.Context, userID int64, boardID int64, data models.BoardRequest) (updatedBoard *models.Board, err error) {
 	deleterMember, err := uc.boardRepository.GetMemberPermissions(ctx, boardID, userID, false)
 	if err != nil {
 		return nil, fmt.Errorf("GetMembersPermissions (getting editor perm-s): %w", err)
@@ -59,12 +46,12 @@ func (uc *BoardUsecase) UpdateBoard(ctx context.Context, userID int, boardID int
 	if deleterMember.Role != "admin" && deleterMember.Role != "editor_chief" {
 		return nil, fmt.Errorf("GetMembersPermissions (checking): %w", errs.ErrNotPermitted)
 	}
-	updatedBoard, err = uc.boardRepository.UpdateBoard(ctx, boardID, &data)
+	updatedBoard, err = uc.boardRepository.UpdateBoard(ctx, boardID, userID, &data)
 	return
 }
 
 // DeleteBoard удаляет доску
-func (uc *BoardUsecase) DeleteBoard(ctx context.Context, userID int, boardID int) error {
+func (uc *BoardUsecase) DeleteBoard(ctx context.Context, userID int64, boardID int64) error {
 	deleterMember, err := uc.boardRepository.GetMemberPermissions(ctx, boardID, userID, false)
 	if err != nil {
 		return fmt.Errorf("GetMembersPermissions (getting deleter perm-s): %w", err)
@@ -80,18 +67,18 @@ func (uc *BoardUsecase) DeleteBoard(ctx context.Context, userID int, boardID int
 }
 
 // GetMyBoards получает все доски для пользователя
-func (uc *BoardUsecase) GetMyBoards(ctx context.Context, userID int) (boards []models.Board, err error) {
+func (uc *BoardUsecase) GetMyBoards(ctx context.Context, userID int64) (boards []models.Board, err error) {
 	boards, err = uc.boardRepository.GetBoardsForUser(ctx, userID)
 	return
 }
 
 // GetMembersPermissions получает информацию о ролях всех участников доски
-func (uc *BoardUsecase) GetMembersPermissions(ctx context.Context, userID int, boardID int) (data []models.MemberWithPermissions, err error) {
+func (uc *BoardUsecase) GetMembersPermissions(ctx context.Context, userID int64, boardID int64) (data []models.MemberWithPermissions, err error) {
 	_, err = uc.boardRepository.GetMemberPermissions(ctx, boardID, userID, false)
 	if err != nil {
 		return nil, fmt.Errorf("GetMembersPermissions (permissions): %w", err)
 	}
-	permissions, err := uc.boardRepository.GetMembersWithPermissions(ctx, boardID)
+	permissions, err := uc.boardRepository.GetMembersWithPermissions(ctx, boardID, userID)
 	if err != nil {
 		return nil, fmt.Errorf("GetMembersPermissions (query): %w", err)
 	}
@@ -99,7 +86,7 @@ func (uc *BoardUsecase) GetMembersPermissions(ctx context.Context, userID int, b
 }
 
 // AddMember добавляет участника на доску с правами "viewer" и возвращает его права
-func (uc *BoardUsecase) AddMember(ctx context.Context, userID int, boardID int, addRequest *models.AddMemberRequest) (newMember *models.MemberWithPermissions, err error) {
+func (uc *BoardUsecase) AddMember(ctx context.Context, userID int64, boardID int64, addRequest *models.AddMemberRequest) (newMember *models.MemberWithPermissions, err error) {
 	adderMember, err := uc.boardRepository.GetMemberPermissions(ctx, boardID, userID, false)
 	if err != nil {
 		return nil, fmt.Errorf("GetMembersPermissions (permissions): %w", err)
@@ -119,15 +106,17 @@ func (uc *BoardUsecase) AddMember(ctx context.Context, userID int, boardID int, 
 }
 
 // UpdateMemberRole обновляет роль участника и возвращает обновлённые права
-func (uc *BoardUsecase) UpdateMemberRole(ctx context.Context, userID int, boardID int, memberID int, newRole string) (updatedMember *models.MemberWithPermissions, err error) {
+func (uc *BoardUsecase) UpdateMemberRole(ctx context.Context, userID int64, boardID int64, memberID int64, newRole string) (updatedMember *models.MemberWithPermissions, err error) {
 	updaterMember, err := uc.boardRepository.GetMemberPermissions(ctx, boardID, userID, false)
 	if err != nil {
 		return nil, fmt.Errorf("UpdateMemberRole (updater permissions): %w", err)
 	}
+
 	memberToUpdate, err := uc.boardRepository.GetMemberPermissions(ctx, boardID, memberID, false)
 	if err != nil {
 		return nil, fmt.Errorf("UpdateMemberRole (member permissions): %w", err)
 	}
+
 	if updaterMember.Role != "admin" {
 		if (updaterMember.Role != "admin") && (updaterMember.Role != "editor_chief") {
 			return nil, fmt.Errorf("UpdateMemberRole (check1): %w", errs.ErrNotPermitted)
@@ -139,15 +128,17 @@ func (uc *BoardUsecase) UpdateMemberRole(ctx context.Context, userID int, boardI
 			return nil, fmt.Errorf("UpdateMemberRole (check3): %w", errs.ErrNotPermitted)
 		}
 	}
-	updatedMember, err = uc.boardRepository.SetMemberRole(ctx, boardID, memberID, newRole)
+
+	updatedMember, err = uc.boardRepository.SetMemberRole(ctx, userID, boardID, memberID, newRole)
 	if err != nil {
 		return nil, fmt.Errorf("UpdateMemberRole (action): %w", err)
 	}
+
 	return updatedMember, nil
 }
 
 // RemoveMember удаляет участника с доски
-func (uc *BoardUsecase) RemoveMember(ctx context.Context, userID int, boardID int, memberID int) error {
+func (uc *BoardUsecase) RemoveMember(ctx context.Context, userID int64, boardID int64, memberID int64) error {
 	removerMember, err := uc.boardRepository.GetMemberPermissions(ctx, boardID, userID, false)
 	if err != nil {
 		return fmt.Errorf("RemoveMember (remover permissions): %w", err)
@@ -174,7 +165,7 @@ func (uc *BoardUsecase) RemoveMember(ctx context.Context, userID int, boardID in
 }
 
 // GetBoardContent получает все карточки и колонки с доски, а также информацию о доске
-func (uc *BoardUsecase) GetBoardContent(ctx context.Context, userID int, boardID int) (content *models.BoardContent, err error) {
+func (uc *BoardUsecase) GetBoardContent(ctx context.Context, userID int64, boardID int64) (content *models.BoardContent, err error) {
 	userPermissions, err := uc.boardRepository.GetMemberPermissions(ctx, boardID, userID, false)
 	if err != nil {
 		if errors.Is(err, errs.ErrNotPermitted) {
@@ -196,7 +187,7 @@ func (uc *BoardUsecase) GetBoardContent(ctx context.Context, userID int, boardID
 		return nil, fmt.Errorf("GetBoardContent (add GetColumnsForBoard): %w", err)
 	}
 
-	info, err := uc.boardRepository.GetBoard(ctx, boardID)
+	info, err := uc.boardRepository.GetBoard(ctx, boardID, userID)
 	if err != nil {
 		return nil, fmt.Errorf("GetBoardContent (add GetBoard): %w", err)
 	}
@@ -210,7 +201,7 @@ func (uc *BoardUsecase) GetBoardContent(ctx context.Context, userID int, boardID
 }
 
 // CreateNewCard создаёт новую карточку и возвращает её
-func (uc *BoardUsecase) CreateNewCard(ctx context.Context, userID int, boardID int, data *models.CardPutRequest) (newCard *models.Card, err error) {
+func (uc *BoardUsecase) CreateNewCard(ctx context.Context, userID int64, boardID int64, data *models.CardPostRequest) (newCard *models.Card, err error) {
 	perms, err := uc.boardRepository.GetMemberPermissions(ctx, boardID, userID, false)
 	if err != nil {
 		if errors.Is(err, errs.ErrNotPermitted) {
@@ -219,15 +210,16 @@ func (uc *BoardUsecase) CreateNewCard(ctx context.Context, userID int, boardID i
 		if errors.Is(err, errs.ErrNotFound) {
 			return nil, fmt.Errorf("CreateNewCard (get permissions): %w", err)
 		}
-		return nil, fmt.Errorf("CreateNewCard (add GetMemberPermissions): %w", err)
+		return nil, fmt.Errorf("CreateNewCard (get permissions): %w", err)
 	}
+
 	if perms.Role == "viewer" {
 		return nil, fmt.Errorf("CreateNewCard (check): %w", errs.ErrNotPermitted)
 	}
 
-	card, err := uc.boardRepository.CreateNewCard(ctx, boardID, data.NewColumnId, data.NewTitle)
+	card, err := uc.boardRepository.CreateNewCard(ctx, *data.ColumnID, *data.Title)
 	if err != nil {
-		return nil, fmt.Errorf("CreateNewCard (add CreateNewCard): %w", err)
+		return nil, fmt.Errorf("CreateNewCard (create): %w", err)
 	}
 
 	return &models.Card{
@@ -240,24 +232,24 @@ func (uc *BoardUsecase) CreateNewCard(ctx context.Context, userID int, boardID i
 }
 
 // UpdateCard обновляет карточку и возвращает обновлённую версию
-func (uc *BoardUsecase) UpdateCard(ctx context.Context, userID int, boardID int, cardID int, data *models.CardPutRequest) (updatedCard *models.Card, err error) {
-	perms, err := uc.boardRepository.GetMemberPermissions(ctx, boardID, userID, false)
+func (uc *BoardUsecase) UpdateCard(ctx context.Context, userID int64, cardID int64, data *models.CardPatchRequest) (updatedCard *models.Card, err error) {
+	role, _, err := uc.boardRepository.GetMemberFromCard(ctx, userID, cardID)
 	if err != nil {
 		if errors.Is(err, errs.ErrNotPermitted) {
-			return nil, fmt.Errorf("UpdateCard: %w", err)
+			return nil, fmt.Errorf("UpdateCard (get permissions): %w", err)
 		}
 		if errors.Is(err, errs.ErrNotFound) {
-			return nil, fmt.Errorf("UpdateCard: %w", err)
+			return nil, fmt.Errorf("UpdateCard (get permissions): %w", err)
 		}
-		return nil, fmt.Errorf("UpdateCard (add GetMemberPermissions): %w", err)
+		return nil, fmt.Errorf("UpdateCard (get permissions): %w", err)
 	}
-	if perms.Role == "viewer" {
+	if role == "viewer" {
 		return nil, fmt.Errorf("UpdateCard (check): %w", errs.ErrNotPermitted)
 	}
 
-	updatedCard, err = uc.boardRepository.UpdateCard(ctx, boardID, cardID, *data)
+	updatedCard, err = uc.boardRepository.UpdateCard(ctx, cardID, *data)
 	if err != nil {
-		return nil, fmt.Errorf("UpdateCard (repo): %w", err)
+		return nil, fmt.Errorf("UpdateCard (update): %w", err)
 	}
 
 	return &models.Card{
@@ -270,40 +262,28 @@ func (uc *BoardUsecase) UpdateCard(ctx context.Context, userID int, boardID int,
 }
 
 // DeleteCard удаляет карточку
-func (uc *BoardUsecase) DeleteCard(ctx context.Context, userID int, boardID int, cardID int) (err error) {
-	perms, err := uc.boardRepository.GetMemberPermissions(ctx, boardID, userID, false)
+func (uc *BoardUsecase) DeleteCard(ctx context.Context, userID int64, cardID int64) (err error) {
+	role, _, err := uc.boardRepository.GetMemberFromCard(ctx, userID, cardID)
 	if err != nil {
-		if errors.Is(err, errs.ErrNotPermitted) {
-			return err
-		}
-		if errors.Is(err, errs.ErrNotFound) {
-			return err
-		}
 		return err
 	}
-	if perms.Role == "viewer" {
+	if role == "viewer" {
 		return fmt.Errorf("DeleteCard (check): %w", errs.ErrNotPermitted)
 	}
 
-	err = uc.boardRepository.DeleteCard(ctx, boardID, cardID)
+	err = uc.boardRepository.DeleteCard(ctx, cardID)
 	if err != nil {
-		return err
+		return fmt.Errorf("DeleteCard (delete): %w", err)
 	}
 
 	return nil
 }
 
 // CreateColumn создаёт колонку канбана на доске и возвращает её
-func (uc *BoardUsecase) CreateColumn(ctx context.Context, userID int, boardID int, data *models.ColumnRequest) (newCol *models.Column, err error) {
+func (uc *BoardUsecase) CreateColumn(ctx context.Context, userID int64, boardID int64, data *models.ColumnRequest) (newCol *models.Column, err error) {
 	perms, err := uc.boardRepository.GetMemberPermissions(ctx, boardID, userID, false)
 	if err != nil {
-		if errors.Is(err, errs.ErrNotPermitted) {
-			return nil, fmt.Errorf("CreateColumn: %w", err)
-		}
-		if errors.Is(err, errs.ErrNotFound) {
-			return nil, fmt.Errorf("CreateColumn: %w", err)
-		}
-		return nil, fmt.Errorf("CreateColumn (add GetMemberPermissions): %w", err)
+		return nil, fmt.Errorf("CreateColumn (get role): %w", err)
 	}
 	if perms.Role == "viewer" {
 		return nil, fmt.Errorf("CreateColumn (check): %w", errs.ErrNotPermitted)
@@ -311,7 +291,7 @@ func (uc *BoardUsecase) CreateColumn(ctx context.Context, userID int, boardID in
 
 	column, err := uc.boardRepository.CreateColumn(ctx, boardID, data.NewTitle)
 	if err != nil {
-		return nil, fmt.Errorf("CreateColumn (add CreateColumn): %w", err)
+		return nil, fmt.Errorf("CreateColumn (create): %w", err)
 	}
 
 	return &models.Column{
@@ -321,45 +301,45 @@ func (uc *BoardUsecase) CreateColumn(ctx context.Context, userID int, boardID in
 }
 
 // UpdateColumn изменяет колонку и возвращает её обновлённую версию
-func (uc *BoardUsecase) UpdateColumn(ctx context.Context, userID int, boardID int, columnID int, data *models.ColumnRequest) (updatedCol *models.Column, err error) {
-	perms, err := uc.boardRepository.GetMemberPermissions(ctx, boardID, userID, false)
+func (uc *BoardUsecase) UpdateColumn(ctx context.Context, userID int64, columnID int64, data *models.ColumnRequest) (updatedCol *models.Column, err error) {
+	role, _, err := uc.boardRepository.GetMemberFromColumn(ctx, userID, columnID)
 	if err != nil {
 		return nil, fmt.Errorf("UpdateColumn (get perms): %w", err)
 	}
-	if perms.Role == "viewer" {
+
+	if role == "viewer" {
 		return nil, fmt.Errorf("UpdateColumn (check): %w", errs.ErrNotPermitted)
 	}
 
-	updatedCol, err = uc.boardRepository.UpdateColumn(ctx, boardID, columnID, *data)
+	updatedCol, err = uc.boardRepository.UpdateColumn(ctx, columnID, *data)
 	if err != nil {
 		return nil, fmt.Errorf("UpdateColumn (add UpdateColumn): %w", err)
 	}
 
-	return &models.Column{
-		ID:    updatedCol.ID,
-		Title: updatedCol.Title,
-	}, nil
+	return updatedCol, nil
 }
 
 // DeleteColumn удаляет колонку
-func (uc *BoardUsecase) DeleteColumn(ctx context.Context, userID int, boardID int, columnID int) (err error) {
-	perms, err := uc.boardRepository.GetMemberPermissions(ctx, boardID, userID, false)
+func (uc *BoardUsecase) DeleteColumn(ctx context.Context, userID int64, columnID int64) (err error) {
+	role, _, err := uc.boardRepository.GetMemberFromColumn(ctx, userID, columnID)
 	if err != nil {
 		return fmt.Errorf("DeleteColumn (get perms): %w", err)
 	}
-	if perms.Role == "viewer" {
+
+	if role == "viewer" {
 		return fmt.Errorf("DeleteColumn (check): %w", errs.ErrNotPermitted)
 	}
 
-	err = uc.boardRepository.DeleteColumn(ctx, boardID, columnID)
+	err = uc.boardRepository.DeleteColumn(ctx, columnID)
 	if err != nil {
-		return err
+		return fmt.Errorf("DeleteColumn (delete): %w", errs.ErrNotPermitted)
 	}
 
 	return nil
 }
 
-func (uc *BoardUsecase) SetBoardBackground(ctx context.Context, userID int, boardID int, file *multipart.File, fileHeader *multipart.FileHeader) (updatedBoard *models.Board, err error) {
+func (uc *BoardUsecase) SetBoardBackground(ctx context.Context, userID int64, boardID int64, file *models.UploadedFile) (updatedBoard *models.Board, err error) {
+	funcName := "SetBoardBackground"
 	perms, err := uc.boardRepository.GetMemberPermissions(ctx, boardID, userID, false)
 	if err != nil {
 		return nil, fmt.Errorf("SetBoardBackground (get perms): %w", err)
@@ -367,26 +347,378 @@ func (uc *BoardUsecase) SetBoardBackground(ctx context.Context, userID int, boar
 	if perms.Role != "admin" && perms.Role != "editor_chief" {
 		return nil, fmt.Errorf("UpdateColumn (check): %w", errs.ErrNotPermitted)
 	}
-	uploadTo, err := uc.boardRepository.SetBoardBackground(
-		ctx,
-		userID,
-		boardID,
-		uploads.ExtractFileExtension(fileHeader.Filename),
-		int(fileHeader.Size),
-	)
-	if err != nil {
-		return nil, err
-	}
-	uploadDir := os.Getenv("USER_UPLOADS_DIR")
-	filePath := filepath.Join(uploadDir, uploadTo)
-	dst, err := os.Create(filePath)
-	if err != nil {
-		return nil, fmt.Errorf("cant create file on server side: %w", err)
-	}
-	defer dst.Close()
 
-	if _, err = io.Copy(dst, *file); err != nil {
-		return nil, fmt.Errorf("cant copy file on server side: %w", err)
+	fileNames, fileIDs, err := uc.boardRepository.DeduplicateFile(ctx, file)
+	if err != nil {
+		return nil, fmt.Errorf("%s (deduplicate): %w", funcName, err)
 	}
-	return uc.boardRepository.GetBoard(ctx, boardID)
+
+	fileID, err := uploads.CompareFiles(fileNames, fileIDs, file)
+	if err != nil {
+		return nil, fmt.Errorf("%s (compare): %w", funcName, err)
+	}
+
+	if fileID == nil {
+		err = uc.boardRepository.RegisterFile(ctx, file)
+		if err != nil {
+			return nil, fmt.Errorf("%s (save file): %w", funcName, err)
+		}
+		fileID = file.FileID
+	}
+	file.FileID = fileID
+
+	newBoard, err := uc.boardRepository.SetBoardBackground(ctx, userID, boardID, file)
+	if err != nil {
+		return nil, fmt.Errorf("%s (): %w", funcName, err)
+	}
+
+	return newBoard, nil
+}
+
+// AssignUser назначает карточку пользователю
+func (uc *BoardUsecase) AssignUser(ctx context.Context, userID int64, cardID int64, assignedUserID int64) (assignedUser *models.UserProfile, err error) {
+	funcName := "AssignUser"
+	perms, _, err := uc.boardRepository.GetMemberFromCard(ctx, userID, cardID)
+	if err != nil {
+		return nil, fmt.Errorf("%s (get perms): %w", funcName, err)
+	}
+
+	if perms == "viewer" {
+		return nil, fmt.Errorf("%s (check): %w", funcName, errs.ErrNotPermitted)
+	}
+
+	assignedUser, err = uc.boardRepository.AssignUserToCard(ctx, cardID, assignedUserID)
+	if err != nil {
+		return nil, fmt.Errorf("%s (assign user): %w", funcName, err)
+	}
+
+	return assignedUser, nil
+}
+
+// DeassignUser отменяет назначение карточки пользователю
+func (uc *BoardUsecase) DeassignUser(ctx context.Context, userID int64, cardID int64, assignedUserID int64) (err error) {
+	funcName := "DeassignUser"
+	perms, _, err := uc.boardRepository.GetMemberFromCard(ctx, userID, cardID)
+	if err != nil {
+		return fmt.Errorf("%s (get perms): %w", funcName, err)
+	}
+
+	if perms == "viewer" {
+		return fmt.Errorf("%s (check): %w", funcName, errs.ErrNotPermitted)
+	}
+
+	err = uc.boardRepository.DeassignUserFromCard(ctx, cardID, assignedUserID)
+	if err != nil {
+		return fmt.Errorf("%s (deassign user): %w", funcName, err)
+	}
+
+	return nil
+}
+
+// AddComment добавляет комментарий на карточку
+func (uc *BoardUsecase) AddComment(ctx context.Context, userID int64, cardID int64, commentReq *models.CommentRequest) (newComment *models.Comment, err error) {
+	funcName := "AddComment"
+
+	perms, _, err := uc.boardRepository.GetMemberFromCard(ctx, userID, cardID)
+	if err != nil {
+		return nil, fmt.Errorf("%s (get perms): %w", funcName, err)
+	}
+
+	if perms == "viewer" {
+		return nil, fmt.Errorf("%s (check): %w", funcName, errs.ErrNotPermitted)
+	}
+
+	newComment, err = uc.boardRepository.CreateComment(ctx, userID, cardID, commentReq)
+	if err != nil {
+		return nil, fmt.Errorf("%s (add comment): %w", funcName, err)
+	}
+
+	return newComment, nil
+}
+
+// UpdateComment редактирует существующий комментарий на карточке
+func (uc *BoardUsecase) UpdateComment(ctx context.Context, userID int64, commentID int64, commentReq *models.CommentRequest) (updatedComment *models.Comment, err error) {
+	funcName := "UpdateComment"
+	role, _, _, err := uc.boardRepository.GetMemberFromComment(ctx, userID, commentID)
+	if err != nil {
+		return nil, fmt.Errorf("%s (get perms): %w", funcName, err)
+	}
+
+	if role == "viewer" {
+		return nil, fmt.Errorf("%s (check): %w", funcName, errs.ErrNotPermitted)
+	}
+	updatedComment, err = uc.boardRepository.UpdateComment(ctx, commentID, commentReq)
+	if err != nil {
+		return nil, fmt.Errorf("%s (update comment): %w", funcName, err)
+	}
+
+	return updatedComment, nil
+}
+
+// DeleteComment удаляет комментарий с карточки
+func (uc *BoardUsecase) DeleteComment(ctx context.Context, userID int64, commentID int64) (err error) {
+	funcName := "DeleteComment"
+	role, _, _, err := uc.boardRepository.GetMemberFromComment(ctx, userID, commentID)
+	if err != nil {
+		return fmt.Errorf("%s (get perms): %w", funcName, err)
+	}
+
+	if role == "viewer" {
+		return fmt.Errorf("%s (check): %w", funcName, errs.ErrNotPermitted)
+	}
+
+	err = uc.boardRepository.DeleteComment(ctx, commentID)
+	if err != nil {
+		return fmt.Errorf("%s (delete comment): %w", funcName, err)
+	}
+
+	return nil
+}
+
+// AddCheckListField добавляет строку чеклиста в конец списка
+func (uc *BoardUsecase) AddCheckListField(ctx context.Context, userID int64, cardID int64, fieldReq *models.CheckListFieldPostRequest) (newField *models.CheckListField, err error) {
+	funcName := "AddCheckListField"
+	role, _, err := uc.boardRepository.GetMemberFromCard(ctx, userID, cardID)
+	if err != nil {
+		return nil, fmt.Errorf("%s (member): %w", funcName, err)
+	}
+	if role == "viewer" {
+		return nil, fmt.Errorf("%s (check): %w", funcName, errs.ErrNotPermitted)
+	}
+
+	field, err := uc.boardRepository.CreateCheckListField(ctx, cardID, fieldReq)
+	if err != nil {
+		return nil, fmt.Errorf("%s (create): %w", funcName, err)
+	}
+	return field, nil
+}
+
+// UpdateCheckListField обновляет строку чеклиста и/или её положение
+func (uc *BoardUsecase) UpdateCheckListField(ctx context.Context, userID int64, fieldID int64, fieldReq *models.CheckListFieldPatchRequest) (updatedField *models.CheckListField, err error) {
+	funcName := "UpdateCheckListField"
+	role, _, _, err := uc.boardRepository.GetMemberFromCheckListField(ctx, userID, fieldID)
+	if err != nil {
+		return nil, fmt.Errorf("%s (member): %w", funcName, err)
+	}
+	if role == "viewer" {
+		return nil, fmt.Errorf("%s (check): %w", funcName, errs.ErrNotPermitted)
+	}
+
+	field, err := uc.boardRepository.UpdateCheckListField(ctx, fieldID, fieldReq)
+	if err != nil {
+		return nil, fmt.Errorf("%s (update): %w", funcName, err)
+	}
+	return field, nil
+}
+
+// DeleteCheckListField удаляет строку из чеклиста
+func (uc *BoardUsecase) DeleteCheckListField(ctx context.Context, userID int64, fieldID int64) (err error) {
+	funcName := "DeleteCheckListField"
+	role, _, _, err := uc.boardRepository.GetMemberFromCheckListField(ctx, userID, fieldID)
+	if err != nil {
+		return fmt.Errorf("%s (member): %w", funcName, err)
+	}
+	if role == "viewer" {
+		return fmt.Errorf("%s (check): %w", funcName, errs.ErrNotPermitted)
+	}
+
+	err = uc.boardRepository.DeleteCheckListField(ctx, fieldID)
+	if err != nil {
+		return fmt.Errorf("%s (delete): %w", funcName, err)
+	}
+	return nil
+}
+
+// SetCardCover устанавливает обложку для карточки
+func (uc *BoardUsecase) SetCardCover(ctx context.Context, userID int64, cardID int64, file *models.UploadedFile) (updatedCard *models.Card, err error) {
+	funcName := "SetCardCover"
+	role, _, err := uc.boardRepository.GetMemberFromCard(ctx, userID, cardID)
+	if err != nil {
+		return nil, fmt.Errorf("%s (member): %w", funcName, err)
+	}
+
+	if role == "viewer" {
+		return nil, fmt.Errorf("%s (check): %w", funcName, errs.ErrNotPermitted)
+	}
+
+	updatedCard, err = uc.boardRepository.SetCardCover(ctx, userID, cardID, file)
+	if err != nil {
+		return nil, fmt.Errorf("%s (update): %w", funcName, err)
+	}
+
+	return updatedCard, nil
+}
+
+// DeleteCardCover удаляет обложку с карточки
+func (uc *BoardUsecase) DeleteCardCover(ctx context.Context, userID int64, cardID int64) (err error) {
+	funcName := "DeleteCardCover"
+	role, _, err := uc.boardRepository.GetMemberFromCard(ctx, userID, cardID)
+	if err != nil {
+		return fmt.Errorf("%s (member): %w", funcName, err)
+	}
+
+	if role == "viewer" {
+		return fmt.Errorf("%s (check): %w", funcName, errs.ErrNotPermitted)
+	}
+
+	err = uc.boardRepository.RemoveCardCover(ctx, cardID)
+	if err != nil {
+		return fmt.Errorf("%s (delete): %w", funcName, err)
+	}
+
+	return nil
+}
+
+// AddAttachment добавляет вложение на карточку
+func (uc *BoardUsecase) AddAttachment(ctx context.Context, userID int64, cardID int64, file *models.UploadedFile) (newAttachment *models.Attachment, err error) {
+	funcName := "AddAttachment"
+	role, _, err := uc.boardRepository.GetMemberFromCard(ctx, userID, cardID)
+	if err != nil {
+		return nil, fmt.Errorf("%s (member): %w", funcName, err)
+	}
+
+	if role == "viewer" {
+		return nil, fmt.Errorf("%s (check): %w", funcName, errs.ErrNotPermitted)
+	}
+
+	newAttachment, err = uc.boardRepository.AddAttachment(ctx, userID, cardID, file)
+	if err != nil {
+		return nil, fmt.Errorf("%s (update): %w", funcName, err)
+	}
+
+	return newAttachment, nil
+}
+
+// DeleteAttachment удаляет вложение с карточки
+func (uc *BoardUsecase) DeleteAttachment(ctx context.Context, userID int64, attachmentID int64) (err error) {
+	funcName := "DeleteAttachment"
+	role, _, _, err := uc.boardRepository.GetMemberFromAttachment(ctx, userID, attachmentID)
+	if err != nil {
+		return fmt.Errorf("%s (member): %w", funcName, err)
+	}
+
+	if role == "viewer" {
+		return fmt.Errorf("%s (check): %w", funcName, errs.ErrNotPermitted)
+	}
+
+	err = uc.boardRepository.RemoveAttachment(ctx, attachmentID)
+	if err != nil {
+		return fmt.Errorf("%s (delete): %w", funcName, err)
+	}
+
+	return nil
+}
+
+// MoveCard перемещает карточку на доске
+func (uc *BoardUsecase) MoveCard(ctx context.Context, userID int64, cardID int64, moveReq *models.CardMoveRequest) (err error) {
+	panic("not implemented")
+}
+
+// MoveColumn перемещает колонку на доске
+func (uc *BoardUsecase) MoveColumn(ctx context.Context, userID int64, columnID int64, moveReq *models.ColumnMoveRequest) (err error) {
+	panic("not implemented")
+}
+
+// GetSharedCard даёт информацию о карточке, которой поделились по ссылке
+func (uc *BoardUsecase) GetSharedCard(ctx context.Context, userID int64, cardUuid string) (found *models.SharedCardFoundResponse, dummy *models.SharedCardDummyResponse, err error) {
+	panic("not implemented")
+}
+
+// RaiseInviteLink устанавливает ссылку-приглашение на доску
+func (uc *BoardUsecase) RaiseInviteLink(ctx context.Context, userID int64, boardID int64) (inviteLink *models.InviteLink, err error) {
+	funcName := "RaiseInviteLink"
+	member, err := uc.boardRepository.GetMemberPermissions(ctx, boardID, userID, false)
+	if err != nil {
+		return nil, fmt.Errorf("%s (member): %w", funcName, err)
+	}
+
+	if member.Role == "viewer" {
+		return nil, fmt.Errorf("%s (check): %w", funcName, errs.ErrNotPermitted)
+	}
+
+	inviteLink, err = uc.boardRepository.PullInviteLink(ctx, userID, boardID)
+	if err != nil {
+		return nil, fmt.Errorf("%s (update): %w", funcName, err)
+	}
+
+	return inviteLink, nil
+}
+
+// DeleteInviteLink удаляет ссылку-приглашение
+func (uc *BoardUsecase) DeleteInviteLink(ctx context.Context, userID int64, boardID int64) (err error) {
+	funcName := "DeleteInviteLink"
+	member, err := uc.boardRepository.GetMemberPermissions(ctx, boardID, userID, false)
+	if err != nil {
+		return fmt.Errorf("%s (member): %w", funcName, err)
+	}
+
+	if member.Role == "viewer" {
+		return fmt.Errorf("%s (check): %w", funcName, errs.ErrNotPermitted)
+	}
+
+	err = uc.boardRepository.DeleteInviteLink(ctx, userID, boardID)
+	if err != nil {
+		return fmt.Errorf("%s (delete): %w", funcName, err)
+	}
+
+	return nil
+}
+
+// FetchInvite возвращает информацию о приглашении на доску
+func (uc *BoardUsecase) FetchInvite(ctx context.Context, inviteUUID string) (board *models.Board, err error) {
+	funcName := "FetchInvite"
+	board, err = uc.boardRepository.FetchInvite(ctx, inviteUUID)
+	if err != nil {
+		return nil, fmt.Errorf("%s (fetch): %w", funcName, err)
+	}
+
+	return board, nil
+}
+
+// AcceptInvite добавляет пользователя как зрителя на доску
+func (uc *BoardUsecase) AcceptInvite(ctx context.Context, userID int64, inviteUUID string) (board *models.Board, err error) {
+	panic("not implemented")
+}
+
+// GetCardDetails возвращает подробное содержание карточки
+func (d *BoardUsecase) GetCardDetails(ctx context.Context, userID int64, cardID int64) (details *models.CardDetails, err error) {
+	funcName := "GetCardDetails"
+	_, _, err = d.boardRepository.GetMemberFromCard(ctx, userID, cardID)
+	if err != nil {
+		return nil, fmt.Errorf("%s: %w", funcName, err)
+	}
+
+	assignedUsers, err := d.boardRepository.GetCardAssignedUsers(ctx, cardID)
+	if err != nil {
+		return nil, fmt.Errorf("%s (assigned): %w", funcName, err)
+	}
+
+	attachments, err := d.boardRepository.GetCardAttachments(ctx, cardID)
+	if err != nil {
+		return nil, fmt.Errorf("%s (attachments): %w", funcName, err)
+	}
+
+	checkList, err := d.boardRepository.GetCardCheckList(ctx, cardID)
+	if err != nil {
+		return nil, fmt.Errorf("%s (checklist): %w", funcName, err)
+	}
+
+	comments, err := d.boardRepository.GetCardComments(ctx, cardID)
+	if err != nil {
+		return nil, fmt.Errorf("%s (comments): %w", funcName, err)
+	}
+
+	//TODO убрать это позорище
+	card, err := d.boardRepository.UpdateCard(ctx, cardID, models.CardPatchRequest{})
+	if err != nil {
+		return nil, fmt.Errorf("%s (card): %w", funcName, err)
+	}
+
+	return &models.CardDetails{
+		Attachments:   attachments,
+		CheckList:     checkList,
+		Comments:      comments,
+		AssignedUsers: assignedUsers,
+		Card:          card,
+	}, nil
 }
