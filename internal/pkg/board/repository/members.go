@@ -469,6 +469,7 @@ func (r *BoardRepository) GetCardCheckList(ctx context.Context, cardID int64) (c
 
 // GetCardAssignedUsers получает пользователей, назначенных на карточку
 func (r *BoardRepository) GetCardAssignedUsers(ctx context.Context, cardID int64) (assignedUsers []models.UserProfile, err error) {
+	funcName := "GetCardAssignedUsers"
 	query := `
 		SELECT u.u_id,
 		u.nickname,
@@ -483,12 +484,12 @@ func (r *BoardRepository) GetCardAssignedUsers(ctx context.Context, cardID int64
 		WHERE cua.card_id = $1;
 	`
 	rows, err := r.db.Query(ctx, query, cardID)
-	logging.Debug(ctx, "GetCardAssignedUsers query has err: ", err)
+	logging.Debug(ctx, funcName, " query has err: ", err)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, fmt.Errorf("GetCardAssignedUsers (query): %w", errs.ErrNotFound)
+			return nil, fmt.Errorf("%s (query): %w", funcName, errs.ErrNotFound)
 		}
-		return nil, fmt.Errorf("GetCardAssignedUsers (query): %w", err)
+		return nil, fmt.Errorf("%s (query): %w", funcName, err)
 	}
 
 	assignedUsers = make([]models.UserProfile, 0)
@@ -504,7 +505,7 @@ func (r *BoardRepository) GetCardAssignedUsers(ctx context.Context, cardID int64
 			&avatarUUID,
 			&avatarExt,
 		); err != nil {
-			return nil, fmt.Errorf("GetCardAssignedUsers (scan): %w", err)
+			return nil, fmt.Errorf("%s (scan): %w", funcName, err)
 		}
 
 		assignedProfile.AvatarImageURL = uploads.JoinFileURL(avatarUUID, avatarExt, uploads.DefaultAvatarURL)
@@ -516,10 +517,10 @@ func (r *BoardRepository) GetCardAssignedUsers(ctx context.Context, cardID int64
 
 // GetCardComments получает комментарии, оставленные на карточку
 func (r *BoardRepository) GetCardComments(ctx context.Context, cardID int64) (comments []models.Comment, err error) {
+	funcName := "GetCardComments"
 	query := `
 		SELECT cc.comment_id,
 		cc.title,
-		cc.created_by,
 		cc.created_at,
 		cc.is_edited,
 
@@ -540,12 +541,12 @@ func (r *BoardRepository) GetCardComments(ctx context.Context, cardID int64) (co
 	comments = make([]models.Comment, 0)
 
 	rows, err := r.db.Query(ctx, query, cardID)
-	logging.Debug(ctx, "GetCardComments query has err: ", err)
+	logging.Debug(ctx, funcName, " query has err: ", err)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, fmt.Errorf("GetCardComments (query): %w", errs.ErrNotFound)
+			return nil, fmt.Errorf("%s (query): %w", funcName, errs.ErrNotFound)
 		}
-		return nil, fmt.Errorf("GetCardComments (query): %w", err)
+		return nil, fmt.Errorf("%s (query): %w", funcName, err)
 	}
 
 	for rows.Next() {
@@ -553,10 +554,10 @@ func (r *BoardRepository) GetCardComments(ctx context.Context, cardID int64) (co
 		c := models.Comment{}
 		var avatarUUID, avatarExt string
 
-		if err := rows.Scan(&c.ID, &c.Text, &c.CreatedBy, &c.CreatedAt, &c.IsEdited, &uP.ID,
+		if err := rows.Scan(&c.ID, &c.Text, &c.CreatedAt, &c.IsEdited, &uP.ID,
 			&uP.Name, &uP.Email, &uP.JoinedAt,
 			&uP.UpdatedAt, &avatarUUID, &avatarExt); err != nil {
-			return nil, fmt.Errorf("GetCardAssignedUsers (scan): %w", err)
+			return nil, fmt.Errorf("%s (scan): %w", funcName, err)
 		}
 		uP.AvatarImageURL = uploads.JoinFileURL(avatarUUID, avatarExt, uploads.DefaultAvatarURL)
 		c.CreatedBy = &uP
@@ -759,8 +760,8 @@ func (r *BoardRepository) AssignUserToCard(ctx context.Context, cardID int64, as
 				WHERE c.card_id=$1
 			)
 		)
-		SELECT u.u_id, u.nickname, u.email, u.joined_at, u.updated_at, COALESCE(f.file_uuid::text, "")
-		COALESCE(f.file_extension::text, "")
+		SELECT u.u_id, u.nickname, u.email, u.joined_at, u.updated_at,
+		COALESCE(f.file_uuid::text, ''), COALESCE(f.file_extension::text, '')
 		FROM card_user_assignment AS cua
 		JOIN "user" AS u ON cua.u_id = u.u_id
 		LEFT JOIN user_uploaded_file AS f ON f.file_id=u.avatar_file_id
@@ -817,7 +818,8 @@ func (r *BoardRepository) CreateComment(ctx context.Context, userID int64, cardI
 	funcName := "CreateComment"
 	query := `
 		WITH insert_comment AS (
-			INSERT INTO card_comment (card_id, created_by, title) VALUES ($1, $2, $3) RETURNING comment_id, title, is_edited, created_by, created_at
+			INSERT INTO card_comment (card_id, created_by, title) VALUES ($1, $2, $3)
+			RETURNING comment_id, title, is_edited, created_by, created_at
 		),
 		update_card AS (
 			UPDATE "card" SET updated_at=CURRENT_TIMESTAMP WHERE card_id = $1
@@ -831,13 +833,35 @@ func (r *BoardRepository) CreateComment(ctx context.Context, userID int64, cardI
 				WHERE c.card_id=$1
 			)
 		)
-		SELECT;
+		SELECT i.comment_id, i.title,
+			i.is_edited, i.created_at,
+			u.u_id, u.nickname, u.email,u.joined_at, u.updated_at,
+			COALESCE(f.file_uuid::text, ''),
+			COALESCE(f.file_extension, '')
+		FROM insert_comment AS i
+		JOIN "user" AS u ON u.u_id=i.created_by
+		LEFT JOIN user_uploaded_file AS f ON f.file_id=u.avatar_file_id;
 
 	`
 
 	newComment = &models.Comment{}
-	row := r.db.QueryRow(ctx, query)
-	err = row.Scan() //TODO
+	newComment.CreatedBy = &models.UserProfile{}
+	row := r.db.QueryRow(ctx, query, cardID, userID, comment.Text)
+	var fileUUID, fileExtension string
+	err = row.Scan(
+		&newComment.ID,
+		&newComment.Text,
+		&newComment.IsEdited,
+		&newComment.CreatedAt,
+		&newComment.CreatedBy.ID,
+		&newComment.CreatedBy.Name,
+		&newComment.CreatedBy.Email,
+		&newComment.CreatedBy.JoinedAt,
+		&newComment.CreatedBy.UpdatedAt,
+		&fileUUID,
+		&fileExtension,
+	)
+	newComment.CreatedBy.AvatarImageURL = uploads.JoinFileURL(fileUUID, fileExtension, uploads.DefaultAvatarURL)
 	logging.Debug(ctx, funcName, " query has err: ", err)
 	if err != nil {
 		return nil, fmt.Errorf("%s (query): %w", err)
@@ -849,29 +873,39 @@ func (r *BoardRepository) CreateComment(ctx context.Context, userID int64, cardI
 func (r *BoardRepository) UpdateComment(ctx context.Context, commentID int64, update *models.CommentRequest) (updatedComment *models.Comment, err error) {
 	funcName := "UpdateComment"
 	query := `
-	WITH insert_comment AS (
-			UPDATE card_comment SET updated_at=CURRENT_TIMESTAMP, title=$2 WHERE comment_id = $1
-		),
-		update_card AS (
-			UPDATE "card" SET updated_at=CURRENT_TIMESTAMP WHERE card_id = (
-				SELECT card_id FROM card_comment WHERE comment_id=$1
-			)
-		),
-		update_board AS (
-			UPDATE board SET updated_at=CURRENT_TIMESTAMP WHERE board_id = (
-				SELECT b.board_id
-				FROM card_comment AS cc
-				JOIN card AS c ON cc.card_id=c.card_id
-				JOIN kanban_column AS kc ON c.col_id=kc.col_id
-				JOIN board AS b ON b.board_id = kc.board_id
-				WHERE cc.comment_id=$1
-			)
+	WITH update_comment AS (
+		UPDATE card_comment
+		SET updated_at=CURRENT_TIMESTAMP, title=$2, is_edited=TRUE
+		WHERE comment_id = $1
+		RETURNING comment_id, title, is_edited, created_at, created_by
+	),
+	update_card AS (
+		UPDATE "card" SET updated_at=CURRENT_TIMESTAMP WHERE card_id = (
+			SELECT card_id FROM card_comment WHERE comment_id=$1
 		)
-		SELECT;
+	),
+	update_board AS (
+		UPDATE board SET updated_at=CURRENT_TIMESTAMP WHERE board_id = (
+			SELECT b.board_id
+			FROM card_comment AS cc
+			JOIN card AS c ON cc.card_id=c.card_id
+			JOIN kanban_column AS kc ON c.col_id=kc.col_id
+			JOIN board AS b ON b.board_id = kc.board_id
+			WHERE cc.comment_id=$1
+		)
+	)
+	SELECT c.comment_id, c.title,
+		c.is_edited, c.created_at,
+		u.u_id, u.nickname, u.email,u.joined_at, u.updated_at,
+		COALESCE(f.file_uuid::text, ''),
+		COALESCE(f.file_extension, '')
+	FROM update_comment AS c
+	JOIN "user" AS u ON u.u_id=i.created_by
+	LEFT JOIN user_uploaded_file AS f ON f.file_id=u.avatar_file_id;
 	`
 
 	updatedComment = &models.Comment{}
-	row := r.db.QueryRow(ctx, query)
+	row := r.db.QueryRow(ctx, query, commentID, update.Text)
 	err = row.Scan()
 	logging.Debug(ctx, funcName, " query has err: ", err)
 	if err != nil {
@@ -942,34 +976,41 @@ func (r *BoardRepository) CreateCheckListField(ctx context.Context, cardID int64
 func (r *BoardRepository) UpdateCheckListField(ctx context.Context, fieldID int64, update *models.CheckListFieldPatchRequest) (updatedField *models.CheckListField, err error) {
 	funcName := "UpdateCheckListField"
 	query := `
-		WITH update_field AS (
-			UPDATE checklist_field SET updated_at=CURRENT_TIMESTAMP, title=$2, is_done=$3 WHERE checklist_field_id = $1
-		),
-		update_card AS (
-			UPDATE "card" SET updated_at=CURRENT_TIMESTAMP WHERE card_id = (
-				SELECT card_id FROM checklist_field WHERE checklist_field_id=$1
-		),
-		update_board AS (
-			UPDATE board SET updated_at=CURRENT_TIMESTAMP WHERE board_id = (
-				SELECT b.board_id
-				FROM checklist_field AS cf
-				JOIN card AS c ON cf.card_id=c.card_id
-				JOIN kanban_column AS kc ON c.col_id=kc.col_id
-				JOIN board AS b ON b.board_id = kc.board_id
-				WHERE cf.checklist_field_id=$1
+	WITH update_field AS (
+		UPDATE checklist_field SET title=COALESCE($2,title), is_done=COALESCE($3,is_done) WHERE checklist_field_id = $1
+	),
+	update_card AS (
+		UPDATE "card" SET updated_at=CURRENT_TIMESTAMP WHERE card_id = (
+			SELECT card_id FROM checklist_field WHERE checklist_field_id=$1
+		)
+	),
+	update_board AS (
+		UPDATE board SET updated_at=CURRENT_TIMESTAMP WHERE board_id = (
+			SELECT b.board_id
+			FROM checklist_field AS cf
+			JOIN card AS c ON cf.card_id=c.card_id
+			JOIN kanban_column AS kc ON c.col_id=kc.col_id
+			JOIN board AS b ON b.board_id = kc.board_id
+			WHERE cf.checklist_field_id=$1
 		)
 	)
-	SELECT checklist_field_id, title, created_at, is_done
+	SELECT f.checklist_field_id, f.title, f.created_at, f.is_done
 	FROM checklist_field AS f
 	WHERE f.checklist_field_id=$1;
 	`
 
 	updatedField = &models.CheckListField{}
-	row := r.db.QueryRow(ctx, query)
+	row := r.db.QueryRow(ctx, query, fieldID, update.Title, update.IsDone)
 	err = row.Scan(&updatedField.ID, &updatedField.Title, &updatedField.CreatedAt, &updatedField.IsDone)
 	logging.Debug(ctx, funcName, " query has err: ", err)
 	if err != nil {
 		return nil, fmt.Errorf("%s (query): %w", err)
+	}
+	if update.IsDone != nil {
+		updatedField.IsDone = *update.IsDone
+	}
+	if update.Title != nil {
+		updatedField.Title = *update.Title
 	}
 	return updatedField, nil
 }

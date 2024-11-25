@@ -53,7 +53,7 @@ type Column struct {
 
 type Comment struct {
 	ID        int64        `json:"id"`
-	Text      int64        `json:"text"`
+	Text      string       `json:"text"`
 	IsEdited  bool         `json:"isEdited"`
 	CreatedBy *UserProfile `json:"createdBy"`
 	CreatedAt time.Time    `json:"createdAt"`
