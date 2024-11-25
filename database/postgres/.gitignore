@@ -1,2 +1,4 @@
-fullchain.crt
-privkey.key
+*.crt
+*.key
+*.key.secure
+*.csr
