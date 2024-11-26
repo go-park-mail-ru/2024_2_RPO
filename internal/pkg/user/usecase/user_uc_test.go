@@ -2,6 +2,7 @@ package usecase_test
 
 import (
 	"RPO_back/internal/models"
+	grpcMocks "RPO_back/internal/pkg/auth/delivery/grpc/mocks"
 	mocks "RPO_back/internal/pkg/user/mocks"
 	"RPO_back/internal/pkg/user/usecase"
 	"context"
@@ -18,14 +19,14 @@ func TestUserUsecase_GetMyProfile(t *testing.T) {
 	defer ctrl.Finish()
 
 	mockUserRepo := mocks.NewMockUserRepo(ctrl)
-	userUsecase := usecase.CreateUserUsecase(mockUserRepo)
+	grpc := grpcMocks.NewMockAuthClient(ctrl)
+	userUsecase := usecase.CreateUserUsecase(mockUserRepo, grpc)
 
 	t.Run("successful profile retrieval", func(t *testing.T) {
 		mockUserRepo.EXPECT().GetUserProfile(gomock.Any(), 1).Return(&models.UserProfile{
 			ID:             1,
 			Name:           "Test User",
 			Email:          "testuser@example.com",
-			Description:    "User Description",
 			JoinedAt:       time.Now(),
 			UpdatedAt:      time.Now(),
 			AvatarImageURL: "",
@@ -51,7 +52,8 @@ func TestUserUsecase_UpdateMyProfile(t *testing.T) {
 	defer ctrl.Finish()
 
 	mockUserRepo := mocks.NewMockUserRepo(ctrl)
-	userUsecase := usecase.CreateUserUsecase(mockUserRepo)
+	grpc := grpcMocks.NewMockAuthClient(ctrl)
+	userUsecase := usecase.CreateUserUsecase(mockUserRepo, grpc)
 
 	t.Run("successful profile update", func(t *testing.T) {
 		updateData := &models.UserProfileUpdateRequest{
@@ -62,7 +64,6 @@ func TestUserUsecase_UpdateMyProfile(t *testing.T) {
 			ID:             1,
 			Name:           "Updated User",
 			Email:          "updateduser@example.com",
-			Description:    "Updated Description",
 			JoinedAt:       time.Now(),
 			UpdatedAt:      time.Now(),
 			AvatarImageURL: "",
@@ -86,49 +87,3 @@ func TestUserUsecase_UpdateMyProfile(t *testing.T) {
 		assert.Nil(t, profile)
 	})
 }
-
-// func TestUserUsecase_SetMyAvatar(t *testing.T) {
-// 	ctrl := gomock.NewController(t)
-// 	defer ctrl.Finish()
-
-// 	mockUserRepo := mocks.NewMockUserRepo(ctrl)
-// 	userUsecase := usecase.CreateUserUsecase(mockUserRepo)
-
-// 	// Мокаем загрузку аватара
-// 	t.Run("successful avatar upload", func(t *testing.T) {
-// 		// Предполагаемая настройка окружения для загрузки файлов
-// 		os.Setenv("USER_UPLOADS_DIR", "/tmp/uploads")
-
-// 		file := multipart.File(nil) // Заглушка для теста
-// 		fileHeader := &multipart.FileHeader{
-// 			Filename: "avatar.jpg",
-// 			Size:     1024,
-// 		}
-
-// 		mockUserRepo.EXPECT().SetUserAvatar(1, ".jpg", int(fileHeader.Size)).Return("user1_avatar.jpg", nil)
-// 		mockUserRepo.EXPECT().GetUserProfile(1).Return(&models.UserProfile{
-// 			ID:             1,
-// 			Name:           "Test User",
-// 			Email:          "testuser@example.com",
-// 			AvatarImageURL: "/tmp/uploads/user1_avatar.jpg",
-// 		}, nil)
-
-// 		profile, err := userUsecase.SetMyAvatar(1, &file, fileHeader)
-// 		assert.NoError(t, err)
-// 		assert.Equal(t, "/tmp/uploads/user1_avatar.jpg", profile.AvatarImageURL)
-// 	})
-
-// 	t.Run("failed avatar upload - unable to save", func(t *testing.T) {
-// 		file := multipart.File(nil) // Заглушка для теста
-// 		fileHeader := &multipart.FileHeader{
-// 			Filename: "avatar.jpg",
-// 			Size:     1024,
-// 		}
-
-// 		mockUserRepo.EXPECT().SetUserAvatar(1, ".jpg", int(fileHeader.Size)).Return("", errors.New("upload error"))
-
-// 		profile, err := userUsecase.SetMyAvatar(1, &file, fileHeader)
-// 		assert.Error(t, err)
-// 		assert.Nil(t, profile)
-// 	})
-// }

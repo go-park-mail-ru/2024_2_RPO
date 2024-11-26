@@ -2,6 +2,7 @@ package repository
 
 import (
 	"RPO_back/internal/models"
+	"RPO_back/internal/pkg/utils/misc"
 	"context"
 	"errors"
 	"testing"
@@ -36,7 +37,7 @@ func TestCreateNewCard(t *testing.T) {
 		WithArgs(1, 1, "New Card").
 		WillReturnError(errors.New("some error"))
 
-	_, err = repo.CreateNewCard(context.Background(), 1, 1, "New Card")
+	_, err = repo.CreateNewCard(context.Background(), 1, "New Card")
 	assert.Error(t, err)
 }
 
@@ -52,11 +53,10 @@ func TestUpdateCard(t *testing.T) {
 		WillReturnError(errors.New("some error"))
 
 	data := models.CardPatchRequest{
-		NewTitle:    "Updated Title",
-		NewColumnID: 2,
+		NewTitle: misc.StringPtr("Updated Title"),
 	}
 
-	_, err = repo.UpdateCard(context.Background(), 1, 1, data)
+	_, err = repo.UpdateCard(context.Background(), 1, data)
 	assert.Error(t, err)
 }
 
@@ -71,7 +71,7 @@ func TestDeleteCard(t *testing.T) {
 		WithArgs(1, 1).
 		WillReturnError(errors.New("some error"))
 
-	err = repo.DeleteCard(context.Background(), 1, 1)
+	err = repo.DeleteCard(context.Background(), 1)
 	assert.Error(t, err)
 }
 
@@ -117,7 +117,7 @@ func TestUpdateColumn_Error(t *testing.T) {
 		WithArgs("Updated Title", 1, 1).
 		WillReturnError(errors.New("some error"))
 
-	_, err = boardRepo.UpdateColumn(context.Background(), 1, 1, models.ColumnRequest{NewTitle: "Updated Title"})
+	_, err = boardRepo.UpdateColumn(context.Background(), 1, models.ColumnRequest{NewTitle: "Updated Title"})
 
 	assert.Error(t, err)
 	assert.NoError(t, dbMock.ExpectationsWereMet())
@@ -133,7 +133,7 @@ func TestDeleteColumn_Error(t *testing.T) {
 		WithArgs(1, 1).
 		WillReturnError(errors.New("some error"))
 
-	err = boardRepo.DeleteColumn(context.Background(), 1, 1)
+	err = boardRepo.DeleteColumn(context.Background(), 1)
 
 	assert.Error(t, err)
 	assert.NoError(t, dbMock.ExpectationsWereMet())

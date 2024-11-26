@@ -4,7 +4,7 @@ import (
 	"RPO_back/internal/errs"
 	"RPO_back/internal/models"
 	"RPO_back/internal/pkg/auth"
-	mocks "RPO_back/internal/pkg/auth/mocks"
+	mocks "RPO_back/internal/pkg/user/mocks"
 	"bytes"
 	"encoding/json"
 	"errors"
@@ -20,8 +20,8 @@ func TestLoginUser_Success(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	mockAuthUsecase := mocks.NewMockAuthUsecase(ctrl)
-	authDelivery := AuthDelivery{authUsecase: mockAuthUsecase}
+	mockAuthUsecase := mocks.NewMockUserUsecase(ctrl)
+	authDelivery := UserDelivery{userUC: mockAuthUsecase}
 
 	loginRequest := models.LoginRequest{
 		Email:    "user@example.com",
@@ -52,7 +52,7 @@ func TestLoginUser_InvalidRequest(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	authDelivery := AuthDelivery{}
+	authDelivery := UserDelivery{}
 
 	req, _ := http.NewRequest(http.MethodPost, "/login", bytes.NewReader([]byte("{invalid json}")))
 	w := httptest.NewRecorder()
@@ -70,9 +70,9 @@ func TestLoginUser_WrongCredentials(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	mockAuthUsecase := mocks.NewMockAuthUsecase(ctrl)
+	mockAuthUsecase := mocks.NewMockUserUsecase(ctrl)
 
-	authDelivery := AuthDelivery{authUsecase: mockAuthUsecase}
+	authDelivery := UserDelivery{userUC: mockAuthUsecase}
 
 	loginRequest := models.LoginRequest{
 		Email:    "user@example.com",
@@ -98,9 +98,9 @@ func TestLoginUser_InternalServerError(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	mockAuthUsecase := mocks.NewMockAuthUsecase(ctrl)
+	mockAuthUsecase := mocks.NewMockUserUsecase(ctrl)
 
-	authDelivery := AuthDelivery{authUsecase: mockAuthUsecase}
+	authDelivery := UserDelivery{userUC: mockAuthUsecase}
 
 	loginRequest := models.LoginRequest{
 		Email:    "user@example.com",
@@ -133,8 +133,8 @@ func TestRegisterUser_Success(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	mockAuthUsecase := mocks.NewMockAuthUsecase(ctrl)
-	authDelivery := AuthDelivery{authUsecase: mockAuthUsecase}
+	mockAuthUsecase := mocks.NewMockUserUsecase(ctrl)
+	authDelivery := UserDelivery{userUC: mockAuthUsecase}
 
 	user := models.UserRegisterRequest{
 		Email:    "user@example.com",
@@ -166,7 +166,7 @@ func TestRegisterUser_InvalidRequest(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	authDelivery := AuthDelivery{}
+	authDelivery := UserDelivery{}
 
 	req, _ := http.NewRequest(http.MethodPost, "/register", bytes.NewReader([]byte("{invalid json}")))
 	w := httptest.NewRecorder()
@@ -184,8 +184,8 @@ func TestRegisterUser_EmailBusy(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	mockAuthUsecase := mocks.NewMockAuthUsecase(ctrl)
-	authDelivery := AuthDelivery{authUsecase: mockAuthUsecase}
+	mockAuthUsecase := mocks.NewMockUserUsecase(ctrl)
+	authDelivery := UserDelivery{userUC: mockAuthUsecase}
 
 	user := models.UserRegisterRequest{
 		Email:    "user@example.com",
@@ -212,8 +212,8 @@ func TestRegisterUser_NicknameBusy(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	mockAuthUsecase := mocks.NewMockAuthUsecase(ctrl)
-	authDelivery := AuthDelivery{authUsecase: mockAuthUsecase}
+	mockAuthUsecase := mocks.NewMockUserUsecase(ctrl)
+	authDelivery := UserDelivery{userUC: mockAuthUsecase}
 
 	user := models.UserRegisterRequest{
 		Email:    "user@example.com",
@@ -240,8 +240,8 @@ func TestRegisterUser_InternalServerError(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	mockAuthUsecase := mocks.NewMockAuthUsecase(ctrl)
-	authDelivery := AuthDelivery{authUsecase: mockAuthUsecase}
+	mockAuthUsecase := mocks.NewMockUserUsecase(ctrl)
+	authDelivery := UserDelivery{userUC: mockAuthUsecase}
 
 	user := models.UserRegisterRequest{
 		Email:    "user@example.com",

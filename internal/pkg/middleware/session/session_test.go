@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	auth "RPO_back/internal/pkg/auth"
-	mocks "RPO_back/internal/pkg/auth/mocks"
+	mocks "RPO_back/internal/pkg/auth/delivery/grpc/mocks"
 
 	gomock "github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
@@ -17,7 +17,7 @@ func TestMiddleware_NoCookie(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	mockAuthRepo := mocks.NewMockAuthRepo(ctrl)
+	mockAuthRepo := mocks.NewMockAuthClient(ctrl)
 
 	mw := CreateSessionMiddleware(mockAuthRepo)
 
@@ -37,8 +37,8 @@ func TestMiddleware_InvalidCookie(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	mockAuthRepo := mocks.NewMockAuthRepo(ctrl)
-	mockAuthRepo.EXPECT().RetrieveUserIDFromSession(gomock.Any(), "invalid-session-id").Return(0, errors.New("Invalid session id"))
+	mockAuthRepo := mocks.NewMockAuthClient(ctrl)
+	mockAuthRepo.EXPECT().CheckSession(gomock.Any(), "invalid-session-id").Return(0, errors.New("Invalid session id"))
 
 	mw := CreateSessionMiddleware(mockAuthRepo)
 
@@ -58,9 +58,9 @@ func TestMiddleware_ValidCookie(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	mockAuthRepo := mocks.NewMockAuthRepo(ctrl)
+	mockAuthRepo := mocks.NewMockAuthClient(ctrl)
 	userID := 123
-	mockAuthRepo.EXPECT().RetrieveUserIDFromSession(gomock.Any(), "valid-session-id").Return(userID, nil)
+	mockAuthRepo.EXPECT().CheckSession(gomock.Any(), "valid-session-id").Return(userID, nil)
 
 	mw := CreateSessionMiddleware(mockAuthRepo)
 

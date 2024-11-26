@@ -105,6 +105,6 @@ func main() {
 	addr := fmt.Sprintf(":%s", os.Getenv("SERVER_PORT"))
 	log.Infof("server started at http://0.0.0.0%s", addr)
 	if err := http.ListenAndServe(addr, router); err != nil {
-		log.Fatalf("error while starting server: %w", err)
+		log.Fatalf("error while starting server: %v", err)
 	}
 }

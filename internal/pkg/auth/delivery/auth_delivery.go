@@ -9,6 +9,8 @@ import (
 	"fmt"
 )
 
+//go:generate mockgen -source=grpc/gen/auth_grpc.pb.go -destination=grpc/mocks/auth_mock.go
+
 type AuthDelivery struct {
 	gen.AuthServer
 	authUsecase auth.AuthUsecase

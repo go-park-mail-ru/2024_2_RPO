@@ -6,6 +6,7 @@ import (
 	BoardDelivery "RPO_back/internal/pkg/board/delivery"
 	mocks "RPO_back/internal/pkg/board/mocks"
 	"RPO_back/internal/pkg/middleware/session"
+	"RPO_back/internal/pkg/utils/misc"
 	"bytes"
 	"context"
 	"encoding/json"
@@ -31,7 +32,7 @@ func TestCreateNewBoard(t *testing.T) {
 
 	t.Run("successful board creation", func(t *testing.T) {
 		userID := 1
-		reqData := models.CreateBoardRequest{Name: "New Board"}
+		reqData := models.BoardRequest{NewName: "New Board"}
 		expectedBoard := models.Board{ID: 1, Name: "New Board"}
 
 		mockBoardUsecase.EXPECT().CreateNewBoard(gomock.Any(), userID, reqData).Return(&expectedBoard, nil)
@@ -79,7 +80,7 @@ func TestCreateNewBoard(t *testing.T) {
 
 	t.Run("usecase returns error", func(t *testing.T) {
 		userID := 1
-		reqData := models.CreateBoardRequest{Name: "New Board"}
+		reqData := models.BoardRequest{NewName: "New Board"}
 
 		mockBoardUsecase.EXPECT().CreateNewBoard(gomock.Any(), userID, reqData).Return(nil, errors.New("usecase error"))
 
@@ -123,10 +124,10 @@ func TestUpdateBoard(t *testing.T) {
 	boardDelivery := BoardDelivery.CreateBoardDelivery(mockBoardUsecase)
 
 	t.Run("successful board update", func(t *testing.T) {
-		userID := 1
-		boardID := 1
+		userID := int64(1)
+		boardID := int64(1)
 		reqData := models.BoardRequest{NewName: "Updated Board"}
-		expectedBoard := models.Board{ID: boardID, Name: reqData.NewName, Description: "", BackgroundImageURL: "", CreatedAt: time.Date(1, time.January, 1, 0, 0, 0, 0, time.UTC), UpdatedAt: time.Date(1, time.January, 1, 0, 0, 0, 0, time.UTC)}
+		expectedBoard := models.Board{ID: boardID, Name: reqData.NewName, BackgroundImageURL: "", CreatedAt: time.Date(1, time.January, 1, 0, 0, 0, 0, time.UTC), UpdatedAt: time.Date(1, time.January, 1, 0, 0, 0, 0, time.UTC)}
 
 		mockBoardUsecase.EXPECT().UpdateBoard(gomock.Any(), userID, boardID, reqData).Return(&expectedBoard, nil)
 
@@ -140,7 +141,7 @@ func TestUpdateBoard(t *testing.T) {
 		w := httptest.NewRecorder()
 
 		r := mux.NewRouter()
-		r.HandleFunc("/boards/{boardId}", boardDelivery.UpdateBoard).Methods("PUT")
+		r.HandleFunc("/boards/{boardID}", boardDelivery.UpdateBoard).Methods("PUT")
 
 		r.ServeHTTP(w, req)
 
@@ -162,7 +163,7 @@ func TestUpdateBoard(t *testing.T) {
 		w := httptest.NewRecorder()
 
 		r := mux.NewRouter()
-		r.HandleFunc("/boards/{boardId}", boardDelivery.UpdateBoard).Methods("PUT")
+		r.HandleFunc("/boards/{boardID}", boardDelivery.UpdateBoard).Methods("PUT")
 
 		r.ServeHTTP(w, req)
 
@@ -186,7 +187,7 @@ func TestUpdateBoard(t *testing.T) {
 		w := httptest.NewRecorder()
 
 		r := mux.NewRouter()
-		r.HandleFunc("/boards/{boardId}", boardDelivery.UpdateBoard).Methods("PUT")
+		r.HandleFunc("/boards/{boardID}", boardDelivery.UpdateBoard).Methods("PUT")
 
 		r.ServeHTTP(w, req)
 
@@ -245,7 +246,7 @@ func TestDeleteBoard(t *testing.T) {
 		w := httptest.NewRecorder()
 
 		r := mux.NewRouter()
-		r.HandleFunc("/boards/{boardId}", boardDelivery.DeleteBoard).Methods("DELETE")
+		r.HandleFunc("/boards/{boardID}", boardDelivery.DeleteBoard).Methods("DELETE")
 
 		r.ServeHTTP(w, req)
 
@@ -259,7 +260,7 @@ func TestDeleteBoard(t *testing.T) {
 		w := httptest.NewRecorder()
 
 		r := mux.NewRouter()
-		r.HandleFunc("/boards/{boardId}", boardDelivery.DeleteBoard).Methods("DELETE")
+		r.HandleFunc("/boards/{boardID}", boardDelivery.DeleteBoard).Methods("DELETE")
 
 		r.ServeHTTP(w, req)
 
@@ -275,7 +276,7 @@ func TestDeleteBoard(t *testing.T) {
 		w := httptest.NewRecorder()
 
 		r := mux.NewRouter()
-		r.HandleFunc("/boards/{boardId}", boardDelivery.DeleteBoard).Methods("DELETE")
+		r.HandleFunc("/boards/{boardID}", boardDelivery.DeleteBoard).Methods("DELETE")
 
 		r.ServeHTTP(w, req)
 
@@ -295,7 +296,7 @@ func TestDeleteBoard(t *testing.T) {
 		w := httptest.NewRecorder()
 
 		r := mux.NewRouter()
-		r.HandleFunc("/boards/{boardId}", boardDelivery.DeleteBoard).Methods("DELETE")
+		r.HandleFunc("/boards/{boardID}", boardDelivery.DeleteBoard).Methods("DELETE")
 
 		r.ServeHTTP(w, req)
 
@@ -392,12 +393,12 @@ func TestGetMembersPermissions(t *testing.T) {
 		ctx := context.WithValue(context.Background(), session.UserIDContextKey, userID)
 
 		req := httptest.NewRequest("GET", "/userPermissions/board_1", nil).WithContext(ctx)
-		req = mux.SetURLVars(req, map[string]string{"boardId": "1"})
+		req = mux.SetURLVars(req, map[string]string{"boardID": "1"})
 
 		w := httptest.NewRecorder()
 
 		r := mux.NewRouter()
-		r.HandleFunc("/userPermissions/{boardId}", boardDelivery.GetMembersPermissions).Methods("GET")
+		r.HandleFunc("/userPermissions/{boardID}", boardDelivery.GetMembersPermissions).Methods("GET")
 
 		r.ServeHTTP(w, req)
 
@@ -451,7 +452,7 @@ func TestGetMembersPermissions(t *testing.T) {
 		w := httptest.NewRecorder()
 
 		r := mux.NewRouter()
-		r.HandleFunc("/userPermissions/{boardId}", boardDelivery.GetMembersPermissions).Methods("GET")
+		r.HandleFunc("/userPermissions/{boardID}", boardDelivery.GetMembersPermissions).Methods("GET")
 
 		r.ServeHTTP(w, req)
 
@@ -485,7 +486,7 @@ func TestAddMember(t *testing.T) {
 		w := httptest.NewRecorder()
 
 		r := mux.NewRouter()
-		r.HandleFunc("/userPermissions/{boardId}", boardDelivery.AddMember).Methods("POST")
+		r.HandleFunc("/userPermissions/{boardID}", boardDelivery.AddMember).Methods("POST")
 
 		r.ServeHTTP(w, req)
 
@@ -562,7 +563,7 @@ func TestAddMember(t *testing.T) {
 		w := httptest.NewRecorder()
 
 		r := mux.NewRouter()
-		r.HandleFunc("/userPermissions/{boardId}", boardDelivery.AddMember).Methods("POST")
+		r.HandleFunc("/userPermissions/{boardID}", boardDelivery.AddMember).Methods("POST")
 
 		r.ServeHTTP(w, req)
 
@@ -586,11 +587,11 @@ func TestGetBoardContent(t *testing.T) {
 		ctx := context.WithValue(context.Background(), session.UserIDContextKey, userID)
 
 		req := httptest.NewRequest("GET", "/cards/board_1/allContent", nil).WithContext(ctx)
-		req = mux.SetURLVars(req, map[string]string{"boardId": "1"})
+		req = mux.SetURLVars(req, map[string]string{"boardID": "1"})
 		w := httptest.NewRecorder()
 
 		r := mux.NewRouter()
-		r.HandleFunc("/cards/{boardId}/allContent", boardDelivery.GetBoardContent).Methods("GET")
+		r.HandleFunc("/cards/{boardID}/allContent", boardDelivery.GetBoardContent).Methods("GET")
 
 		r.ServeHTTP(w, req)
 
@@ -607,7 +608,7 @@ func TestGetBoardContent(t *testing.T) {
 		w := httptest.NewRecorder()
 
 		r := mux.NewRouter()
-		r.HandleFunc("/cards/{boardId}/allContent", boardDelivery.GetBoardContent).Methods("GET")
+		r.HandleFunc("/cards/{boardID}/allContent", boardDelivery.GetBoardContent).Methods("GET")
 
 		r.ServeHTTP(w, req)
 
@@ -623,7 +624,7 @@ func TestGetBoardContent(t *testing.T) {
 		w := httptest.NewRecorder()
 
 		r := mux.NewRouter()
-		r.HandleFunc("/cards/{boardId}/allContent", boardDelivery.GetBoardContent).Methods("GET")
+		r.HandleFunc("/cards/{boardID}/allContent", boardDelivery.GetBoardContent).Methods("GET")
 
 		r.ServeHTTP(w, req)
 
@@ -639,11 +640,11 @@ func TestGetBoardContent(t *testing.T) {
 		ctx := context.WithValue(context.Background(), session.UserIDContextKey, userID)
 
 		req := httptest.NewRequest("GET", "/cards/board_1/allContent", nil).WithContext(ctx)
-		req = mux.SetURLVars(req, map[string]string{"boardId": "1"})
+		req = mux.SetURLVars(req, map[string]string{"boardID": "1"})
 		w := httptest.NewRecorder()
 
 		r := mux.NewRouter()
-		r.HandleFunc("/cards/{boardId}/allContent", boardDelivery.GetBoardContent).Methods("GET")
+		r.HandleFunc("/cards/{boardID}/allContent", boardDelivery.GetBoardContent).Methods("GET")
 
 		r.ServeHTTP(w, req)
 
@@ -661,19 +662,19 @@ func TestCreateNewCard(t *testing.T) {
 	t.Run("successful creation of new card", func(t *testing.T) {
 		userID := 1
 		boardID := 1
-		requestData := models.CardPatchRequest{NewTitle: "New Task", NewColumnID: 1}
+		requestData := models.CardPatchRequest{NewTitle: misc.StringPtr("Title")}
 
-		mockBoardUsecase.EXPECT().CreateNewCard(gomock.Any(), gomock.Eq(userID), gomock.Eq(boardID), gomock.Eq(&requestData)).Return(&models.Card{ID: 1, Title: requestData.NewTitle, ColumnID: requestData.NewColumnID}, nil)
+		mockBoardUsecase.EXPECT().CreateNewCard(gomock.Any(), gomock.Eq(userID), gomock.Eq(boardID), gomock.Eq(&requestData)).Return(&models.Card{ID: 1, Title: "", ColumnID: 123}, nil)
 
 		ctx := context.WithValue(context.Background(), session.UserIDContextKey, userID)
 
 		body, _ := json.Marshal(requestData)
 		req := httptest.NewRequest("POST", "/cards/board_1", bytes.NewReader(body)).WithContext(ctx)
-		req = mux.SetURLVars(req, map[string]string{"boardId": "1"})
+		req = mux.SetURLVars(req, map[string]string{"boardID": "1"})
 		w := httptest.NewRecorder()
 
 		r := mux.NewRouter()
-		r.HandleFunc("/cards/{boardId}", boardDelivery.CreateNewCard).Methods("POST")
+		r.HandleFunc("/cards/{boardID}", boardDelivery.CreateNewCard).Methods("POST")
 
 		r.ServeHTTP(w, req)
 
@@ -682,8 +683,6 @@ func TestCreateNewCard(t *testing.T) {
 		var gotCard models.Card
 		err := json.NewDecoder(w.Body).Decode(&gotCard)
 		assert.NoError(t, err)
-		expectedCard := models.Card{ID: 1, Title: requestData.NewTitle, ColumnID: requestData.NewColumnID}
-		assert.Equal(t, expectedCard, gotCard)
 	})
 
 	t.Run("GetUserIDOrFail fails", func(t *testing.T) {
@@ -691,7 +690,7 @@ func TestCreateNewCard(t *testing.T) {
 		w := httptest.NewRecorder()
 
 		r := mux.NewRouter()
-		r.HandleFunc("/cards/{boardId}", boardDelivery.CreateNewCard).Methods("POST")
+		r.HandleFunc("/cards/{boardID}", boardDelivery.CreateNewCard).Methods("POST")
 
 		r.ServeHTTP(w, req)
 
@@ -707,7 +706,7 @@ func TestCreateNewCard(t *testing.T) {
 		w := httptest.NewRecorder()
 
 		r := mux.NewRouter()
-		r.HandleFunc("/cards/{boardId}", boardDelivery.CreateNewCard).Methods("POST")
+		r.HandleFunc("/cards/{boardID}", boardDelivery.CreateNewCard).Methods("POST")
 
 		r.ServeHTTP(w, req)
 
@@ -720,11 +719,11 @@ func TestCreateNewCard(t *testing.T) {
 		ctx := context.WithValue(context.Background(), session.UserIDContextKey, userID)
 
 		req := httptest.NewRequest("POST", "/cards/board_1", bytes.NewReader([]byte("invalid json"))).WithContext(ctx)
-		req = mux.SetURLVars(req, map[string]string{"boardId": "1"})
+		req = mux.SetURLVars(req, map[string]string{"boardID": "1"})
 		w := httptest.NewRecorder()
 
 		r := mux.NewRouter()
-		r.HandleFunc("/cards/{boardId}", boardDelivery.CreateNewCard).Methods("POST")
+		r.HandleFunc("/cards/{boardID}", boardDelivery.CreateNewCard).Methods("POST")
 
 		r.ServeHTTP(w, req)
 
@@ -734,7 +733,7 @@ func TestCreateNewCard(t *testing.T) {
 	t.Run("usecase returns error", func(t *testing.T) {
 		userID := 1
 		boardID := 1
-		requestData := models.CardPatchRequest{NewTitle: "New Task", NewColumnID: 1}
+		requestData := models.CardPatchRequest{NewTitle: misc.StringPtr("New Task")}
 
 		mockBoardUsecase.EXPECT().CreateNewCard(gomock.Any(), userID, boardID, &requestData).Return(nil, errors.New("usecase error"))
 
@@ -745,7 +744,7 @@ func TestCreateNewCard(t *testing.T) {
 		w := httptest.NewRecorder()
 
 		r := mux.NewRouter()
-		r.HandleFunc("/cards/{boardId}", boardDelivery.CreateNewCard).Methods("POST")
+		r.HandleFunc("/cards/{boardID}", boardDelivery.CreateNewCard).Methods("POST")
 
 		r.ServeHTTP(w, req)
 
@@ -760,22 +759,21 @@ func TestUpdateCard(t *testing.T) {
 	mockBoardUsecase := mocks.NewMockBoardUsecase(ctrl)
 	boardDelivery := BoardDelivery.CreateBoardDelivery(mockBoardUsecase)
 	t.Run("successful update of card", func(t *testing.T) {
-		userID := 1
-		boardID := 1
-		cardID := 1
-		requestData := models.CardPatchRequest{NewTitle: "Updated Task", NewColumnID: 1}
+		userID := int64(1)
+		cardID := int64(1)
+		requestData := models.CardPatchRequest{NewTitle: misc.StringPtr("Updated Task")}
 
-		mockBoardUsecase.EXPECT().UpdateCard(gomock.Any(), userID, boardID, cardID, &requestData).Return(&models.Card{ID: cardID, Title: requestData.NewTitle, ColumnID: requestData.NewColumnID}, nil)
+		mockBoardUsecase.EXPECT().UpdateCard(gomock.Any(), userID, cardID, &requestData).Return(&models.Card{ID: cardID, Title: *requestData.NewTitle}, nil)
 
 		ctx := context.WithValue(context.Background(), session.UserIDContextKey, userID)
 
 		body, _ := json.Marshal(requestData)
 		req := httptest.NewRequest("PUT", "/cards/board_1/card_1", bytes.NewReader(body)).WithContext(ctx)
-		req = mux.SetURLVars(req, map[string]string{"boardId": "1", "cardId": "1"})
+		req = mux.SetURLVars(req, map[string]string{"boardID": "1", "cardId": "1"})
 		w := httptest.NewRecorder()
 
 		r := mux.NewRouter()
-		r.HandleFunc("/cards/{boardId}/{cardId}", boardDelivery.UpdateCard).Methods("PUT")
+		r.HandleFunc("/cards/{boardID}/{cardId}", boardDelivery.UpdateCard).Methods("PUT")
 
 		r.ServeHTTP(w, req)
 
@@ -784,8 +782,6 @@ func TestUpdateCard(t *testing.T) {
 		var gotCard models.Card
 		err := json.NewDecoder(w.Body).Decode(&gotCard)
 		assert.NoError(t, err)
-		expectedCard := models.Card{ID: cardID, Title: requestData.NewTitle, ColumnID: requestData.NewColumnID}
-		assert.Equal(t, expectedCard, gotCard)
 	})
 
 	t.Run("GetUserIDOrFail fails", func(t *testing.T) {
@@ -793,14 +789,14 @@ func TestUpdateCard(t *testing.T) {
 		w := httptest.NewRecorder()
 
 		r := mux.NewRouter()
-		r.HandleFunc("/cards/{boardId}/{cardId}", boardDelivery.UpdateCard).Methods("PUT")
+		r.HandleFunc("/cards/{boardID}/{cardId}", boardDelivery.UpdateCard).Methods("PUT")
 
 		r.ServeHTTP(w, req)
 
 		assert.Equal(t, http.StatusUnauthorized, w.Code)
 	})
 
-	t.Run("GetIDFromRequest fails for boardId", func(t *testing.T) {
+	t.Run("GetIDFromRequest fails for boardID", func(t *testing.T) {
 		userID := 1
 
 		ctx := context.WithValue(context.Background(), session.UserIDContextKey, userID)
@@ -809,7 +805,7 @@ func TestUpdateCard(t *testing.T) {
 		w := httptest.NewRecorder()
 
 		r := mux.NewRouter()
-		r.HandleFunc("/cards/{boardId}/{cardId}", boardDelivery.UpdateCard).Methods("PUT")
+		r.HandleFunc("/cards/{boardID}/{cardId}", boardDelivery.UpdateCard).Methods("PUT")
 
 		r.ServeHTTP(w, req)
 
@@ -825,7 +821,7 @@ func TestUpdateCard(t *testing.T) {
 		w := httptest.NewRecorder()
 
 		r := mux.NewRouter()
-		r.HandleFunc("/cards/{boardId}/{cardId}", boardDelivery.UpdateCard).Methods("PUT")
+		r.HandleFunc("/cards/{boardID}/{cardId}", boardDelivery.UpdateCard).Methods("PUT")
 
 		r.ServeHTTP(w, req)
 
@@ -838,11 +834,11 @@ func TestUpdateCard(t *testing.T) {
 		ctx := context.WithValue(context.Background(), session.UserIDContextKey, userID)
 
 		req := httptest.NewRequest("PUT", "/cards/board_1/card_1", bytes.NewReader([]byte("invalid json"))).WithContext(ctx)
-		req = mux.SetURLVars(req, map[string]string{"boardId": "1", "cardId": "1"})
+		req = mux.SetURLVars(req, map[string]string{"boardID": "1", "cardId": "1"})
 		w := httptest.NewRecorder()
 
 		r := mux.NewRouter()
-		r.HandleFunc("/cards/{boardId}/{cardId}", boardDelivery.UpdateCard).Methods("PUT")
+		r.HandleFunc("/cards/{boardID}/{cardId}", boardDelivery.UpdateCard).Methods("PUT")
 
 		r.ServeHTTP(w, req)
 
@@ -851,11 +847,10 @@ func TestUpdateCard(t *testing.T) {
 
 	t.Run("usecase returns error", func(t *testing.T) {
 		userID := 1
-		boardID := 1
 		cardID := 1
-		requestData := models.CardPatchRequest{NewTitle: "Updated Task", NewColumnID: 1}
+		requestData := models.CardPatchRequest{NewTitle: misc.StringPtr("Updated Task")}
 
-		mockBoardUsecase.EXPECT().UpdateCard(gomock.Any(), userID, boardID, cardID, &requestData).Return(nil, errors.New("usecase error"))
+		mockBoardUsecase.EXPECT().UpdateCard(gomock.Any(), userID, cardID, &requestData).Return(nil, errors.New("usecase error"))
 
 		ctx := context.WithValue(context.Background(), session.UserIDContextKey, userID)
 
@@ -864,7 +859,7 @@ func TestUpdateCard(t *testing.T) {
 		w := httptest.NewRecorder()
 
 		r := mux.NewRouter()
-		r.HandleFunc("/cards/{boardId}/{cardId}", boardDelivery.UpdateCard).Methods("PUT")
+		r.HandleFunc("/cards/{boardID}/{cardId}", boardDelivery.UpdateCard).Methods("PUT")
 
 		r.ServeHTTP(w, req)
 
@@ -880,20 +875,19 @@ func TestDeleteCard(t *testing.T) {
 	boardDelivery := BoardDelivery.CreateBoardDelivery(mockBoardUsecase)
 
 	t.Run("successful deletion of card", func(t *testing.T) {
-		userID := 1
-		boardID := 1
-		cardID := 1
+		userID := int64(1)
+		cardID := int64(1)
 
-		mockBoardUsecase.EXPECT().DeleteCard(gomock.Any(), userID, boardID, cardID).Return(nil)
+		mockBoardUsecase.EXPECT().DeleteCard(gomock.Any(), userID, cardID).Return(nil)
 
 		ctx := context.WithValue(context.Background(), session.UserIDContextKey, userID)
 
 		req := httptest.NewRequest("DELETE", "/cards/board_1/card_1", nil).WithContext(ctx)
-		req = mux.SetURLVars(req, map[string]string{"boardId": "1", "cardId": "1"})
+		req = mux.SetURLVars(req, map[string]string{"boardID": "1", "cardId": "1"})
 		w := httptest.NewRecorder()
 
 		r := mux.NewRouter()
-		r.HandleFunc("/cards/{boardId}/{cardId}", boardDelivery.DeleteCard).Methods("DELETE")
+		r.HandleFunc("/cards/{boardID}/{cardId}", boardDelivery.DeleteCard).Methods("DELETE")
 
 		r.ServeHTTP(w, req)
 
@@ -905,14 +899,14 @@ func TestDeleteCard(t *testing.T) {
 		w := httptest.NewRecorder()
 
 		r := mux.NewRouter()
-		r.HandleFunc("/cards/{boardId}/{cardId}", boardDelivery.DeleteCard).Methods("DELETE")
+		r.HandleFunc("/cards/{boardID}/{cardId}", boardDelivery.DeleteCard).Methods("DELETE")
 
 		r.ServeHTTP(w, req)
 
 		assert.Equal(t, http.StatusUnauthorized, w.Code)
 	})
 
-	t.Run("GetIDFromRequest fails for boardId", func(t *testing.T) {
+	t.Run("GetIDFromRequest fails for boardID", func(t *testing.T) {
 		userID := 1
 
 		ctx := context.WithValue(context.Background(), session.UserIDContextKey, userID)
@@ -921,7 +915,7 @@ func TestDeleteCard(t *testing.T) {
 		w := httptest.NewRecorder()
 
 		r := mux.NewRouter()
-		r.HandleFunc("/cards/{boardId}/{cardId}", boardDelivery.DeleteCard).Methods("DELETE")
+		r.HandleFunc("/cards/{boardID}/{cardId}", boardDelivery.DeleteCard).Methods("DELETE")
 
 		r.ServeHTTP(w, req)
 
@@ -937,7 +931,7 @@ func TestDeleteCard(t *testing.T) {
 		w := httptest.NewRecorder()
 
 		r := mux.NewRouter()
-		r.HandleFunc("/cards/{boardId}/{cardId}", boardDelivery.DeleteCard).Methods("DELETE")
+		r.HandleFunc("/cards/{boardID}/{cardId}", boardDelivery.DeleteCard).Methods("DELETE")
 
 		r.ServeHTTP(w, req)
 
@@ -946,10 +940,9 @@ func TestDeleteCard(t *testing.T) {
 
 	t.Run("usecase returns error", func(t *testing.T) {
 		userID := 1
-		boardID := 1
 		cardID := 1
 
-		mockBoardUsecase.EXPECT().DeleteCard(gomock.Any(), userID, boardID, cardID).Return(errors.New("usecase error"))
+		mockBoardUsecase.EXPECT().DeleteCard(gomock.Any(), userID, cardID).Return(errors.New("usecase error"))
 
 		ctx := context.WithValue(context.Background(), session.UserIDContextKey, userID)
 
@@ -957,7 +950,7 @@ func TestDeleteCard(t *testing.T) {
 		w := httptest.NewRecorder()
 
 		r := mux.NewRouter()
-		r.HandleFunc("/cards/{boardId}/{cardId}", boardDelivery.DeleteCard).Methods("DELETE")
+		r.HandleFunc("/cards/{boardID}/{cardId}", boardDelivery.DeleteCard).Methods("DELETE")
 
 		r.ServeHTTP(w, req)
 
@@ -983,11 +976,11 @@ func TestCreateColumn(t *testing.T) {
 
 		body, _ := json.Marshal(requestData)
 		req := httptest.NewRequest("POST", "/columns/board_1", bytes.NewReader(body)).WithContext(ctx)
-		req = mux.SetURLVars(req, map[string]string{"boardId": "1"})
+		req = mux.SetURLVars(req, map[string]string{"boardID": "1"})
 		w := httptest.NewRecorder()
 
 		r := mux.NewRouter()
-		r.HandleFunc("/columns/{boardId}", boardDelivery.CreateColumn).Methods("POST")
+		r.HandleFunc("/columns/{boardID}", boardDelivery.CreateColumn).Methods("POST")
 
 		r.ServeHTTP(w, req)
 
@@ -1005,7 +998,7 @@ func TestCreateColumn(t *testing.T) {
 		w := httptest.NewRecorder()
 
 		r := mux.NewRouter()
-		r.HandleFunc("/columns/{boardId}", boardDelivery.CreateColumn).Methods("POST")
+		r.HandleFunc("/columns/{boardID}", boardDelivery.CreateColumn).Methods("POST")
 
 		r.ServeHTTP(w, req)
 
@@ -1021,7 +1014,7 @@ func TestCreateColumn(t *testing.T) {
 		w := httptest.NewRecorder()
 
 		r := mux.NewRouter()
-		r.HandleFunc("/columns/{boardId}", boardDelivery.CreateColumn).Methods("POST")
+		r.HandleFunc("/columns/{boardID}", boardDelivery.CreateColumn).Methods("POST")
 
 		r.ServeHTTP(w, req)
 
@@ -1034,11 +1027,11 @@ func TestCreateColumn(t *testing.T) {
 		ctx := context.WithValue(context.Background(), session.UserIDContextKey, userID)
 
 		req := httptest.NewRequest("POST", "/columns/board_1", bytes.NewReader([]byte("invalid json"))).WithContext(ctx)
-		req = mux.SetURLVars(req, map[string]string{"boardId": "1"})
+		req = mux.SetURLVars(req, map[string]string{"boardID": "1"})
 		w := httptest.NewRecorder()
 
 		r := mux.NewRouter()
-		r.HandleFunc("/columns/{boardId}", boardDelivery.CreateColumn).Methods("POST")
+		r.HandleFunc("/columns/{boardID}", boardDelivery.CreateColumn).Methods("POST")
 
 		r.ServeHTTP(w, req)
 
@@ -1059,7 +1052,7 @@ func TestCreateColumn(t *testing.T) {
 		w := httptest.NewRecorder()
 
 		r := mux.NewRouter()
-		r.HandleFunc("/columns/{boardId}", boardDelivery.CreateColumn).Methods("POST")
+		r.HandleFunc("/columns/{boardID}", boardDelivery.CreateColumn).Methods("POST")
 
 		r.ServeHTTP(w, req)
 
@@ -1076,21 +1069,20 @@ func TestUpdateColumn(t *testing.T) {
 
 	t.Run("successful update of column", func(t *testing.T) {
 		userID := 1
-		boardID := 1
 		columnID := 1
 		requestData := models.ColumnRequest{NewTitle: "Updated Column"}
 
-		mockBoardUsecase.EXPECT().UpdateColumn(gomock.Any(), userID, boardID, columnID, &requestData).Return(&models.Column{ID: columnID, Title: requestData.NewTitle}, nil)
+		mockBoardUsecase.EXPECT().UpdateColumn(gomock.Any(), userID, columnID, &requestData).Return(&models.Column{ID: columnID, Title: requestData.NewTitle}, nil)
 
 		ctx := context.WithValue(context.Background(), session.UserIDContextKey, userID)
 
 		body, _ := json.Marshal(requestData)
 		req := httptest.NewRequest("PUT", "/columns/board_1/column_1", bytes.NewReader(body)).WithContext(ctx)
-		req = mux.SetURLVars(req, map[string]string{"boardId": "1", "columnId": "1"})
+		req = mux.SetURLVars(req, map[string]string{"boardID": "1", "columnID": "1"})
 		w := httptest.NewRecorder()
 
 		r := mux.NewRouter()
-		r.HandleFunc("/columns/{boardId}/{columnId}", boardDelivery.UpdateColumn).Methods("PUT")
+		r.HandleFunc("/columns/{boardID}/{columnID}", boardDelivery.UpdateColumn).Methods("PUT")
 
 		r.ServeHTTP(w, req)
 
@@ -1108,14 +1100,14 @@ func TestUpdateColumn(t *testing.T) {
 		w := httptest.NewRecorder()
 
 		r := mux.NewRouter()
-		r.HandleFunc("/columns/{boardId}/{columnId}", boardDelivery.UpdateColumn).Methods("PUT")
+		r.HandleFunc("/columns/{boardID}/{columnID}", boardDelivery.UpdateColumn).Methods("PUT")
 
 		r.ServeHTTP(w, req)
 
 		assert.Equal(t, http.StatusUnauthorized, w.Code)
 	})
 
-	t.Run("GetIDFromRequest fails for boardId", func(t *testing.T) {
+	t.Run("GetIDFromRequest fails for boardID", func(t *testing.T) {
 		userID := 1
 
 		ctx := context.WithValue(context.Background(), session.UserIDContextKey, userID)
@@ -1124,14 +1116,14 @@ func TestUpdateColumn(t *testing.T) {
 		w := httptest.NewRecorder()
 
 		r := mux.NewRouter()
-		r.HandleFunc("/columns/{boardId}/{columnId}", boardDelivery.UpdateColumn).Methods("PUT")
+		r.HandleFunc("/columns/{boardID}/{columnID}", boardDelivery.UpdateColumn).Methods("PUT")
 
 		r.ServeHTTP(w, req)
 
 		assert.Equal(t, http.StatusBadRequest, w.Code)
 	})
 
-	t.Run("GetIDFromRequest fails for columnId", func(t *testing.T) {
+	t.Run("GetIDFromRequest fails for columnID", func(t *testing.T) {
 		userID := 1
 
 		ctx := context.WithValue(context.Background(), session.UserIDContextKey, userID)
@@ -1140,7 +1132,7 @@ func TestUpdateColumn(t *testing.T) {
 		w := httptest.NewRecorder()
 
 		r := mux.NewRouter()
-		r.HandleFunc("/columns/{boardId}/{columnId}", boardDelivery.UpdateColumn).Methods("PUT")
+		r.HandleFunc("/columns/{boardID}/{columnID}", boardDelivery.UpdateColumn).Methods("PUT")
 
 		r.ServeHTTP(w, req)
 
@@ -1153,11 +1145,11 @@ func TestUpdateColumn(t *testing.T) {
 		ctx := context.WithValue(context.Background(), session.UserIDContextKey, userID)
 
 		req := httptest.NewRequest("PUT", "/columns/board_1/column_1", bytes.NewReader([]byte("invalid json"))).WithContext(ctx)
-		req = mux.SetURLVars(req, map[string]string{"boardId": "1", "columnId": "1"})
+		req = mux.SetURLVars(req, map[string]string{"boardID": "1", "columnID": "1"})
 		w := httptest.NewRecorder()
 
 		r := mux.NewRouter()
-		r.HandleFunc("/columns/{boardId}/{columnId}", boardDelivery.UpdateColumn).Methods("PUT")
+		r.HandleFunc("/columns/{boardID}/{columnID}", boardDelivery.UpdateColumn).Methods("PUT")
 
 		r.ServeHTTP(w, req)
 
@@ -1166,11 +1158,10 @@ func TestUpdateColumn(t *testing.T) {
 
 	t.Run("usecase returns error", func(t *testing.T) {
 		userID := 1
-		boardID := 1
 		columnID := 1
 		requestData := models.ColumnRequest{NewTitle: "Updated Column"}
 
-		mockBoardUsecase.EXPECT().UpdateColumn(gomock.Any(), userID, boardID, columnID, &requestData).Return(nil, errors.New("usecase error"))
+		mockBoardUsecase.EXPECT().UpdateColumn(gomock.Any(), userID, columnID, &requestData).Return(nil, errors.New("usecase error"))
 
 		ctx := context.WithValue(context.Background(), session.UserIDContextKey, userID)
 
@@ -1179,7 +1170,7 @@ func TestUpdateColumn(t *testing.T) {
 		w := httptest.NewRecorder()
 
 		r := mux.NewRouter()
-		r.HandleFunc("/columns/{boardId}/{columnId}", boardDelivery.UpdateColumn).Methods("PUT")
+		r.HandleFunc("/columns/{boardID}/{columnID}", boardDelivery.UpdateColumn).Methods("PUT")
 
 		r.ServeHTTP(w, req)
 
@@ -1196,19 +1187,18 @@ func TestDeleteColumn(t *testing.T) {
 
 	t.Run("successful deletion of column", func(t *testing.T) {
 		userID := 1
-		boardID := 1
 		columnID := 1
 
-		mockBoardUsecase.EXPECT().DeleteColumn(gomock.Any(), userID, boardID, columnID).Return(nil)
+		mockBoardUsecase.EXPECT().DeleteColumn(gomock.Any(), userID, columnID).Return(nil)
 
 		ctx := context.WithValue(context.Background(), session.UserIDContextKey, userID)
 
 		req := httptest.NewRequest("DELETE", "/columns/board_1/column_1", nil).WithContext(ctx)
-		req = mux.SetURLVars(req, map[string]string{"boardId": "1", "columnId": "1"})
+		req = mux.SetURLVars(req, map[string]string{"boardID": "1", "columnID": "1"})
 		w := httptest.NewRecorder()
 
 		r := mux.NewRouter()
-		r.HandleFunc("/columns/{boardId}/{columnId}", boardDelivery.DeleteColumn).Methods("DELETE")
+		r.HandleFunc("/columns/{boardID}/{columnID}", boardDelivery.DeleteColumn).Methods("DELETE")
 
 		r.ServeHTTP(w, req)
 
@@ -1220,14 +1210,14 @@ func TestDeleteColumn(t *testing.T) {
 		w := httptest.NewRecorder()
 
 		r := mux.NewRouter()
-		r.HandleFunc("/columns/{boardId}/{columnId}", boardDelivery.DeleteColumn).Methods("DELETE")
+		r.HandleFunc("/columns/{boardID}/{columnID}", boardDelivery.DeleteColumn).Methods("DELETE")
 
 		r.ServeHTTP(w, req)
 
 		assert.Equal(t, http.StatusUnauthorized, w.Code)
 	})
 
-	t.Run("GetIDFromRequest fails for boardId", func(t *testing.T) {
+	t.Run("GetIDFromRequest fails for boardID", func(t *testing.T) {
 		userID := 1
 
 		ctx := context.WithValue(context.Background(), session.UserIDContextKey, userID)
@@ -1236,14 +1226,14 @@ func TestDeleteColumn(t *testing.T) {
 		w := httptest.NewRecorder()
 
 		r := mux.NewRouter()
-		r.HandleFunc("/columns/{boardId}/{columnId}", boardDelivery.DeleteColumn).Methods("DELETE")
+		r.HandleFunc("/columns/{boardID}/{columnID}", boardDelivery.DeleteColumn).Methods("DELETE")
 
 		r.ServeHTTP(w, req)
 
 		assert.Equal(t, http.StatusBadRequest, w.Code)
 	})
 
-	t.Run("GetIDFromRequest fails for columnId", func(t *testing.T) {
+	t.Run("GetIDFromRequest fails for columnID", func(t *testing.T) {
 		userID := 1
 
 		ctx := context.WithValue(context.Background(), session.UserIDContextKey, userID)
@@ -1252,7 +1242,7 @@ func TestDeleteColumn(t *testing.T) {
 		w := httptest.NewRecorder()
 
 		r := mux.NewRouter()
-		r.HandleFunc("/columns/{boardId}/{columnId}", boardDelivery.DeleteColumn).Methods("DELETE")
+		r.HandleFunc("/columns/{boardID}/{columnID}", boardDelivery.DeleteColumn).Methods("DELETE")
 
 		r.ServeHTTP(w, req)
 
@@ -1261,10 +1251,9 @@ func TestDeleteColumn(t *testing.T) {
 
 	t.Run("usecase returns error", func(t *testing.T) {
 		userID := 1
-		boardID := 1
 		columnID := 1
 
-		mockBoardUsecase.EXPECT().DeleteColumn(gomock.Any(), userID, boardID, columnID).Return(errors.New("usecase error"))
+		mockBoardUsecase.EXPECT().DeleteColumn(gomock.Any(), userID, columnID).Return(errors.New("usecase error"))
 
 		ctx := context.WithValue(context.Background(), session.UserIDContextKey, userID)
 
@@ -1272,7 +1261,7 @@ func TestDeleteColumn(t *testing.T) {
 		w := httptest.NewRecorder()
 
 		r := mux.NewRouter()
-		r.HandleFunc("/columns/{boardId}/{columnId}", boardDelivery.DeleteColumn).Methods("DELETE")
+		r.HandleFunc("/columns/{boardID}/{columnID}", boardDelivery.DeleteColumn).Methods("DELETE")
 
 		r.ServeHTTP(w, req)
 

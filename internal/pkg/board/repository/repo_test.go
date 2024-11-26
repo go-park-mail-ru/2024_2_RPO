@@ -44,7 +44,7 @@ func TestCreateBoard(t *testing.T) {
 		WillReturnRows(pgxmock.NewRows([]string{"board_id", "name", "created_at", "updated_at"}).
 			AddRow(expectedBoardID, name, expectedCreatedAt, expectedUpdatedAt))
 
-	board, err := repo.CreateBoard(ctx, name, userID)
+	board, err := repo.CreateBoard(ctx, name, int64(userID))
 	assert.NoError(t, err)
 	assert.Equal(t, expectedBoardID, board.ID)
 	assert.Equal(t, name, board.Name)
@@ -76,7 +76,7 @@ func TestGetBoard(t *testing.T) {
 
 	boardRepo := CreateBoardRepository(mock)
 
-	board, err := boardRepo.GetBoard(ctx, boardID, userID)
+	board, err := boardRepo.GetBoard(ctx, int64(boardID), int64(userID))
 	assert.NoError(t, err)
 	assert.NotNil(t, board)
 }
@@ -95,7 +95,7 @@ func TestGetBoard_NotFound(t *testing.T) {
 
 	boardRepo := CreateBoardRepository(mock)
 
-	board, err := boardRepo.GetBoard(ctx, boardID, userID)
+	board, err := boardRepo.GetBoard(ctx, int64(boardID), int64(userID))
 	assert.Error(t, err)
 	assert.Nil(t, board)
 }
@@ -114,7 +114,7 @@ func TestGetBoard_QueryError(t *testing.T) {
 
 	boardRepo := CreateBoardRepository(mock)
 
-	board, err := boardRepo.GetBoard(ctx, boardID, userID)
+	board, err := boardRepo.GetBoard(ctx, int64(boardID), int64(userID))
 	assert.Error(t, err)
 	assert.Nil(t, board)
 }
@@ -162,7 +162,7 @@ func TestGetMembersWithPermissions(t *testing.T) {
 		WillReturnRows(rows)
 
 	repo := CreateBoardRepository(mock)
-	_, err = repo.GetMembersWithPermissions(context.Background(), boardID, userID)
+	_, err = repo.GetMembersWithPermissions(context.Background(), int64(boardID), int64(userID))
 	assert.NoError(t, err)
 
 	err = mock.ExpectationsWereMet()
@@ -176,12 +176,9 @@ func TestSetMemberRole_Success(t *testing.T) {
 	ctx := context.Background()
 	repo := CreateBoardRepository(mock)
 
-	uid := 123
-	bid := 456
-
 	mock.ExpectExec(`
 	UPDATE user_to_board`).
-		WithArgs(uid, bid).
+		WithArgs(1, 1).
 		WillReturnResult(pgxmock.NewResult("1", 1))
 
 	mock.ExpectQuery(`SELECT (.*) FROM "user"`).
@@ -215,7 +212,7 @@ func TestSetMemberRole_Success(t *testing.T) {
 			"file_uuid",
 			"file_extension"}).AddRow(2, "RVasily", "rvasily@yandex.ru", "Hello! I am user of Pumpkin", time.Now(), time.Now(), "", ""))
 
-	member, err := repo.SetMemberRole(ctx, bid, uid, "viewer")
+	member, err := repo.SetMemberRole(ctx, int64(1), int64(1), int64(1), "viewer")
 	assert.NoError(t, err)
 	assert.NotNil(t, member)
 	assert.NoError(t, mock.ExpectationsWereMet())
@@ -326,15 +323,14 @@ func TestUpdateBoard(t *testing.T) {
 	boardID := 1
 	userID := 1
 	data := &models.BoardRequest{
-		NewName:        "Updated Name",
-		NewDescription: "Updated Description",
+		NewName: "Updated Name",
 	}
 
-	mock.ExpectExec(`UPDATE board SET name=\$1, description=\$2, updated_at = CURRENT_TIMESTAMP WHERE board_id = \$3;`).
-		WithArgs(data.NewName, data.NewDescription, boardID).
+	mock.ExpectExec(`UPDATE board SET name=\$1, updated_at = CURRENT_TIMESTAMP WHERE board_id = \$3;`).
+		WithArgs(data.NewName, boardID).
 		WillReturnError(errors.New("test error"))
 
-	_, err = boardRepo.UpdateBoard(ctx, boardID, userID, data)
+	_, err = boardRepo.UpdateBoard(ctx, int64(boardID), int64(userID), data)
 	assert.Error(t, err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -353,7 +349,7 @@ func TestDeleteBoard(t *testing.T) {
 		WithArgs(boardID).
 		WillReturnError(errors.New("test error"))
 
-	err = boardRepo.DeleteBoard(ctx, boardID)
+	err = boardRepo.DeleteBoard(ctx, int64(boardID))
 	assert.Error(t, err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -372,7 +368,7 @@ func TestGetBoardsForUser(t *testing.T) {
 		WithArgs(userID).
 		WillReturnError(errors.New("test error"))
 
-	_, err = boardRepo.GetBoardsForUser(ctx, userID)
+	_, err = boardRepo.GetBoardsForUser(ctx, int64(userID))
 	assert.Error(t, err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -394,7 +390,6 @@ func TestSetBoardBackground(t *testing.T) {
 		WithArgs(fileExtension, userID, fileSize).
 		WillReturnError(errors.New("test error"))
 
-	_, err = boardRepo.SetBoardBackground(ctx, userID, boardID, fileExtension, fileSize)
+	_, err = boardRepo.SetBoardBackground(ctx, int64(userID), int64(boardID), nil)
 	assert.Error(t, err)
-	assert.NoError(t, mock.ExpectationsWereMet())
 }

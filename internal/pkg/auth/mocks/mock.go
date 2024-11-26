@@ -145,10 +145,10 @@ func (mr *MockAuthRepoMockRecorder) DisplaceUserSessions(ctx, sessionID, userID 
 }
 
 // GetUserPasswordHash mocks base method.
-func (m *MockAuthRepo) GetUserPasswordHash(ctx context.Context, userID int) (string, error) {
+func (m *MockAuthRepo) GetUserPasswordHash(ctx context.Context, userID int) (*string, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetUserPasswordHash", ctx, userID)
-	ret0, _ := ret[0].(string)
+	ret0, _ := ret[0].(*string)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

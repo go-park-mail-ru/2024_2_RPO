@@ -33,7 +33,7 @@ build_poll:
 build_all: build_auth build_user build_poll build_board
 	@echo "==> All applications are built!"
 
-run_tests: generate
+run_tests:
 	@echo "==> Running tests..."
 	@go test $(GOFLAGS) -coverprofile coverage_raw.out -v ./...
 

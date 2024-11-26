@@ -858,7 +858,7 @@ func (r *BoardRepository) CreateComment(ctx context.Context, userID int64, cardI
 	newComment.CreatedBy.AvatarImageURL = uploads.JoinFileURL(fileUUID, fileExtension, uploads.DefaultAvatarURL)
 	logging.Debug(ctx, funcName, " query has err: ", err)
 	if err != nil {
-		return nil, fmt.Errorf("%s (query): %w", err)
+		return nil, fmt.Errorf("%s (query): %w", funcName, err)
 	}
 	return newComment, err
 }
@@ -903,7 +903,7 @@ func (r *BoardRepository) UpdateComment(ctx context.Context, commentID int64, up
 	err = row.Scan()
 	logging.Debug(ctx, funcName, " query has err: ", err)
 	if err != nil {
-		return nil, fmt.Errorf("%s (query): %w", err)
+		return nil, fmt.Errorf("%s (query): %w", funcName, err)
 	}
 	return updatedComment, nil
 }
@@ -958,7 +958,7 @@ func (r *BoardRepository) CreateCheckListField(ctx context.Context, cardID int64
 
 	logging.Debug(ctx, funcName, " query has err: ", err)
 	if err != nil {
-		return nil, fmt.Errorf("%s (query): %w", err)
+		return nil, fmt.Errorf("%s (query): %w", funcName, err)
 	}
 	return newField, nil
 }
@@ -995,7 +995,7 @@ func (r *BoardRepository) UpdateCheckListField(ctx context.Context, fieldID int6
 	err = row.Scan(&updatedField.ID, &updatedField.Title, &updatedField.CreatedAt, &updatedField.IsDone)
 	logging.Debug(ctx, funcName, " query has err: ", err)
 	if err != nil {
-		return nil, fmt.Errorf("%s (query): %w", err)
+		return nil, fmt.Errorf("%s (query): %w", funcName, err)
 	}
 	if update.IsDone != nil {
 		updatedField.IsDone = *update.IsDone
@@ -1212,7 +1212,7 @@ func (r *BoardRepository) FetchInvite(ctx context.Context, inviteUUID string) (b
 	err = row.Scan()
 	logging.Debug(ctx, funcName, " query has err: ", err)
 	if err != nil {
-		return nil, fmt.Errorf("%s (query): %w", err)
+		return nil, fmt.Errorf("%s (query): %w", funcName, err)
 	}
 	return board, nil
 }
