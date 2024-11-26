@@ -9,16 +9,16 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 )
 
-type PerformanceMiddleware struct {
+type HTTPPerformanceMiddleware struct {
 	serviceName string
 	Hits        *prometheus.CounterVec
 }
 
-func NewPerformanceMiddleware() *PerformanceMiddleware {
-	return &PerformanceMiddleware{}
+func CreateHTTPPerformanceMiddleware() *HTTPPerformanceMiddleware {
+	return &HTTPPerformanceMiddleware{}
 }
 
-func (*PerformanceMiddleware) Middleware(next http.Handler) http.Handler {
+func (*HTTPPerformanceMiddleware) Middleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		timeStart := time.Now()
 

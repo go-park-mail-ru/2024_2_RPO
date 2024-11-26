@@ -37,6 +37,18 @@ func CreateGRPCPerformanceMiddleware(serviceName string) (*GRPCPerformanceMiddle
 		},
 	}, []string{"method", "status"})
 
+	if err := prometheus.Register(hits); err != nil {
+		return nil, err
+	}
+
+	if err := prometheus.Register(times); err != nil {
+		return nil, err
+	}
+
+	if err := prometheus.Register(errors); err != nil {
+		return nil, err
+	}
+
 	return &GRPCPerformanceMiddleware{
 		Hits:        hits,
 		serviceName: serviceName,
