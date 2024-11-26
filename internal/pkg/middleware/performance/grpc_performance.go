@@ -1,9 +1,15 @@
 package performance
 
 import (
+	"context"
 	"fmt"
+	"net/http"
+	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 type GRPCPerformanceMiddleware struct {
@@ -57,4 +63,40 @@ func CreateGRPCPerformanceMiddleware(serviceName string) (*GRPCPerformanceMiddle
 		Times:       times,
 		Errors:      errors,
 	}, nil
+}
+
+func mapStatusCodes(err error) int {
+	switch status.Code(err) {
+	case codes.OK:
+		return http.StatusOK
+	case codes.NotFound:
+		return http.StatusNotFound
+	case codes.Unauthenticated:
+		return http.StatusUnauthorized
+	default:
+		return http.StatusInternalServerError
+	}
+}
+
+func (mg *GRPCPerformanceMiddleware) GRPCMetricsInterceptor(
+	ctx context.Context,
+	req interface{},
+	info *grpc.UnaryServerInfo,
+	handler grpc.UnaryHandler,
+) (resp interface{}, err error) {
+	start := time.Now()
+	resp, err = handler(ctx, req)
+
+	statusCode := mapStatusCodes(err)
+	grpcCode := status.Code(err).String()
+
+	mg.Hits.WithLabelValues(info.FullMethod, fmt.Sprintf("%d", statusCode)).Inc()
+	if err != nil {
+		mg.Errors.WithLabelValues(info.FullMethod, fmt.Sprintf("%d", statusCode), grpcCode).Inc()
+	}
+
+	duration := time.Since(start).Seconds()
+	mg.Times.WithLabelValues(info.FullMethod, fmt.Sprintf("%d", statusCode)).Observe(duration)
+
+	return resp, err
 }
