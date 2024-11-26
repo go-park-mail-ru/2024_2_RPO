@@ -6,7 +6,7 @@
 
 - [Жуков Георгий](https://github.com/dedxyk594)
 
-- [Константин Сафронов](https://github.com/kosafronov)
+- [Сафронов Константин](https://github.com/kosafronov)
 
 Менторы:
 
@@ -33,66 +33,37 @@
 
 ### Docker
 
-Этот вариант подходит для Production, поскольку его легко разворачивать.
+Сначала надо убедиться, что в трёх файлах используется не CRLF, а LF:
 
-Для docker-compose файла, который лежит в репе, надо задать следующие настройки в .env:
+* `/database/postgres/start-postgres.sh`
+* `/database/postgres/certgen.sh`
+* `/database/redis/start-redis.sh`
 
-```
-POSTGRES_HOST = postgres
-POSTGRES_PORT = 5432
+Далее надо сгенерировать сертификаты для Postgres вызовом скрипта `/database/postgres/certgen.sh`. Вызывать его надо в той директории, где находится скрипт. Возможно, надо поставить OpenSSL. Этот скрипт сгенерирует самоподписанные сертификаты.
 
-REDIS_HOST = redis
-REDIS_PORT = 6379
-
-SERVER_PORT = 8800
-
-USER_UPLOADS_DIR = /uploads
-```
-
-### Локальный
-
-> [!CAUTION]
-> Этот раздел может значительно измениться при внедрении микросервисов
-
-Надо развернуть PostgreSQL и Redis
-
-Создать в PostgresQL базу данных pumpkin
-
-Запустить `CREATE TABLE`, который лежит в ветке `swagger_approved`
-
-Затем надо оформить файл `.env`. Пример:
+Надо оформить файл `.env`. Пример:
 
 ```
-POSTGRES_HOST = localhost
-POSTGRES_PORT = 5432
-POSTGRES_USER = tarasovxx
-POSTGRES_PASSWORD = my_secure_password
-POSTGRES_DB = pumpkin
-POSTGRES_SSLMODE = require
+CORS_ORIGIN = https://example.com
 
-SERVER_PORT = 8800
-
-REDIS_HOST = localhost
-REDIS_PORT = 6379
-REDIS_PASSWORD = my_secure_password
-
-CORS_ORIGIN = https://mysite.com
-
-LOGS_FILE = log.json
-
-USER_UPLOADS_DIR = /opt/uploads
-USER_UPLOADS_URL = /files
-
+# Эту переменную надо задавать, если Вам надо создать миграции с помощью Atlas
 TEST_DATABASE_URL = postgresql://3kybika:12345678@localhost:5432/migrate_gen_db?sslmode=disable
 ```
 
-Запуск: `make run`
+Потом можно запускать сами сервисы через Docker. Команда:
 
-Миграции: `make migrate-up`
+```sh
+make build_all -j && docker compose up --build
+```
 
-### Установка зависимостей
+Эта команда на хост-машине соберёт все бинари и будет исполнять их на докерах.
 
-go install -tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@latest
+Это ещё не все шаги: мы не накатили миграции. Для миграций надо зайти в контейнер `auth_service` и там вызвать команду `make migrate-up`.
+Имейте в виду, что auth_service, если не смог подключиться к PostgreSQL, ждёт 100 секунд, чтобы мы смогли накатить миграции и создать базу данных.
+Также имейте в виду, что контейнер с PostgreSQL при первом запуске запускает наш самописный скрипт инициализации, поэтому не спешите выключать контейнер, дождитесь, пока база создастся.
+
+> [!CAUTION]
+> Часто бывает, что в volume, где хранится сокет PostgreSQL, слетают права. Тогда postgres завершает свою работу, и бэк ложится. Если такой случай произошёл, надо удалить все контейнеры, удалить volume `pumpkin-postgres-socket` и заново поднять docker compose
 
 ### Запуск тестов
 
