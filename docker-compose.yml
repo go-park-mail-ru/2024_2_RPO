@@ -104,7 +104,7 @@ services:
     container_name: postgres
     image: postgres:bookworm
     ports:
-      - "0.0.0.0:5432:5432"
+      - "0.0.0.0:8032:5432"
     networks:
       - Pumpkin-network
     volumes:
@@ -131,15 +131,29 @@ services:
   grafana:
     container_name: grafana
     image: grafana/grafana
+    ports:
+      - 0.0.0.0:8010:3000
+    env_file:
+      - .env
+    networks:
+      - Pumpkin-network
 
   prometheus:
     image: prom/prometheus:latest
     container_name: prometheus
+    env_file:
+      - .env
+    networks:
+      - Pumpkin-network
 
   node_exporter:
     depends_on:
       - prometheus
     image: quay.io/prometheus/node-exporter:latest
+    env_file:
+      - .env
+    networks:
+      - Pumpkin-network
 
 networks:
   Pumpkin-network:

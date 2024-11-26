@@ -10,6 +10,7 @@ import (
 	"RPO_back/internal/pkg/middleware/csrf"
 	"RPO_back/internal/pkg/middleware/logging_middleware"
 	"RPO_back/internal/pkg/middleware/no_panic"
+	"RPO_back/internal/pkg/middleware/performance"
 	"RPO_back/internal/pkg/middleware/session"
 	"RPO_back/internal/pkg/utils/logging"
 	"RPO_back/internal/pkg/utils/misc"
@@ -88,6 +89,8 @@ func main() {
 
 	// Применяем middleware
 	router.Use(no_panic.PanicMiddleware)
+	pm := performance.NewPerformanceMiddleware()
+	router.Use(pm.Middleware)
 	router.Use(logging_middleware.LoggingMiddleware)
 	router.Use(cors.CorsMiddleware)
 	router.Use(csrf.CSRFMiddleware)
