@@ -1,31 +1,26 @@
 global:
   scrape_interval: 15s # интервал между опросами сервисов
   evaluation_interval: 15s # как часто обрабатывать данные согласно правилам
-#   external_labels:
-#     monitor: "pumpkin-monitor" # название метрики или метка
-
-# rule_files:
-#   # - "first.rules"
-#   # - "second.rules"
+  external_labels:
+    monitor: "pumpkin-monitor" # название метрики или метка
 
 scrape_configs:
-  # - job_name: "prometheus"
-  #   static_configs:
-  #     - targets: ["localhost:9090"]
+  - job_name: "auth"
+    metrics_path: /prometheus/metrics
+    static_configs:
+      - targets: ["auth_service:8888"]
 
-  # - job_name: "auth"
-  #   static_configs:
-  #     - targets: ["localhost:9090"]
-
-  # - job_name: "user"
-  #   static_configs:
-  #     - targets: ["localhost:9090"]
+  - job_name: "user"
+    metrics_path: /prometheus/metrics
+    static_configs:
+      - targets: ["user_service:8888"]
 
   - job_name: "board"
     metrics_path: /prometheus/metrics
     static_configs:
       - targets: ["board_service:8888"]
 
-  # - job_name: "poll"
-  #   static_configs:
-  #     - targets: ["localhost:9090"]
+  - job_name: "poll"
+    metrics_path: /prometheus/metrics
+    static_configs:
+      - targets: ["poll_service:8888"]

@@ -6,6 +6,7 @@ import (
 	"RPO_back/internal/pkg/middleware/csrf"
 	"RPO_back/internal/pkg/middleware/logging_middleware"
 	"RPO_back/internal/pkg/middleware/no_panic"
+	"RPO_back/internal/pkg/middleware/performance"
 	"RPO_back/internal/pkg/middleware/session"
 	UserDelivery "RPO_back/internal/pkg/user/delivery"
 	UserRepository "RPO_back/internal/pkg/user/repository"
@@ -22,6 +23,7 @@ import (
 	AuthGRPC "RPO_back/internal/pkg/auth/delivery/grpc/gen"
 
 	"github.com/gorilla/mux"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -82,6 +84,11 @@ func main() {
 
 	// Применяем middleware
 	router.Use(no_panic.PanicMiddleware)
+	pm, err := performance.CreateHTTPPerformanceMiddleware("user")
+	if err != nil {
+		log.Fatal("create HTTP middleware: ", err)
+	}
+	router.Use(pm.Middleware)
 	router.Use(logging_middleware.LoggingMiddleware)
 	router.Use(cors.CorsMiddleware)
 	router.Use(csrf.CSRFMiddleware)
@@ -89,6 +96,7 @@ func main() {
 	router.Use(sm.Middleware)
 
 	// Регистрируем обработчики
+	router.HandleFunc("/prometheus/metrics", promhttp.Handler().ServeHTTP)
 	router.HandleFunc("/auth/register", userDelivery.RegisterUser).Methods("POST", "OPTIONS")
 	router.HandleFunc("/auth/login", userDelivery.LoginUser).Methods("POST", "OPTIONS")
 	router.HandleFunc("/auth/logout", userDelivery.LogoutUser).Methods("POST", "OPTIONS")

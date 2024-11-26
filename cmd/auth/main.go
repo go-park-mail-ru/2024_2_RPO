@@ -11,6 +11,7 @@ import (
 	"RPO_back/internal/pkg/utils/logging"
 	"RPO_back/internal/pkg/utils/misc"
 	"net"
+	"net/http"
 	"os/signal"
 	"syscall"
 	"time"
@@ -22,6 +23,8 @@ import (
 	"os"
 
 	"github.com/go-redis/redis/v8"
+	"github.com/gorilla/mux"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -96,24 +99,33 @@ func main() {
 		grpc.Creds(insecure.NewCredentials()),
 		grpc.ChainUnaryInterceptor(grpcMetricsMiddleware.GRPCMetricsInterceptor, LogMiddleware.InterceptorLogger),
 	)
-
 	gen.RegisterAuthServer(grpcServer, authDelivery)
 
-	listener, err := net.Listen("tcp4", ":"+config.CurrentConfig.ServerPort)
-	if err != nil {
-		log.Fatalf("failed to listen on port %s: %v", config.CurrentConfig.ServerPort, err)
-	}
-	log.Infof("gRPC server is listening on port %s", config.CurrentConfig.ServerPort)
+	router := mux.NewRouter()
+	router.Use(logging_middleware.LoggingMiddleware)
+	router.HandleFunc("/prometheus/metrics", promhttp.Handler().ServeHTTP)
+
+	go func() {
+		if err := http.ListenAndServe(":8087", router); err != nil {
+			log.Fatal(err)
+		}
+	}()
+
+	go func() {
+		listener, err := net.Listen("tcp4", ":"+config.CurrentConfig.ServerPort)
+		if err != nil {
+			log.Fatalf("failed to listen on port %s: %v", config.CurrentConfig.ServerPort, err)
+		}
+		if err := grpcServer.Serve(listener); err != nil {
+			log.Fatalf("failed to serve gRPC server: %v", err)
+		}
+		log.Infof("gRPC server is listening on port %s", config.CurrentConfig.ServerPort)
+	}()
 
 	stop := make(chan os.Signal, 1)
 	signal.Notify(stop, os.Interrupt, syscall.SIGTERM, syscall.SIGINT)
-	go func() {
-		<-stop
-		log.Info("Shutting down gRPC server...")
-		grpcServer.GracefulStop()
-	}()
 
-	if err := grpcServer.Serve(listener); err != nil {
-		log.Fatalf("failed to serve gRPC server: %v", err)
-	}
+	<-stop
+	log.Info("Shutting down gRPC server...")
+	grpcServer.GracefulStop()
 }

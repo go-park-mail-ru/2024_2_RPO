@@ -1,6 +1,7 @@
 package performance
 
 import (
+	"RPO_back/internal/pkg/utils/logging"
 	"fmt"
 	"net/http"
 	"time"
@@ -71,6 +72,11 @@ func CreateResponseWriter(w http.ResponseWriter) *responseWriter {
 	return &responseWriter{w, http.StatusOK}
 }
 
+func (mh *responseWriter) WriteHeader(code int) {
+	mh.statusCode = code
+	mh.ResponseWriter.WriteHeader(code)
+}
+
 func (mh *HTTPPerformanceMiddleware) Middleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		timeStart := time.Now()
@@ -91,8 +97,8 @@ func (mh *HTTPPerformanceMiddleware) Middleware(next http.Handler) http.Handler 
 		duration := time.Since(timeStart).Seconds()
 		mh.Times.WithLabelValues(method, status).Observe(duration)
 
-		if rw.statusCode >= 400 {
-			mh.Errors.WithLabelValues(method, status).Inc()
-		}
+		mh.Errors.WithLabelValues(method, status).Inc()
+		logging.Error(r.Context(), "Code: ", status)
+
 	})
 }

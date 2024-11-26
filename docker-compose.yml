@@ -139,8 +139,8 @@ services:
       - Pumpkin-network
 
   prometheus:
-    image: prom/prometheus:latest
     container_name: prometheus
+    image: prom/prometheus:latest
     env_file:
       - .env
     networks:
