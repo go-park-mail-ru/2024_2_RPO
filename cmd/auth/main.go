@@ -7,6 +7,7 @@ import (
 	AuthUsecase "RPO_back/internal/pkg/auth/usecase"
 	"RPO_back/internal/pkg/config"
 	"RPO_back/internal/pkg/middleware/logging_middleware"
+	"RPO_back/internal/pkg/middleware/performance"
 	"RPO_back/internal/pkg/utils/logging"
 	"RPO_back/internal/pkg/utils/misc"
 	"net"
@@ -75,6 +76,11 @@ func main() {
 		return
 	}
 
+	grpcMetricsMiddleware, err := performance.CreateGRPCPerformanceMiddleware("auth")
+	if err != nil {
+		log.Error("error creating gRPC performance middleware: ", err)
+	}
+
 	// Auth
 	authRepository := AuthRepository.CreateAuthRepository(postgresDB, redisDB)
 	authUsecase := AuthUsecase.CreateAuthUsecase(authRepository)
@@ -88,7 +94,7 @@ func main() {
 
 	grpcServer := grpc.NewServer(
 		grpc.Creds(insecure.NewCredentials()),
-		grpc.UnaryInterceptor(LogMiddleware.InterceptorLogger),
+		grpc.ChainUnaryInterceptor(grpcMetricsMiddleware.GRPCMetricsInterceptor, LogMiddleware.InterceptorLogger),
 	)
 
 	gen.RegisterAuthServer(grpcServer, authDelivery)

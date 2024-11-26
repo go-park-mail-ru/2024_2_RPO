@@ -2,7 +2,7 @@ global:
   scrape_interval: 15s # интервал между опросами сервисов
   evaluation_interval: 15s # как часто обрабатывать данные согласно правилам
   external_labels:
-    monitor: "codelab-monitor" # название метрики или метка
+    monitor: "pumpkin-monitor" # название метрики или метка
 
 rule_files:
   # - "first.rules"
