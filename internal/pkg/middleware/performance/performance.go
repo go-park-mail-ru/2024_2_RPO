@@ -10,12 +10,56 @@ import (
 )
 
 type HTTPPerformanceMiddleware struct {
-	serviceName string
 	Hits        *prometheus.CounterVec
+	serviceName string
+	Times       *prometheus.HistogramVec
+	Errors      *prometheus.CounterVec
 }
 
-func CreateHTTPPerformanceMiddleware() *HTTPPerformanceMiddleware {
-	return &HTTPPerformanceMiddleware{}
+func CreateHTTPPerformanceMiddleware(serviceName string) (*HTTPPerformanceMiddleware, error) {
+	hits := prometheus.NewCounterVec(prometheus.CounterOpts{
+		Name: serviceName + "http_hits",
+		Help: "Number of HTTP calls",
+		ConstLabels: prometheus.Labels{
+			"serviceName": serviceName,
+		},
+	}, []string{"method", "status"})
+
+	times := prometheus.NewHistogramVec(prometheus.HistogramOpts{
+		Name: serviceName + "http_times",
+		Help: "Histogram of http call times",
+		ConstLabels: prometheus.Labels{
+			"serviceName": serviceName,
+		},
+		Buckets: prometheus.DefBuckets, // возожно не понадобится, подумаем...
+	}, []string{"method", "status"})
+
+	errors := prometheus.NewCounterVec(prometheus.CounterOpts{
+		Name: serviceName + "http_errors",
+		Help: "Number of http errors",
+		ConstLabels: prometheus.Labels{
+			"serviceName": serviceName,
+		},
+	}, []string{"method", "status"})
+
+	if err := prometheus.Register(hits); err != nil {
+		return nil, fmt.Errorf("create register hits (http): %w", err)
+	}
+
+	if err := prometheus.Register(times); err != nil {
+		return nil, fmt.Errorf("create register times (http): %w", err)
+	}
+
+	if err := prometheus.Register(errors); err != nil {
+		return nil, fmt.Errorf("create register errors (http): %w", err)
+	}
+
+	return &HTTPPerformanceMiddleware{
+		Hits:        hits,
+		serviceName: serviceName,
+		Times:       times,
+		Errors:      errors,
+	}, nil
 }
 
 func (*HTTPPerformanceMiddleware) Middleware(next http.Handler) http.Handler {

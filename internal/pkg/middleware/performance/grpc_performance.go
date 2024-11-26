@@ -1,6 +1,8 @@
 package performance
 
 import (
+	"fmt"
+
 	"github.com/prometheus/client_golang/prometheus"
 )
 
@@ -25,7 +27,7 @@ func CreateGRPCPerformanceMiddleware(serviceName string) (*GRPCPerformanceMiddle
 		ConstLabels: prometheus.Labels{
 			"serviceName": serviceName,
 		},
-		Buckets: prometheus.DefBuckets,
+		Buckets: prometheus.DefBuckets, // возожно не понадобится, подумаем...
 	},
 		[]string{"method", "status"})
 
@@ -38,15 +40,15 @@ func CreateGRPCPerformanceMiddleware(serviceName string) (*GRPCPerformanceMiddle
 	}, []string{"method", "status"})
 
 	if err := prometheus.Register(hits); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("create register hits (gRPC): %w", err)
 	}
 
 	if err := prometheus.Register(times); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("create register times (gRPC): %w", err)
 	}
 
 	if err := prometheus.Register(errors); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("create register errors (gRPC): %w", err)
 	}
 
 	return &GRPCPerformanceMiddleware{
