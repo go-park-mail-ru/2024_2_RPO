@@ -1,8 +1,8 @@
-h1:mkJlsKSoOSKgnN0cHMLV/PW6ydanIre9o3Z5vHrJ8Uc=
-20241115153518_create_tables.up.sql h1:EUwX9bA1AoWqd2QDRXWRdxOXFR6yJb43HAhyA9lKX08=
-20241116220131_tag_attach_share_comment.up.sql h1:G3ZjUsmnJEVuz1lmd1K6KyvsarLMoy+c4b8VXBH5Dls=
-20241116231100_define_roles.up.sql h1:sepdUa86H6KQvHCSBkoesJrvx2AiokKAZj/ZvtCZ8TY=
-20241117163200_homework_2.up.sql h1:X1yanaUrg5+XjB5sEATzW5k2GjuGk+wT1AE/uZFaT80=
-20241119150136_remove_description.up.sql h1:4Ngb2zg33IS8FXGqyJjNmUfFnQR+6ISHnDBvyNft+8M=
-20241123073430_fix.up.sql h1:tg2QJYz6WpodThLqaEytpD9RzUTGYB5/x3mfxdexItc=
-20241123074346_hackatone.up.sql h1:N4AYpAjt4KJ93Tp0yBAIH00Vi2SkYsVUJSzf/d5aqjU=
+h1:Fi1oZKZY+Hhv0wzuuMRAfkicPCB5Qi9LAsCbcCcGqcQ=
+20241115153518_create_tables.up.sql h1:W96eSKMroscgv19rfcMkNBWrBjyRlH7nHxfdh13kenc=
+20241116220131_tag_attach_share_comment.up.sql h1:5SNrfFikZZlsMb9BLYnl/pbkHXqbpmmd6jLaUB9vzaw=
+20241116231100_define_roles.up.sql h1:h2TpSe6NYfs3tWVD9cTMuLotVjB4qZabi3afPKFhrGo=
+20241117163200_homework_2.up.sql h1:gADn1zc47v54fE416W/8J+rBG0v1C6MEc12dxLSiibI=
+20241119150136_remove_description.up.sql h1:1p0oLB+qKi6CONLwuZGln+IAtvHZnz0zkOZWb1w41jM=
+20241123073430_fix.up.sql h1:2JPZ3+AuKxxvG6jX3Aux0KJ+0aDCDSBHgiPq+mMZ074=
+20241123074346_hackatone.up.sql h1:Gs5T+eUmQT24JRGV24wSj9UiWpIOlzw69bgFoqi9hH4=

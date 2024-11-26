@@ -11,8 +11,6 @@ BEGIN
     END IF;
 END
 $$;
-REASSIGN OWNED BY "3kybika" TO postgres;
-DROP OWNED BY "3kybika";
 DROP ROLE IF EXISTS "3kybika";
 CREATE ROLE "3kybika" WITH LOGIN;
 
