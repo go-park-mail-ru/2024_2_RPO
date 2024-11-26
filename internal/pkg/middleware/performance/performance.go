@@ -11,7 +11,7 @@ import (
 
 type PerformanceMiddleware struct {
 	serviceName string
-	Hits        *prometheus.Metric
+	Hits        *prometheus.CounterVec
 }
 
 func NewPerformanceMiddleware() *PerformanceMiddleware {
