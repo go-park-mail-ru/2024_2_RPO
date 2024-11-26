@@ -124,11 +124,11 @@ func (d *UserDelivery) LoginUser(w http.ResponseWriter, r *http.Request) {
 
 // RegisterUser регистрирует пользователя
 func (d *UserDelivery) RegisterUser(w http.ResponseWriter, r *http.Request) {
+	funcName := "RegisterUser"
 	var user models.UserRegisterRequest
 	err := requests.GetRequestData(r, &user)
 	if err != nil {
-		log.Error("UserDelivery Parsing JSON: ", err)
-		responses.DoBadResponse(w, http.StatusBadRequest, "Bad request")
+		responses.ResponseErrorAndLog(w, err, funcName)
 		return
 	}
 

@@ -1,11 +1,18 @@
 package validate
 
 import (
+	"RPO_back/internal/errs"
 	"RPO_back/internal/pkg/utils/logging"
 	"context"
+	"fmt"
+	"regexp"
 
 	"github.com/go-playground/validator/v10"
 )
+
+type Validatable interface {
+	Validate() error
+}
 
 func Validate(ctx context.Context, v interface{}) error {
 	validate := validator.New()
@@ -16,6 +23,76 @@ func Validate(ctx context.Context, v interface{}) error {
 			logging.Warnf(ctx, "Error: Field '%s' failed on the '%s' tag\n", err.Field(), err.Tag())
 		}
 		return err
+	}
+
+	if v, ok := v.(Validatable); ok == true && v != nil {
+		if err := v.Validate(); err != nil {
+			return fmt.Errorf("Validate: %w", err)
+		}
+	}
+
+	return nil
+}
+
+func CheckPassword(password string) error {
+	if len(password) < 8 || len(password) > 50 {
+		return fmt.Errorf("%w: password must be between 8 and 50 characters", errs.ErrValidation)
+	}
+
+	done, err := regexp.MatchString("([A-Z])+", password)
+	if err != nil {
+		return fmt.Errorf("CheckPassword (MatchString [UpperCase]): %w", err)
+	}
+	if !done {
+		return fmt.Errorf("%w: password must contain at least one uppercase letter", errs.ErrValidation)
+	}
+
+	done, err = regexp.MatchString("([a-z])+", password)
+	if err != nil {
+		return fmt.Errorf("CheckPassword (MatchString [LowerCase]): %w", err)
+	}
+	if !done {
+		return fmt.Errorf("%w: password must contain at least one lowercase letter", errs.ErrValidation)
+	}
+
+	done, err = regexp.MatchString("([0-9])+", password)
+	if err != nil {
+		return fmt.Errorf("CheckPassword (MatchString [Digit]): %w", err)
+	}
+	if !done {
+		return fmt.Errorf("%w: password must contain at least one digit", errs.ErrValidation)
+	}
+
+	done, err = regexp.MatchString("([!@#$%^&*.?-])+", password)
+	if err != nil {
+		return fmt.Errorf("CheckPassword (MatchString [SpecialChar]): %w", err)
+	}
+	if !done {
+		return fmt.Errorf("%w: password must contain at least one special character", errs.ErrValidation)
+	}
+
+	return nil
+}
+
+func CheckUserName(name string) error {
+	if len(name) < 3 || len(name) > 30 {
+		return fmt.Errorf("%w: name must be between 3 and 30 characters", errs.ErrValidation)
+	}
+
+	done, err := regexp.MatchString("([A-Za-z0-9])+", name)
+	if err != nil {
+		return fmt.Errorf("CheckUserName (MatchString [Alphanumeric]): %w", err)
+	}
+	if !done {
+		return fmt.Errorf("%w: name must contain at least one alphanumeric character", errs.ErrValidation)
+	}
+
+	done, err = regexp.MatchString("([!@#$%^&*.?-])+", name)
+	if err != nil {
+		return fmt.Errorf("CheckUserName (MatchString [SpecialChar]): %w", err)
+	}
+	if !done {
+		return fmt.Errorf("%w: name must contain at least one special character", errs.ErrValidation)
 	}
 
 	return nil

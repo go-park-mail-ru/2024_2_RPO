@@ -56,23 +56,26 @@ func (r *AuthRepository) KillSessionRedis(ctx context.Context, sessionID string)
 	redisConn := r.redisDb.Conn(r.redisDb.Context())
 	defer redisConn.Close()
 
-	res := redisConn.Get(r.redisDb.Context(), sessionID)
+	res := redisConn.Get(r.redisDb.Context(), sessionPrefix+sessionID)
 	if res.Err() != nil {
+		if res.Err() == redis.Nil {
+			return fmt.Errorf("KillSessionRedis (get): %w", errs.ErrNotFound)
+		}
 		return fmt.Errorf("KillSessionRedis (get): %w", res.Err())
 	}
 
-	userID, err := strconv.ParseInt(res.String(), 10, 64)
+	userID, err := strconv.ParseInt(res.Val(), 10, 64)
 	if err != nil {
 		return fmt.Errorf("KillSessionRedis (atoi): %w", res.Err())
 	}
 
-	err = redisConn.Del(r.redisDb.Context(), sessionID).Err()
+	err = redisConn.Del(r.redisDb.Context(), sessionPrefix+sessionID).Err()
 	if err != nil {
 		return fmt.Errorf("KillSessionRedis (del): %w", err)
 	}
 
 	userKey := fmt.Sprintf("%s%d", userPrefix, userID)
-	res2 := redisConn.SRem(ctx, userKey, sessionID)
+	res2 := redisConn.SRem(ctx, userKey, sessionPrefix+sessionID)
 	if res2.Err() != nil {
 		return fmt.Errorf("KillSessionRedis (srem): %w", res2.Err())
 	}
@@ -82,9 +85,6 @@ func (r *AuthRepository) KillSessionRedis(ctx context.Context, sessionID string)
 
 // DisplaceUserSessions удаляет все сессии пользователя из Redis, кроме одной сессии - sessionID
 func (r *AuthRepository) DisplaceUserSessions(ctx context.Context, sessionID string, userID int64) error {
-	if 1 == 1 {
-		return nil
-	}
 	setKey := fmt.Sprintf("%s%d", userPrefix, userID)
 
 	redisConn := r.redisDb.Conn(r.redisDb.Context())
@@ -92,7 +92,7 @@ func (r *AuthRepository) DisplaceUserSessions(ctx context.Context, sessionID str
 
 	sessions, err := redisConn.SMembers(ctx, setKey).Result()
 	if err != nil {
-		log.Fatalf("DisplaceUserSessions (get user): %w", err)
+		log.Fatalf("DisplaceUserSessions (get user): %v", err)
 	}
 
 	sessionsToDelete := make([]interface{}, 0)

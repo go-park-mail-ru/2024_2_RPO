@@ -1,6 +1,9 @@
 package models
 
-import "time"
+import (
+	"RPO_back/internal/pkg/utils/validate"
+	"time"
+)
 
 type CardPatchRequest struct {
 	NewTitle    *string    `json:"title"`
@@ -43,6 +46,18 @@ type UserRegisterRequest struct {
 	Name     string `json:"name" validate:"required,min=3,max=30"`
 	Email    string `json:"email" validate:"required,email"`
 	Password string `json:"password" validate:"required,min=8,max=50"`
+}
+
+func (r *UserRegisterRequest) Validate() error {
+	if err := validate.CheckPassword(r.Password); err != nil {
+		return err
+	}
+
+	if err := validate.CheckUserName(r.Name); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 type UserProfileUpdateRequest struct {

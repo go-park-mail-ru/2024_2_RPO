@@ -70,6 +70,11 @@ func ResponseErrorAndLog(w http.ResponseWriter, err error, prefix string) {
 		log.Warn(prefix, ": ", err)
 		return
 	}
+	if errors.Is(err, errs.ErrValidation) {
+		DoBadResponse(w, http.StatusBadRequest, err.Error())
+		log.Warn(prefix, ": ", err)
+		return
+	}
 	log.Error(prefix, ": ", err)
 	DoBadResponse(w, http.StatusInternalServerError, "internal error")
 }

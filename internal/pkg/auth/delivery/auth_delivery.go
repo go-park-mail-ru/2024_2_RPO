@@ -7,6 +7,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+
+	"github.com/sirupsen/logrus"
 )
 
 //go:generate mockgen -source=grpc/gen/auth_grpc.pb.go -destination=grpc/mocks/auth_mock.go
@@ -46,6 +48,7 @@ func (d *AuthDelivery) CheckSession(ctx context.Context, request *gen.CheckSessi
 func (d *AuthDelivery) DeleteSession(ctx context.Context, request *gen.Session) (*gen.StatusResponse, error) {
 	err := d.authUsecase.KillSession(ctx, request.SessionID)
 	if err != nil {
+		logrus.Errorf("DeleteSession: %v", err)
 		return &gen.StatusResponse{Error: gen.Error_INTERNAL_SERVER_ERROR}, nil
 	}
 
