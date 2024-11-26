@@ -1,0 +1,30 @@
+global:
+  scrape_interval: 15s # интервал между опросами сервисов
+  evaluation_interval: 15s # как часто обрабатывать данные согласно правилам
+  external_labels:
+    monitor: "codelab-monitor" # название метрики или метка
+
+rule_files:
+  # - "first.rules"
+  # - "second.rules"
+
+scrape_configs:
+  - job_name: "prometheus"
+    static_configs:
+      - targets: ["localhost:9090"]
+
+  - job_name: "auth"
+    static_configs:
+      - targets: ["localhost:9090"]
+
+  - job_name: "user"
+    static_configs:
+      - targets: ["localhost:9090"]
+
+  - job_name: "board"
+    static_configs:
+      - targets: ["localhost:9090"]
+
+  - job_name: "poll"
+    static_configs:
+      - targets: ["localhost:9090"]
