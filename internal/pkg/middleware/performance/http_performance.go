@@ -62,19 +62,37 @@ func CreateHTTPPerformanceMiddleware(serviceName string) (*HTTPPerformanceMiddle
 	}, nil
 }
 
-func (*HTTPPerformanceMiddleware) Middleware(next http.Handler) http.Handler {
+type responseWriter struct {
+	http.ResponseWriter
+	statusCode int
+}
+
+func CreateResponseWriter(w http.ResponseWriter) *responseWriter {
+	return &responseWriter{w, http.StatusOK}
+}
+
+func (mh *HTTPPerformanceMiddleware) Middleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		timeStart := time.Now()
 
-		next.ServeHTTP(w, r)
-		timeElapsed := time.Now().UnixMilli() - timeStart.UnixMilli()
-		pathTemplate, err := mux.CurrentRoute(r).GetPathTemplate()
-		if err != nil {
-			pathTemplate = "/invalid-route/"
+		rw := CreateResponseWriter(w)
+		next.ServeHTTP(rw, r)
+
+		path, err := mux.CurrentRoute(r).GetPathTemplate()
+		if err != nil || path == "" {
+			path = "/unknown-route"
 		}
 
-		statPath := r.Method + pathTemplate
+		method := r.Method
+		status := fmt.Sprintf("%d", rw.statusCode)
 
-		fmt.Printf("Time elapsed: %dms Route: %s\n", timeElapsed, statPath)
+		mh.Hits.WithLabelValues(method, status).Inc()
+
+		duration := time.Since(timeStart).Seconds()
+		mh.Times.WithLabelValues(method, status).Observe(duration)
+
+		if rw.statusCode >= 400 {
+			mh.Errors.WithLabelValues(method, status).Inc()
+		}
 	})
 }
