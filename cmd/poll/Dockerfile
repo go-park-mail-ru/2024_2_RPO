@@ -1,19 +1,7 @@
-# 1 шаг - сборка
-FROM golang:1.23-alpine AS build_stage
-RUN apk add make
-WORKDIR /tmp
-COPY ./go.mod ./go.sum /go/src/pumpkin/
-WORKDIR /go/src/pumpkin
-RUN go mod download
-COPY ./Makefile /go/src/pumpkin/
-COPY ./internal /go/src/pumpkin/internal/
-COPY ./cmd/poll/main.go /go/src/pumpkin/cmd/poll/
-RUN make build_poll
+FROM alpine
 
-# 2 шаг
-FROM alpine AS run_stage
-WORKDIR /app_binary
-COPY --from=build_stage /go/src/pumpkin/build/poll_app /app_binary/
+WORKDIR /app
+COPY ./build/poll_app .
 RUN chmod +x ./poll_app
-EXPOSE 8080/tcp
+
 ENTRYPOINT ./poll_app

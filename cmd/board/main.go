@@ -23,6 +23,7 @@ import (
 	"os"
 
 	"github.com/gorilla/mux"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -89,7 +90,10 @@ func main() {
 
 	// Применяем middleware
 	router.Use(no_panic.PanicMiddleware)
-	pm := performance.NewPerformanceMiddleware()
+	pm, err := performance.CreateHTTPPerformanceMiddleware("board")
+	if err != nil {
+		log.Fatal("create HTTP middleware: ", err)
+	}
 	router.Use(pm.Middleware)
 	router.Use(logging_middleware.LoggingMiddleware)
 	router.Use(cors.CorsMiddleware)
@@ -98,6 +102,7 @@ func main() {
 	router.Use(sm.Middleware)
 
 	// Регистрируем обработчики
+	router.HandleFunc("/prometheus/metrics", promhttp.Handler().ServeHTTP)
 	router.HandleFunc("/boards", boardDelivery.CreateNewBoard).Methods("POST", "OPTIONS")
 	router.HandleFunc("/boards/{boardID}", boardDelivery.DeleteBoard).Methods("DELETE", "OPTIONS")
 	router.HandleFunc("/boards/{boardID}", boardDelivery.UpdateBoard).Methods("PUT", "OPTIONS")

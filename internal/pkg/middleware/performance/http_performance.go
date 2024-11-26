@@ -18,7 +18,7 @@ type HTTPPerformanceMiddleware struct {
 
 func CreateHTTPPerformanceMiddleware(serviceName string) (*HTTPPerformanceMiddleware, error) {
 	hits := prometheus.NewCounterVec(prometheus.CounterOpts{
-		Name: serviceName + "http_hits",
+		Name: serviceName + "_http_hits",
 		Help: "Number of HTTP calls",
 		ConstLabels: prometheus.Labels{
 			"serviceName": serviceName,
@@ -26,7 +26,7 @@ func CreateHTTPPerformanceMiddleware(serviceName string) (*HTTPPerformanceMiddle
 	}, []string{"method", "status"})
 
 	times := prometheus.NewHistogramVec(prometheus.HistogramOpts{
-		Name: serviceName + "http_times",
+		Name: serviceName + "_http_times",
 		Help: "Histogram of http call times",
 		ConstLabels: prometheus.Labels{
 			"serviceName": serviceName,
@@ -35,7 +35,7 @@ func CreateHTTPPerformanceMiddleware(serviceName string) (*HTTPPerformanceMiddle
 	}, []string{"method", "status"})
 
 	errors := prometheus.NewCounterVec(prometheus.CounterOpts{
-		Name: serviceName + "http_errors",
+		Name: serviceName + "_http_errors",
 		Help: "Number of http errors",
 		ConstLabels: prometheus.Labels{
 			"serviceName": serviceName,

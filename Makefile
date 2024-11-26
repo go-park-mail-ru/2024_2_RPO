@@ -12,23 +12,26 @@ GOFLAGS := # Может, когда-нибудь пригодятся
 LDFLAGS := -ldflags="-s -w" # Отключить дебаг-информацию
 
 # Цели Makefile, которые не привязываются к файлам
-.PHONY: build_auth build_user build_board run_tests test clean coverage run generate
+.PHONY: build_auth build_user build_board build_poll build_all run_tests test clean coverage run generate
 
 build_auth:
-	@echo "==> Building the application..."
-	@go build $(GOFLAGS) $(LDFLAGS) -o $(BUILD_DIR)/auth_app ./cmd/auth
+	@echo "==> Building auth application..."
+	@GOOS=linux go build $(GOFLAGS) $(LDFLAGS) -o $(BUILD_DIR)/auth_app ./cmd/auth
 
 build_user:
-	@echo "==> Building the application..."
-	@go build $(GOFLAGS) $(LDFLAGS) -o $(BUILD_DIR)/user_app ./cmd/user
+	@echo "==> Building user application..."
+	@GOOS=linux go build $(GOFLAGS) $(LDFLAGS) -o $(BUILD_DIR)/user_app ./cmd/user
 
 build_board:
-	@echo "==> Building the application..."
-	@go build $(GOFLAGS) $(LDFLAGS) -o $(BUILD_DIR)/board_app ./cmd/board
+	@echo "==> Building board application..."
+	@GOOS=linux go build $(GOFLAGS) $(LDFLAGS) -o $(BUILD_DIR)/board_app ./cmd/board
 
 build_poll:
-	@echo "==> Building the application..."
-	@go build $(GOFLAGS) $(LDFLAGS) -o $(BUILD_DIR)/poll_app ./cmd/poll
+	@echo "==> Building poll application..."
+	@GOOS=linux go build $(GOFLAGS) $(LDFLAGS) -o $(BUILD_DIR)/poll_app ./cmd/poll
+
+build_all: build_auth build_user build_poll build_board
+	@echo "==> All applications are built!"
 
 run_tests: generate
 	@echo "==> Running tests..."
