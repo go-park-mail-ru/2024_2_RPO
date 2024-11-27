@@ -20,17 +20,17 @@ func CreateAuthUsecase(repo auth.AuthRepo) *AuthUsecase {
 }
 
 func (uc *AuthUsecase) CreateSession(ctx context.Context, userID int64, password string) (sessionID string, err error) {
-	_, err = uc.authRepo.GetUserPasswordHash(ctx, int(userID))
+	passwordHash, err := uc.authRepo.GetUserPasswordHash(ctx, int(userID))
 	if err != nil {
 		return "", err
 	}
 
-	// if passwordHash != nil {
-	// 	ok := encrypt.CheckPassword(password, *passwordHash)
-	// 	if !ok {
-	// 		return "", fmt.Errorf("LoginUser: passwords not match: %w", errs.ErrWrongCredentials)
-	// 	}
-	// }
+	if passwordHash != nil {
+		ok := encrypt.CheckPassword(password, *passwordHash)
+		if !ok {
+			return "", fmt.Errorf("LoginUser: passwords not match: %w", errs.ErrWrongCredentials)
+		}
+	}
 
 	sessionID = encrypt.GenerateSessionID()
 
@@ -71,17 +71,17 @@ func (uc *AuthUsecase) ChangePassword(ctx context.Context, oldPassword string, n
 		return fmt.Errorf("ChangePassword (CheckSession): %w", err)
 	}
 
-	_, err = uc.authRepo.GetUserPasswordHash(ctx, int(userID))
+	oldPasswordHash, err := uc.authRepo.GetUserPasswordHash(ctx, int(userID))
 	if err != nil {
 		return fmt.Errorf("ChangePassword (GetUserPasswordHash): %w", err)
 	}
 
-	// if oldPasswordHash != nil {
-	// 	ok := encrypt.CheckPassword(oldPassword, *oldPasswordHash)
-	// 	if !ok {
-	// 		return fmt.Errorf("ChangePassword (CheckPassword): passwords do not match: %w", errs.ErrWrongCredentials)
-	// 	}
-	// }
+	if oldPasswordHash != nil {
+		ok := encrypt.CheckPassword(oldPassword, *oldPasswordHash)
+		if !ok {
+			return fmt.Errorf("ChangePassword (CheckPassword): passwords do not match: %w", errs.ErrWrongCredentials)
+		}
+	}
 
 	err = uc.authRepo.DisplaceUserSessions(ctx, sessionID, int64(userID))
 	if err != nil {
