@@ -1,4 +1,4 @@
-FROM alpine
+FROM ubuntu
 
 WORKDIR /app
 COPY ./build/poll_app .
