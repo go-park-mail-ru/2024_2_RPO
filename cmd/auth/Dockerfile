@@ -14,4 +14,4 @@ COPY ./build/auth_app .
 RUN chmod +x ./auth_app
 RUN chmod +x /usr/bin/migrate
 
-ENTRYPOINT ./auth_app
+ENTRYPOINT /app/auth_app
