@@ -1,6 +1,6 @@
 FROM ubuntu
 RUN apt update
-RUN apt install wget make
+RUN apt install wget make -y
 
 WORKDIR /tmp
 RUN wget https://github.com/golang-migrate/migrate/releases/download/v4.18.1/migrate.linux-amd64.tar.gz -O migrate.tar.gz
