@@ -23,7 +23,7 @@ func CreateHTTPPerformanceMiddleware(serviceName string) (*HTTPPerformanceMiddle
 		ConstLabels: prometheus.Labels{
 			"serviceName": serviceName,
 		},
-	}, []string{"method", "status"})
+	}, []string{"path"})
 
 	times := prometheus.NewHistogramVec(prometheus.HistogramOpts{
 		Name: serviceName + "_http_times",
@@ -32,7 +32,7 @@ func CreateHTTPPerformanceMiddleware(serviceName string) (*HTTPPerformanceMiddle
 			"serviceName": serviceName,
 		},
 		Buckets: prometheus.DefBuckets, // возожно не понадобится, подумаем...
-	}, []string{"method", "status"})
+	}, []string{"path", "status"})
 
 	errors := prometheus.NewCounterVec(prometheus.CounterOpts{
 		Name: serviceName + "_http_errors",
@@ -40,7 +40,7 @@ func CreateHTTPPerformanceMiddleware(serviceName string) (*HTTPPerformanceMiddle
 		ConstLabels: prometheus.Labels{
 			"serviceName": serviceName,
 		},
-	}, []string{"method", "status"})
+	}, []string{"path", "status"})
 
 	if err := prometheus.Register(hits); err != nil {
 		return nil, fmt.Errorf("create register hits (http): %w", err)
@@ -87,16 +87,16 @@ func (mh *HTTPPerformanceMiddleware) Middleware(next http.Handler) http.Handler 
 		if err != nil || path == "" {
 			path = "/unknown-route"
 		}
+		path = r.Method + " " + path
 
-		method := r.Method
 		status := fmt.Sprintf("%d", rw.statusCode)
 
-		mh.Hits.WithLabelValues(method, status).Inc()
+		mh.Hits.WithLabelValues(path).Inc()
 
 		duration := time.Since(timeStart).Seconds()
-		mh.Times.WithLabelValues(method, status).Observe(duration)
+		mh.Times.WithLabelValues(path, status).Observe(duration)
 
-		mh.Errors.WithLabelValues(method, status).Inc()
+		mh.Errors.WithLabelValues(path, status).Inc()
 
 	})
 }
