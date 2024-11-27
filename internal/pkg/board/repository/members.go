@@ -1047,7 +1047,7 @@ func (r *BoardRepository) SetCardCover(ctx context.Context, userID int64, cardID
 	err = row.Scan()
 	logging.Debug(ctx, funcName, " query has err: ", err)
 	if err != nil {
-		return nil, fmt.Errorf("%s (query): %w", err)
+		return nil, fmt.Errorf("%s (query): %w", funcName, err)
 	}
 	return updatedCard, nil
 }
@@ -1114,7 +1114,7 @@ func (r *BoardRepository) AddAttachment(ctx context.Context, userID int64, cardI
 	err = row.Scan()
 	logging.Debug(ctx, funcName, " query has err: ", err)
 	if err != nil {
-		return nil, fmt.Errorf("%s (query): %w", err)
+		return nil, fmt.Errorf("%s (query): %w", funcName, err)
 	}
 	return newAttachment, nil
 }
@@ -1169,7 +1169,7 @@ func (r *BoardRepository) PullInviteLink(ctx context.Context, userID int64, boar
 	err = row.Scan()
 	logging.Debug(ctx, funcName, " query has err: ", err)
 	if err != nil {
-		return nil, fmt.Errorf("%s (query): %w", err)
+		return nil, fmt.Errorf("%s (query): %w", funcName, err)
 	}
 	return link, nil
 }
@@ -1246,7 +1246,7 @@ func (r *BoardRepository) AcceptInvite(ctx context.Context, userID int64, boardI
 	err = row.Scan()
 	logging.Debug(ctx, funcName, " query has err: ", err)
 	if err != nil {
-		return nil, fmt.Errorf("%s (query): %w", err)
+		return nil, fmt.Errorf("%s (query): %w", funcName, err)
 	}
 	return board, nil
 }
