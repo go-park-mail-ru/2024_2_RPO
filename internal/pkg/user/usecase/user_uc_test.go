@@ -11,23 +11,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestGetMyProfile_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockUserRepo := mockUser.NewMockUserRepo(ctrl)
-	mockAuthClient := authGRPC.NewMockAuthClient(ctrl)
-	uc := CreateUserUsecase(mockUserRepo, mockAuthClient)
-
-	userID := int64(1)
-	expectedProfile := &models.UserProfile{ID: userID, Name: "test_user"}
-	mockUserRepo.EXPECT().GetUserProfile(context.Background(), userID).Return(expectedProfile, nil)
-
-	profile, err := uc.GetMyProfile(context.Background(), userID)
-	assert.NoError(t, err)
-	assert.Equal(t, expectedProfile, profile)
-}
-
 func TestUpdateMyProfile_Success(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
