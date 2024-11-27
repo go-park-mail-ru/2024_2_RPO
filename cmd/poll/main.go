@@ -101,10 +101,21 @@ func main() {
 	router.HandleFunc("/poll/submit", pollDelivery.SubmitPoll).Methods("POST", "OPTIONS")
 	router.HandleFunc("/poll/results", pollDelivery.GetPollResults).Methods("GET", "OPTIONS")
 
-	// Запускаем сервер
-	addr := fmt.Sprintf(":%s", os.Getenv("SERVER_PORT"))
-	log.Infof("server started at http://0.0.0.0%s", addr)
-	if err := http.ListenAndServe(addr, router); err != nil {
-		log.Fatalf("error while starting server: %v", err)
+	// Регистрируем обработчик Prometheus
+	metricsRouter := mux.NewRouter()
+	metricsRouter.Handle("/prometheus/metrics", promhttp.Handler())
+
+	// Объявляем серверы
+	mainAddr := fmt.Sprintf(":%s", os.Getenv("SERVER_PORT"))
+	promAddr := ":8087"
+	mainServer := &http.Server{
+		Addr:    mainAddr,
+		Handler: router,
 	}
+	promServer := &http.Server{
+		Addr:    promAddr,
+		Handler: metricsRouter,
+	}
+
+	misc.StartServers(mainServer, promServer)
 }

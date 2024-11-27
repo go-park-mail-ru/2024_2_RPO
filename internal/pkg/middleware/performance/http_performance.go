@@ -1,7 +1,6 @@
 package performance
 
 import (
-	"RPO_back/internal/pkg/utils/logging"
 	"fmt"
 	"net/http"
 	"time"
@@ -98,7 +97,6 @@ func (mh *HTTPPerformanceMiddleware) Middleware(next http.Handler) http.Handler 
 		mh.Times.WithLabelValues(method, status).Observe(duration)
 
 		mh.Errors.WithLabelValues(method, status).Inc()
-		logging.Error(r.Context(), "Code: ", status)
 
 	})
 }

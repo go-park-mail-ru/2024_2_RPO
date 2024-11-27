@@ -46,7 +46,7 @@ type Card struct {
 }
 
 type Column struct {
-	ID         int    `json:"id"`
+	ID         int64  `json:"id"`
 	Title      string `json:"title"`
 	OrderIndex int64  `json:"-"`
 }
