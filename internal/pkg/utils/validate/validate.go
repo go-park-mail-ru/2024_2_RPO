@@ -6,6 +6,7 @@ import (
 	"context"
 	"fmt"
 	"regexp"
+	"strings"
 
 	"github.com/go-playground/validator/v10"
 )
@@ -63,11 +64,7 @@ func CheckPassword(password string) error {
 		return fmt.Errorf("%w: password must contain at least one digit", errs.ErrValidation)
 	}
 
-	done, err = regexp.MatchString("([!@#$%^&*.?-])+", password)
-	if err != nil {
-		return fmt.Errorf("CheckPassword (MatchString [SpecialChar]): %w", err)
-	}
-	if !done {
+	if !strings.ContainsAny(password, "!#&.,?/\\(){}[]\"'`;:|<>*^%~") {
 		return fmt.Errorf("%w: password must contain at least one special character", errs.ErrValidation)
 	}
 
@@ -79,20 +76,12 @@ func CheckUserName(name string) error {
 		return fmt.Errorf("%w: name must be between 3 and 30 characters", errs.ErrValidation)
 	}
 
-	done, err := regexp.MatchString("([A-Za-z0-9])+", name)
+	done, err := regexp.MatchString("^([A-Za-z0-9_-])+$", name)
 	if err != nil {
 		return fmt.Errorf("CheckUserName (MatchString [Alphanumeric]): %w", err)
 	}
 	if !done {
-		return fmt.Errorf("%w: name must contain at least one alphanumeric character", errs.ErrValidation)
-	}
-
-	done, err = regexp.MatchString("([!@#$%^&*.?-])+", name)
-	if err != nil {
-		return fmt.Errorf("CheckUserName (MatchString [SpecialChar]): %w", err)
-	}
-	if !done {
-		return fmt.Errorf("%w: name must contain at least one special character", errs.ErrValidation)
+		return fmt.Errorf("%w: name contains forbidden characters. Only allowed A-Z, a-z, 0-9, '_', '-'", errs.ErrValidation)
 	}
 
 	return nil
