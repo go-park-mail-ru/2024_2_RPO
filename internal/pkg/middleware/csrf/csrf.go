@@ -14,7 +14,7 @@ func checkCSRFToken(w http.ResponseWriter, r *http.Request) bool {
 	if csrfHeader == "" {
 		log.Warn(r.URL.Path, " CSRF: no X-CSRF-Token header")
 		SetCSRFToken(w)
-		responses.DoBadResponse(w, http.StatusForbidden, "csrf: no X-CSRF-Token header")
+		responses.DoBadResponseAndLog(r, w, http.StatusForbidden, "csrf: no X-CSRF-Token header")
 		return false
 	}
 
@@ -22,14 +22,14 @@ func checkCSRFToken(w http.ResponseWriter, r *http.Request) bool {
 	if err != nil {
 		log.Warn(r.URL.Path, " CSRF: no csrf cookie: ", err)
 		SetCSRFToken(w)
-		responses.DoBadResponse(w, http.StatusForbidden, "no csrf cookie")
+		responses.DoBadResponseAndLog(r, w, http.StatusForbidden, "no csrf cookie")
 		return false
 	}
 
 	if csrfCookie.Value != csrfHeader {
 		log.Warn(r.URL.Path, " CSRF: tokens in cookie and header are different")
 		SetCSRFToken(w)
-		responses.DoBadResponse(w, http.StatusForbidden, "csrf tokens in cookie and header are different")
+		responses.DoBadResponseAndLog(r, w, http.StatusForbidden, "csrf tokens in cookie and header are different")
 		return false
 	}
 

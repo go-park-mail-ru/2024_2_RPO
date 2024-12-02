@@ -10,7 +10,6 @@ import (
 	"RPO_back/internal/pkg/utils/responses"
 	"RPO_back/internal/pkg/utils/uploads"
 	"errors"
-	"fmt"
 	"net/http"
 	"time"
 
@@ -32,13 +31,12 @@ func (d *UserDelivery) GetMyProfile(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	fmt.Println("USER ID IN GETMYPROFILE: ", userID)
 	profile, err := d.userUC.GetMyProfile(r.Context(), userID)
 	if err != nil {
-		responses.ResponseErrorAndLog(w, err, funcName)
+		responses.ResponseErrorAndLog(r, w, err, funcName)
 		return
 	}
-	responses.DoJSONResponse(w, profile, 200)
+	responses.DoJSONResponse(r, w, profile, http.StatusOK)
 }
 
 // UpdateMyProfile обновляет профиль пользователя и возвращает обновлённый профиль
@@ -51,15 +49,15 @@ func (d *UserDelivery) UpdateMyProfile(w http.ResponseWriter, r *http.Request) {
 	data := models.UserProfileUpdateRequest{}
 	err := requests.GetRequestData(r, &data)
 	if err != nil {
-		responses.DoBadResponse(w, 400, "bad request")
+		responses.DoBadResponseAndLog(r, w, 400, "bad request")
 		return
 	}
 	newProfile, err := d.userUC.UpdateMyProfile(r.Context(), userID, &data)
 	if err != nil {
-		responses.ResponseErrorAndLog(w, err, funcName)
+		responses.ResponseErrorAndLog(r, w, err, funcName)
 		return
 	}
-	responses.DoJSONResponse(w, newProfile, 200)
+	responses.DoJSONResponse(r, w, newProfile, http.StatusOK)
 }
 
 // SetMyAvatar принимает у пользователя файл изображения, сохраняет его,
@@ -73,18 +71,18 @@ func (d *UserDelivery) SetMyAvatar(w http.ResponseWriter, r *http.Request) {
 
 	file, err := uploads.FormFile(r)
 	if err != nil {
-		responses.DoBadResponse(w, 401, "Wrong credentials")
+		responses.DoBadResponseAndLog(r, w, 401, "Wrong credentials")
 		logging.Warn(r.Context(), "LoginUser (checking credentials): ", err)
 		return
 	}
 
 	updatedProfile, err := d.userUC.SetMyAvatar(r.Context(), userID, file)
 	if err != nil {
-		responses.ResponseErrorAndLog(w, err, funcName)
+		responses.ResponseErrorAndLog(r, w, err, funcName)
 		return
 	}
 
-	responses.DoJSONResponse(w, updatedProfile, 200)
+	responses.DoJSONResponse(r, w, updatedProfile, http.StatusOK)
 }
 
 // LoginUser обеспечивает вход в сервис
@@ -93,7 +91,7 @@ func (d *UserDelivery) LoginUser(w http.ResponseWriter, r *http.Request) {
 	var loginRequest models.LoginRequest
 	err := requests.GetRequestData(r, &loginRequest)
 	if err != nil {
-		responses.DoBadResponse(w, http.StatusBadRequest, "Invalid request")
+		responses.DoBadResponseAndLog(r, w, http.StatusBadRequest, "Invalid request")
 		logging.Warn(r.Context(), "LoginUser (getting data): ", err)
 		return
 	}
@@ -101,11 +99,11 @@ func (d *UserDelivery) LoginUser(w http.ResponseWriter, r *http.Request) {
 	sessionID, err := d.userUC.LoginUser(r.Context(), loginRequest.Email, loginRequest.Password)
 	if err != nil {
 		if errors.Is(err, errs.ErrWrongCredentials) {
-			responses.DoBadResponse(w, 401, "Wrong credentials")
+			responses.DoBadResponseAndLog(r, w, 401, "Wrong credentials")
 			log.Warn("LoginUser (checking credentials): ", err)
 			return
 		}
-		responses.DoBadResponse(w, 500, "Internal Server Error")
+		responses.DoBadResponseAndLog(r, w, 500, "Internal Server Error")
 		log.Error("LoginUser (checking credentials): ", err)
 		return
 	}
@@ -128,7 +126,7 @@ func (d *UserDelivery) RegisterUser(w http.ResponseWriter, r *http.Request) {
 	var user models.UserRegisterRequest
 	err := requests.GetRequestData(r, &user)
 	if err != nil {
-		responses.ResponseErrorAndLog(w, err, funcName)
+		responses.ResponseErrorAndLog(r, w, err, funcName)
 		return
 	}
 
@@ -136,13 +134,13 @@ func (d *UserDelivery) RegisterUser(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Error("Auth: ", err)
 		if errors.Is(err, errs.ErrBusyEmail) && errors.Is(err, errs.ErrBusyNickname) {
-			responses.DoBadResponse(w, http.StatusConflict, "Email and nickname are busy")
+			responses.DoBadResponseAndLog(r, w, http.StatusConflict, "Email and nickname are busy")
 		} else if errors.Is(err, errs.ErrBusyEmail) {
-			responses.DoBadResponse(w, http.StatusConflict, "Email is busy")
+			responses.DoBadResponseAndLog(r, w, http.StatusConflict, "Email is busy")
 		} else if errors.Is(err, errs.ErrBusyNickname) {
-			responses.DoBadResponse(w, http.StatusConflict, "Nickname is busy")
+			responses.DoBadResponseAndLog(r, w, http.StatusConflict, "Nickname is busy")
 		} else {
-			responses.DoBadResponse(w, http.StatusInternalServerError, "Internal server error")
+			responses.DoBadResponseAndLog(r, w, http.StatusInternalServerError, "Internal server error")
 		}
 		return
 	}
@@ -164,7 +162,7 @@ func (d *UserDelivery) RegisterUser(w http.ResponseWriter, r *http.Request) {
 func (d *UserDelivery) LogoutUser(w http.ResponseWriter, r *http.Request) {
 	cookie, err := r.Cookie(auth.SessionCookieName)
 	if err != nil {
-		responses.DoBadResponse(w, http.StatusBadRequest, "You are not logged in")
+		responses.DoBadResponseAndLog(r, w, http.StatusBadRequest, "You are not logged in")
 		return
 	}
 
@@ -180,7 +178,7 @@ func (d *UserDelivery) LogoutUser(w http.ResponseWriter, r *http.Request) {
 	})
 
 	if err != nil {
-		responses.ResponseErrorAndLog(w, err, "LogoutUser")
+		responses.ResponseErrorAndLog(r, w, err, "LogoutUser")
 	} else {
 		responses.DoEmptyOkResponse(w)
 	}
@@ -189,61 +187,26 @@ func (d *UserDelivery) LogoutUser(w http.ResponseWriter, r *http.Request) {
 // ChangePassword отвечает за смену пароля
 func (d *UserDelivery) ChangePassword(w http.ResponseWriter, r *http.Request) {
 	funcName := "ChangePassword"
-	userID, ok := requests.GetUserIDOrFail(w, r, funcName)
-	if !ok {
-		return
-	}
-	data := models.ChangePasswordRequest{}
-	err := requests.GetRequestData(r, &data)
-	if err != nil {
-		responses.DoBadResponse(w, http.StatusBadRequest, "bad request")
-		return
-	}
-	err = d.userUC.ChangePassword(r.Context(), userID, data.OldPassword, data.NewPassword)
-	if err != nil {
-		responses.DoBadResponse(w, http.StatusInternalServerError, "internal error")
-		return
-	}
-	responses.DoEmptyOkResponse(w)
-}
-
-func (d *UserDelivery) SubmitPoll(w http.ResponseWriter, r *http.Request) {
-	funcName := "SubmitPoll"
-	userID, ok := requests.GetUserIDOrFail(w, r, funcName)
-	if !ok {
-		return
-	}
-	pollSubmit := models.PollSubmit{}
-	err := requests.GetRequestData(r, &pollSubmit)
-	if err != nil {
-		logging.Warn(r.Context(), err)
-		responses.DoBadResponse(w, http.StatusBadRequest, "bad request")
-		return
-	}
-
-	err = d.userUC.SubmitPoll(r.Context(), userID, &pollSubmit)
-	if err != nil {
-		logging.Warn(r.Context(), err)
-		responses.DoBadResponse(w, http.StatusInternalServerError, "internal error")
-		return
-	}
-
-	responses.DoEmptyOkResponse(w)
-}
-
-func (d *UserDelivery) GetPollResults(w http.ResponseWriter, r *http.Request) {
-	funcName := "GetPollResults"
 	_, ok := requests.GetUserIDOrFail(w, r, funcName)
 	if !ok {
 		return
 	}
 
-	pollResults, err := d.userUC.GetPollResults(r.Context())
+	sessionID, err := r.Cookie(auth.SessionCookieName)
 	if err != nil {
-		logging.Warn(r.Context(), err)
-		responses.ResponseErrorAndLog(w, err, funcName)
-		return
+		responses.ResponseErrorAndLog(r, w, err, funcName)
 	}
 
-	responses.DoJSONResponse(w, pollResults, http.StatusOK)
+	data := models.ChangePasswordRequest{}
+	err = requests.GetRequestData(r, &data)
+	if err != nil {
+		responses.DoBadResponseAndLog(r, w, http.StatusBadRequest, "bad request")
+		return
+	}
+	err = d.userUC.ChangePassword(r.Context(), sessionID.Value, data.OldPassword, data.NewPassword)
+	if err != nil {
+		responses.ResponseErrorAndLog(r, w, err, funcName)
+		return
+	}
+	responses.DoEmptyOkResponse(w)
 }

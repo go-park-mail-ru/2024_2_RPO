@@ -31,7 +31,7 @@ func CreateAuthRepository(postgresDb pgxiface.PgxIface, redisDb *redis.Client) *
 }
 
 // RegisterSessionRedis регистрирует сессию в Redis
-func (r *AuthRepository) RegisterSessionRedis(ctx context.Context, sessionID string, userID int) error {
+func (r *AuthRepository) RegisterSessionRedis(ctx context.Context, sessionID string, userID int64) error {
 	redisConn := r.redisDb.Conn(r.redisDb.Context())
 	defer redisConn.Close()
 
@@ -115,7 +115,7 @@ func (r *AuthRepository) DisplaceUserSessions(ctx context.Context, sessionID str
 }
 
 // CheckSession ходит в Redis и получает UserID (или не получает и даёт ошибку errs.ErrNotFound)
-func (r *AuthRepository) CheckSession(ctx context.Context, sessionID string) (userID int, err error) {
+func (r *AuthRepository) CheckSession(ctx context.Context, sessionID string) (userID int64, err error) {
 	redisConn := r.redisDb.Conn(r.redisDb.Context())
 	defer redisConn.Close()
 
@@ -123,12 +123,12 @@ func (r *AuthRepository) CheckSession(ctx context.Context, sessionID string) (us
 	fmt.Printf("VALUE: %v\n", val)
 	logging.Debug(ctx, "CheckSession query to redis has err: ", err)
 	if err == redis.Nil {
-		return 0, fmt.Errorf("CheckSession (get; err 404): %w", errs.ErrNotFound)
+		return 0, fmt.Errorf("CheckSession (get): %w", errs.ErrNotFound)
 	} else if err != nil {
 		return 0, err
 	}
 
-	intVal, err := strconv.Atoi(val)
+	intVal, err := strconv.ParseInt(val, 10, 64)
 	if err != nil {
 		return 0, fmt.Errorf("CheckSession (atoi): %v", err)
 	}

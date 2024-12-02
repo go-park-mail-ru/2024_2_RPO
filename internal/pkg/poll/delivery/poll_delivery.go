@@ -27,14 +27,14 @@ func (d *PollDelivery) SubmitPoll(w http.ResponseWriter, r *http.Request) {
 	err := requests.GetRequestData(r, &pollSubmit)
 	if err != nil {
 		logging.Warn(r.Context(), err)
-		responses.DoBadResponse(w, http.StatusBadRequest, "bad request")
+		responses.DoBadResponseAndLog(r, w, http.StatusBadRequest, "bad request")
 		return
 	}
 
 	err = d.pollUC.SubmitPoll(r.Context(), userID, &pollSubmit)
 	if err != nil {
 		logging.Warn(r.Context(), err)
-		responses.DoBadResponse(w, http.StatusInternalServerError, "internal error")
+		responses.DoBadResponseAndLog(r, w, http.StatusInternalServerError, "internal error")
 		return
 	}
 
@@ -51,9 +51,9 @@ func (d *PollDelivery) GetPollResults(w http.ResponseWriter, r *http.Request) {
 	pollResults, err := d.pollUC.GetPollResults(r.Context())
 	if err != nil {
 		logging.Warn(r.Context(), err)
-		responses.ResponseErrorAndLog(w, err, funcName)
+		responses.ResponseErrorAndLog(r, w, err, funcName)
 		return
 	}
 
-	responses.DoJSONResponse(w, pollResults, http.StatusOK)
+	responses.DoJSONResponse(r, w, pollResults, http.StatusOK)
 }

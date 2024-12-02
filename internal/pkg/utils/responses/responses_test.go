@@ -12,7 +12,7 @@ func TestDoBadResponse(t *testing.T) {
 	statusCode := http.StatusBadRequest
 	message := "test error message"
 
-	responses.DoBadResponse(recorder, statusCode, message)
+	responses.DoBadResponseAndLog(recorder, statusCode, message)
 
 	result := recorder.Result()
 	defer result.Body.Close()

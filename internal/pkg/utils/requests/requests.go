@@ -80,7 +80,7 @@ func GetUserIDOrFail(w http.ResponseWriter, r *http.Request, prefix string) (use
 	userID, ok = session.UserIDFromContext(r.Context())
 
 	if !ok {
-		responses.DoBadResponse(w, http.StatusUnauthorized, "unauthorized")
+		responses.DoBadResponseAndLog(r, w, http.StatusUnauthorized, "unauthorized")
 		log.Warn(prefix, ": unauthorized")
 		return 0, false
 	}

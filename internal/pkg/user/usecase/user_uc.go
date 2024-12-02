@@ -76,10 +76,11 @@ func (uc *UserUsecase) SetMyAvatar(ctx context.Context, userID int64, file *mode
 	return uc.userRepo.GetUserProfile(ctx, userID)
 }
 
-func (uc *UserUsecase) ChangePassword(ctx context.Context, userID int64, oldPassword string, newPassword string) error {
+func (uc *UserUsecase) ChangePassword(ctx context.Context, sessionID string, oldPassword string, newPassword string) error {
 	responce, err := uc.authClient.ChangePassword(ctx, &authGRPC.ChangePasswordRequest{
 		PasswordOld: oldPassword,
 		PasswordNew: newPassword,
+		SessionID:   sessionID,
 	})
 	if err != nil {
 		return fmt.Errorf("ChangePassword: %w", err)
@@ -140,27 +141,41 @@ func (uc *UserUsecase) LogoutUser(ctx context.Context, sessionID string) error {
 }
 
 func (uc *UserUsecase) RegisterUser(ctx context.Context, user *models.UserRegisterRequest) (sessionID string, err error) {
+	funcName := "RegisterUser"
 	newUser, err := uc.userRepo.CreateUser(ctx, user)
 	if err != nil {
-		return "", fmt.Errorf("RegisterUser (CreateUser): %w", err)
+		return "", fmt.Errorf("%s (create): %w", funcName, err)
 	}
 
-	responce, err := uc.authClient.CreateSession(ctx, &authGRPC.UserDataRequest{
+	response, err := uc.authClient.CreateSession(ctx, &authGRPC.UserDataRequest{
 		UserID:   int64(newUser.ID),
 		Password: user.Password,
 	})
 	if err != nil {
-		return "", fmt.Errorf("RegisterUser (GRPC request): %w", err)
+		return "", fmt.Errorf("%s (session): %w", funcName, err)
 	}
-
-	errGRPC := responce.GetError()
+	errGRPC := response.GetError()
 	if errGRPC == authGRPC.Error_INVALID_CREDENTIALS {
-		return "", fmt.Errorf("CreateSession (GRPC response): %w", errs.ErrWrongCredentials)
+		return "", fmt.Errorf("%s (GRPC response 1): %w", funcName, errs.ErrWrongCredentials)
 	} else if errGRPC == authGRPC.Error_INTERNAL_SERVER_ERROR {
-		return "", fmt.Errorf("CreateSession (GRPC response): internal error at auth service")
+		return "", fmt.Errorf("%s (GRPC response 1): internal error at auth service", funcName)
 	}
+	sessionID = response.GetSessionID()
 
-	sessionID = responce.GetSessionID()
+	response2, err := uc.authClient.ChangePassword(ctx, &authGRPC.ChangePasswordRequest{
+		PasswordOld: "",
+		PasswordNew: user.Password,
+		SessionID:   sessionID,
+	})
+	if err != nil {
+		return "", fmt.Errorf("%s (password): %w", funcName, err)
+	}
+	errGRPC = response2.GetError()
+	if errGRPC == authGRPC.Error_INVALID_CREDENTIALS {
+		return "", fmt.Errorf("%s (GRPC response 2): %w", funcName, errs.ErrWrongCredentials)
+	} else if errGRPC == authGRPC.Error_INTERNAL_SERVER_ERROR {
+		return "", fmt.Errorf("%s (GRPC response 2): internal error at auth service", funcName)
+	}
 
 	return sessionID, nil
 }

@@ -3,6 +3,7 @@ package responses
 import (
 	"RPO_back/internal/errs"
 	"RPO_back/internal/models"
+	"RPO_back/internal/pkg/utils/logging"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -13,7 +14,7 @@ import (
 )
 
 // Вернуть ответ с указанным статусом
-func DoBadResponse(w http.ResponseWriter, statusCode int, message string) {
+func DoBadResponseAndLog(r *http.Request, w http.ResponseWriter, statusCode int, message string) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(statusCode)
 
@@ -28,6 +29,8 @@ func DoBadResponse(w http.ResponseWriter, statusCode int, message string) {
 		return
 	}
 	w.Write(jsonResponse)
+
+	logging.Error(r.Context(), "Bad response with status ", statusCode, " and message ", message)
 }
 
 func DoEmptyOkResponse(w http.ResponseWriter) {
@@ -36,10 +39,10 @@ func DoEmptyOkResponse(w http.ResponseWriter) {
 	w.Write([]byte("{\"status\":200,\"text\":\"success\"}"))
 }
 
-func DoJSONResponse(w http.ResponseWriter, responseData interface{}, successStatusCode int) {
+func DoJSONResponse(r *http.Request, w http.ResponseWriter, responseData interface{}, successStatusCode int) {
 	body, err := json.Marshal(responseData)
 	if err != nil {
-		DoBadResponse(w, 500, "error serializing response")
+		DoBadResponseAndLog(r, w, 500, "internal error")
 		log.Error(fmt.Errorf("error in marshalling response body: %w", err))
 		return
 	}
@@ -59,22 +62,22 @@ func DoJSONResponse(w http.ResponseWriter, responseData interface{}, successStat
 // В данном случае префикс - `UserToBoard`, двоеточие мы поставим сами.
 //
 // Поддерживаемые типы ошибок: 404, 403, 500
-func ResponseErrorAndLog(w http.ResponseWriter, err error, prefix string) {
+func ResponseErrorAndLog(r *http.Request, w http.ResponseWriter, err error, prefix string) {
 	if errors.Is(err, errs.ErrNotFound) {
-		DoBadResponse(w, http.StatusNotFound, "not found")
+		DoBadResponseAndLog(r, w, http.StatusNotFound, "not found")
 		log.Warn(prefix, ": ", err)
 		return
 	}
 	if errors.Is(err, errs.ErrNotPermitted) {
-		DoBadResponse(w, http.StatusForbidden, "forbidden")
+		DoBadResponseAndLog(r, w, http.StatusForbidden, "forbidden")
 		log.Warn(prefix, ": ", err)
 		return
 	}
 	if errors.Is(err, errs.ErrValidation) {
-		DoBadResponse(w, http.StatusBadRequest, err.Error())
+		DoBadResponseAndLog(r, w, http.StatusBadRequest, err.Error())
 		log.Warn(prefix, ": ", err)
 		return
 	}
 	log.Error(prefix, ": ", err)
-	DoBadResponse(w, http.StatusInternalServerError, "internal error")
+	DoBadResponseAndLog(r, w, http.StatusInternalServerError, "internal error")
 }
