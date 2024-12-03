@@ -163,10 +163,6 @@ components:
         avatarImageUrl:
           type: string
           example: "/uploads/550e8400-e29b-41d4-a716-446655440000.png"
-        questions:
-          type: array
-          items:
-            $ref: "#/components/schemas/PollQuestion"
 
     UserPut:
       type: object
@@ -621,6 +617,15 @@ components:
           type: string
           example: "reddiridabl666"
 
+    SearchResult:
+      type: object
+      properties:
+        boardId:
+          type: integer
+        where:
+          type: string
+          enum: ["card_title", "checklist", "comment"]
+
 paths:
   /auth/register:
     post:
@@ -803,6 +808,29 @@ paths:
           $ref: "#/components/responses/BadRequestResponse"
         "401":
           $ref: "#/components/responses/NoAuthResponse"
+
+  /poll/getQuestions:
+    get:
+      summary: "Получить вопросы CSAT для себя"
+      security:
+        - SessionCookieAuth: []
+      tags:
+        - Опрос
+      responses:
+        "200":
+          description: "Непустой массив, если пользователю пришло время проходить CSAT, или пустой массив, если вопросов нет"
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PollQuestion"
+        "401":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BadResponse"
 
   /poll/submit:
     post:
@@ -1909,3 +1937,22 @@ paths:
           $ref: "#/components/responses/NotFoundResponse"
         "409":
           $ref: "#/components/responses/NotFoundResponse"
+
+  /search:
+    post:
+      summary: "Запрос на полнотекстовый поиск"
+      security:
+        - SessionCookieAuth: []
+      responses:
+        "200":
+          description: "Результаты запроса"
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SearchResult"
+        "400":
+          $ref: "#/components/responses/BadRequestResponse"
+        "401":
+          $ref: "#/components/responses/NoAuthResponse"
