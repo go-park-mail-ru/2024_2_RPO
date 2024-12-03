@@ -10,7 +10,7 @@ RUN rm -rf migrate migrate.tar.gz
 
 WORKDIR /app
 COPY ./Makefile .
-COPY ./database/ .
+COPY ./database/migrations/ ./migrations/
 COPY ./build/auth_app .
 RUN chmod +x ./auth_app
 RUN chmod +x /usr/bin/migrate

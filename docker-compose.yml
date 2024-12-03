@@ -170,6 +170,12 @@ services:
     networks:
       - Pumpkin-network
 
+  elastic:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.16.1
+    container_name: elastic
+    ports:
+      - "127.0.0.1:8020:9200"
+
 networks:
   Pumpkin-network:
     name: Pumpkin-network

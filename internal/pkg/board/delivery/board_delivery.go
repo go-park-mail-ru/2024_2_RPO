@@ -10,6 +10,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"slices"
+	"strings"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -264,6 +265,8 @@ func (d *BoardDelivery) CreateNewCard(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	*requestData.Title = strings.TrimSpace(*requestData.Title)
+
 	newCard, err := d.boardUsecase.CreateNewCard(r.Context(), userID, boardID, requestData)
 	if err != nil {
 		responses.ResponseErrorAndLog(r, w, err, funcName)
@@ -294,6 +297,10 @@ func (d *BoardDelivery) UpdateCard(w http.ResponseWriter, r *http.Request) {
 		logging.Error(r.Context(), err)
 		responses.DoBadResponseAndLog(r, w, http.StatusBadRequest, "bad request")
 		return
+	}
+
+	if requestData.NewTitle != nil {
+		*requestData.NewTitle = strings.TrimSpace(*requestData.NewTitle)
 	}
 
 	updatedCard, err := d.boardUsecase.UpdateCard(r.Context(), userID, cardID, requestData)

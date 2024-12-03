@@ -55,7 +55,7 @@ clean:
 migrate-up:
 	@which migrate
 	@echo "==> Running migrations..."
-	@migrate -path ./database/migrations -database $(SUPERUSER_DSN) up
+	@migrate -path ./migrations -database $(SUPERUSER_DSN) up
 
 make-migrations:
 	@echo "==> Let's generate migrations with Atlas!"

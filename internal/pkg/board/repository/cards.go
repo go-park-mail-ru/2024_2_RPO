@@ -24,7 +24,7 @@ func (r *BoardRepository) GetCardsForBoard(ctx context.Context, boardID int64) (
     	c.is_done,
 		(SELECT (NOT COUNT(*)=0) FROM checklist_field AS f WHERE f.card_id=c.card_id),
     	(SELECT (NOT COUNT(*)=0) FROM card_attachment AS f WHERE f.card_id=c.card_id),
-    	(SELECT (NOT COUNT(*)=0 )FROM card_user_assignment AS f WHERE f.card_id=c.card_id),
+    	(SELECT (NOT COUNT(*)=0) FROM card_user_assignment AS f WHERE f.card_id=c.card_id),
     	(SELECT (NOT COUNT(*)=0) FROM card_comment AS f WHERE f.card_id=c.card_id)
 	FROM card c
 	JOIN kanban_column kc ON c.col_id = kc.col_id
@@ -118,7 +118,7 @@ func (r *BoardRepository) UpdateCard(ctx context.Context, cardID int64, data mod
 		is_done = COALESCE($4, is_done),
 		updated_at = CURRENT_TIMESTAMP
 		WHERE card_id=$1
-		RETURNING card_id
+		RETURNING card_id, col_id, title, created_at, updated_at, deadline, is_done
 	), update_board AS (
 		UPDATE board
 		SET updated_at=CURRENT_TIMESTAMP
@@ -142,8 +142,7 @@ func (r *BoardRepository) UpdateCard(ctx context.Context, cardID int64, data mod
 		(SELECT (NOT COUNT(*)=0) FROM card_attachment AS f WHERE f.card_id=c.card_id),
 		(SELECT (NOT COUNT(*)=0) FROM card_user_assignment AS f WHERE f.card_id=c.card_id),
 		(SELECT (NOT COUNT(*)=0) FROM card_comment AS f WHERE f.card_id=c.card_id)
-	FROM card AS c
-	WHERE c.card_id=$1;
+	FROM update_card AS c;
 	`
 	updateCard = &models.Card{}
 
