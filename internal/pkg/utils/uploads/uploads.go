@@ -6,8 +6,7 @@ import (
 	"RPO_back/internal/pkg/utils/logging"
 	"RPO_back/internal/pkg/utils/pgxiface"
 	"context"
-	"crypto/sha1"
-	"encoding/hex"
+	"crypto/sha256"
 	"fmt"
 	"io"
 	"net/http"
@@ -35,7 +34,7 @@ func JoinFileURL(fileUUID string, fileExtension string, defaultValue string) str
 	return urlPrefix + fileUUID
 }
 
-// ExtractFileExtension извлекает из имени файла его расширение (возвращает "", если файл без расширения)
+// ExtractFileExtension извлекает из имени файла его расширение и переводит в нижний регистр (возвращает "", если файл без расширения)
 func ExtractFileExtension(fileName string) string {
 	lastDotIndex := strings.LastIndex(fileName, ".")
 	if lastDotIndex == -1 || lastDotIndex == len(fileName)-1 {
@@ -125,16 +124,17 @@ func FormFile(r *http.Request) (file *models.UploadedFile, err error) {
 	}
 
 	file.OriginalName = fileHeader.Filename
-	file.FileExtension = ExtractFileExtension(file.OriginalName)
+
+	h := sha256.New()
+	h.Write(file.Content)
+	bs := h.Sum(nil)
+	file.Hash = fmt.Sprintf("%x", bs)
 
 	return file, nil
 }
 
-func SaveFile(file *models.UploadedFile) (err error) {
-	if file.UUID == nil {
-		return fmt.Errorf("SaveFile: file uuid is nil")
-	}
-	fileName := JoinFilePath(*file.UUID, file.FileExtension)
+func SaveFile(file *models.UploadedFile, fileUUID string) (err error) {
+	fileName := JoinFilePath(fileUUID, ExtractFileExtension(file.OriginalName))
 	err = os.WriteFile(filepath.Join(config.CurrentConfig.UploadsDir, fileName), file.Content, 0644)
 	if err != nil {
 		return fmt.Errorf("SaveFile: cant write to file %s: %w", fileName, err)
@@ -142,7 +142,7 @@ func SaveFile(file *models.UploadedFile) (err error) {
 	return nil
 }
 
-// DeduplicateFile возвращает список файлов с таким же расширением, ID и размером
+// DeduplicateFile возвращает список файлов с таким же расширением, хешем и размером
 func DeduplicateFile(ctx context.Context, db pgxiface.PgxIface, file *models.UploadedFile) (fileNames []string, fileIDs []int64, err error) {
 	funcName := "DeduplicateFile"
 	query := `
@@ -151,11 +151,7 @@ func DeduplicateFile(ctx context.Context, db pgxiface.PgxIface, file *models.Upl
 	WHERE file_hash=$1 AND "size"=$2 AND file_extension=$3;
 	`
 
-	h := sha1.New()
-	h.Write(file.Content)
-	fileHash := hex.EncodeToString(h.Sum(nil))
-
-	rows, err := db.Query(ctx, query, fileHash, len(file.Content), file.FileExtension)
+	rows, err := db.Query(ctx, query, file.Hash, len(file.Content), ExtractFileExtension(file.OriginalName))
 	if err != nil {
 		return nil, nil, fmt.Errorf("%s (query): %w", funcName, err)
 	}
@@ -173,7 +169,7 @@ func DeduplicateFile(ctx context.Context, db pgxiface.PgxIface, file *models.Upl
 }
 
 // RegisterFile заносит информацию о файле в таблицу и по указателю меняет поля FileID и UUID в структуре file
-func RegisterFile(ctx context.Context, db pgxiface.PgxIface, file *models.UploadedFile) error {
+func RegisterFile(ctx context.Context, db pgxiface.PgxIface, file *models.UploadedFile) (fileID int64, err error) {
 	funcName := "RegisterFile"
 	query := `
 	INSERT INTO user_uploaded_file
@@ -183,11 +179,9 @@ func RegisterFile(ctx context.Context, db pgxiface.PgxIface, file *models.Upload
 	`
 
 	if file == nil {
-		panic(funcName + ": file should not be nil")
+		return 0, fmt.Errorf("%s: file should not be nil", funcName)
 	}
-	file.FileID = new(int64)
-	file.UUID = new(string)
-
+	fileExt := ExtractFileExtension(file.OriginalName)
 	row := db.QueryRow(ctx, query, file.FileExtension, len(file.Content))
 	err := row.Scan(&file.UUID, file.FileID)
 	logging.Debug(ctx, funcName, " query has err: ", err)
@@ -195,4 +189,16 @@ func RegisterFile(ctx context.Context, db pgxiface.PgxIface, file *models.Upload
 		return fmt.Errorf("%s: %w", funcName, err)
 	}
 	return nil
+}
+
+type FileRepo interface {
+	DeduplicateFile(ctx context.Context, file *models.UploadedFile) (fileNames []string, fileIDs []int64, err error)
+	RegisterFile(ctx context.Context, file *models.UploadedFile) error
+}
+
+func UsecaseUploadFile(ctx context.Context, file *models.UploadedFile, repo FileRepo) (fileID int64, err error) {
+	// Вычислить хеш файла
+	// Найти файлы с такими же хешем, длиной и расширением
+	// Если файлы есть, вернуть ID подходящего файла (при сравнении побайтово)
+	// Если файл оказался уникальным, зарегистрировать и сохранить его
 }

@@ -66,69 +66,88 @@ func (r *UserRepository) GetUserProfile(ctx context.Context, userID int64) (prof
 
 // UpdateUserProfile обновляет профиль пользователя
 func (r *UserRepository) UpdateUserProfile(ctx context.Context, userID int64, data models.UserProfileUpdateRequest) (newProfile *models.UserProfile, err error) {
-	query1 := `SELECT COUNT(*) FROM "user" WHERE email=$1 AND u_id!=$2;`
-	query2 := `SELECT COUNT(*) FROM "user" WHERE nickname=$1 AND u_id!=$2;`
-	query3 := `
-	UPDATE "user"
-	SET email=$1, nickname=$2
-	WHERE u_id=$3;`
-	var nicknameCount, emailCount int
+	funcName := "UpdateUserProfile"
+	query1 := `SELECT COUNT(*) FROM "user" WHERE (email=$1 OR nickname=$2) AND u_id!=$3;`
+	query2 := `
+	UPDATE "user" u
+	SET email = $1, nickname = $2
+	WHERE u.u_id = $3
+	RETURNING
+	    u.u_id,
+	    u.nickname,
+	    u.email,
+	    u.joined_at,
+	    u.updated_at,
+	    COALESCE(
+	        (SELECT f.file_uuid::text FROM user_uploaded_file f WHERE f.file_id = u.avatar_file_id),
+	        ''
+	    ) AS file_uuid,
+	    COALESCE(
+	        (SELECT f.file_extension FROM user_uploaded_file f WHERE f.file_id = u.avatar_file_id),
+	        ''
+	    ) AS file_extension;
+	`
+
+	var duplicateCount int
+
 	row := r.db.QueryRow(ctx, query1, data.Email, userID)
-	err = row.Scan(&emailCount)
-	logging.Debug(ctx, "UpdateUserProfile query 1 has err: ", err)
+	err = row.Scan(&duplicateCount)
+	logging.Debugf(ctx, "%s query 1 has err: %v", funcName, err)
 	if err != nil {
-		return nil, fmt.Errorf("UpdateUserProfile (check unique email): %w", err)
+		return nil, fmt.Errorf("%s (check unique): %w", err)
 	}
-	row = r.db.QueryRow(ctx, query2, data.NewName, userID)
-	err = row.Scan(&nicknameCount)
-	logging.Debug(ctx, "UpdateUserProfile query 2 has err: ", err)
+	if duplicateCount != 0 {
+		return nil, fmt.Errorf("%s (check unique): %w", funcName, errs.ErrAlreadyExists)
+	}
+
+	newProfile = &models.UserProfile{}
+	var fileUUID, fileExt string
+
+	row = r.db.QueryRow(ctx, query2, data.Email, data.NewName, userID)
+	err = row.Scan(&newProfile.ID,
+		&newProfile.Name,
+		&newProfile.Email,
+		&newProfile.JoinedAt,
+		&newProfile.UpdatedAt,
+		&fileUUID,
+		&fileExt)
+	logging.Debugf(ctx, "%s query 2 has err: %v", funcName, err)
 	if err != nil {
-		return nil, fmt.Errorf("UpdateUserProfile (check unique nick): %w", err)
+		return nil, fmt.Errorf("%s (action): %w", funcName, err)
 	}
-	if nicknameCount != 0 && emailCount != 0 {
-		return nil, fmt.Errorf("UpdateUserProfile (check unique): %w %w", errs.ErrBusyEmail, errs.ErrBusyNickname)
-	}
-	if nicknameCount != 0 {
-		return nil, fmt.Errorf("UpdateUserProfile (check unique): %w", errs.ErrBusyNickname)
-	}
-	if emailCount != 0 {
-		return nil, fmt.Errorf("UpdateUserProfile (check unique): %w", errs.ErrBusyEmail)
-	}
-	tag, err := r.db.Exec(ctx, query3, data.Email, data.NewName, userID)
-	logging.Debug(ctx, "UpdateUserProfile query 3 has err: ", err)
-	if err != nil {
-		return nil, fmt.Errorf("UpdateUserProfile (action): %w", err)
-	}
-	if tag.RowsAffected() == 0 {
-		return nil, fmt.Errorf("UpdateUserProfile (action): UPDATE made no changes")
-	}
-	newProfile, err = r.GetUserProfile(ctx, userID)
+
+	newProfile.AvatarImageURL = uploads.JoinFileURL(fileUUID, fileExt, uploads.DefaultAvatarURL)
+
 	return
 }
 
-func (r *UserRepository) SetUserAvatar(ctx context.Context, userID int64, avatarFileID int64) error {
+func (r *UserRepository) SetUserAvatar(ctx context.Context, userID int64, avatarFileID int64) (updated *models.UserProfile, err error) {
+	funcName := "SetUserAvatar"
 	query := `
 	UPDATE "user"
 	SET avatar_file_id=$1
-	WHERE u_id=$2;`
+	WHERE u_id=$2
+	RETURNING;`
 	tag, err := r.db.Exec(ctx, query, avatarFileID, userID)
-	logging.Debug(ctx, "SetUserAvatar query has err: ", err)
+	logging.Debugf(ctx, "%s query has err: ", funcName, err)
 	if err != nil {
-		return fmt.Errorf("SetUserAvatar (update): %w", err)
+		return nil, fmt.Errorf("%s (update): %w", funcName, err)
 	}
 	if tag.RowsAffected() == 0 {
-		return fmt.Errorf("SetUserAvatar (update): no rows affected")
+		return nil, fmt.Errorf("%s (update): no rows affected", funcName)
 	}
-	return nil
+	return updated, nil
 }
 
 // GetUserByEmail получает данные пользователя из базы по email
 func (r *UserRepository) GetUserByEmail(ctx context.Context, email string) (user *models.UserProfile, err error) {
 	query := `
-	SELECT u_id, nickname, email,
-	joined_at, updated_at
-	FROM "user"
-	WHERE email=$1;`
+	SELECT u.u_id, u.nickname, u.email,
+	u.joined_at, u.updated_at,
+	COALESCE(f.file_uuid::text, ''), COALESCE(f.file_extension, '')
+	FROM "user" AS u
+	LEFT JOIN user_uploaded_file AS f ON f.file_id=u.avatar_file_id
+	WHERE u.email=$1;`
 	user = &models.UserProfile{}
 	err = r.db.QueryRow(ctx, query, email).Scan(
 		&user.ID,

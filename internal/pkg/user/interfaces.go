@@ -21,7 +21,7 @@ type UserUsecase interface {
 type UserRepo interface {
 	GetUserProfile(ctx context.Context, userID int64) (profile *models.UserProfile, err error)
 	UpdateUserProfile(ctx context.Context, userID int64, data models.UserProfileUpdateRequest) (newProfile *models.UserProfile, err error)
-	SetUserAvatar(ctx context.Context, userID int64, avatarFileID int64) (err error)
+	SetUserAvatar(ctx context.Context, userID int64, avatarFileID int64) (updated *models.UserProfile, err error)
 	GetUserByEmail(ctx context.Context, email string) (user *models.UserProfile, err error)
 	CreateUser(ctx context.Context, user *models.UserRegisterRequest) (newUser *models.UserProfile, err error)
 	CheckUniqueCredentials(ctx context.Context, nickname string, email string) error

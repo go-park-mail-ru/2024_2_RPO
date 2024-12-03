@@ -54,24 +54,13 @@ func (uc *UserUsecase) UpdateMyProfile(ctx context.Context, userID int64, data *
 
 // SetMyAvatar устанавливает пользователю аватарку
 func (uc *UserUsecase) SetMyAvatar(ctx context.Context, userID int64, file *models.UploadedFile) (updated *models.UserProfile, err error) {
-	fileNames, fileIDs, err := uc.userRepo.DeduplicateFile(ctx, file)
+	funcName := "SetMyAvatar"
+	fileID, err := uploads.UsecaseUploadFile(ctx, file, uc.userRepo)
 	if err != nil {
-		return nil, fmt.Errorf("SetMyAvatar: %w", err)
+		return nil, fmt.Errorf("%s (upload file): %w", funcName, err)
 	}
 
-	existingID, err := uploads.CompareFiles(fileNames, fileIDs, file)
-	if err != nil {
-		return nil, fmt.Errorf("SetMyAvatar: %w", err)
-	}
-
-	if existingID != nil {
-		file.FileID = existingID
-	} else {
-		uc.userRepo.RegisterFile(ctx, file)
-		uploads.SaveFile(file)
-	}
-
-	uploads.SaveFile(file)
+	updated, err = uc.userRepo.SetUserAvatar(ctx, userID, fileID)
 
 	return uc.userRepo.GetUserProfile(ctx, userID)
 }

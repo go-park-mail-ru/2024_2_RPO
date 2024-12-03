@@ -25,7 +25,7 @@ func DoBadResponseAndLog(r *http.Request, w http.ResponseWriter, statusCode int,
 
 	jsonResponse, err := json.Marshal(response)
 	if err != nil {
-		http.Error(w, "unknown error", http.StatusInternalServerError)
+		http.Error(w, "internal error", http.StatusInternalServerError)
 		return
 	}
 	w.Write(jsonResponse)
@@ -36,22 +36,28 @@ func DoBadResponseAndLog(r *http.Request, w http.ResponseWriter, statusCode int,
 func DoEmptyOkResponse(w http.ResponseWriter) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte("{\"status\":200,\"text\":\"success\"}"))
+	w.Write([]byte("{\"status\": 200, \"text\": \"success\"}"))
 }
 
 func DoJSONResponse(r *http.Request, w http.ResponseWriter, responseData interface{}, successStatusCode int) {
 	body, err := json.Marshal(responseData)
 	if err != nil {
-		DoBadResponseAndLog(r, w, 500, "internal error")
-		log.Error(fmt.Errorf("error in marshalling response body: %w", err))
+		DoBadResponseAndLog(r, w, http.StatusInternalServerError, "internal error")
+		log.Error(fmt.Errorf("error marshalling response body: %v", err))
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.Header().Set("Content-Length", strconv.Itoa(len(body)))
 
+	_, err = w.Write(body)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		logging.Errorf(r.Context(), "error writing response: %v", err)
+		return
+	}
+
 	w.WriteHeader(successStatusCode)
-	_, _ = w.Write(body)
 }
 
 // ResponseErrorAndLog принимает ошибку, которая пришла из usecase, и делает ответ
@@ -63,21 +69,25 @@ func DoJSONResponse(r *http.Request, w http.ResponseWriter, responseData interfa
 //
 // Поддерживаемые типы ошибок: 404, 403, 500
 func ResponseErrorAndLog(r *http.Request, w http.ResponseWriter, err error, prefix string) {
-	if errors.Is(err, errs.ErrNotFound) {
+	switch {
+	case errors.Is(err, errs.ErrNotFound):
 		DoBadResponseAndLog(r, w, http.StatusNotFound, "not found")
-		log.Warn(prefix, ": ", err)
-		return
-	}
-	if errors.Is(err, errs.ErrNotPermitted) {
+		logging.Warn(r.Context(), prefix, ": ", err)
+
+	case errors.Is(err, errs.ErrNotPermitted):
 		DoBadResponseAndLog(r, w, http.StatusForbidden, "forbidden")
-		log.Warn(prefix, ": ", err)
-		return
-	}
-	if errors.Is(err, errs.ErrValidation) {
+		logging.Warn(r.Context(), prefix, ": ", err)
+
+	case errors.Is(err, errs.ErrValidation):
 		DoBadResponseAndLog(r, w, http.StatusBadRequest, err.Error())
-		log.Warn(prefix, ": ", err)
-		return
+		logging.Warn(r.Context(), prefix, ": ", err)
+
+	case errors.Is(err, errs.ErrAlreadyExists):
+		DoBadResponseAndLog(r, w, http.StatusConflict, "already exists")
+		logging.Warn(r.Context(), prefix, ": ", err)
+
+	default:
+		logging.Error(r.Context(), prefix, ": ", err)
+		DoBadResponseAndLog(r, w, http.StatusInternalServerError, "internal error")
 	}
-	log.Error(prefix, ": ", err)
-	DoBadResponseAndLog(r, w, http.StatusInternalServerError, "internal error")
 }
