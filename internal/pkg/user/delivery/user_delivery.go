@@ -123,7 +123,7 @@ func (d *UserDelivery) LoginUser(w http.ResponseWriter, r *http.Request) {
 // RegisterUser регистрирует пользователя
 func (d *UserDelivery) RegisterUser(w http.ResponseWriter, r *http.Request) {
 	funcName := "RegisterUser"
-	var user models.UserRegisterRequest
+	user := models.UserRegisterRequest{}
 	err := requests.GetRequestData(r, &user)
 	if err != nil {
 		responses.ResponseErrorAndLog(r, w, err, funcName)

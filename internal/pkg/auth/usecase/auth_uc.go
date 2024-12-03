@@ -35,7 +35,7 @@ func (uc *AuthUsecase) CreateSession(ctx context.Context, userID int64, password
 
 	sessionID = encrypt.GenerateSessionID()
 
-	err = uc.authRepo.RegisterSessionRedis(ctx, sessionID, userID)
+	err = uc.authRepo.CreateSession(ctx, sessionID, userID)
 	if err != nil {
 		return "", err
 	}
@@ -43,10 +43,11 @@ func (uc *AuthUsecase) CreateSession(ctx context.Context, userID int64, password
 	return sessionID, nil
 }
 
+// CheckSession определяет, какому пользователю соответствует эта сессия.
+// Если сессия не валидна, возвращает errs.ErrNotFound
 func (uc *AuthUsecase) CheckSession(ctx context.Context, sessionID string) (userID int64, err error) {
 	funcName := "CheckSession"
 	userID, err = uc.authRepo.CheckSession(ctx, sessionID)
-	fmt.Println("CHECK SESSION => u_id=", userID)
 	if err != nil {
 		if errors.Is(err, errs.ErrNotFound) {
 			return 0, errs.ErrNotFound
@@ -58,9 +59,9 @@ func (uc *AuthUsecase) CheckSession(ctx context.Context, sessionID string) (user
 	return userID, nil
 }
 
-func (uc *AuthUsecase) KillSession(ctx context.Context, sessionID string) (err error) {
-	funcName := "KillSession"
-	err = uc.authRepo.KillSessionRedis(ctx, sessionID)
+func (uc *AuthUsecase) RemoveSession(ctx context.Context, sessionID string) (err error) {
+	funcName := "RemoveSession"
+	err = uc.authRepo.RemoveSession(ctx, sessionID)
 	if err != nil {
 		return fmt.Errorf("%s: %w", funcName, err)
 	}
@@ -102,9 +103,9 @@ func (uc *AuthUsecase) ChangePassword(ctx context.Context, oldPassword string, n
 		return fmt.Errorf("%s (SetNewPasswordHash): %w", funcName, err)
 	}
 
-	err = uc.authRepo.RegisterSessionRedis(ctx, sessionID, userID)
+	err = uc.authRepo.CreateSession(ctx, sessionID, userID)
 	if err != nil {
-		return fmt.Errorf("%s (RegisterSessionRedis): %w", funcName, err)
+		return fmt.Errorf("%s (CreateSession): %w", funcName, err)
 	}
 
 	return nil

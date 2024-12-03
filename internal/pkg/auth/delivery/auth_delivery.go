@@ -54,7 +54,7 @@ func (d *AuthDelivery) CheckSession(ctx context.Context, request *gen.CheckSessi
 
 func (d *AuthDelivery) DeleteSession(ctx context.Context, request *gen.Session) (*gen.StatusResponse, error) {
 	funcName := "DeleteSession"
-	err := d.authUsecase.KillSession(ctx, request.SessionID)
+	err := d.authUsecase.RemoveSession(ctx, request.SessionID)
 	if err != nil {
 		logrus.Errorf("%s: %v", funcName, err)
 		return &gen.StatusResponse{Error: gen.Error_INTERNAL_SERVER_ERROR}, nil

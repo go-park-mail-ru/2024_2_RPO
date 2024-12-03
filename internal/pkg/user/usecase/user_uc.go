@@ -142,6 +142,12 @@ func (uc *UserUsecase) LogoutUser(ctx context.Context, sessionID string) error {
 
 func (uc *UserUsecase) RegisterUser(ctx context.Context, user *models.UserRegisterRequest) (sessionID string, err error) {
 	funcName := "RegisterUser"
+
+	err = uc.userRepo.CheckUniqueCredentials(ctx, user.Name, user.Email)
+	if err != nil {
+		return "", fmt.Errorf("%s (uniq): %w", funcName, err)
+	}
+
 	newUser, err := uc.userRepo.CreateUser(ctx, user)
 	if err != nil {
 		return "", fmt.Errorf("%s (create): %w", funcName, err)

@@ -166,10 +166,10 @@ func (r *UserRepository) CreateUser(ctx context.Context, user *models.UserRegist
 
 // CheckUniqueCredentials проверяет, существуют ли такие логин и email в базе
 func (r *UserRepository) CheckUniqueCredentials(ctx context.Context, nickname string, email string) error {
-	funcName := `UserRepository.CheckUniqueCredentials`
+	funcName := `CheckUniqueCredentials`
 	query := `SELECT nickname, email FROM "user" WHERE nickname = $1 OR email=$2;`
 	var emailCount, nicknameCount int
-	rows, err := r.db.Query(ctx, query, nickname)
+	rows, err := r.db.Query(ctx, query, nickname, email)
 	logging.Debug(ctx, funcName, " query has err: ", err)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -177,6 +177,7 @@ func (r *UserRepository) CheckUniqueCredentials(ctx context.Context, nickname st
 		}
 		return fmt.Errorf("%s: %w", funcName, err)
 	}
+
 	for rows.Next() {
 		var knownNickname, knownEmail string
 		err := rows.Scan(&knownNickname, &knownEmail)
@@ -190,11 +191,14 @@ func (r *UserRepository) CheckUniqueCredentials(ctx context.Context, nickname st
 			nicknameCount++
 		}
 	}
+
 	if emailCount > 0 && nicknameCount > 0 {
 		return fmt.Errorf("%s: %w %w", funcName, errs.ErrBusyNickname, errs.ErrBusyEmail)
-	} else if nicknameCount > 0 {
+	}
+	if nicknameCount > 0 {
 		return fmt.Errorf("%s: %w", funcName, errs.ErrBusyNickname)
-	} else if emailCount > 0 {
+	}
+	if emailCount > 0 {
 		return fmt.Errorf("%s: %w", funcName, errs.ErrBusyEmail)
 	}
 	return nil
@@ -228,7 +232,7 @@ func (r *UserRepository) GetRatingResults(ctx context.Context) (results []models
 	SELECT cq.question_text, AVG(cr.rating) AS rating FROM csat_results AS cr
 	JOIN csat_question AS cq ON cr.question_id = cq.question_id
 	WHERE cr.created_at >= CURRENT_TIMESTAMP - INTERVAL '7 days' AND cq.type='answer_rating'
-	GROUP BY cq.question_id, cr.rating;	
+	GROUP BY cq.question_id, cr.rating;
 	`
 
 	rows, err := r.db.Query(ctx, query)
@@ -260,13 +264,13 @@ func (r *UserRepository) GetTextResults(ctx context.Context) (results []models.A
 	rows, err := r.db.Query(ctx, query)
 	logging.Debug(ctx, funcName, " query has err: ", err)
 	if err != nil {
-		return nil, fmt.Errorf("GetTextResults (query): %w", err)
+		return nil, fmt.Errorf("%s (query): %w", funcName, err)
 	}
 
 	for rows.Next() {
 		var q, a string
 		if err := rows.Scan(&a, &q); err != nil {
-			return nil, fmt.Errorf("GetTextResults (scan): %w", err)
+			return nil, fmt.Errorf("%s (scan): %w", funcName, err)
 		}
 		if len(results) == 0 {
 			results = append(results, models.AnswerResults{

@@ -13,13 +13,13 @@ const (
 type AuthUsecase interface {
 	CreateSession(ctx context.Context, userID int64, password string) (sessionID string, err error)
 	CheckSession(ctx context.Context, sessionID string) (userID int64, err error)
-	KillSession(ctx context.Context, sessionID string) (err error)
+	RemoveSession(ctx context.Context, sessionID string) (err error)
 	ChangePassword(ctx context.Context, oldPassword string, newPassword string, sessionID string) (err error)
 }
 
 type AuthRepo interface {
-	RegisterSessionRedis(ctx context.Context, cookie string, userID int64) error
-	KillSessionRedis(ctx context.Context, sessionID string) error
+	CreateSession(ctx context.Context, cookie string, userID int64) error
+	RemoveSession(ctx context.Context, sessionID string) error
 	CheckSession(ctx context.Context, sessionID string) (userID int64, err error)
 	SetNewPasswordHash(ctx context.Context, userID int64, newPasswordHash string) error
 	GetUserPasswordHash(ctx context.Context, userID int64) (passwordHash *string, err error)

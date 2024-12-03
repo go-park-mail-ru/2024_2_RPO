@@ -12,24 +12,27 @@ import (
 
 // SetNewPasswordHash устанавливает пользователю новый хеш пароля
 func (r *AuthRepository) SetNewPasswordHash(ctx context.Context, userID int64, newPasswordHash string) error {
+	funcName := "SetNewPasswordHash"
 	query := `
 	UPDATE "user"
 	SET password_hash=$1
 	WHERE u_id=$2;
 	`
+
 	tag, err := r.db.Exec(ctx, query, newPasswordHash, userID)
-	logging.Debug(ctx, "SetNewPasswordHash query has err: ", err, " tag: ", tag)
+	logging.Debugf(ctx, "%s query has err: %v", funcName, err)
 	if err != nil {
-		return fmt.Errorf("SetNewPasswordHash: %w", err)
+		return fmt.Errorf("%s: %w", funcName, err)
 	}
 	if tag.RowsAffected() == 0 {
-		return fmt.Errorf("SetNewPasswordHash: No password change done")
+		return fmt.Errorf("%s: No password change done", funcName)
 	}
 	return nil
 }
 
 // GetUserPasswordHash получает хеш пароля пользователя
 func (r *AuthRepository) GetUserPasswordHash(ctx context.Context, userID int64) (passwordHash *string, err error) {
+	funcName := "GetUserPasswordHash"
 	query := `
 	SELECT password_hash
 	FROM "user"
@@ -37,12 +40,12 @@ func (r *AuthRepository) GetUserPasswordHash(ctx context.Context, userID int64) 
 	`
 
 	err = r.db.QueryRow(ctx, query, userID).Scan(&passwordHash)
-	logging.Debug(ctx, "GetUserPasswordHash query has err: ", err)
+	logging.Debugf(ctx, "%s query has err: %v", funcName, err)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, fmt.Errorf("GetUserPasswordHash: %w", errs.ErrNotFound)
+			return nil, fmt.Errorf("%s: %w", funcName, errs.ErrNotFound)
 		}
-		return nil, fmt.Errorf("GetUserPasswordHash: %w", err)
+		return nil, fmt.Errorf("%s: %w", funcName, err)
 	}
 
 	return passwordHash, nil
