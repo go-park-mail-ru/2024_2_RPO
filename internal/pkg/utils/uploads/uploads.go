@@ -76,17 +76,6 @@ func CompareFiles(fileNames []string, fileIDs []int64, newFile *models.UploadedF
 	return nil, nil
 }
 
-// extractUUID предполагает, что UUID находится в начале имени файла, разделённого символом '_'
-// Например: "123e4567-e89b-12d3-a456-426614174000_filename.ext"
-func extractUUID(filePath string) (string, error) {
-	// UUID состоит из 36 символов (32 цифры и 4 дефиса)
-	runes := []rune(filePath)
-	if len(runes) < 36 {
-		return "", fmt.Errorf("invalid uuid length")
-	}
-	return string(runes[:36]), nil
-}
-
 func FormFile(r *http.Request) (file *models.UploadedFile, err error) {
 	r.ParseMultipartForm(10 << 20)
 
@@ -168,37 +157,59 @@ func DeduplicateFile(ctx context.Context, db pgxiface.PgxIface, file *models.Upl
 	return fileNames, fileIDs, nil
 }
 
-// RegisterFile заносит информацию о файле в таблицу и по указателю меняет поля FileID и UUID в структуре file
-func RegisterFile(ctx context.Context, db pgxiface.PgxIface, file *models.UploadedFile) (fileID int64, err error) {
+// RegisterFile заносит информацию о файле в таблицу и возвращает ID строки
+func RegisterFile(ctx context.Context, db pgxiface.PgxIface, file *models.UploadedFile) (fileID int64, fileUUID string, err error) {
 	funcName := "RegisterFile"
 	query := `
 	INSERT INTO user_uploaded_file
-	(file_extension, created_at, "size")
-	VALUES ($1, CURRENT_TIMESTAMP, $2)
-	RETURNING file_uuid::text, file_id;
+	(file_extension, "size")
+	VALUES ($1, $2)
+	RETURNING file_id, file_uuid::text;
 	`
 
 	if file == nil {
-		return 0, fmt.Errorf("%s: file should not be nil", funcName)
+		return 0, "", fmt.Errorf("%s: file should not be nil", funcName)
 	}
 	fileExt := ExtractFileExtension(file.OriginalName)
-	row := db.QueryRow(ctx, query, file.FileExtension, len(file.Content))
-	err := row.Scan(&file.UUID, file.FileID)
-	logging.Debug(ctx, funcName, " query has err: ", err)
+	row := db.QueryRow(ctx, query, fileExt, len(file.Content))
+
+	err = row.Scan(&fileID, &fileUUID)
+	logging.Debugf(ctx, "%s query has err: ", funcName, err)
 	if err != nil {
-		return fmt.Errorf("%s: %w", funcName, err)
+		return 0, "", fmt.Errorf("%s: %w", funcName, err)
 	}
-	return nil
+	return fileID, fileUUID, nil
 }
 
 type FileRepo interface {
 	DeduplicateFile(ctx context.Context, file *models.UploadedFile) (fileNames []string, fileIDs []int64, err error)
-	RegisterFile(ctx context.Context, file *models.UploadedFile) error
+	RegisterFile(ctx context.Context, file *models.UploadedFile) (fileID int64, fileUUID string, err error)
 }
 
 func UsecaseUploadFile(ctx context.Context, file *models.UploadedFile, repo FileRepo) (fileID int64, err error) {
-	// Вычислить хеш файла
-	// Найти файлы с такими же хешем, длиной и расширением
-	// Если файлы есть, вернуть ID подходящего файла (при сравнении побайтово)
-	// Если файл оказался уникальным, зарегистрировать и сохранить его
+	fileNames, fileIDs, err := repo.DeduplicateFile(ctx, file)
+	if err != nil {
+		return 0, fmt.Errorf("UsecaseUploadFile (deduplicate): %w", err)
+	}
+
+	fileFoundID, err := CompareFiles(fileNames, fileIDs, file)
+	if err != nil {
+		return 0, fmt.Errorf("UsecaseUploadFile (compare): %w", err)
+	}
+
+	if fileFoundID != nil {
+		return *fileFoundID, nil
+	}
+
+	fileID, fileUUID, err := repo.RegisterFile(ctx, file)
+	if err != nil {
+		return 0, fmt.Errorf("UsecaseUploadFile (register): %w", err)
+	}
+
+	err = SaveFile(file, fileUUID)
+	if err != nil {
+		return 0, fmt.Errorf("UsecaseUploadFile (save): %w", err)
+	}
+
+	return fileID, err
 }

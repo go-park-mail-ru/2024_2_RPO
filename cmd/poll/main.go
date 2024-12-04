@@ -97,7 +97,7 @@ func main() {
 	router.Use(sm.Middleware)
 
 	// Регистрируем обработчики
-	router.HandleFunc("/prometheus/metrics", promhttp.Handler().ServeHTTP)
+	router.HandleFunc("/poll/questions", pollDelivery.GetPollQuestions).Methods("GET", "OPTIONS")
 	router.HandleFunc("/poll/submit", pollDelivery.SubmitPoll).Methods("POST", "OPTIONS")
 	router.HandleFunc("/poll/results", pollDelivery.GetPollResults).Methods("GET", "OPTIONS")
 

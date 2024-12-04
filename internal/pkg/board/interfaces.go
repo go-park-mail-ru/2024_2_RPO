@@ -67,7 +67,7 @@ type BoardRepo interface {
 	RemoveMember(ctx context.Context, boardID int64, memberUserID int64) (err error)
 	AddMember(ctx context.Context, boardID int64, adderID int64, memberUserID int64) (member *models.MemberWithPermissions, err error)
 	GetUserByNickname(ctx context.Context, nickname string) (user *models.UserProfile, err error)
-	SetBoardBackground(ctx context.Context, userID int64, boardID int64, file *models.UploadedFile) (newBoard *models.Board, err error)
+	SetBoardBackground(ctx context.Context, userID int64, boardID int64, fileID int64) (newBoard *models.Board, err error)
 	GetMemberFromCard(ctx context.Context, userID int64, cardID int64) (role string, boardID int64, err error)
 	GetMemberFromCheckListField(ctx context.Context, userID int64, fieldID int64) (role string, boardID int64, cardID int64, err error)
 	GetMemberFromAttachment(ctx context.Context, userID int64, attachmentID int64) (role string, boardID int64, cardID int64, err error)
@@ -90,14 +90,14 @@ type BoardRepo interface {
 	CreateCheckListField(ctx context.Context, cardID int64, field *models.CheckListFieldPostRequest) (newField *models.CheckListField, err error)
 	UpdateCheckListField(ctx context.Context, fieldID int64, update *models.CheckListFieldPatchRequest) (updatedField *models.CheckListField, err error)
 	DeleteCheckListField(ctx context.Context, fieldID int64) error
-	SetCardCover(ctx context.Context, userID int64, cardID int64, file *models.UploadedFile) (updatedCard *models.Card, err error)
+	SetCardCover(ctx context.Context, userID int64, cardID int64, fileID int64) (updatedCard *models.Card, err error)
 	RemoveCardCover(ctx context.Context, cardID int64) (err error)
-	AddAttachment(ctx context.Context, userID int64, cardID int64, file *models.UploadedFile) (newAttachment *models.Attachment, err error)
+	AddAttachment(ctx context.Context, userID int64, cardID int64, fileID int64) (newAttachment *models.Attachment, err error)
 	RemoveAttachment(ctx context.Context, attachmentID int64) (err error)
 	PullInviteLink(ctx context.Context, userID int64, boardID int64) (link *models.InviteLink, err error)
 	DeleteInviteLink(ctx context.Context, userID int64, boardID int64) (err error)
 	FetchInvite(ctx context.Context, inviteUUID string) (board *models.Board, err error)
 	AcceptInvite(ctx context.Context, userID int64, boardID int64, invitedUserID int64, inviteUUID string) (board *models.Board, err error)
 	DeduplicateFile(ctx context.Context, file *models.UploadedFile) (fileNames []string, fileIDs []int64, err error)
-	RegisterFile(ctx context.Context, file *models.UploadedFile) error
+	RegisterFile(ctx context.Context, file *models.UploadedFile) (fileID int64, fileUUID string, err error)
 }

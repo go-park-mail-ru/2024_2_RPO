@@ -1024,11 +1024,12 @@ func (r *BoardRepository) DeleteCheckListField(ctx context.Context, fieldID int6
 }
 
 // SetCardCover устанавливает файл обложки карточки
-func (r *BoardRepository) SetCardCover(ctx context.Context, userID int64, cardID int64, file *models.UploadedFile) (updatedCard *models.Card, err error) {
+func (r *BoardRepository) SetCardCover(ctx context.Context, userID int64, cardID int64, fileID int64) (updatedCard *models.Card, err error) {
 	funcName := "SetCardCover"
 	query := `
 	WITH update_cover AS (
-		UPDATE "card" SET updated_at=CURRENT_TIMESTAMP, cover_file_id=$1 WHERE card_id = $2
+		UPDATE "card"
+		SET updated_at=CURRENT_TIMESTAMP, cover_file_id=$1 WHERE card_id = $2
 	),
 	update_board AS (
 		UPDATE board SET updated_at=CURRENT_TIMESTAMP WHERE board_id = (
@@ -1038,12 +1039,21 @@ func (r *BoardRepository) SetCardCover(ctx context.Context, userID int64, cardID
 			JOIN board AS b ON b.board_id = kc.board_id
 			WHERE c.card_id=$1
 		)
+	),
+	update_user AS (
+		UPDATE user_to_board SET last_visit_at=CURRENT_TIMESTAMP
+		WHERE u_id=$3 AND board_id=(
+			SELECT board_id
+			FROM kanban_column AS cc
+			JOIN kanban_card AS c ON c.col_id=cc.col_id
+			WHERE card_id=$1
+		)
 	)
 	SELECT;
 	`
 
 	updatedCard = &models.Card{}
-	row := r.db.QueryRow(ctx, query)
+	row := r.db.QueryRow(ctx, query, fileID, cardID, userID)
 	err = row.Scan()
 	logging.Debug(ctx, funcName, " query has err: ", err)
 	if err != nil {
@@ -1083,7 +1093,7 @@ func (r *BoardRepository) RemoveCardCover(ctx context.Context, cardID int64) (er
 }
 
 // AddAttachment добавляет файл вложения в карточку
-func (r *BoardRepository) AddAttachment(ctx context.Context, userID int64, cardID int64, file *models.UploadedFile) (newAttachment *models.Attachment, err error) {
+func (r *BoardRepository) AddAttachment(ctx context.Context, userID int64, cardID int64, fileID int64) (newAttachment *models.Attachment, err error) {
 	funcName := "AddAttachment"
 	query := `
 	WITH insert_attachment AS (

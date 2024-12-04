@@ -348,28 +348,14 @@ func (uc *BoardUsecase) SetBoardBackground(ctx context.Context, userID int64, bo
 		return nil, fmt.Errorf("UpdateColumn (check): %w", errs.ErrNotPermitted)
 	}
 
-	fileNames, fileIDs, err := uc.boardRepository.DeduplicateFile(ctx, file)
+	fileID, err := uploads.UsecaseUploadFile(ctx, file, uc.boardRepository)
 	if err != nil {
-		return nil, fmt.Errorf("%s (deduplicate): %w", funcName, err)
+		return nil, fmt.Errorf("%s (upload): %w", funcName, err)
 	}
 
-	fileID, err := uploads.CompareFiles(fileNames, fileIDs, file)
+	newBoard, err := uc.boardRepository.SetBoardBackground(ctx, userID, boardID, fileID)
 	if err != nil {
-		return nil, fmt.Errorf("%s (compare): %w", funcName, err)
-	}
-
-	if fileID == nil {
-		err = uc.boardRepository.RegisterFile(ctx, file)
-		if err != nil {
-			return nil, fmt.Errorf("%s (save file): %w", funcName, err)
-		}
-		fileID = file.FileID
-	}
-	file.FileID = fileID
-
-	newBoard, err := uc.boardRepository.SetBoardBackground(ctx, userID, boardID, file)
-	if err != nil {
-		return nil, fmt.Errorf("%s (): %w", funcName, err)
+		return nil, fmt.Errorf("%s (set): %w", funcName, err)
 	}
 
 	return newBoard, nil
@@ -546,7 +532,12 @@ func (uc *BoardUsecase) SetCardCover(ctx context.Context, userID int64, cardID i
 		return nil, fmt.Errorf("%s (check): %w", funcName, errs.ErrNotPermitted)
 	}
 
-	updatedCard, err = uc.boardRepository.SetCardCover(ctx, userID, cardID, file)
+	fileID, err := uploads.UsecaseUploadFile(ctx, file, uc.boardRepository)
+	if err != nil {
+		return nil, fmt.Errorf("%s (upload): %w", funcName, err)
+	}
+
+	updatedCard, err = uc.boardRepository.SetCardCover(ctx, userID, cardID, fileID)
 	if err != nil {
 		return nil, fmt.Errorf("%s (update): %w", funcName, err)
 	}
@@ -586,7 +577,12 @@ func (uc *BoardUsecase) AddAttachment(ctx context.Context, userID int64, cardID 
 		return nil, fmt.Errorf("%s (check): %w", funcName, errs.ErrNotPermitted)
 	}
 
-	newAttachment, err = uc.boardRepository.AddAttachment(ctx, userID, cardID, file)
+	fileID, err := uploads.UsecaseUploadFile(ctx, file, uc.boardRepository)
+	if err != nil {
+		return nil, fmt.Errorf("%s (upload): %w", funcName, err)
+	}
+
+	newAttachment, err = uc.boardRepository.AddAttachment(ctx, userID, cardID, fileID)
 	if err != nil {
 		return nil, fmt.Errorf("%s (update): %w", funcName, err)
 	}

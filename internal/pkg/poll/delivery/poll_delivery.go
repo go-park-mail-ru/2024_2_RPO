@@ -57,3 +57,13 @@ func (d *PollDelivery) GetPollResults(w http.ResponseWriter, r *http.Request) {
 
 	responses.DoJSONResponse(r, w, pollResults, http.StatusOK)
 }
+
+func (d *PollDelivery) GetPollQuestions(w http.ResponseWriter, r *http.Request) {
+	funcName := "GetPollQuestions"
+	userID, ok := requests.GetUserIDOrFail(w, r, funcName)
+	if !ok {
+		return
+	}
+
+	pollQuestions, err := d.pollUC.GetPollQuestions(r.Context(), userID)
+}

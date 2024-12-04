@@ -180,7 +180,7 @@ func (r *BoardRepository) GetBoardsForUser(ctx context.Context, userID int64) (b
 }
 
 // SetBoardBackground задаёт файл заднего фона доски
-func (r *BoardRepository) SetBoardBackground(ctx context.Context, userID int64, boardID int64, file *models.UploadedFile) (newBoard *models.Board, err error) {
+func (r *BoardRepository) SetBoardBackground(ctx context.Context, userID int64, boardID int64, fileID int64) (newBoard *models.Board, err error) {
 	funcName := "SetBoardBackground"
 	query := `
 	WITH update_board AS (
@@ -190,24 +190,29 @@ func (r *BoardRepository) SetBoardBackground(ctx context.Context, userID int64, 
 		WHERE board_id=$2
 		RETURNING board_id
 	)
-	SELECT b.board_id, b.name, b.created_at, b.updated_at
+	SELECT b.board_id, b.name, b.created_at, b.updated_at,
+	COALESCE(f.file_uuid::text, ''), COALESCE(f.file_extension, '')
 	FROM board AS b
+	LEFT JOIN user_uploaded_file AS f ON f.file_id=b.background_image_id
 	WHERE b.board_id=$2;
 	`
 
 	newBoard = &models.Board{}
+	var fileUUID, fileExt string
 
-	row := r.db.QueryRow(ctx, query, file.FileID, boardID)
+	row := r.db.QueryRow(ctx, query, fileID, boardID)
 	err = row.Scan(
 		&newBoard.ID,
 		&newBoard.Name,
 		&newBoard.CreatedAt,
 		&newBoard.UpdatedAt,
+		&fileUUID,
+		&fileExt,
 	)
 	logging.Debug(ctx, funcName, " query has err: ", err)
 	if err != nil {
 		return nil, fmt.Errorf("%s (query): %w", funcName, err)
 	}
-	newBoard.BackgroundImageURL = uploads.JoinFileURL(*file.UUID, file.FileExtension, uploads.DefaultBackgroundURL)
+	newBoard.BackgroundImageURL = uploads.JoinFileURL(fileUUID, fileExt, uploads.DefaultBackgroundURL)
 	return newBoard, nil
 }

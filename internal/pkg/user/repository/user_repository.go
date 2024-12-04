@@ -226,7 +226,7 @@ func (r *UserRepository) CheckUniqueCredentials(ctx context.Context, nickname st
 func (r *UserRepository) DeduplicateFile(ctx context.Context, file *models.UploadedFile) (fileNames []string, fileIDs []int64, err error) {
 	return uploads.DeduplicateFile(ctx, r.db, file)
 }
-func (r *UserRepository) RegisterFile(ctx context.Context, file *models.UploadedFile) error {
+func (r *UserRepository) RegisterFile(ctx context.Context, file *models.UploadedFile) (fileID int64, fileUUID string, err error) {
 	return uploads.RegisterFile(ctx, r.db, file)
 }
 
