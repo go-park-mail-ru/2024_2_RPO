@@ -66,4 +66,11 @@ func (d *PollDelivery) GetPollQuestions(w http.ResponseWriter, r *http.Request) 
 	}
 
 	pollQuestions, err := d.pollUC.GetPollQuestions(r.Context(), userID)
+	if err != nil {
+		logging.Warn(r.Context(), err)
+		responses.ResponseErrorAndLog(r, w, err, funcName)
+		return
+	}
+
+	responses.DoJSONResponse(r, w, pollQuestions, http.StatusOK)
 }

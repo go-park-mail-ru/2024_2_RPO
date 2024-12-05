@@ -8,7 +8,6 @@ import (
 	"RPO_back/internal/pkg/utils/uploads"
 	"context"
 	"fmt"
-	"time"
 )
 
 type UserUsecase struct {
@@ -28,15 +27,6 @@ func (uc *UserUsecase) GetMyProfile(ctx context.Context, userID int64) (profile 
 	profile, err = uc.userRepo.GetUserProfile(ctx, userID)
 	if err != nil {
 		return nil, fmt.Errorf("GetMyProfile: %w", err)
-	}
-
-	if profile.CsatPollDT.Second() < time.Now().Second() {
-		uc.userRepo.SetNextPollDT(ctx, userID)
-		poll, err := uc.userRepo.PickPollQuestions(ctx)
-		if err != nil {
-			return nil, fmt.Errorf("GetMyProfile: %w", err)
-		}
-		profile.PollQuestions = poll
 	}
 
 	return
@@ -173,32 +163,4 @@ func (uc *UserUsecase) RegisterUser(ctx context.Context, user *models.UserRegist
 	}
 
 	return sessionID, nil
-}
-
-func (uc *UserUsecase) SubmitPoll(ctx context.Context, userID int64, pollSubmit *models.PollSubmit) error {
-	err := uc.userRepo.SubmitPoll(ctx, userID, pollSubmit)
-	if err != nil {
-		return fmt.Errorf("SubmitPoll: %w", err)
-	}
-
-	return nil
-}
-
-func (uc *UserUsecase) GetPollResults(ctx context.Context) (pollResults *models.PollResults, err error) {
-	pollRating, err := uc.userRepo.GetRatingResults(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("GetPollResults (GetRatingResults): %w", err)
-	}
-
-	pollText, err := uc.userRepo.GetTextResults(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("GetPollResults (GetTextResults): %w", err)
-	}
-
-	pollResults = &models.PollResults{
-		RatingResults: pollRating,
-		TextResults:   pollText,
-	}
-
-	return pollResults, nil
 }

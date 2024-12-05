@@ -14,8 +14,6 @@ type UserUsecase interface {
 	RegisterUser(ctx context.Context, user *models.UserRegisterRequest) (sessionID string, err error)
 	LogoutUser(ctx context.Context, sessionID string) error
 	ChangePassword(ctx context.Context, sessionID string, oldPassword string, newPassword string) error
-	SubmitPoll(ctx context.Context, userID int64, pollQuestion *models.PollSubmit) error
-	GetPollResults(ctx context.Context) (pollResults *models.PollResults, err error)
 }
 
 type UserRepo interface {
@@ -25,11 +23,6 @@ type UserRepo interface {
 	GetUserByEmail(ctx context.Context, email string) (user *models.UserProfile, err error)
 	CreateUser(ctx context.Context, user *models.UserRegisterRequest) (newUser *models.UserProfile, err error)
 	CheckUniqueCredentials(ctx context.Context, nickname string, email string) error
-	SubmitPoll(ctx context.Context, userID int64, pollSubmit *models.PollSubmit) error
-	GetRatingResults(ctx context.Context) (results []models.RatingResults, err error)
-	GetTextResults(ctx context.Context) (results []models.AnswerResults, err error)
-	SetNextPollDT(ctx context.Context, userID int64) error
-	PickPollQuestions(ctx context.Context) (pollQuestions []models.PollQuestion, err error)
 	DeduplicateFile(ctx context.Context, file *models.UploadedFile) (fileNames []string, fileIDs []int64, err error)
 	RegisterFile(ctx context.Context, file *models.UploadedFile) (fileID int64, fileUUID string, err error)
 }
