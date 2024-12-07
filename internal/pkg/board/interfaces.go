@@ -101,3 +101,9 @@ type BoardRepo interface {
 	DeduplicateFile(ctx context.Context, file *models.UploadedFile) (fileNames []string, fileIDs []int64, err error)
 	RegisterFile(ctx context.Context, file *models.UploadedFile) (fileID int64, fileUUID string, err error)
 }
+
+type BoardElasticRepo interface {
+	PutCard(ctx context.Context, boardID int64, cardID int64, cardText string) (err error)
+	Search(ctx context.Context, query string) (cardID []int64, err error)
+	DeleteCard(ctx context.Context, cardID int64) (err error)
+}

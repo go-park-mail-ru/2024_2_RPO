@@ -36,7 +36,7 @@ type Card struct {
 	ColumnID         int64      `json:"columnId"`
 	CreatedAt        time.Time  `json:"createdAt"`
 	UpdatedAt        time.Time  `json:"updatedAt"`
-	Deadine          *time.Time `json:"deadline,omitempty"`
+	Deadline         *time.Time `json:"deadline,omitempty"`
 	IsDone           bool       `json:"isDone"`
 	HasCheckList     bool       `json:"hasCheckList"`
 	HasAttachments   bool       `json:"hasAttachments"`

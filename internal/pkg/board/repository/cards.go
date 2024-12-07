@@ -3,6 +3,7 @@ package repository
 import (
 	"RPO_back/internal/models"
 	"RPO_back/internal/pkg/utils/logging"
+	"RPO_back/internal/pkg/utils/uploads"
 	"context"
 	"errors"
 	"fmt"
@@ -25,9 +26,13 @@ func (r *BoardRepository) GetCardsForBoard(ctx context.Context, boardID int64) (
 		(SELECT (NOT COUNT(*)=0) FROM checklist_field AS f WHERE f.card_id=c.card_id),
     	(SELECT (NOT COUNT(*)=0) FROM card_attachment AS f WHERE f.card_id=c.card_id),
     	(SELECT (NOT COUNT(*)=0) FROM card_user_assignment AS f WHERE f.card_id=c.card_id),
-    	(SELECT (NOT COUNT(*)=0) FROM card_comment AS f WHERE f.card_id=c.card_id)
+    	(SELECT (NOT COUNT(*)=0) FROM card_comment AS f WHERE f.card_id=c.card_id),
+		COALESCE(uuf.file_uuid::text, ''),
+		COALESCE(uuf.file_extension::text, ''),
+		c.card_uuid
 	FROM card c
 	JOIN kanban_column kc ON c.col_id = kc.col_id
+	LEFT JOIN user_uploaded_file uuf ON c.cover_file_id = uuf.file_id
 	WHERE kc.board_id = $1;
 `
 	rows, err := r.db.Query(ctx, query, boardID)
@@ -46,22 +51,27 @@ func (r *BoardRepository) GetCardsForBoard(ctx context.Context, boardID int64) (
 
 	for rows.Next() {
 		var card models.Card
+		var fileUUID, fileExt string
 		err := rows.Scan(
 			&card.ID,
 			&card.ColumnID,
 			&card.Title,
 			&card.CreatedAt,
 			&card.UpdatedAt,
-			&card.Deadine,
+			&card.Deadline,
 			&card.IsDone,
 			&card.HasCheckList,
 			&card.HasAttachments,
 			&card.HasAssignedUsers,
 			&card.HasComments,
+			&fileUUID,
+			&fileExt,
+			&card.UUID,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("%s (scan): %w", funcName, err)
 		}
+		card.CoverImageURL = uploads.JoinFileURL(fileUUID, fileExt, uploads.DefaultBackgroundURL)
 		cards = append(cards, card)
 	}
 
@@ -154,7 +164,7 @@ func (r *BoardRepository) UpdateCard(ctx context.Context, cardID int64, data mod
 		&updateCard.Title,
 		&updateCard.CreatedAt,
 		&updateCard.UpdatedAt,
-		&updateCard.Deadine,
+		&updateCard.Deadline,
 		&updateCard.IsDone,
 		&updateCard.HasCheckList,
 		&updateCard.HasAttachments,
@@ -183,4 +193,33 @@ func (r *BoardRepository) DeleteCard(ctx context.Context, cardID int64) (err err
 	}
 
 	return nil
+}
+
+func (r *BoardRepository) GetCardsByID(ctx context.Context, cardIDs []int64) (cards []models.Card, err error) {
+	panic("Not implemented")
+	funcName := "GetCardsByID"
+	query := `
+	SELECT 
+		c.card_id,
+		c.col_id,
+		c.title,
+		c.created_at,
+		c.updated_at,
+		c.deadline,
+    	c.is_done,
+		(SELECT (NOT COUNT(*)=0) FROM checklist_field AS f WHERE f.card_id=c.card_id),
+    	(SELECT (NOT COUNT(*)=0) FROM card_attachment AS f WHERE f.card_id=c.card_id),
+    	(SELECT (NOT COUNT(*)=0) FROM card_user_assignment AS f WHERE f.card_id=c.card_id),
+    	(SELECT (NOT COUNT(*)=0) FROM card_comment AS f WHERE f.card_id=c.card_id),
+		COALESCE(uuf.file_uuid::text, ''),
+		COALESCE(uuf.file_extension::text, ''),
+		c.card_uuid
+	FROM card AS c
+	LEFT JOIN user_uploaded_file uuf ON c.cover_file_id = uuf.file_id
+	WHERE c.card_id IN (%s);
+	`
+
+	fmt.Println(query, funcName)
+
+	return cards, nil
 }
