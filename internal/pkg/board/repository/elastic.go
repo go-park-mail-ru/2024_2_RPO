@@ -23,7 +23,6 @@ func CreateBoardElasticRepository(el *elastic.Client) *BoardElasticRepository {
 	}
 }
 
-// добавляет/обновляеют карточку в ElasticSearch
 func (be *BoardElasticRepository) PutCard(ctx context.Context, boardID int64, cardID int64, cardText string) error {
 	funcName := "PutCard"
 	if len(cardText) < ElasticSearchValueMinLength {
