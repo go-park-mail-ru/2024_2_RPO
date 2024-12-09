@@ -180,7 +180,8 @@ services:
     image: nginx:alpine
     container_name: nginx_back
     volumes:
-      - ./certs:/certs
+      - ./certs/cert.crt:/certs/cert.crt:ro
+      - ./certs/cert.pem:/certs/cert.pem:ro
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf
       - pumpkin-user-uploads:/uploads/:ro
     ports:
