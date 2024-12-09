@@ -96,6 +96,16 @@ func main() {
 	sm := session.CreateSessionMiddleware(authGRPC)
 	router.Use(sm.Middleware)
 
+	// Настраиваем обработку 404 и 405
+	router.NotFoundHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		log.Warn("no such handler: ", r.Method, " ", r.URL.Path)
+		http.Error(w, "poll service: no such handler: "+r.URL.Path, http.StatusNotFound)
+	})
+	router.MethodNotAllowedHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		log.Warn("method not allowed: ", r.Method, " ", r.URL.Path)
+		http.Error(w, "poll service: method not allowed: "+r.Method+" "+r.URL.Path, http.StatusMethodNotAllowed)
+	})
+
 	// Регистрируем обработчики
 	router.HandleFunc("/poll/questions", pollDelivery.GetPollQuestions).Methods("GET", "OPTIONS")
 	router.HandleFunc("/poll/submit", pollDelivery.SubmitPoll).Methods("POST", "OPTIONS")

@@ -95,6 +95,16 @@ func main() {
 	sm := session.CreateSessionMiddleware(authGRPC)
 	router.Use(sm.Middleware)
 
+	// Настраиваем обработку 404 и 405
+	router.NotFoundHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		log.Warn("no such handler: ", r.Method, " ", r.URL.Path)
+		http.Error(w, "user service: no such handler: "+r.URL.Path, http.StatusNotFound)
+	})
+	router.MethodNotAllowedHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		log.Warn("method not allowed: ", r.Method, " ", r.URL.Path)
+		http.Error(w, "user service: method not allowed: "+r.Method+" "+r.URL.Path, http.StatusMethodNotAllowed)
+	})
+
 	// Регистрируем обработчики
 	router.HandleFunc("/prometheus/metrics", promhttp.Handler().ServeHTTP)
 	router.HandleFunc("/auth/register", userDelivery.RegisterUser).Methods("POST", "OPTIONS")

@@ -46,9 +46,18 @@
 ```
 CORS_ORIGIN = https://example.com
 
+SERVER_NAME = example.com
+
+# Важно - замыкающий слеш!
+USER_UPLOADS_URL = https://example.com/uploads/
+
 # Эту переменную надо задавать, если Вам надо создать миграции с помощью Atlas
 TEST_DATABASE_URL = postgresql://3kybika:12345678@localhost:5432/migrate_gen_db?sslmode=disable
 ```
+
+Далее надо подтянуть сертификаты для самого бэкенда. На проде надо сделать символьные ссылки на сертификаты в директории certs.
+На локальной машине можно сгенерировать сертификаты для локалхоста через `make gen-test-certs`.
+В директории `certs` должно быть два файла: `cert.crt` и `cert.pem`
 
 Потом можно запускать сами сервисы через Docker. Команда:
 

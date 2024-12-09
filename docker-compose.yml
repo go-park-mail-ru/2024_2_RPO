@@ -176,6 +176,21 @@ services:
     ports:
       - "127.0.0.1:8020:9200"
 
+  nginx:
+    image: nginx:alpine
+    container_name: nginx_back
+    volumes:
+      - ./certs:/certs
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+      - pumpkin-user-uploads:/uploads/:ro
+    ports:
+      - "0.0.0.0:80:80"
+      - "0.0.0.0:443:443"
+    networks:
+      - Pumpkin-network
+    env_file:
+      - .env
+
 networks:
   Pumpkin-network:
     name: Pumpkin-network

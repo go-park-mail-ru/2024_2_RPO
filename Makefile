@@ -63,3 +63,9 @@ make-migrations:
 	@echo "Provide migration name: >>> "
 	@read MIGRATION_NAME; echo "MIGRATION_NAME: $$MIGRATION_NAME"; \
 	atlas migrate diff $$MIGRATION_NAME.up --dir "file://database/migrations" --to "file://database/schema.sql" --dev-url "$(TEST_DATABASE_URL)"
+
+gen-test-certs:
+	@echo "==> Lets generate certificates that are suitable for testing!"
+	@mkdir -p certs
+	@openssl req -x509 -newkey rsa:2048 -nodes -keyout certs/cert.pem -out certs/cert.crt -days 365 -subj '/CN=localhost'
+	@echo "==> Success! Enjoy & be happy!"

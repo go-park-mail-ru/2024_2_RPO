@@ -94,7 +94,7 @@ func (r *UserRepository) UpdateUserProfile(ctx context.Context, userID int64, da
 	err = row.Scan(&duplicateCount)
 	logging.Debugf(ctx, "%s query 1 has err: %v", funcName, err)
 	if err != nil {
-		return nil, fmt.Errorf("%s (check unique): %w", err)
+		return nil, fmt.Errorf("%s (check unique): %w", funcName, err)
 	}
 	if duplicateCount != 0 {
 		return nil, fmt.Errorf("%s (check unique): %w", funcName, errs.ErrAlreadyExists)
@@ -141,6 +141,7 @@ func (r *UserRepository) SetUserAvatar(ctx context.Context, userID int64, avatar
 
 // GetUserByEmail получает данные пользователя из базы по email
 func (r *UserRepository) GetUserByEmail(ctx context.Context, email string) (user *models.UserProfile, err error) {
+	funcName := "GetUserByEmail"
 	query := `
 	SELECT u.u_id, u.nickname, u.email,
 	u.joined_at, u.updated_at,
@@ -148,26 +149,31 @@ func (r *UserRepository) GetUserByEmail(ctx context.Context, email string) (user
 	FROM "user" AS u
 	LEFT JOIN user_uploaded_file AS f ON f.file_id=u.avatar_file_id
 	WHERE u.email=$1;`
+
 	user = &models.UserProfile{}
+	var fileUUID, fileExt string
 	err = r.db.QueryRow(ctx, query, email).Scan(
 		&user.ID,
 		&user.Name,
 		&user.Email,
 		&user.JoinedAt,
 		&user.UpdatedAt,
+		&fileUUID, &fileExt,
 	)
-	logging.Debug(ctx, "GetUserByEmail query has err: ", err)
+	logging.Debugf(ctx, "%s query has err: %v", funcName, err)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, errs.ErrWrongCredentials
 		}
 		return nil, err
 	}
+	user.AvatarImageURL = uploads.JoinFileURL(fileUUID, fileExt, uploads.DefaultAvatarURL)
 	return user, nil
 }
 
 // CreateUser создаёт пользователя (или не создаёт, если повторяются креды)
 func (r *UserRepository) CreateUser(ctx context.Context, user *models.UserRegisterRequest) (newUser *models.UserProfile, err error) {
+	funcName := "CreateUser"
 	newUser = &models.UserProfile{}
 	query := `INSERT INTO "user" (nickname, email, password_hash, csat_poll_dt)
               VALUES ($1, $2, NULL, (CURRENT_TIMESTAMP+$3)) RETURNING u_id, nickname, email, joined_at, updated_at`
@@ -179,17 +185,17 @@ func (r *UserRepository) CreateUser(ctx context.Context, user *models.UserRegist
 		&newUser.JoinedAt,
 		&newUser.UpdatedAt,
 	)
-	logging.Debug(ctx, "CreateUser query has err: ", err)
+	logging.Debugf(ctx, "%s query has err: %v", funcName, err)
 	return newUser, err
 }
 
 // CheckUniqueCredentials проверяет, существуют ли такие логин и email в базе
 func (r *UserRepository) CheckUniqueCredentials(ctx context.Context, nickname string, email string) error {
-	funcName := `CheckUniqueCredentials`
+	funcName := "CheckUniqueCredentials"
 	query := `SELECT nickname, email FROM "user" WHERE nickname = $1 OR email=$2;`
 	var emailCount, nicknameCount int
 	rows, err := r.db.Query(ctx, query, nickname, email)
-	logging.Debug(ctx, funcName, " query has err: ", err)
+	logging.Debugf(ctx, "%s query has err: %v", funcName, err)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil
