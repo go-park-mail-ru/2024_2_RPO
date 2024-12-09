@@ -1,3 +1,4 @@
+sleep 1
 chmod 777 /tmp/redis/redis.sock/
 rm /tmp/redis/redis.sock/*
 
