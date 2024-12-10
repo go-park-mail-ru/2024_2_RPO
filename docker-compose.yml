@@ -33,7 +33,7 @@ services:
         condition: service_started
       redis:
         condition: service_started
-      auth:
+      auth_service:
         condition: service_started
     restart: always
     ports:
@@ -58,7 +58,7 @@ services:
         condition: service_started
       redis:
         condition: service_started
-      auth:
+      auth_service:
         condition: service_started
     restart: always
     ports:
@@ -83,7 +83,7 @@ services:
         condition: service_started
       redis:
         condition: service_started
-      auth:
+      auth_service:
         condition: service_started
     restart: always
     ports:
@@ -180,6 +180,13 @@ services:
 
   nginx:
     image: nginx:alpine
+    depends_on:
+      user_service:
+        condition: service_started
+      board_service:
+        condition: service_started
+      poll_service:
+        condition: service_started
     container_name: nginx_back
     volumes:
       - ./certs/cert.crt:/certs/cert.crt:ro
