@@ -1,5 +1,5 @@
 services:
-  auth:
+  auth_service:
     container_name: auth_service
     build:
       context: .
@@ -20,7 +20,7 @@ services:
       - pumpkin-postgres-socket:/tmp/postgres/postgres.sock
       - pumpkin-all-logs:/pumpkin_logs
 
-  board:
+  board_service:
     container_name: board_service
     build:
       context: .
@@ -45,7 +45,7 @@ services:
       - pumpkin-postgres-socket:/tmp/postgres/postgres.sock
       - pumpkin-all-logs:/pumpkin_logs
 
-  user:
+  user_service:
     container_name: user_service
     build:
       context: .
@@ -70,7 +70,7 @@ services:
       - pumpkin-postgres-socket:/tmp/postgres/postgres.sock
       - pumpkin-all-logs:/pumpkin_logs
 
-  poll:
+  poll_service:
     container_name: poll_service
     build:
       context: .
