@@ -71,7 +71,9 @@ func (r *BoardRepository) GetCardsForBoard(ctx context.Context, boardID int64) (
 		if err != nil {
 			return nil, fmt.Errorf("%s (scan): %w", funcName, err)
 		}
-		card.CoverImageURL = uploads.JoinFileURL(fileUUID, fileExt, uploads.DefaultBackgroundURL)
+		if fileUUID != "" {
+			card.CoverImageURL = uploads.JoinFileURL(fileUUID, fileExt, uploads.DefaultBackgroundURL)
+		}
 		cards = append(cards, card)
 	}
 
@@ -199,7 +201,7 @@ func (r *BoardRepository) GetCardsByID(ctx context.Context, cardIDs []int64) (ca
 	panic("Not implemented")
 	funcName := "GetCardsByID"
 	query := `
-	SELECT 
+	SELECT
 		c.card_id,
 		c.col_id,
 		c.title,

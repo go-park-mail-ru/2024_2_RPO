@@ -71,8 +71,7 @@ func (d *UserDelivery) SetMyAvatar(w http.ResponseWriter, r *http.Request) {
 
 	file, err := uploads.FormFile(r)
 	if err != nil {
-		responses.DoBadResponseAndLog(r, w, 401, "Wrong credentials")
-		logging.Warn(r.Context(), "LoginUser (checking credentials): ", err)
+		responses.ResponseErrorAndLog(r, w, err, funcName)
 		return
 	}
 

@@ -121,22 +121,22 @@ func (r *UserRepository) UpdateUserProfile(ctx context.Context, userID int64, da
 	return
 }
 
-func (r *UserRepository) SetUserAvatar(ctx context.Context, userID int64, avatarFileID int64) (updated *models.UserProfile, err error) {
+func (r *UserRepository) SetUserAvatar(ctx context.Context, userID int64, avatarFileID int64) error {
 	funcName := "SetUserAvatar"
 	query := `
 	UPDATE "user"
 	SET avatar_file_id=$1
-	WHERE u_id=$2
-	RETURNING;`
+	WHERE u_id=$2;
+	`
 	tag, err := r.db.Exec(ctx, query, avatarFileID, userID)
 	logging.Debugf(ctx, "%s query has err: ", funcName, err)
 	if err != nil {
-		return nil, fmt.Errorf("%s (update): %w", funcName, err)
+		return fmt.Errorf("%s (update): %w", funcName, err)
 	}
 	if tag.RowsAffected() == 0 {
-		return nil, fmt.Errorf("%s (update): no rows affected", funcName)
+		return fmt.Errorf("%s (update): no rows affected", funcName)
 	}
-	return updated, nil
+	return nil
 }
 
 // GetUserByEmail получает данные пользователя из базы по email

@@ -50,7 +50,7 @@ func (uc *UserUsecase) SetMyAvatar(ctx context.Context, userID int64, file *mode
 		return nil, fmt.Errorf("%s (upload file): %w", funcName, err)
 	}
 
-	updated, err = uc.userRepo.SetUserAvatar(ctx, userID, fileID)
+	err = uc.userRepo.SetUserAvatar(ctx, userID, fileID)
 
 	return uc.userRepo.GetUserProfile(ctx, userID)
 }
