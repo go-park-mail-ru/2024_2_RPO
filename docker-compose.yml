@@ -175,6 +175,8 @@ services:
     container_name: elastic
     ports:
       - "127.0.0.1:8020:9200"
+    networks:
+      - Pumpkin-network
 
   nginx:
     image: nginx:alpine
