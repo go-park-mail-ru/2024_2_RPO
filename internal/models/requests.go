@@ -12,12 +12,12 @@ type CardPatchRequest struct {
 }
 
 type CardPostRequest struct {
-	Title    *string `json:"title" validation:"required"`
-	ColumnID *int64  `json:"columnId"`
+	Title    *string `json:"title" validate:"required"`
+	ColumnID *int64  `json:"columnId" validate:"required"`
 }
 
 type ColumnRequest struct {
-	NewTitle string `json:"title" validate:"required"`
+	NewTitle string `json:"title" validate:"required,min=3,max=30"`
 }
 
 type AddMemberRequest struct {
@@ -29,7 +29,7 @@ type UpdateMemberRequest struct {
 }
 
 type BoardRequest struct {
-	NewName string `json:"name" validate:"required"`
+	NewName string `json:"name" validate:"required,min=3"`
 }
 
 type LoginRequest struct {
@@ -70,14 +70,14 @@ type CommentRequest struct {
 }
 
 type CheckListFieldPatchRequest struct {
-	Title           *string `json:"title" validate:"min=3,max=50"`
+	Title           *string `json:"title" validate:"min=3"`
 	IsDone          *bool   `json:"isDone"`
 	PreviousFieldID *int64  `json:"previousFieldId"`
 	NextFieldID     *int64  `json:"nextFieldId"`
 }
 
 type CheckListFieldPostRequest struct {
-	Title string `json:"title" validate:"required"`
+	Title *string `json:"title" validate:"required,min=3"`
 }
 
 type CardMoveRequest struct {

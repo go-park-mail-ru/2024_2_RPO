@@ -85,26 +85,6 @@ func (uc *BoardUsecase) GetMembersPermissions(ctx context.Context, userID int64,
 	return permissions, nil
 }
 
-// AddMember добавляет участника на доску с правами "viewer" и возвращает его права
-func (uc *BoardUsecase) AddMember(ctx context.Context, userID int64, boardID int64, addRequest *models.AddMemberRequest) (newMember *models.MemberWithPermissions, err error) {
-	adderMember, err := uc.boardRepository.GetMemberPermissions(ctx, boardID, userID, false)
-	if err != nil {
-		return nil, fmt.Errorf("GetMembersPermissions (permissions): %w", err)
-	}
-	if (adderMember.Role != "admin") && (adderMember.Role != "editor_chief") {
-		return nil, fmt.Errorf("GetMembersPermissions (permissions): %w", errs.ErrNotPermitted)
-	}
-	newMemberProfile, err := uc.boardRepository.GetUserByNickname(ctx, addRequest.MemberNickname)
-	if err != nil {
-		return nil, fmt.Errorf("GetMembersPermissions (get new user ID): %w", err)
-	}
-	newMember, err = uc.boardRepository.AddMember(ctx, boardID, userID, newMemberProfile.ID)
-	if err != nil {
-		return nil, fmt.Errorf("GetMembersPermissions (action): %w", err)
-	}
-	return newMember, nil
-}
-
 // UpdateMemberRole обновляет роль участника и возвращает обновлённые права
 func (uc *BoardUsecase) UpdateMemberRole(ctx context.Context, userID int64, boardID int64, memberID int64, newRole string) (updatedMember *models.MemberWithPermissions, err error) {
 	updaterMember, err := uc.boardRepository.GetMemberPermissions(ctx, boardID, userID, false)

@@ -256,32 +256,6 @@ func (r *BoardRepository) RemoveMember(ctx context.Context, boardID int64, membe
 	return nil
 }
 
-// AddMember добавляет участника на доску с правами "viewer"
-func (r *BoardRepository) AddMember(ctx context.Context, boardID int64, adderID int64, memberUserID int64) (member *models.MemberWithPermissions, err error) {
-	query := `
-	INSERT INTO user_to_board (u_id, board_id, added_at, updated_at,
-	last_visit_at, added_by, updated_by, "role") VALUES (
-	$1, $2, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP,
-	$3, $3, 'viewer'
-	);
-	`
-	member, err = r.GetMemberPermissions(ctx, boardID, memberUserID, false)
-	logging.Debug(ctx, "AddMember query has err: ", err)
-
-	if (err != nil) && (!errors.Is(err, errs.ErrNotPermitted)) {
-		return nil, fmt.Errorf("AddMember (get member): %w", err)
-	}
-	if err == nil {
-		return nil, fmt.Errorf("AddMember (get member): %w", errs.ErrAlreadyExists)
-	}
-	_, err = r.db.Exec(ctx, query, memberUserID, boardID, adderID)
-	if err != nil {
-		return nil, fmt.Errorf("AddMember (insert): %w", err)
-	}
-	member, err = r.GetMemberPermissions(ctx, boardID, memberUserID, true)
-	return member, err
-}
-
 // GetUserByNickname получает данные пользователя из базы по имени
 func (r *BoardRepository) GetUserByNickname(ctx context.Context, nickname string) (user *models.UserProfile, err error) {
 	query := `SELECT u_id, nickname, email, joined_at, updated_at FROM "user"

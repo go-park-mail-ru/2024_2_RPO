@@ -57,7 +57,6 @@ func (d *BoardDelivery) UpdateBoard(w http.ResponseWriter, r *http.Request) {
 
 	boardID, err := requests.GetIDFromRequest(r, "boardID", "board_")
 	if err != nil {
-		logging.Warn(r.Context(), err)
 		responses.DoBadResponseAndLog(r, w, http.StatusBadRequest, "bad request")
 		return
 	}
@@ -68,11 +67,13 @@ func (d *BoardDelivery) UpdateBoard(w http.ResponseWriter, r *http.Request) {
 		responses.DoBadResponseAndLog(r, w, http.StatusBadRequest, "bad request")
 		return
 	}
+
 	newBoard, err := d.boardUsecase.UpdateBoard(r.Context(), userID, boardID, data)
 	if err != nil {
 		responses.ResponseErrorAndLog(r, w, err, funcName)
 		return
 	}
+
 	responses.DoJSONResponse(r, w, newBoard, http.StatusOK)
 }
 
@@ -88,11 +89,13 @@ func (d *BoardDelivery) DeleteBoard(w http.ResponseWriter, r *http.Request) {
 		responses.DoBadResponseAndLog(r, w, http.StatusBadRequest, "bad request")
 		return
 	}
+
 	err = d.boardUsecase.DeleteBoard(r.Context(), userID, boardID)
 	if err != nil {
 		responses.ResponseErrorAndLog(r, w, err, "DeleteBoard")
 		return
 	}
+
 	responses.DoEmptyOkResponse(w)
 }
 
@@ -129,34 +132,6 @@ func (d *BoardDelivery) GetMembersPermissions(w http.ResponseWriter, r *http.Req
 		return
 	}
 	responses.DoJSONResponse(r, w, memberPermissions, http.StatusOK)
-}
-
-// AddMember добавляет участника на доску с правами "viewer" и возвращает его права
-func (d *BoardDelivery) AddMember(w http.ResponseWriter, r *http.Request) {
-	userID, ok := requests.GetUserIDOrFail(w, r, "AddMember")
-	if !ok {
-		return
-	}
-
-	boardID, err := requests.GetIDFromRequest(r, "boardID", "board_")
-	if err != nil {
-		responses.DoBadResponseAndLog(r, w, http.StatusBadRequest, "bad request")
-		return
-	}
-
-	data := models.AddMemberRequest{}
-	err = requests.GetRequestData(r, &data)
-	if err != nil {
-		responses.DoBadResponseAndLog(r, w, http.StatusBadRequest, "bad request")
-		return
-	}
-
-	newMember, err := d.boardUsecase.AddMember(r.Context(), userID, boardID, &data)
-	if err != nil {
-		responses.ResponseErrorAndLog(r, w, err, "AddMember")
-		return
-	}
-	responses.DoJSONResponse(r, w, newMember, 200)
 }
 
 // UpdateMemberRole обновляет роль участника и возвращает обновлённые права
@@ -377,7 +352,6 @@ func (d *BoardDelivery) UpdateColumn(w http.ResponseWriter, r *http.Request) {
 	columnID, err := requests.GetIDFromRequest(r, "columnID", "column_")
 	if err != nil {
 		responses.DoBadResponseAndLog(r, w, http.StatusBadRequest, "bad request")
-		log.Warn("columnID is invalid")
 		return
 	}
 
@@ -616,7 +590,8 @@ func (d *BoardDelivery) AddCheckListField(w http.ResponseWriter, r *http.Request
 	data := &models.CheckListFieldPostRequest{}
 	err = requests.GetRequestData(r, data)
 	if err != nil {
-		responses.DoBadResponseAndLog(r, w, 404, "bad request")
+		responses.DoBadResponseAndLog(r, w, http.StatusBadRequest, "bad request")
+		return
 	}
 
 	cd, err := d.boardUsecase.AddCheckListField(r.Context(), userID, cardID, data)
@@ -645,7 +620,8 @@ func (d *BoardDelivery) UpdateCheckListField(w http.ResponseWriter, r *http.Requ
 	data := &models.CheckListFieldPatchRequest{}
 	err = requests.GetRequestData(r, data)
 	if err != nil {
-		responses.DoBadResponseAndLog(r, w, 404, "bad request")
+		responses.DoBadResponseAndLog(r, w, http.StatusBadRequest, "bad request")
+		return
 	}
 
 	cd, err := d.boardUsecase.UpdateCheckListField(r.Context(), userID, fieldID, data)
@@ -772,6 +748,7 @@ func (d *BoardDelivery) DeleteAttachment(w http.ResponseWriter, r *http.Request)
 	attachmentID, err := requests.GetIDFromRequest(r, "attachmentID", "attachment_")
 	if err != nil {
 		responses.DoBadResponseAndLog(r, w, http.StatusBadRequest, "bad request")
+		return
 	}
 
 	err = d.boardUsecase.DeleteAttachment(r.Context(), userID, attachmentID)
@@ -853,13 +830,13 @@ func (d *BoardDelivery) GetSharedCard(w http.ResponseWriter, r *http.Request) {
 
 	//cardUuid: 4421f872-6945-42ac-b7e4-88842327c76f
 
-	cardUuid, err := requests.GetUUIDFromRequest(r, "cardUuid")
+	cardUUID, err := requests.GetUUIDFromRequest(r, "cardUuid")
 	if err != nil {
 		responses.DoBadResponseAndLog(r, w, http.StatusBadRequest, "bad request")
 		return
 	}
 
-	found, dummy, err := d.boardUsecase.GetSharedCard(r.Context(), userID, cardUuid)
+	found, dummy, err := d.boardUsecase.GetSharedCard(r.Context(), userID, cardUUID)
 	if err != nil {
 		responses.ResponseErrorAndLog(r, w, err, funcName)
 		return
