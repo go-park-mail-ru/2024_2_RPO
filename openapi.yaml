@@ -202,6 +202,9 @@ components:
           type: string
           format: date-time
           example: "2023-10-01T12:34:56Z"
+        myInviteLinkUuid:
+          type: string
+          example: "7acebd60-9441-4a74-84da-36596103f15d"
 
     BoardPut:
       type: object
