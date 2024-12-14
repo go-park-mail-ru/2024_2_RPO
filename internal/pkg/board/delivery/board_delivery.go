@@ -752,7 +752,13 @@ func (d *BoardDelivery) AddAttachment(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	d.boardUsecase.AddAttachment(r.Context(), userID, cardID, file)
+	newAttachment, err := d.boardUsecase.AddAttachment(r.Context(), userID, cardID, file)
+	if err != nil {
+		responses.ResponseErrorAndLog(r, w, err, funcName)
+		return
+	}
+
+	responses.DoJSONResponse(r, w, newAttachment, http.StatusCreated)
 }
 
 // DeleteAttachment удаляет вложение с карточки

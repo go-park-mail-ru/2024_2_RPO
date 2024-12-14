@@ -582,7 +582,7 @@ func (uc *BoardUsecase) AddAttachment(ctx context.Context, userID int64, cardID 
 		return nil, fmt.Errorf("%s (upload): %w", funcName, err)
 	}
 
-	newAttachment, err = uc.boardRepository.AddAttachment(ctx, userID, cardID, fileID)
+	newAttachment, err = uc.boardRepository.AddAttachment(ctx, userID, cardID, fileID, file.OriginalName)
 	if err != nil {
 		return nil, fmt.Errorf("%s (update): %w", funcName, err)
 	}

@@ -92,7 +92,7 @@ type BoardRepo interface {
 	DeleteCheckListField(ctx context.Context, fieldID int64) error
 	SetCardCover(ctx context.Context, userID int64, cardID int64, fileID int64) (updatedCard *models.Card, err error)
 	RemoveCardCover(ctx context.Context, cardID int64) (err error)
-	AddAttachment(ctx context.Context, userID int64, cardID int64, fileID int64) (newAttachment *models.Attachment, err error)
+	AddAttachment(ctx context.Context, userID int64, cardID int64, fileID int64, originalName string) (newAttachment *models.Attachment, err error)
 	RemoveAttachment(ctx context.Context, attachmentID int64) (err error)
 	PullInviteLink(ctx context.Context, userID int64, boardID int64) (link *models.InviteLink, err error)
 	DeleteInviteLink(ctx context.Context, userID int64, boardID int64) (err error)

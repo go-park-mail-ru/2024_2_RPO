@@ -1093,12 +1093,12 @@ func (r *BoardRepository) RemoveCardCover(ctx context.Context, cardID int64) (er
 }
 
 // AddAttachment добавляет файл вложения в карточку
-func (r *BoardRepository) AddAttachment(ctx context.Context, userID int64, cardID int64, fileID int64) (newAttachment *models.Attachment, err error) {
+func (r *BoardRepository) AddAttachment(ctx context.Context, userID int64, cardID int64, fileID int64, originalName string) (newAttachment *models.Attachment, err error) {
 	funcName := "AddAttachment"
 	query := `
 	WITH insert_attachment AS (
 		INSERT INTO card_attachment (card_id, file_id, original_name, attached_by) VALUES ($1, $2, $3, $4)
-		RETURNING attachment_id
+		RETURNING attachment_id, original_name, file_id, created_at
 	),
 	update_card AS (
 		UPDATE "card" SET updated_at=CURRENT_TIMESTAMP WHERE card_id = $1
@@ -1113,19 +1113,23 @@ func (r *BoardRepository) AddAttachment(ctx context.Context, userID int64, cardI
 			WHERE ca.attachment_id=$1
 		)
 	)
-	SELECT uuf.file_uuid, uuf.file_extension
-	FROM card_attachment AS ca
-	JOIN user_uploaded_file AS uuf ON ca.file_id = uuf.file_id
-	WHERE ca.file_id = $2;
+	SELECT a.attachment_id, a.original_name, a.created_at, f.file_uuid, f.file_extension
+	FROM insert_attachment AS a
+	JOIN user_uploaded_file AS f ON a.file_id = f.file_id;
 	`
 
 	newAttachment = &models.Attachment{}
-	row := r.db.QueryRow(ctx, query)
-	err = row.Scan()
+	var fileUUID, fileExt string
+
+	row := r.db.QueryRow(ctx, query, cardID, fileID, originalName, userID)
+	err = row.Scan(&newAttachment.ID, &newAttachment.OriginalName,
+		&newAttachment.CreatedAt, &fileUUID, &fileExt)
 	logging.Debug(ctx, funcName, " query has err: ", err)
 	if err != nil {
 		return nil, fmt.Errorf("%s (query): %w", funcName, err)
 	}
+
+	newAttachment.FileName = uploads.JoinFileURL(fileUUID, fileExt, "unknown-error")
 	return newAttachment, nil
 }
 

@@ -54,6 +54,7 @@ func JoinFilePath(fileUUID string, fileExtension string) string {
 // CompareFiles смотрит, равен ли данный файл какому-нибудь из существующих
 // загруженных файлов. Если да, возвращает fileUUID эквивалентного файла
 func CompareFiles(fileNames []string, fileIDs []int64, newFile *models.UploadedFile) (fileID *int64, err error) {
+	fmt.Printf("dedupe files: fileNames=%#v\n", fileNames)
 	for idx, filePath := range fileNames {
 		// Читаем существующий файл
 		file, err := os.Open(filepath.Join(config.CurrentConfig.UploadsDir, filePath))
@@ -162,8 +163,8 @@ func RegisterFile(ctx context.Context, db pgxiface.PgxIface, file *models.Upload
 	funcName := "RegisterFile"
 	query := `
 	INSERT INTO user_uploaded_file
-	(file_extension, "size")
-	VALUES ($1, $2)
+	(file_extension, "size", file_hash)
+	VALUES ($1, $2, $3)
 	RETURNING file_id, file_uuid::text;
 	`
 
@@ -171,7 +172,7 @@ func RegisterFile(ctx context.Context, db pgxiface.PgxIface, file *models.Upload
 		return 0, "", fmt.Errorf("%s: file should not be nil", funcName)
 	}
 	fileExt := ExtractFileExtension(file.OriginalName)
-	row := db.QueryRow(ctx, query, fileExt, len(file.Content))
+	row := db.QueryRow(ctx, query, fileExt, len(file.Content), file.Hash)
 
 	err = row.Scan(&fileID, &fileUUID)
 	logging.Debugf(ctx, "%s query has err: ", funcName, err)
