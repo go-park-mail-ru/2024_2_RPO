@@ -1,0 +1,25 @@
+name: Production Deployment
+on:
+  push:
+    branches: 
+        - staging
+  pull_request:
+    branches:
+        - staging
+jobs:
+  linter:
+    runs-on: ubuntu-latest
+    steps:
+      -
+        name: Checkout staging
+        uses: actions/checkout@v4
+      -
+        name: Install Go
+        uses: actions/setup-go@v5
+        with:
+           go-version: '1.17'
+      -
+        name: Install Go
+        uses: actions/setup-go@v5
+        with:
+           go-version: '1.17'
