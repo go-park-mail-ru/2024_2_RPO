@@ -35,6 +35,21 @@ func (m *MockPollUsecase) EXPECT() *MockPollUsecaseMockRecorder {
 	return m.recorder
 }
 
+// GetPollQuestions mocks base method.
+func (m *MockPollUsecase) GetPollQuestions(ctx context.Context, userID int64) ([]models.PollQuestion, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetPollQuestions", ctx, userID)
+	ret0, _ := ret[0].([]models.PollQuestion)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetPollQuestions indicates an expected call of GetPollQuestions.
+func (mr *MockPollUsecaseMockRecorder) GetPollQuestions(ctx, userID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPollQuestions", reflect.TypeOf((*MockPollUsecase)(nil).GetPollQuestions), ctx, userID)
+}
+
 // GetPollResults mocks base method.
 func (m *MockPollUsecase) GetPollResults(ctx context.Context) (*models.PollResults, error) {
 	m.ctrl.T.Helper()
@@ -87,6 +102,21 @@ func (m *MockPollRepo) EXPECT() *MockPollRepoMockRecorder {
 	return m.recorder
 }
 
+// GetPollQuestions mocks base method.
+func (m *MockPollRepo) GetPollQuestions(ctx context.Context) ([]models.PollQuestion, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetPollQuestions", ctx)
+	ret0, _ := ret[0].([]models.PollQuestion)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetPollQuestions indicates an expected call of GetPollQuestions.
+func (mr *MockPollRepoMockRecorder) GetPollQuestions(ctx interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPollQuestions", reflect.TypeOf((*MockPollRepo)(nil).GetPollQuestions), ctx)
+}
+
 // GetRatingResults mocks base method.
 func (m *MockPollRepo) GetRatingResults(ctx context.Context) ([]models.RatingResults, error) {
 	m.ctrl.T.Helper()
@@ -115,21 +145,6 @@ func (m *MockPollRepo) GetTextResults(ctx context.Context) ([]models.AnswerResul
 func (mr *MockPollRepoMockRecorder) GetTextResults(ctx interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTextResults", reflect.TypeOf((*MockPollRepo)(nil).GetTextResults), ctx)
-}
-
-// PickPollQuestions mocks base method.
-func (m *MockPollRepo) PickPollQuestions(ctx context.Context) ([]models.PollQuestion, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "PickPollQuestions", ctx)
-	ret0, _ := ret[0].([]models.PollQuestion)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// PickPollQuestions indicates an expected call of PickPollQuestions.
-func (mr *MockPollRepoMockRecorder) PickPollQuestions(ctx interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PickPollQuestions", reflect.TypeOf((*MockPollRepo)(nil).PickPollQuestions), ctx)
 }
 
 // SetNextPollDT mocks base method.

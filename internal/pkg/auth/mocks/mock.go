@@ -49,10 +49,10 @@ func (mr *MockAuthUsecaseMockRecorder) ChangePassword(ctx, oldPassword, newPassw
 }
 
 // CheckSession mocks base method.
-func (m *MockAuthUsecase) CheckSession(ctx context.Context, sessionID string) (int, error) {
+func (m *MockAuthUsecase) CheckSession(ctx context.Context, sessionID string) (int64, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CheckSession", ctx, sessionID)
-	ret0, _ := ret[0].(int)
+	ret0, _ := ret[0].(int64)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -78,18 +78,18 @@ func (mr *MockAuthUsecaseMockRecorder) CreateSession(ctx, userID, password inter
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateSession", reflect.TypeOf((*MockAuthUsecase)(nil).CreateSession), ctx, userID, password)
 }
 
-// KillSession mocks base method.
-func (m *MockAuthUsecase) KillSession(ctx context.Context, sessionID string) error {
+// RemoveSession mocks base method.
+func (m *MockAuthUsecase) RemoveSession(ctx context.Context, sessionID string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "KillSession", ctx, sessionID)
+	ret := m.ctrl.Call(m, "RemoveSession", ctx, sessionID)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// KillSession indicates an expected call of KillSession.
-func (mr *MockAuthUsecaseMockRecorder) KillSession(ctx, sessionID interface{}) *gomock.Call {
+// RemoveSession indicates an expected call of RemoveSession.
+func (mr *MockAuthUsecaseMockRecorder) RemoveSession(ctx, sessionID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "KillSession", reflect.TypeOf((*MockAuthUsecase)(nil).KillSession), ctx, sessionID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveSession", reflect.TypeOf((*MockAuthUsecase)(nil).RemoveSession), ctx, sessionID)
 }
 
 // MockAuthRepo is a mock of AuthRepo interface.
@@ -116,10 +116,10 @@ func (m *MockAuthRepo) EXPECT() *MockAuthRepoMockRecorder {
 }
 
 // CheckSession mocks base method.
-func (m *MockAuthRepo) CheckSession(ctx context.Context, sessionID string) (int, error) {
+func (m *MockAuthRepo) CheckSession(ctx context.Context, sessionID string) (int64, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CheckSession", ctx, sessionID)
-	ret0, _ := ret[0].(int)
+	ret0, _ := ret[0].(int64)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -128,6 +128,20 @@ func (m *MockAuthRepo) CheckSession(ctx context.Context, sessionID string) (int,
 func (mr *MockAuthRepoMockRecorder) CheckSession(ctx, sessionID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CheckSession", reflect.TypeOf((*MockAuthRepo)(nil).CheckSession), ctx, sessionID)
+}
+
+// CreateSession mocks base method.
+func (m *MockAuthRepo) CreateSession(ctx context.Context, cookie string, userID int64) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreateSession", ctx, cookie, userID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// CreateSession indicates an expected call of CreateSession.
+func (mr *MockAuthRepoMockRecorder) CreateSession(ctx, cookie, userID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateSession", reflect.TypeOf((*MockAuthRepo)(nil).CreateSession), ctx, cookie, userID)
 }
 
 // DisplaceUserSessions mocks base method.
@@ -145,7 +159,7 @@ func (mr *MockAuthRepoMockRecorder) DisplaceUserSessions(ctx, sessionID, userID 
 }
 
 // GetUserPasswordHash mocks base method.
-func (m *MockAuthRepo) GetUserPasswordHash(ctx context.Context, userID int) (*string, error) {
+func (m *MockAuthRepo) GetUserPasswordHash(ctx context.Context, userID int64) (*string, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetUserPasswordHash", ctx, userID)
 	ret0, _ := ret[0].(*string)
@@ -159,36 +173,22 @@ func (mr *MockAuthRepoMockRecorder) GetUserPasswordHash(ctx, userID interface{})
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUserPasswordHash", reflect.TypeOf((*MockAuthRepo)(nil).GetUserPasswordHash), ctx, userID)
 }
 
-// KillSessionRedis mocks base method.
-func (m *MockAuthRepo) KillSessionRedis(ctx context.Context, sessionID string) error {
+// RemoveSession mocks base method.
+func (m *MockAuthRepo) RemoveSession(ctx context.Context, sessionID string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "KillSessionRedis", ctx, sessionID)
+	ret := m.ctrl.Call(m, "RemoveSession", ctx, sessionID)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// KillSessionRedis indicates an expected call of KillSessionRedis.
-func (mr *MockAuthRepoMockRecorder) KillSessionRedis(ctx, sessionID interface{}) *gomock.Call {
+// RemoveSession indicates an expected call of RemoveSession.
+func (mr *MockAuthRepoMockRecorder) RemoveSession(ctx, sessionID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "KillSessionRedis", reflect.TypeOf((*MockAuthRepo)(nil).KillSessionRedis), ctx, sessionID)
-}
-
-// RegisterSessionRedis mocks base method.
-func (m *MockAuthRepo) RegisterSessionRedis(ctx context.Context, cookie string, userID int) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "RegisterSessionRedis", ctx, cookie, userID)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// RegisterSessionRedis indicates an expected call of RegisterSessionRedis.
-func (mr *MockAuthRepoMockRecorder) RegisterSessionRedis(ctx, cookie, userID interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RegisterSessionRedis", reflect.TypeOf((*MockAuthRepo)(nil).RegisterSessionRedis), ctx, cookie, userID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveSession", reflect.TypeOf((*MockAuthRepo)(nil).RemoveSession), ctx, sessionID)
 }
 
 // SetNewPasswordHash mocks base method.
-func (m *MockAuthRepo) SetNewPasswordHash(ctx context.Context, userID int, newPasswordHash string) error {
+func (m *MockAuthRepo) SetNewPasswordHash(ctx context.Context, userID int64, newPasswordHash string) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SetNewPasswordHash", ctx, userID, newPasswordHash)
 	ret0, _ := ret[0].(error)

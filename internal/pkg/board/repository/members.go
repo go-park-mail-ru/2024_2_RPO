@@ -299,6 +299,9 @@ func (r *BoardRepository) GetMemberFromCard(ctx context.Context, userID int64, c
 	)
 	logging.Debug(ctx, funcName, " query has err: ", err)
 	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return "", 0, fmt.Errorf("%s (query): %w", funcName, errs.ErrNotFound)
+		}
 		return "", 0, fmt.Errorf("%s (query): %w", funcName, err)
 	}
 	return role, boardID, nil
@@ -928,7 +931,7 @@ func (r *BoardRepository) CreateCheckListField(ctx context.Context, cardID int64
 	newField = &models.CheckListField{}
 	row := r.db.QueryRow(ctx, query, cardID, field.Title)
 	err = row.Scan(&newField.ID) //&newField.Title, &newField.CreatedAt, &newField.IsDone,
-	newField.Title = field.Title
+	newField.Title = *field.Title
 
 	logging.Debug(ctx, funcName, " query has err: ", err)
 	if err != nil {
@@ -1146,15 +1149,15 @@ func (r *BoardRepository) RemoveAttachment(ctx context.Context, attachmentID int
 func (r *BoardRepository) PullInviteLink(ctx context.Context, userID int64, boardID int64) (link *models.InviteLink, err error) {
 	funcName := "PullInviteLink"
 	query := `
-	WITH update_invite_link AS (
-		UPDATE user_to_board SET invite_uuid = uuid_generate_v4() WHERE u_id = $1 AND board_id = $2
-	)
-	SELECT;
+	UPDATE user_to_board
+	SET invite_link_uuid = uuid_generate_v4()
+	WHERE u_id = $1 AND board_id = $2
+	RETURNING invite_link_uuid;
 	`
 
 	link = &models.InviteLink{}
-	row := r.db.QueryRow(ctx, query)
-	err = row.Scan()
+	row := r.db.QueryRow(ctx, query, userID, boardID)
+	err = row.Scan(&link.InviteLinkUUID)
 	logging.Debug(ctx, funcName, " query has err: ", err)
 	if err != nil {
 		return nil, fmt.Errorf("%s (query): %w", funcName, err)
@@ -1167,7 +1170,7 @@ func (r *BoardRepository) DeleteInviteLink(ctx context.Context, userID int64, bo
 	funcName := "DeleteInviteLink"
 	query := `
 	WITH delete_invite_link AS (
-		UPDATE user_to_board SET invite_uuid = NULL WHERE u_id = $1 AND board_id = $2
+		UPDATE user_to_board SET invite_link_uuid = NULL WHERE u_id = $1 AND board_id = $2
 	)
 	SELECT;
 	`
@@ -1187,21 +1190,30 @@ func (r *BoardRepository) DeleteInviteLink(ctx context.Context, userID int64, bo
 func (r *BoardRepository) FetchInvite(ctx context.Context, inviteUUID string) (board *models.Board, err error) {
 	funcName := "FetchInvite"
 	query := `
-		SELECT b.board_id, b.name, b.created_at, b.updated_at, ub.last_visit_at,
+		SELECT b.board_id, b.name, b.created_at, b.updated_at,
 		COALESCE(f.file_uuid::text, ''), COALESCE(f.file_extension, '')
-		FROM user_to_board AS utb
-		JOIN board AS b ON utb.board_id = b.board_id
+		FROM user_to_board AS ub
+		JOIN board AS b ON ub.board_id = b.board_id
 		LEFT JOIN user_uploaded_file AS f ON f.file_id=b.background_image_id
-		WHERE utb.invite_uuid = $1;
+		WHERE ub.invite_link_uuid = $1::UUID;
 	`
 
 	board = &models.Board{}
-	row := r.db.QueryRow(ctx, query)
-	err = row.Scan()
+	var fileUUID, fileExt string
+	row := r.db.QueryRow(ctx, query, inviteUUID)
+	err = row.Scan(
+		&board.ID,
+		&board.Name,
+		&board.CreatedAt,
+		&board.UpdatedAt,
+		&fileUUID,
+		&fileExt,
+	)
 	logging.Debug(ctx, funcName, " query has err: ", err)
 	if err != nil {
 		return nil, fmt.Errorf("%s (query): %w", funcName, err)
 	}
+	board.BackgroundImageURL = uploads.JoinFileURL(fileUUID, fileExt, uploads.DefaultBackgroundURL)
 	return board, nil
 }
 

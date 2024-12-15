@@ -13,7 +13,6 @@ type BoardUsecase interface {
 	DeleteBoard(ctx context.Context, userID int64, boardID int64) error
 	GetMyBoards(ctx context.Context, userID int64) (boards []models.Board, err error)
 	GetMembersPermissions(ctx context.Context, userID int64, boardID int64) (data []models.MemberWithPermissions, err error)
-	AddMember(ctx context.Context, userID int64, boardID int64, addRequest *models.AddMemberRequest) (newMember *models.MemberWithPermissions, err error)
 	UpdateMemberRole(ctx context.Context, userID int64, boardID int64, memberID int64, newRole string) (updatedMember *models.MemberWithPermissions, err error)
 	RemoveMember(ctx context.Context, userID int64, boardID int64, memberID int64) error
 	GetBoardContent(ctx context.Context, userID int64, boardID int64) (content *models.BoardContent, err error)
@@ -44,6 +43,7 @@ type BoardUsecase interface {
 	FetchInvite(ctx context.Context, inviteUUID string) (board *models.Board, err error)
 	AcceptInvite(ctx context.Context, userID int64, inviteUUID string) (board *models.Board, err error)
 	GetCardDetails(ctx context.Context, userID int64, cardID int64) (details *models.CardDetails, err error)
+	GetCardDetailsUnauthorized(ctx context.Context, cardID int64) (details *models.CardDetails, err error)
 }
 
 type BoardRepo interface {
@@ -65,7 +65,6 @@ type BoardRepo interface {
 	GetMembersWithPermissions(ctx context.Context, boardID int64, userID int64) (members []models.MemberWithPermissions, err error)
 	SetMemberRole(ctx context.Context, userID int64, boardID int64, memberUserID int64, newRole string) (member *models.MemberWithPermissions, err error)
 	RemoveMember(ctx context.Context, boardID int64, memberUserID int64) (err error)
-	AddMember(ctx context.Context, boardID int64, adderID int64, memberUserID int64) (member *models.MemberWithPermissions, err error)
 	GetUserByNickname(ctx context.Context, nickname string) (user *models.UserProfile, err error)
 	SetBoardBackground(ctx context.Context, userID int64, boardID int64, fileID int64) (newBoard *models.Board, err error)
 	GetMemberFromCard(ctx context.Context, userID int64, cardID int64) (role string, boardID int64, err error)
@@ -98,6 +97,7 @@ type BoardRepo interface {
 	DeleteInviteLink(ctx context.Context, userID int64, boardID int64) (err error)
 	FetchInvite(ctx context.Context, inviteUUID string) (board *models.Board, err error)
 	AcceptInvite(ctx context.Context, userID int64, boardID int64, invitedUserID int64, inviteUUID string) (board *models.Board, err error)
+	GetSharedCardInfo(ctx context.Context, cardUUID string) (cardID int64, boardID int64, err error)
 	DeduplicateFile(ctx context.Context, file *models.UploadedFile) (fileNames []string, fileIDs []int64, err error)
 	RegisterFile(ctx context.Context, file *models.UploadedFile) (fileID int64, fileUUID string, err error)
 }

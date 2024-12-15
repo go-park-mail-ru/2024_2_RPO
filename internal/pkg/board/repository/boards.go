@@ -57,9 +57,10 @@ func (r *BoardRepository) GetBoard(ctx context.Context, boardID int64, userID in
         b.name,
         b.created_at,
         b.updated_at,
-        ub.last_visit_at,
+        COALESCE(ub.last_visit_at, CURRENT_TIMESTAMP),
         COALESCE(file.file_uuid::text,''),
-        COALESCE(file.file_extension,'')
+        COALESCE(file.file_extension,''),
+		ub.invite_link_uuid::text
     FROM board AS b
     LEFT JOIN user_to_board AS ub ON ub.board_id = b.board_id AND ub.u_id = $1
     LEFT JOIN user_uploaded_file AS file ON file.file_id=b.background_image_id
@@ -76,6 +77,7 @@ func (r *BoardRepository) GetBoard(ctx context.Context, boardID int64, userID in
 		&board.LastVisitAt,
 		&fileUUID,
 		&fileExtension,
+		&board.MyInviteUUID,
 	)
 	logging.Debug(ctx, "GetBoard query has err: ", err)
 	if err != nil {
@@ -137,7 +139,7 @@ func (r *BoardRepository) GetBoardsForUser(ctx context.Context, userID int64) (b
 	query := `
 		SELECT b.board_id, b.name, b.created_at, b.updated_at,
 		COALESCE(f.file_uuid::text, ''),
-		COALESCE(f.file_extension, '')
+		COALESCE(f.file_extension, ''), ub.invite_link_uuid
 		FROM user_to_board AS ub
 		JOIN board AS b ON b.board_id = ub.board_id
 		LEFT JOIN user_uploaded_file AS f ON f.file_id=b.background_image_id
@@ -164,6 +166,7 @@ func (r *BoardRepository) GetBoardsForUser(ctx context.Context, userID int64) (b
 			&board.UpdatedAt,
 			&fileUUID,
 			&fileExtension,
+			&board.MyInviteUUID,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("GetBoardsForUser (for rows): %w", err)

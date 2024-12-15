@@ -600,9 +600,77 @@ func (uc *BoardUsecase) MoveColumn(ctx context.Context, userID int64, columnID i
 	panic("not implemented")
 }
 
+// GetCardDetailsUnauthorized получает подробности карточки даже без авторизации
+func (uc *BoardUsecase) GetCardDetailsUnauthorized(ctx context.Context, cardID int64) (details *models.CardDetails, err error) {
+	funcName := "GetCardDetailsUnauthorized"
+	assignedUsers, err := uc.boardRepository.GetCardAssignedUsers(ctx, cardID)
+	if err != nil {
+		return nil, fmt.Errorf("%s (assigned): %w", funcName, err)
+	}
+
+	attachments, err := uc.boardRepository.GetCardAttachments(ctx, cardID)
+	if err != nil {
+		return nil, fmt.Errorf("%s (attachments): %w", funcName, err)
+	}
+
+	checkList, err := uc.boardRepository.GetCardCheckList(ctx, cardID)
+	if err != nil {
+		return nil, fmt.Errorf("%s (checklist): %w", funcName, err)
+	}
+
+	comments, err := uc.boardRepository.GetCardComments(ctx, cardID)
+	if err != nil {
+		return nil, fmt.Errorf("%s (comments): %w", funcName, err)
+	}
+
+	//TODO убрать это позорище
+	card, err := uc.boardRepository.UpdateCard(ctx, cardID, models.CardPatchRequest{})
+	if err != nil {
+		return nil, fmt.Errorf("%s (card): %w", funcName, err)
+	}
+
+	return &models.CardDetails{
+		Attachments:   attachments,
+		CheckList:     checkList,
+		Comments:      comments,
+		AssignedUsers: assignedUsers,
+		Card:          card,
+	}, nil
+}
+
 // GetSharedCard даёт информацию о карточке, которой поделились по ссылке
-func (uc *BoardUsecase) GetSharedCard(ctx context.Context, userID int64, cardUuid string) (found *models.SharedCardFoundResponse, dummy *models.SharedCardDummyResponse, err error) {
-	panic("not implemented")
+func (uc *BoardUsecase) GetSharedCard(ctx context.Context, userID int64, cardUUID string) (found *models.SharedCardFoundResponse, dummy *models.SharedCardDummyResponse, err error) {
+	funcName := "GetSharedCard"
+
+	cardID, boardID, err := uc.boardRepository.GetSharedCardInfo(ctx, cardUUID)
+	if err != nil {
+		return nil, nil, fmt.Errorf("%s (get found): %w", funcName, err)
+	}
+	if found != nil {
+		return found, nil, nil
+	}
+
+	_, _, err = uc.boardRepository.GetMemberFromCard(ctx, userID, cardID)
+	if err != nil {
+		if !errors.Is(err, errs.ErrNotFound) {
+			return nil, nil, fmt.Errorf("%s (check): %w", funcName, err)
+		}
+	} else {
+		found = &models.SharedCardFoundResponse{BoardID: boardID, CardID: cardID}
+		return found, nil, nil
+	}
+
+	cardDetails, err := uc.GetCardDetailsUnauthorized(ctx, cardID)
+	if err != nil {
+		return nil, nil, fmt.Errorf("%s (details): %w", funcName, err)
+	}
+
+	board, err := uc.boardRepository.GetBoard(ctx, boardID, -1)
+
+	return nil, &models.SharedCardDummyResponse{
+		Card:  cardDetails,
+		Board: board,
+	}, nil
 }
 
 // RaiseInviteLink устанавливает ссылку-приглашение на доску
@@ -662,46 +730,12 @@ func (uc *BoardUsecase) AcceptInvite(ctx context.Context, userID int64, inviteUU
 }
 
 // GetCardDetails возвращает подробное содержание карточки
-func (d *BoardUsecase) GetCardDetails(ctx context.Context, userID int64, cardID int64) (details *models.CardDetails, err error) {
+func (uc *BoardUsecase) GetCardDetails(ctx context.Context, userID int64, cardID int64) (details *models.CardDetails, err error) {
 	funcName := "GetCardDetails"
-	_, _, err = d.boardRepository.GetMemberFromCard(ctx, userID, cardID)
+	_, _, err = uc.boardRepository.GetMemberFromCard(ctx, userID, cardID)
 	if err != nil {
 		return nil, fmt.Errorf("%s: %w", funcName, err)
 	}
 
-	assignedUsers, err := d.boardRepository.GetCardAssignedUsers(ctx, cardID)
-	if err != nil {
-		return nil, fmt.Errorf("%s (assigned): %w", funcName, err)
-	}
-
-	attachments, err := d.boardRepository.GetCardAttachments(ctx, cardID)
-	if err != nil {
-		return nil, fmt.Errorf("%s (attachments): %w", funcName, err)
-	}
-
-	checkList, err := d.boardRepository.GetCardCheckList(ctx, cardID)
-	if err != nil {
-		return nil, fmt.Errorf("%s (checklist): %w", funcName, err)
-	}
-
-	comments, err := d.boardRepository.GetCardComments(ctx, cardID)
-	if err != nil {
-		return nil, fmt.Errorf("%s (comments): %w", funcName, err)
-	}
-
-	//TODO убрать это позорище
-	card, err := d.boardRepository.UpdateCard(ctx, cardID, models.CardPatchRequest{})
-	if err != nil {
-		return nil, fmt.Errorf("%s (card): %w", funcName, err)
-	}
-
-	fmt.Printf("%#v\n", card)
-
-	return &models.CardDetails{
-		Attachments:   attachments,
-		CheckList:     checkList,
-		Comments:      comments,
-		AssignedUsers: assignedUsers,
-		Card:          card,
-	}, nil
+	return uc.GetCardDetailsUnauthorized(ctx, cardID)
 }

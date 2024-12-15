@@ -3,6 +3,7 @@ package delivery
 import (
 	"RPO_back/internal/models"
 	"RPO_back/internal/pkg/board"
+	"RPO_back/internal/pkg/middleware/session"
 	"RPO_back/internal/pkg/utils/logging"
 	"RPO_back/internal/pkg/utils/requests"
 	"RPO_back/internal/pkg/utils/responses"
@@ -823,14 +824,12 @@ func (d *BoardDelivery) MoveColumn(w http.ResponseWriter, r *http.Request) {
 // GetSharedCard даёт информацию о карточке, которой поделились по ссылке
 func (d *BoardDelivery) GetSharedCard(w http.ResponseWriter, r *http.Request) {
 	funcName := "GetSharedCard"
-	userID, ok := requests.GetUserIDOrFail(w, r, funcName)
+	userID, ok := session.UserIDFromContext(r.Context())
 	if !ok {
-		return
+		userID = -1
 	}
 
-	//cardUuid: 4421f872-6945-42ac-b7e4-88842327c76f
-
-	cardUUID, err := requests.GetUUIDFromRequest(r, "cardUuid")
+	cardUUID, err := requests.GetUUIDFromRequest(r, "cardUUID")
 	if err != nil {
 		responses.DoBadResponseAndLog(r, w, http.StatusBadRequest, "bad request")
 		return

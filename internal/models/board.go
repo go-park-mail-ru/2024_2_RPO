@@ -9,6 +9,7 @@ type Board struct {
 	CreatedAt          time.Time `json:"createdAt"`
 	UpdatedAt          time.Time `json:"updatedAt"`
 	LastVisitAt        time.Time `json:"lastVisitAt"`
+	MyInviteUUID       *string   `json:"myInviteLinkUuid"`
 }
 
 // MemberWithPermissions - пользователь с правами (в контексте доски)

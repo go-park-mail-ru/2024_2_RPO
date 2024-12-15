@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"RPO_back/internal/errs"
 	"RPO_back/internal/models"
 	"RPO_back/internal/pkg/utils/logging"
 	"RPO_back/internal/pkg/utils/uploads"
@@ -130,7 +131,7 @@ func (r *BoardRepository) UpdateCard(ctx context.Context, cardID int64, data mod
 		is_done = COALESCE($4, is_done),
 		updated_at = CURRENT_TIMESTAMP
 		WHERE card_id=$1
-		RETURNING card_id, col_id, title, created_at, updated_at, deadline, is_done
+		RETURNING card_id, col_id, title, created_at, updated_at, deadline, is_done, card_uuid
 	), update_board AS (
 		UPDATE board
 		SET updated_at=CURRENT_TIMESTAMP
@@ -153,7 +154,8 @@ func (r *BoardRepository) UpdateCard(ctx context.Context, cardID int64, data mod
 		(SELECT (NOT COUNT(*)=0) FROM checklist_field AS f WHERE f.card_id=c.card_id),
 		(SELECT (NOT COUNT(*)=0) FROM card_attachment AS f WHERE f.card_id=c.card_id),
 		(SELECT (NOT COUNT(*)=0) FROM card_user_assignment AS f WHERE f.card_id=c.card_id),
-		(SELECT (NOT COUNT(*)=0) FROM card_comment AS f WHERE f.card_id=c.card_id)
+		(SELECT (NOT COUNT(*)=0) FROM card_comment AS f WHERE f.card_id=c.card_id),
+		c.card_uuid::text
 	FROM update_card AS c;
 	`
 	updateCard = &models.Card{}
@@ -172,6 +174,7 @@ func (r *BoardRepository) UpdateCard(ctx context.Context, cardID int64, data mod
 		&updateCard.HasAttachments,
 		&updateCard.HasAssignedUsers,
 		&updateCard.HasComments,
+		&updateCard.UUID,
 	)
 	logging.Debug(ctx, funcName, " query has err: ", err)
 	if err != nil {
@@ -224,4 +227,27 @@ func (r *BoardRepository) GetCardsByID(ctx context.Context, cardIDs []int64) (ca
 	fmt.Println(query, funcName)
 
 	return cards, nil
+}
+
+func (r *BoardRepository) GetSharedCardInfo(ctx context.Context, cardUUID string) (cardID int64, boardID int64, err error) {
+	funcName := "GetSharedCardInfo"
+	query := `
+	SELECT col.board_id, c.card_id
+	FROM card AS c
+	JOIN kanban_column AS col ON col.col_id=c.col_id
+	WHERE c.card_uuid=$1::uuid;
+	`
+
+	row := r.db.QueryRow(ctx, query, cardUUID)
+	err = row.Scan(&boardID, &cardID)
+	logging.Debug(ctx, funcName, " query has err: ", err)
+
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return 0, 0, fmt.Errorf("%s (query): %w", funcName, errs.ErrNotFound)
+		}
+		return 0, 0, fmt.Errorf("%s (query): %w", funcName, err)
+	}
+
+	return cardID, boardID, nil
 }
