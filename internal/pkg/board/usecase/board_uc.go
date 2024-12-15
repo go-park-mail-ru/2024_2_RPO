@@ -18,12 +18,14 @@ var roleLevels = map[string]int{
 }
 
 type BoardUsecase struct {
-	boardRepository board.BoardRepo
+	boardRepository        board.BoardRepo
+	boardElasticRepository board.BoardElasticRepo
 }
 
-func CreateBoardUsecase(boardRepository board.BoardRepo) *BoardUsecase {
+func CreateBoardUsecase(boardRepository board.BoardRepo, boardElasticRepository board.BoardElasticRepo) *BoardUsecase {
 	return &BoardUsecase{
-		boardRepository: boardRepository,
+		boardRepository:        boardRepository,
+		boardElasticRepository: boardElasticRepository,
 	}
 }
 
@@ -202,6 +204,11 @@ func (uc *BoardUsecase) CreateNewCard(ctx context.Context, userID int64, boardID
 		return nil, fmt.Errorf("CreateNewCard (create): %w", err)
 	}
 
+	err = uc.boardElasticRepository.PutCard(ctx, boardID, card.ID, card.Title)
+	if err != nil {
+		return nil, fmt.Errorf("CreateNewCard (elastic put): %w", err)
+	}
+
 	return &models.Card{
 		ID:        card.ID,
 		Title:     card.Title,
@@ -232,6 +239,16 @@ func (uc *BoardUsecase) UpdateCard(ctx context.Context, userID int64, cardID int
 		return nil, fmt.Errorf("UpdateCard (update): %w", err)
 	}
 
+	_, boardID, err := uc.boardRepository.GetMemberFromCard(ctx, userID, cardID)
+	if err != nil {
+		return nil, fmt.Errorf("UpdateCard (getMemberFromCard): %w", err)
+	}
+
+	err = uc.boardElasticRepository.PutCard(ctx, boardID, updatedCard.ID, updatedCard.Title)
+	if err != nil {
+		return nil, fmt.Errorf("UpdateCard (elastic update): %w", err)
+	}
+
 	return &models.Card{
 		ID:        updatedCard.ID,
 		Title:     updatedCard.Title,
@@ -256,7 +273,21 @@ func (uc *BoardUsecase) DeleteCard(ctx context.Context, userID int64, cardID int
 		return fmt.Errorf("DeleteCard (delete): %w", err)
 	}
 
+	_, boardID, err := uc.boardRepository.GetMemberFromCard(ctx, userID, cardID)
+	if err != nil {
+		return fmt.Errorf("DeleteCard (getMemberFromCard): %w", err)
+	}
+
+	err = uc.boardElasticRepository.DeleteCard(ctx, boardID, cardID)
+	if err != nil {
+		return fmt.Errorf("DeleteCard (elastic delete): %w", err)
+	}
+
 	return nil
+}
+
+func (uc *BoardUsecase) SearchCards(ctx context.Context, userID int64, query string) ([]int64, error) {
+	panic("Not implemented")
 }
 
 // CreateColumn создаёт колонку канбана на доске и возвращает её

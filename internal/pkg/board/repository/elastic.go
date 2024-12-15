@@ -4,7 +4,6 @@ import (
 	"RPO_back/internal/models"
 	"RPO_back/internal/pkg/utils/logging"
 	"context"
-	"encoding/json"
 	"fmt"
 
 	"github.com/olivere/elastic/v7"
@@ -46,30 +45,13 @@ func (be *BoardElasticRepository) PutCard(ctx context.Context, boardID int64, ca
 	return nil
 }
 
-func (be *BoardElasticRepository) Search(ctx context.Context, query string) ([]int64, error) {
+func (be *BoardElasticRepository) Search(ctx context.Context, userID int64, boardID int64, query string) ([]models.ElasticCard, error) {
 	funcName := "Search"
 	if len(query) < ElasticSearchValueMinLength {
 		return nil, fmt.Errorf("%s: query must be at least %d characters", funcName, ElasticSearchValueMinLength)
 	}
 
-	searchQuery := elastic.NewMatchQuery("cardText", query)
-	searchResult, err := be.elastic.Search().Index(ElasticIdxName).Query(searchQuery).Do(ctx)
-	if err != nil {
-		logging.Error(ctx, fmt.Sprintf("%s: search error: %v", funcName, err))
-		return nil, fmt.Errorf("%s: search operation failed", funcName)
-	}
-
-	var cardIDs []int64
-	for _, hit := range searchResult.Hits.Hits {
-		var doc models.ElasticCard
-		if err := json.Unmarshal(hit.Source, &doc); err != nil {
-			logging.Warn(ctx, fmt.Sprintf("%s: failed to unmarshal hit: %v", funcName, err))
-			continue
-		}
-		cardIDs = append(cardIDs, doc.CardID)
-	}
-
-	return cardIDs, nil
+	panic("Not implemented")
 }
 
 func (be *BoardElasticRepository) DeleteCard(ctx context.Context, boardID, cardID int64) (err error) {

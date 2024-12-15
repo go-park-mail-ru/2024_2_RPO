@@ -104,6 +104,6 @@ type BoardRepo interface {
 
 type BoardElasticRepo interface {
 	PutCard(ctx context.Context, boardID int64, cardID int64, cardText string) (err error)
-	Search(ctx context.Context, query string) (cardID []int64, err error)
-	DeleteCard(ctx context.Context, cardID int64) (err error)
+	Search(ctx context.Context, userID int64, boardID int64, query string) ([]models.ElasticCard, error)
+	DeleteCard(ctx context.Context, boardID, cardID int64) (err error)
 }

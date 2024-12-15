@@ -23,6 +23,7 @@ import (
 	"os"
 
 	"github.com/gorilla/mux"
+	"github.com/olivere/elastic/v7"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
@@ -59,6 +60,12 @@ func main() {
 	}
 	defer postgresDB.Close()
 
+	elasticClient, err := elastic.NewClient(elastic.SetURL("http://elastic"))
+	if err != nil {
+		log.Error("error connecting to elasticsearch: " + err.Error())
+		return
+	}
+
 	// Подключение к GRPC сервису авторизаци
 	dialer := func(ctx context.Context, addr string) (net.Conn, error) {
 		d := net.Dialer{
@@ -82,7 +89,8 @@ func main() {
 
 	//Board
 	boardRepository := BoardRepository.CreateBoardRepository(postgresDB)
-	boardUsecase := BoardUsecase.CreateBoardUsecase(boardRepository)
+	boardElasticRepository := BoardRepository.CreateBoardElasticRepository(elasticClient)
+	boardUsecase := BoardUsecase.CreateBoardUsecase(boardRepository, boardElasticRepository)
 	boardDelivery := BoardDelivery.CreateBoardDelivery(boardUsecase)
 
 	// Создаём новый маршрутизатор
