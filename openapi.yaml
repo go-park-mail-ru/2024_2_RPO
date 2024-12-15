@@ -1776,12 +1776,8 @@ paths:
                         example: 234
                   - type: object
                     properties:
-                      boardName:
-                        type: string
-                        example: "Проект ТИГР"
-                      backgroundImageUrl:
-                        type: string
-                        example: "/uploads/4421f872-6945-42ac-b7e4-88842327c76f.png"
+                      board:
+                        $ref: "#/components/schemas/Board"
                       card:
                         $ref: "#/components/schemas/CardDetails"
         "400":
