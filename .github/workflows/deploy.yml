@@ -61,7 +61,7 @@ jobs:
   #         username: ${{ secrets.USERNAME }}
   #         key: ${{ secrets.PRIVATE_KEY }}
   #         script: cd /home/${{ secrets.USERNAME }}/back && git pull
-  #     - name: Build containers
+  #     - name: build containers
   #       uses: appleboy/ssh-action@master
   #       with:
   #         timeout: 200m
@@ -70,7 +70,7 @@ jobs:
   #         username: ${{ secrets.USERNAME }}
   #         key: ${{ secrets.PRIVATE_KEY }}
   #         script: cd /home/${{ secrets.USERNAME }}/back && sudo docker compose build
-  #     - name: Restart service
+  #     - name: restart service
   #       uses: appleboy/ssh-action@master
   #       with:
   #         host: ${{ secrets.HOST }}
