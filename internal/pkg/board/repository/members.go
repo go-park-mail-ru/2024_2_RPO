@@ -585,38 +585,41 @@ func (r *BoardRepository) GetCardAttachments(ctx context.Context, cardID int64) 
 
 // GetCardsForMove получает списки карточек на двух колонках. (карточки неполные)
 // Нужно для Drag-n-Drop (колонки откуда перемещаем и куда)
-func (r *BoardRepository) GetCardsForMove(ctx context.Context, col1ID int64, col2ID *int64) (column1 []models.Card, column2 []models.Card, err error) {
+func (r *BoardRepository) GetCardsForMove(ctx context.Context, destColumnID int64, cardID *int64) (columnFrom []models.Card, columnTo []models.Card, columnFromID int64, err error) {
 	query := `
 	SELECT c.card_id, c.col_id, c.order_index
 	FROM card AS c
-	WHERE c.col_id = $1 OR c.col_id = $2
+	JOIN kanban_column AS k ON c.col_id=k.col_id
+	WHERE c.col_id = $1 OR c.col_id = (SELECT col_id FROM card WHERE card_id=$2)
 	ORDER BY c.order_index;
 	`
 
-	rows, err := r.db.Query(ctx, query, col1ID, col2ID)
+	rows, err := r.db.Query(ctx, query, destColumnID, cardID)
 	logging.Debug(ctx, "GetCardsForMove query has err: ", err)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, nil, fmt.Errorf("GetCardsForMove (query): %w", errs.ErrNotFound)
+			return nil, nil, 0, fmt.Errorf("GetCardsForMove (query): %w", errs.ErrNotFound)
 		}
-		return nil, nil, fmt.Errorf("GetCardsForMove (query): %w", err)
+		return nil, nil, 0, fmt.Errorf("GetCardsForMove (query): %w", err)
 	}
+	columnFromID = destColumnID
 
 	for rows.Next() {
 		c := models.Card{}
 
 		if err := rows.Scan(&c.ID, &c.ColumnID, c.OrderIndex); err != nil {
-			return nil, nil, fmt.Errorf("GetCardsForMove (scan): %w", err)
+			return nil, nil, 0, fmt.Errorf("GetCardsForMove (scan): %w", err)
 		}
 
-		if c.ColumnID == col1ID {
-			column1 = append(column1, c)
-		} else if col2ID != nil && c.ColumnID == *col2ID {
-			column2 = append(column2, c)
+		if c.ColumnID == destColumnID {
+			columnTo = append(columnTo, c)
+		} else {
+			columnFromID = c.ColumnID
+			columnFrom = append(columnFrom, c)
 		}
 	}
 
-	return column1, column2, nil
+	return columnFrom, columnTo, columnFromID, nil
 }
 
 // GetColumnsForMove получает список всех колонок, чтобы сделать Drag-n-Drop
@@ -1134,7 +1137,7 @@ func (r *BoardRepository) RemoveAttachment(ctx context.Context, attachmentID int
 	)
 	SELECT;
 	`
-	tag, err := r.db.Exec(ctx, query)
+	tag, err := r.db.Exec(ctx, query, attachmentID)
 	logging.Debug(ctx, funcName, " query has err: ", err)
 	if err != nil {
 		return fmt.Errorf("%s (query): %w", funcName, err)

@@ -8,6 +8,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"slices"
 )
 
 var roleLevels = map[string]int{
@@ -623,7 +624,42 @@ func (uc *BoardUsecase) DeleteAttachment(ctx context.Context, userID int64, atta
 
 // MoveCard перемещает карточку на доске
 func (uc *BoardUsecase) MoveCard(ctx context.Context, userID int64, cardID int64, moveReq *models.CardMoveRequest) (err error) {
-	panic("not implemented")
+	funcName := "MoveCard"
+
+	columnFrom, columnTo, columnFromID, err := uc.boardRepository.GetCardsForMove(ctx,
+		*moveReq.NewColumnID, &cardID)
+	if err != nil {
+		return fmt.Errorf("%s (get): %w", funcName, err)
+	}
+
+	prevCardIdx := -1
+	for idx, card := range columnFrom {
+		if card.ID == cardID {
+			prevCardIdx = idx
+		}
+	}
+	if prevCardIdx == -1 {
+		return fmt.Errorf("%s (prev idx): previous card not found", funcName)
+	}
+
+	destCardIdx := -1
+	for idx, card := range columnTo {
+		if card.ID == *moveReq.PreviousCardID {
+			destCardIdx = idx + 1
+		}
+	}
+	if destCardIdx != 1 && columnTo[destCardIdx].ID != *moveReq.NextCardID {
+		return fmt.Errorf("%s (check dest): previous card not found", funcName)
+	}
+	if destCardIdx == -1 {
+		destCardIdx = 0
+	}
+
+	columnTo = slices.Insert(columnTo, destCardIdx, columnFrom[prevCardIdx])
+	columnFrom = slices.Delete(columnFrom, prevCardIdx, prevCardIdx)
+
+	uc.boardRepository.
+	return nil
 }
 
 // MoveColumn перемещает колонку на доске
