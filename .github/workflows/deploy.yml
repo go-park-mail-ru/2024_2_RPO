@@ -8,18 +8,72 @@ on:
         - staging
 jobs:
   linter:
+    name: linters
     runs-on: ubuntu-latest
     steps:
       -
-        name: Checkout staging
+        name: checkout staging
         uses: actions/checkout@v4
       -
-        name: Install Go
+        name: install Go
         uses: actions/setup-go@v5
         with:
-           go-version: '1.17'
+            go-version: '1.23'
+      - 
+        name: golangci-lint
+        uses: golangci/golangci-lint-action@v4
+        with:
+            version: v1.62.2
+
+  tests:
+    needs: linter
+    runs-on: ubuntu-latest
+    steps:
+      - 
+        name: checkout staging
+        uses: actions/checkout@v4
       -
-        name: Install Go
+        name: install Go
         uses: actions/setup-go@v5
         with:
-           go-version: '1.17'
+          go-version: '1.23'
+      -
+        run: |
+          sudo apt-get -y update
+          sudo apt-get install -y libwebp-dev wkhtmltopdf
+      -
+        name: build
+        run: go build -v ./...
+      - 
+        name: Test
+        run: go test -v ./...
+
+  deploy:
+    name: deploy 
+    needs: tests
+    runs-on: ubuntu-latest
+    steps:
+      - 
+        name: pull code
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          key: ${{ secrets.PRIVATE_KEY }}
+          script: cd /home/${{ secrets.USERNAME }}/back && git pull
+      - name: Build containers
+        uses: appleboy/ssh-action@master
+        with:
+          timeout: 200m
+          command_timeout: 200m
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          key: ${{ secrets.PRIVATE_KEY }}
+          script: cd /home/${{ secrets.USERNAME }}/back && sudo docker compose build
+      - name: Restart service
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          key: ${{ secrets.PRIVATE_KEY }}
+          script: cd /home/${{ secrets.USERNAME }}/back && make build_all -j && docker compose up --build
