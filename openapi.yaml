@@ -1,7 +1,6 @@
 openapi: 3.0.2
 info:
   title: Pumpkin API
-  version: 1.3.0
   description: RESTful API для облачного канбана Pumpkin
 
 servers:
