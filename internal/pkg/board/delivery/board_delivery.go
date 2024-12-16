@@ -319,7 +319,7 @@ func (d *BoardDelivery) SearchCards(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	searchValue := r.URL.Query().Get("query")
+	searchValue := r.URL.Query().Get("")
 	if searchValue == "" {
 		responses.DoBadResponseAndLog(r, w, http.StatusBadRequest, "bad request")
 		return
