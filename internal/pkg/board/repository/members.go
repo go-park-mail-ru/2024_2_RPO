@@ -1229,35 +1229,26 @@ func (r *BoardRepository) FetchInvite(ctx context.Context, inviteUUID string) (b
 }
 
 // AcceptInvite добавляет приглашённого пользователя на доску с правами зрителя
-func (r *BoardRepository) AcceptInvite(ctx context.Context, userID int64, boardID int64, invitedUserID int64, inviteUUID string) (board *models.Board, err error) {
+func (r *BoardRepository) AcceptInvite(ctx context.Context, userID int64, boardID int64, inviteUUID string) (err error) {
 	funcName := "AcceptInvite"
 	query := `
 	WITH update_board AS (
 		UPDATE board SET updated_at=CURRENT_TIMESTAMP WHERE board_id = $1
-	),
-	update_user_to_board AS (
-		INSERT INTO user_to_board (u_id, board_id, role) VALUES ($2, $1, 'viewer')
 	)
-	SELECT
-		b.board_id,
-        b.name,
-        b.created_at,
-        b.updated_at,
-        ub.last_visit_at,
-        COALESCE(file.file_uuid::text,''),
-        COALESCE(file.file_extension,'')
-    FROM board AS b
-    LEFT JOIN user_to_board AS ub ON ub.board_id = b.board_id AND ub.u_id = $1
-    LEFT JOIN user_uploaded_file AS file ON file.file_id=b.background_image_id
-    WHERE b.board_id = $1;
+	INSERT INTO user_to_board (u_id, board_id, role, added_by, updated_by)
+	VALUES ($2, $1, 'viewer',
+		(SELECT u_id FROM user_to_board WHERE invite_link_uuid=$3),
+		(SELECT u_id FROM user_to_board WHERE invite_link_uuid=$3)
+	);
 	`
 
-	board = &models.Board{}
-	row := r.db.QueryRow(ctx, query)
-	err = row.Scan()
+	tag, err := r.db.Exec(ctx, query, boardID, userID, inviteUUID)
 	logging.Debug(ctx, funcName, " query has err: ", err)
 	if err != nil {
-		return nil, fmt.Errorf("%s (query): %w", funcName, err)
+		return fmt.Errorf("%s (query): %w", funcName, err)
 	}
-	return board, nil
+	if tag.RowsAffected() == 0 {
+		return fmt.Errorf("%s (query): no rows affected", funcName)
+	}
+	return nil
 }

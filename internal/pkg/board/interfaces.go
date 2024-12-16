@@ -96,7 +96,7 @@ type BoardRepo interface {
 	PullInviteLink(ctx context.Context, userID int64, boardID int64) (link *models.InviteLink, err error)
 	DeleteInviteLink(ctx context.Context, userID int64, boardID int64) (err error)
 	FetchInvite(ctx context.Context, inviteUUID string) (board *models.Board, err error)
-	AcceptInvite(ctx context.Context, userID int64, boardID int64, invitedUserID int64, inviteUUID string) (board *models.Board, err error)
+	AcceptInvite(ctx context.Context, userID int64, boardID int64, inviteUUID string) (err error)
 	GetSharedCardInfo(ctx context.Context, cardUUID string) (cardID int64, boardID int64, err error)
 	DeduplicateFile(ctx context.Context, file *models.UploadedFile) (fileNames []string, fileIDs []int64, err error)
 	RegisterFile(ctx context.Context, file *models.UploadedFile) (fileID int64, fileUUID string, err error)

@@ -205,10 +205,10 @@ func (uc *BoardUsecase) CreateNewCard(ctx context.Context, userID int64, boardID
 		return nil, fmt.Errorf("CreateNewCard (create): %w", err)
 	}
 
-	err = uc.boardElasticRepository.PutCard(ctx, boardID, card.ID, card.Title)
-	if err != nil {
-		return nil, fmt.Errorf("CreateNewCard (elastic put): %w", err)
-	}
+	// err = uc.boardElasticRepository.PutCard(ctx, boardID, card.ID, card.Title)
+	// if err != nil {
+	// 	return nil, fmt.Errorf("CreateNewCard (elastic put): %w", err)
+	// }
 
 	return &models.Card{
 		ID:        card.ID,
@@ -258,7 +258,7 @@ func (uc *BoardUsecase) UpdateCard(ctx context.Context, userID int64, cardID int
 
 // DeleteCard удаляет карточку
 func (uc *BoardUsecase) DeleteCard(ctx context.Context, userID int64, cardID int64) (err error) {
-	role, _, err := uc.boardRepository.GetMemberFromCard(ctx, userID, cardID)
+	role, boardID, err := uc.boardRepository.GetMemberFromCard(ctx, userID, cardID)
 	if err != nil {
 		return err
 	}
@@ -271,15 +271,12 @@ func (uc *BoardUsecase) DeleteCard(ctx context.Context, userID int64, cardID int
 		return fmt.Errorf("DeleteCard (delete): %w", err)
 	}
 
-	_, boardID, err := uc.boardRepository.GetMemberFromCard(ctx, userID, cardID)
-	if err != nil {
-		return fmt.Errorf("DeleteCard (getMemberFromCard): %w", err)
-	}
+	fmt.Println(boardID)
 
-	err = uc.boardElasticRepository.DeleteCard(ctx, boardID, cardID)
-	if err != nil {
-		return fmt.Errorf("DeleteCard (elastic delete): %w", err)
-	}
+	// err = uc.boardElasticRepository.DeleteCard(ctx, boardID, cardID)
+	// if err != nil {
+	// 	return fmt.Errorf("DeleteCard (elastic delete): %w", err)
+	// }
 
 	return nil
 }
@@ -807,7 +804,18 @@ func (uc *BoardUsecase) FetchInvite(ctx context.Context, inviteUUID string) (boa
 
 // AcceptInvite добавляет пользователя как зрителя на доску
 func (uc *BoardUsecase) AcceptInvite(ctx context.Context, userID int64, inviteUUID string) (board *models.Board, err error) {
-	panic("not implemented")
+	funcName := "AcceptInvite"
+
+	board, err = uc.FetchInvite(ctx, inviteUUID)
+	if err != nil {
+		return nil, fmt.Errorf("%s (fetch): %w", funcName, err)
+	}
+
+	err = uc.boardRepository.AcceptInvite(ctx, userID, board.ID, inviteUUID)
+	if err != nil {
+		return nil, fmt.Errorf("%s (go): %w", funcName, err)
+	}
+	return board, nil
 }
 
 // GetCardDetails возвращает подробное содержание карточки
