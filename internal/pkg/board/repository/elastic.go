@@ -45,13 +45,17 @@ func (be *BoardElasticRepository) PutCard(ctx context.Context, boardID int64, ca
 	return nil
 }
 
-func (be *BoardElasticRepository) Search(ctx context.Context, userID int64, boardID int64, query string) ([]models.ElasticCard, error) {
+func (be *BoardElasticRepository) Search(ctx context.Context, boardIDs []models.Board, query string) (foundCards []models.ElasticCard, err error) {
 	funcName := "Search"
 	if len(query) < ElasticSearchValueMinLength {
 		return nil, fmt.Errorf("%s: query must be at least %d characters", funcName, ElasticSearchValueMinLength)
 	}
 
-	panic("Not implemented")
+	// есть какой то массив айдишников досок по которым будет происходить поиск карточек
+	// прокидываем массив айдишников из слоя usecase
+	// дальше нужно получ
+
+	return foundCards, nil
 }
 
 func (be *BoardElasticRepository) DeleteCard(ctx context.Context, boardID, cardID int64) (err error) {

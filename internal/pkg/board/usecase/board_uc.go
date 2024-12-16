@@ -281,8 +281,18 @@ func (uc *BoardUsecase) DeleteCard(ctx context.Context, userID int64, cardID int
 	return nil
 }
 
-func (uc *BoardUsecase) SearchCards(ctx context.Context, userID int64, query string) ([]int64, error) {
-	panic("Not implemented")
+func (uc *BoardUsecase) SearchCards(ctx context.Context, userID int64, query string) (cards []models.ElasticCard, err error) {
+	boardArray, err := uc.boardRepository.GetBoardsForUser(ctx, userID)
+	if err != nil {
+		return nil, fmt.Errorf("SearchCards (GetBoardsForUser): %w", err)
+	}
+
+	cards, err = uc.boardElasticRepository.Search(ctx, boardArray, query)
+	if err != nil {
+		return nil, fmt.Errorf("SearchCards (GetBoardsForUser): %w", err)
+	}
+
+	return cards, err
 }
 
 // CreateColumn создаёт колонку канбана на доске и возвращает её
