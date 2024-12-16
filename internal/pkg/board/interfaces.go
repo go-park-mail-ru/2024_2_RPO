@@ -19,7 +19,7 @@ type BoardUsecase interface {
 	CreateNewCard(ctx context.Context, userID int64, boardID int64, data *models.CardPostRequest) (newCard *models.Card, err error)
 	UpdateCard(ctx context.Context, userID int64, cardID int64, data *models.CardPatchRequest) (updatedCard *models.Card, err error)
 	DeleteCard(ctx context.Context, userID int64, cardID int64) (err error)
-	SearchCards(ctx context.Context, userID int64, query string) (cards []models.Card, err error)
+	SearchCards(ctx context.Context, userID int64, searchValue string) (cards []models.Card, err error)
 	CreateColumn(ctx context.Context, userID int64, boardID int64, data *models.ColumnRequest) (newCol *models.Column, err error)
 	UpdateColumn(ctx context.Context, userID int64, columnID int64, data *models.ColumnRequest) (updatedCol *models.Column, err error)
 	DeleteColumn(ctx context.Context, userID int64, columnID int64) (err error)
@@ -58,6 +58,7 @@ type BoardRepo interface {
 	CreateNewCard(ctx context.Context, columnID int64, title string) (newCard *models.Card, err error)
 	UpdateCard(ctx context.Context, cardID int64, data models.CardPatchRequest) (updateCard *models.Card, err error)
 	DeleteCard(ctx context.Context, cardID int64) (err error)
+	GetCardsByID(ctx context.Context, cardIDs []int64) (cards []models.Card, err error)
 	CreateColumn(ctx context.Context, boardId int64, title string) (newColumn *models.Column, err error)
 	UpdateColumn(ctx context.Context, columnID int64, data models.ColumnRequest) (updateColumn *models.Column, err error)
 	DeleteColumn(ctx context.Context, columnID int64) (err error)
@@ -104,7 +105,7 @@ type BoardRepo interface {
 }
 
 type BoardElasticRepo interface {
-	PutCard(ctx context.Context, boardID int64, cardID int64, cardText string) (err error)
-	Search(ctx context.Context, boardIDs []models.Board, query string) (foundCards []models.ElasticCard, err error)
-	DeleteCard(ctx context.Context, boardID, cardID int64) (err error)
+	PutCard(ctx context.Context, boardID int64, cardID int64, cardTitle string) error
+	Search(ctx context.Context, boards []models.Board, searchValue string) (foundCards []int64, err error)
+	DeleteCard(ctx context.Context, cardID int64) (err error)
 }
