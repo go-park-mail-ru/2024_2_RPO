@@ -60,7 +60,7 @@ func main() {
 	}
 	defer postgresDB.Close()
 
-	elasticClient, err := elastic.NewClient(elastic.SetURL("http://elastic"))
+	elasticClient, err := elastic.NewClient(elastic.SetURL("http://elastic:9200"), elastic.SetSniff(false))
 	if err != nil {
 		log.Error("error connecting to elasticsearch: " + err.Error())
 		return

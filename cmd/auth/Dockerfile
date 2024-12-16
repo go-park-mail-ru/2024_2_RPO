@@ -12,6 +12,7 @@ WORKDIR /app
 COPY ./Makefile .
 COPY ./database/migrations/ ./migrations/
 COPY ./build/auth_app .
+COPY ./build/migrator .
 RUN chmod +x ./auth_app
 RUN chmod +x /usr/bin/migrate
 

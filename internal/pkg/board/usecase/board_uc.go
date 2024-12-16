@@ -289,7 +289,7 @@ func (uc *BoardUsecase) SearchCards(ctx context.Context, userID int64, searchVal
 
 	cardIDs, err := uc.boardElasticRepository.Search(ctx, boardArray, searchValue)
 	if err != nil {
-		return nil, fmt.Errorf("SearchCards (GetBoardsForUser): %w", err)
+		return nil, fmt.Errorf("SearchCards (Search): %w", err)
 	}
 
 	cards, err = uc.boardRepository.GetCardsByID(ctx, cardIDs)

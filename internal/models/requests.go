@@ -94,3 +94,7 @@ type ColumnMoveRequest struct {
 type AssignUserRequest struct {
 	NickName string `json:"nickname" validate:"required"`
 }
+
+type ElasticRequest struct {
+	Title string `json:"title" validate:"required"`
+}

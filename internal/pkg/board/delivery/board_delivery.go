@@ -319,13 +319,14 @@ func (d *BoardDelivery) SearchCards(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	searchValue := r.URL.Query().Get("")
-	if searchValue == "" {
+	requestData := &models.ElasticRequest{}
+	err := requests.GetRequestData(r, requestData)
+	if err != nil {
 		responses.DoBadResponseAndLog(r, w, http.StatusBadRequest, "bad request")
 		return
 	}
 
-	cards, err := d.boardUsecase.SearchCards(r.Context(), userID, searchValue)
+	cards, err := d.boardUsecase.SearchCards(r.Context(), userID, requestData.Title)
 	if err != nil {
 		responses.ResponseErrorAndLog(r, w, err, funcName)
 		return

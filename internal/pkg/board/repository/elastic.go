@@ -23,8 +23,8 @@ func CreateBoardElasticRepository(el *elastic.Client) *BoardElasticRepository {
 	}
 }
 
-func (be *BoardElasticRepository) PutCard(ctx context.Context, boardID int64, cardID int64, cardTitle string) error {
-	funcName := "PutCard"
+func (be *BoardElasticRepository) CreateCard(ctx context.Context, boardID int64, cardID int64, cardTitle string) error {
+	funcName := "CreateCard"
 
 	docID := fmt.Sprintf("%d", cardID)
 
@@ -36,11 +36,18 @@ func (be *BoardElasticRepository) PutCard(ctx context.Context, boardID int64, ca
 			"title":    cardTitle,
 			"board_id": boardID,
 		}).
+		Refresh("wait_for").
 		Do(ctx)
 	logging.Debug(ctx, funcName, "putCard has error: ", err)
 	if err != nil {
 		return fmt.Errorf("%s (delete)", funcName)
 	}
+
+	return nil
+}
+
+func (be *BoardElasticRepository) UpdateCard(ctx context.Context, boardID int64, cardID int64, cardTitle string) error {
+	funcName := "UpdateCard"
 
 	return nil
 }
@@ -51,12 +58,12 @@ func (be *BoardElasticRepository) Search(ctx context.Context, boards []models.Bo
 		return nil, fmt.Errorf("%s: query must be at least %d characters", funcName, ElasticSearchValueMinLength)
 	}
 
-	boardIDs := make([]int64, 0, len(boards))
-	for _, board := range boards {
-		boardIDs = append(boardIDs, board.ID)
+	boardIDs := make([]interface{}, len(boards))
+	for i, board := range boards {
+		boardIDs[i] = board.ID
 	}
 
-	boardQuery := elastic.NewTermsQuery("board_id", boardIDs)
+	boardQuery := elastic.NewTermsQuery("board_id", boardIDs...)
 	searchQuery := elastic.NewMatchQuery("title", searchValue).Fuzziness("AUTO")
 
 	fullQuery := elastic.NewBoolQuery().Filter(boardQuery).Must(searchQuery)

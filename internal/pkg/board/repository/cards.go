@@ -205,6 +205,10 @@ func (r *BoardRepository) DeleteCard(ctx context.Context, cardID int64) (err err
 func (r *BoardRepository) GetCardsByID(ctx context.Context, cardIDs []int64) (cards []models.Card, err error) {
 	funcName := "GetCardsByID"
 
+	if len(cardIDs) == 0 {
+		return []models.Card{}, nil
+	}
+
 	placeholders := make([]string, len(cardIDs))
 	args := make([]interface{}, len(cardIDs))
 	for i, id := range cardIDs {
