@@ -221,7 +221,7 @@ func (uc *BoardUsecase) CreateNewCard(ctx context.Context, userID int64, boardID
 
 // UpdateCard обновляет карточку и возвращает обновлённую версию
 func (uc *BoardUsecase) UpdateCard(ctx context.Context, userID int64, cardID int64, data *models.CardPatchRequest) (updatedCard *models.Card, err error) {
-	role, _, err := uc.boardRepository.GetMemberFromCard(ctx, userID, cardID)
+	role, boardID, err := uc.boardRepository.GetMemberFromCard(ctx, userID, cardID)
 	if err != nil {
 		if errors.Is(err, errs.ErrNotPermitted) {
 			return nil, fmt.Errorf("UpdateCard (get permissions): %w", err)
@@ -240,15 +240,12 @@ func (uc *BoardUsecase) UpdateCard(ctx context.Context, userID int64, cardID int
 		return nil, fmt.Errorf("UpdateCard (update): %w", err)
 	}
 
-	_, boardID, err := uc.boardRepository.GetMemberFromCard(ctx, userID, cardID)
-	if err != nil {
-		return nil, fmt.Errorf("UpdateCard (getMemberFromCard): %w", err)
-	}
+	fmt.Println(boardID)
 
-	err = uc.boardElasticRepository.PutCard(ctx, boardID, updatedCard.ID, updatedCard.Title)
-	if err != nil {
-		return nil, fmt.Errorf("UpdateCard (elastic update): %w", err)
-	}
+	// err = uc.boardElasticRepository.PutCard(ctx, boardID, updatedCard.ID, updatedCard.Title)
+	// if err != nil {
+	// 	return nil, fmt.Errorf("UpdateCard (elastic update): %w", err)
+	// }
 
 	return &models.Card{
 		ID:        updatedCard.ID,
@@ -626,7 +623,7 @@ func (uc *BoardUsecase) DeleteAttachment(ctx context.Context, userID int64, atta
 func (uc *BoardUsecase) MoveCard(ctx context.Context, userID int64, cardID int64, moveReq *models.CardMoveRequest) (err error) {
 	funcName := "MoveCard"
 
-	columnFrom, columnTo, columnFromID, err := uc.boardRepository.GetCardsForMove(ctx,
+	columnFrom, columnTo, err := uc.boardRepository.GetCardsForMove(ctx,
 		*moveReq.NewColumnID, &cardID)
 	if err != nil {
 		return fmt.Errorf("%s (get): %w", funcName, err)
@@ -648,17 +645,34 @@ func (uc *BoardUsecase) MoveCard(ctx context.Context, userID int64, cardID int64
 			destCardIdx = idx + 1
 		}
 	}
-	if destCardIdx != 1 && columnTo[destCardIdx].ID != *moveReq.NextCardID {
-		return fmt.Errorf("%s (check dest): previous card not found", funcName)
+	if destCardIdx != -1 && destCardIdx != len(columnTo) && columnTo[destCardIdx].ID != *moveReq.NextCardID {
+		return fmt.Errorf("%s (check dest): previous card pos not found", funcName)
 	}
 	if destCardIdx == -1 {
 		destCardIdx = 0
 	}
 
-	columnTo = slices.Insert(columnTo, destCardIdx, columnFrom[prevCardIdx])
-	columnFrom = slices.Delete(columnFrom, prevCardIdx, prevCardIdx)
+	card := columnFrom[prevCardIdx]
 
-	uc.boardRepository.
+	if len(columnTo) > 0 && columnFrom[0] != columnTo[0] {
+		card.ColumnID = *moveReq.NewColumnID
+		columnTo = slices.Insert(columnTo, destCardIdx, card)
+		columnFrom = slices.Delete(columnFrom, prevCardIdx, prevCardIdx+1)
+	} else {
+		columnFrom = nil
+		columnTo = slices.Delete(columnTo, prevCardIdx, prevCardIdx+1)
+		if prevCardIdx > destCardIdx {
+			columnTo = slices.Insert(columnTo, destCardIdx, card)
+		} else {
+			columnTo = slices.Insert(columnTo, destCardIdx-1, card)
+		}
+	}
+
+	err = uc.boardRepository.RearrangeCards(ctx, columnFrom, columnTo)
+	if err != nil {
+		return fmt.Errorf("%s (rearrange): %w", funcName, err)
+	}
+
 	return nil
 }
 

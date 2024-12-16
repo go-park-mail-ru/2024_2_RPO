@@ -585,11 +585,10 @@ func (r *BoardRepository) GetCardAttachments(ctx context.Context, cardID int64) 
 
 // GetCardsForMove получает списки карточек на двух колонках. (карточки неполные)
 // Нужно для Drag-n-Drop (колонки откуда перемещаем и куда)
-func (r *BoardRepository) GetCardsForMove(ctx context.Context, destColumnID int64, cardID *int64) (columnFrom []models.Card, columnTo []models.Card, columnFromID int64, err error) {
+func (r *BoardRepository) GetCardsForMove(ctx context.Context, destColumnID int64, cardID *int64) (columnFrom []models.Card, columnTo []models.Card, err error) {
 	query := `
-	SELECT c.card_id, c.col_id, c.order_index
+	SELECT c.card_id, c.col_id
 	FROM card AS c
-	JOIN kanban_column AS k ON c.col_id=k.col_id
 	WHERE c.col_id = $1 OR c.col_id = (SELECT col_id FROM card WHERE card_id=$2)
 	ORDER BY c.order_index;
 	`
@@ -598,28 +597,30 @@ func (r *BoardRepository) GetCardsForMove(ctx context.Context, destColumnID int6
 	logging.Debug(ctx, "GetCardsForMove query has err: ", err)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, nil, 0, fmt.Errorf("GetCardsForMove (query): %w", errs.ErrNotFound)
+			return nil, nil, fmt.Errorf("GetCardsForMove (query): %w", errs.ErrNotFound)
 		}
-		return nil, nil, 0, fmt.Errorf("GetCardsForMove (query): %w", err)
+		return nil, nil, fmt.Errorf("GetCardsForMove (query): %w", err)
 	}
-	columnFromID = destColumnID
 
 	for rows.Next() {
 		c := models.Card{}
 
-		if err := rows.Scan(&c.ID, &c.ColumnID, c.OrderIndex); err != nil {
-			return nil, nil, 0, fmt.Errorf("GetCardsForMove (scan): %w", err)
+		if err := rows.Scan(&c.ID, &c.ColumnID); err != nil {
+			return nil, nil, fmt.Errorf("GetCardsForMove (scan): %w", err)
 		}
 
 		if c.ColumnID == destColumnID {
 			columnTo = append(columnTo, c)
 		} else {
-			columnFromID = c.ColumnID
 			columnFrom = append(columnFrom, c)
 		}
 	}
 
-	return columnFrom, columnTo, columnFromID, nil
+	if len(columnFrom) == 0 {
+		columnFrom = columnTo
+	}
+
+	return columnFrom, columnTo, nil
 }
 
 // GetColumnsForMove получает список всех колонок, чтобы сделать Drag-n-Drop
@@ -655,30 +656,37 @@ func (r *BoardRepository) GetColumnsForMove(ctx context.Context, boardID int64) 
 }
 
 // RearrangeCards обновляет позиции всех карточек колонки, чтобы сделать порядок, как в слайсе
-func (r *BoardRepository) RearrangeCards(ctx context.Context, columnID int64, cards []models.Card) (err error) {
+func (r *BoardRepository) RearrangeCards(ctx context.Context, column1 []models.Card, column2 []models.Card) (err error) {
 	funcName := "RearrangeCards"
 	query := `
-	WITH update_position_cards AS (
-		UPDATE card SET order_index = $1 WHERE col_id = $2
-	),
-	update_board AS (
-		UPDATE board SET updated_at = CURRENT_TIMESTAMP WHERE board_id = (
-			SELECT board_id FROM kanban_column WHERE col_id = $2
-		)
-	)
-	SELECT;
+	UPDATE card SET order_index=$1, col_id=$2 WHERE card_id=$3;
 	`
-	batch := &pgx.Batch{}
-	for _, card := range cards {
-		batch.Queue(query, card.OrderIndex)
+	tx, err := r.db.Begin(ctx)
+	if err != nil {
+		return fmt.Errorf("%s (begin): %w", funcName, err)
 	}
 
-	br := r.db.SendBatch(ctx, batch)
+	batch := &pgx.Batch{}
+	for idx, card := range column1 {
+		batch.Queue(query, idx, card.ColumnID, card.ID)
+	}
+	for idx, card := range column2 {
+		batch.Queue(query, idx, card.ColumnID, card.ID)
+	}
+
+	br := tx.SendBatch(ctx, batch)
 	err = br.Close()
 	logging.Debug(ctx, funcName, " batch query has err: ", err)
 	if err != nil {
 		return fmt.Errorf("%s (batch query): %w", funcName, err)
 	}
+
+	tx.Commit(ctx)
+	logging.Debug(ctx, funcName, " commit has err: ", err)
+	if err != nil {
+		return fmt.Errorf("%s (commit): %w", funcName, err)
+	}
+
 	return nil
 }
 

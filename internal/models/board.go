@@ -43,7 +43,6 @@ type Card struct {
 	HasAttachments   bool       `json:"hasAttachments"`
 	HasAssignedUsers bool       `json:"hasAssignedUsers"`
 	HasComments      bool       `json:"hasComments"`
-	OrderIndex       int64      `json:"-"`
 }
 
 type ElasticCard struct {

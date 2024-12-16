@@ -34,7 +34,8 @@ func (r *BoardRepository) GetCardsForBoard(ctx context.Context, boardID int64) (
 	FROM card c
 	JOIN kanban_column kc ON c.col_id = kc.col_id
 	LEFT JOIN user_uploaded_file uuf ON c.cover_file_id = uuf.file_id
-	WHERE kc.board_id = $1;
+	WHERE kc.board_id = $1
+	ORDER BY c.order_index;
 `
 	rows, err := r.db.Query(ctx, query, boardID)
 	logging.Debug(ctx, funcName, " query has err: ", err)
