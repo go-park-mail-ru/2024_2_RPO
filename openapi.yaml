@@ -1,11 +1,15 @@
 openapi: 3.0.2
 info:
   title: Pumpkin API
-  version: 1.0.0
+  version: 1.3.0
   description: RESTful API для облачного канбана Pumpkin
+
 servers:
   - url: https://to.be.defined/api
     description: Основной сервер API
+
+security:
+  - SessionCookieAuth: []
 
 components:
   securitySchemes:
@@ -73,6 +77,20 @@ components:
               text:
                 type: string
                 example: "not found"
+    ConflictResponse:
+      description: "Такой элемент уже существует"
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              status:
+                type: integer
+                example: 409
+              text:
+                type: string
+                example: "conflict"
+
   parameters:
     boardId:
       name: boardId
@@ -144,7 +162,7 @@ components:
           example: "2023-10-01T12:34:56Z"
         avatarImageUrl:
           type: string
-          example: "/images/avatars/23423432432423.png"
+          example: "/uploads/550e8400-e29b-41d4-a716-446655440000.png"
 
     UserPut:
       type: object
@@ -169,9 +187,6 @@ components:
         name:
           type: string
           example: "Любимый проект"
-        description:
-          type: string
-          example: "На этой доске размещены задачи любимого проекта! <3"
         backgroundImageUrl:
           type: string
           example: "/static/backgroundImage.png"
@@ -187,19 +202,18 @@ components:
           type: string
           format: date-time
           example: "2023-10-01T12:34:56Z"
+        myInviteLinkUuid:
+          type: string
+          example: "7acebd60-9441-4a74-84da-36596103f15d"
 
     BoardPut:
       type: object
       required:
         - name
-        - description
       properties:
         name:
           type: string
           example: "Любимый проект"
-        description:
-          type: string
-          example: "На этой доске размещены задачи любимого проекта! <3"
 
     BoardContent:
       type: object
@@ -228,9 +242,9 @@ components:
         title:
           type: string
           example: "Задача 1"
-        description:
+        coverImageUrl:
           type: string
-          example: "Описание задачи 1"
+          example: "/uploads/b5ce022f-270a-4638-a8e3-799d135d64c7.jpg"
         columnId:
           type: integer
           example: 228
@@ -242,6 +256,28 @@ components:
           type: string
           format: date-time
           example: "2023-10-01T12:34:56Z"
+        deadline:
+          type: string
+          format: date-time
+          example: "2023-10-01T12:34:56Z"
+        isDone:
+          type: boolean
+          example: false
+        hasCheckList:
+          type: boolean
+          example: false
+        hasAttachments:
+          type: boolean
+          example: false
+        hasAssignedUsers:
+          type: boolean
+          example: false
+        hasComments:
+          type: boolean
+          example: false
+        cardUuid:
+          type: string
+          example: "70f6549b-96d1-47ef-8409-de73e74fd82c"
 
     CardPostRequest:
       type: object
@@ -254,6 +290,20 @@ components:
         columnId:
           type: integer
           example: 3
+
+    CardPatch:
+      type: object
+      properties:
+        title:
+          type: string
+          example: "Посадить цветок"
+        deadline:
+          type: string
+          format: date-time
+          example: "2023-10-01T12:34:56Z"
+        isDone:
+          type: boolean
+          example: false
 
     Column:
       type: object
@@ -323,7 +373,7 @@ components:
         password:
           type: string
           format: password
-          example: "securepassword123"
+          example: "reddiridabl666"
 
     LoginRequest:
       type: object
@@ -338,7 +388,7 @@ components:
         password:
           type: string
           format: password
-          example: "securepassword123"
+          example: "reddiridabl666"
 
     PasswordChangeRequest:
       type: object
@@ -353,7 +403,237 @@ components:
         newPassword:
           type: string
           format: password
-          example: "securepassword123"
+          example: "reddiridabl666"
+
+    CommentRequest:
+      type: object
+      required:
+        - text
+      properties:
+        text:
+          type: string
+          example: "LGTM ok norm gg XD"
+
+    Comment:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 395
+        text:
+          type: string
+          example: "LGTM ok norm gg XD"
+        isEdited:
+          type: boolean
+          example: false
+        createdBy:
+          $ref: "#/components/schemas/User"
+        createdAt:
+          type: string
+          format: date-time
+          example: "2023-10-01T12:34:56Z"
+
+    CheckListField:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1234
+        title:
+          type: string
+          example: "Сделать рефакторинг"
+        createdAt:
+          type: string
+          format: date-time
+          example: "2023-10-01T12:34:56Z"
+        isDone:
+          type: boolean
+          example: false
+
+    CheckListFieldPutRequest:
+      type: object
+      required:
+        - title
+        - isDone
+        - previousFieldId
+        - nextFieldId
+      properties:
+        title:
+          type: string
+          example: "Сделать рефакторинг"
+        isDone:
+          type: boolean
+          example: false
+        previousFieldId:
+          type: integer
+          example: 234
+        nextFieldId:
+          type: integer
+          example: 789
+
+    CheckListFieldPostRequest:
+      type: object
+      required:
+        - title
+      properties:
+        title:
+          type: string
+          example: "Сделать рефакторинг"
+
+    Attachment:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 777
+        originalName:
+          type: string
+          example: "Ведомость.xlsx"
+        fileName:
+          type: string
+          example: "/uploads/41c41031-15eb-423a-872c-cdc0696fb3ba.xlsx"
+        createdAt:
+          type: string
+          format: date-time
+          example: "2023-10-01T12:34:56Z"
+
+    CardMoveRequest:
+      type: object
+      required:
+        - newColumnId
+        - previousCardId
+        - nextCardId
+      properties:
+        newColumnId:
+          type: integer
+          example: 333
+        previousCardId:
+          type: integer
+          example: 111
+        nextCardId:
+          type: integer
+          example: 222
+
+    ColumnMoveRequest:
+      type: object
+      required:
+        - previousColumnId
+        - nextColumnId
+      properties:
+        previousColumnId:
+          type: integer
+          example: 111
+        nextColumnId:
+          type: integer
+          example: 222
+
+    CardDetails:
+      type: object
+      properties:
+        card:
+          $ref: "#/components/schemas/Card"
+        checkList:
+          type: array
+          items:
+            $ref: "#/components/schemas/CheckListField"
+        attachments:
+          type: array
+          items:
+            $ref: "#/components/schemas/Attachment"
+        comments:
+          type: array
+          items:
+            $ref: "#/components/schemas/Comment"
+        assignedUsers:
+          type: array
+          items:
+            $ref: "#/components/schemas/User"
+
+    InviteLink:
+      type: object
+      properties:
+        inviteLinkUuid:
+          type: string
+          example: "1b7123a0-c604-4667-9377-99b51cc982c9"
+
+    PollQuestion:
+      type: object
+      properties:
+        questionId:
+          type: integer
+          example: 777
+        questionText:
+          type: string
+          example: "Насколько вы довольны нашим проектом?"
+        questionType:
+          type: string
+          enum: ["answer_text", "answer_rating"]
+          example: "answer_text"
+
+    PollSubmit:
+      type: object
+      properties:
+        questionId:
+          type: integer
+          example: 777
+        rating:
+          type: integer
+          example: 4.7
+        text:
+          type: string
+          example: "Да, всё нормально"
+
+    PollResults:
+      type: object
+      properties:
+        ratingResults:
+          type: array
+          items:
+            type: object
+            properties:
+              question:
+                type: string
+                example: "Насколько вы довольны нашим сервисом?"
+              rating:
+                type: string
+                example: "4.7"
+        answerResults:
+          type: array
+          items:
+            type: object
+            properties:
+              question:
+                type: string
+                example: "Вам нравится наш сервис?"
+              answers:
+                type: array
+                items:
+                  type: string
+                example:
+                  - "Да"
+                  - "Нет"
+
+    CardUserAssignRequest:
+      type: object
+      properties:
+        nickname:
+          type: string
+          example: "reddiridabl666"
+
+    SearchResult:
+      type: object
+      properties:
+        boardId:
+          type: integer
+        where:
+          type: string
+          enum: ["card_title", "checklist", "comment"]
+    
+    RequestBodySearch:
+      type: object
+      properties:
+        title:
+          type: string      
 
 paths:
   /auth/register:
@@ -538,6 +818,75 @@ paths:
         "401":
           $ref: "#/components/responses/NoAuthResponse"
 
+  /poll/getQuestions:
+    get:
+      summary: "Получить вопросы CSAT для себя"
+      security:
+        - SessionCookieAuth: []
+      tags:
+        - Опрос
+      responses:
+        "200":
+          description: "Непустой массив, если пользователю пришло время проходить CSAT, или пустой массив, если вопросов нет"
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PollQuestion"
+        "401":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BadResponse"
+
+  /poll/submit:
+    post:
+      summary: "Отправить ответ пользователя на опрос"
+      security:
+        - SessionCookieAuth: []
+      tags:
+        - Опрос
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PollSubmit"
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EmptyOkResponse"
+        "401":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BadResponse"
+
+  /poll/results:
+    get:
+      summary: "Получить результаты опроса"
+      security:
+        - SessionCookieAuth: []
+      tags:
+        - Опрос
+      responses:
+        "200":
+          description: Возвращает результаты опроса
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PollResults"
+        "400":
+          $ref: "#/components/responses/BadRequestResponse"
+        "401":
+          $ref: "#/components/responses/NoAuthResponse"
+
   /boards:
     post:
       summary: Создать новую доску
@@ -692,58 +1041,6 @@ paths:
           $ref: "#/components/responses/ForbiddenResponse"
         "404":
           $ref: "#/components/responses/NotFoundResponse"
-    post:
-      summary: "Добавить пользователя на доску"
-      tags:
-        - Разрешения пользователей
-      security:
-        - SessionCookieAuth: []
-      parameters:
-        - $ref: "#/components/parameters/boardId"
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-                - nickname
-              properties:
-                nickname:
-                  type: string
-                  example: "Tarasovxx"
-      responses:
-        "200":
-          description: "Список прав пользователей"
-          content:
-            application/json:
-              schema:
-                type: "array"
-                items:
-                  $ref: "#/components/schemas/UserPermissions"
-        "400":
-          $ref: "#/components/responses/BadRequestResponse"
-        "401":
-          $ref: "#/components/responses/NoAuthResponse"
-        "403":
-          $ref: "#/components/responses/ForbiddenResponse"
-        "404":
-          $ref: "#/components/responses/NotFoundResponse"
-        "409":
-          description: "Конфликт"
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  status:
-                    type: integer
-                    enum: [409]
-                    example: 409
-                  text:
-                    type: string
-                    enum: ["user already at board"]
-                    example: "user already at board"
 
   /userPermissions/{boardId}/{userId}:
     put:
@@ -856,32 +1153,21 @@ paths:
         "404":
           $ref: "#/components/responses/NotFoundResponse"
 
-  /cards/{boardId}/{cardId}:
+  /cards/{cardId}:
     patch:
-      summary: Обновить карточку
+      summary: "Обновить карточку. Если дедлайн равен Go-шной магической дате (которая используется как формат для time.Time), это означает удаление дедлайна"
       tags:
         - Карточки
       security:
         - SessionCookieAuth: []
       parameters:
-        - $ref: "#/components/parameters/boardId"
         - $ref: "#/components/parameters/cardId"
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                title:
-                  type: string
-                  example: "Обновленная задача"
-                description:
-                  type: string
-                  example: "Обновленное описание задачи"
-                status:
-                  type: string
-                  example: "In Progress"
+              $ref: "#/components/schemas/CardPatch"
       responses:
         "200":
           description: "Карточка успешно обновлена"
@@ -904,11 +1190,35 @@ paths:
       security:
         - SessionCookieAuth: []
       parameters:
-        - $ref: "#/components/parameters/boardId"
         - $ref: "#/components/parameters/cardId"
       responses:
         "200":
           $ref: "#/components/responses/EmptyOkResponse"
+        "400":
+          $ref: "#/components/responses/BadRequestResponse"
+        "401":
+          $ref: "#/components/responses/NoAuthResponse"
+        "403":
+          $ref: "#/components/responses/ForbiddenResponse"
+        "404":
+          $ref: "#/components/responses/NotFoundResponse"
+
+  /cardDetails/{cardId}:
+    get:
+      summary: "Получить подробную информацию о карточке"
+      tags:
+        - Карточки
+      security:
+        - SessionCookieAuth: []
+      parameters:
+        - $ref: "#/components/parameters/cardId"
+      responses:
+        "200":
+          description: "Получена информация о карточке"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CardDetails"
         "400":
           $ref: "#/components/responses/BadRequestResponse"
         "401":
@@ -948,7 +1258,7 @@ paths:
           $ref: "#/components/responses/ForbiddenResponse"
         "404":
           $ref: "#/components/responses/NotFoundResponse"
-  /columns/{boardId}/{columnId}:
+  /columns/{columnId}:
     put:
       summary: "Изменить колонку"
       tags:
@@ -956,7 +1266,6 @@ paths:
       security:
         - SessionCookieAuth: []
       parameters:
-        - $ref: "#/components/parameters/boardId"
         - $ref: "#/components/parameters/columnId"
       requestBody:
         required: true
@@ -986,7 +1295,6 @@ paths:
       security:
         - SessionCookieAuth: []
       parameters:
-        - $ref: "#/components/parameters/boardId"
         - $ref: "#/components/parameters/columnId"
       responses:
         "200":
@@ -1000,5 +1308,610 @@ paths:
         "404":
           $ref: "#/components/responses/NotFoundResponse"
 
-security:
-  - SessionCookieAuth: []
+  /assignedUser/{cardId}:
+    put:
+      summary: "Назначить пользователя на карточку"
+      tags:
+        - Назначение пользователя на карточку
+      security:
+        - SessionCookieAuth: []
+      parameters:
+        - $ref: "#/components/parameters/cardId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CardUserAssignRequest"
+      responses:
+        "200":
+          description: "Пользователь назначен на карточку"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "400":
+          $ref: "#/components/responses/BadRequestResponse"
+        "401":
+          $ref: "#/components/responses/NoAuthResponse"
+        "403":
+          $ref: "#/components/responses/ForbiddenResponse"
+        "404":
+          $ref: "#/components/responses/NotFoundResponse"
+        "409":
+          $ref: "#/components/responses/ConflictResponse"
+
+  /assignedUser/{cardId}/{userId}:
+    delete:
+      summary: "Убрать назначение пользователя на карточку"
+      tags:
+        - Назначение пользователя на карточку
+      security:
+        - SessionCookieAuth: []
+      parameters:
+        - $ref: "#/components/parameters/cardId"
+        - $ref: "#/components/parameters/userId"
+      responses:
+        "200":
+          $ref: "#/components/responses/EmptyOkResponse"
+        "400":
+          $ref: "#/components/responses/BadRequestResponse"
+        "401":
+          $ref: "#/components/responses/NoAuthResponse"
+        "403":
+          $ref: "#/components/responses/ForbiddenResponse"
+        "404":
+          $ref: "#/components/responses/NotFoundResponse"
+
+  /comments/{cardId}:
+    post:
+      summary: "Создать комментарий"
+      tags:
+        - Комментарии
+      security:
+        - SessionCookieAuth: []
+      parameters:
+        - $ref: "#/components/parameters/cardId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CommentRequest"
+      responses:
+        "201":
+          description: "Успешно добавлен комментарий"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Comment"
+        "400":
+          $ref: "#/components/responses/BadRequestResponse"
+        "401":
+          $ref: "#/components/responses/NoAuthResponse"
+        "403":
+          $ref: "#/components/responses/ForbiddenResponse"
+        "404":
+          $ref: "#/components/responses/NotFoundResponse"
+
+  /comments/{commentId}:
+    put:
+      summary: "Изменить комментарий"
+      tags:
+        - Комментарии
+      security:
+        - SessionCookieAuth: []
+      parameters:
+        - name: commentId
+          in: path
+          required: true
+          schema:
+            type: string
+            example: "comment_228"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CommentRequest"
+      responses:
+        "200":
+          description: "Успешно изменён комментарий"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Comment"
+        "400":
+          $ref: "#/components/responses/BadRequestResponse"
+        "401":
+          $ref: "#/components/responses/NoAuthResponse"
+        "403":
+          $ref: "#/components/responses/ForbiddenResponse"
+        "404":
+          $ref: "#/components/responses/NotFoundResponse"
+    delete:
+      summary: "Удалить комментарий"
+      tags:
+        - Комментарии
+      security:
+        - SessionCookieAuth: []
+      parameters:
+        - name: commentId
+          in: path
+          required: true
+          schema:
+            type: string
+            example: "comment_228"
+      responses:
+        "200":
+          $ref: "#/components/responses/EmptyOkResponse"
+        "400":
+          $ref: "#/components/responses/BadRequestResponse"
+        "401":
+          $ref: "#/components/responses/NoAuthResponse"
+        "403":
+          $ref: "#/components/responses/ForbiddenResponse"
+        "404":
+          $ref: "#/components/responses/NotFoundResponse"
+
+  /checkList/{cardId}:
+    post:
+      summary: "Добавить поле чеклиста в конец"
+      tags:
+        - Чеклист
+      security:
+        - SessionCookieAuth: []
+      parameters:
+        - $ref: "#/components/parameters/cardId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CheckListFieldPostRequest"
+      responses:
+        "201":
+          description: "Поле чеклиста успешно добавлено в конец"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CheckListField"
+        "400":
+          $ref: "#/components/responses/BadRequestResponse"
+        "401":
+          $ref: "#/components/responses/NoAuthResponse"
+        "403":
+          $ref: "#/components/responses/ForbiddenResponse"
+        "404":
+          $ref: "#/components/responses/NotFoundResponse"
+
+  /checkList/{fieldId}:
+    patch:
+      summary: "Изменить положение, текст или статус строки чеклиста"
+      tags:
+        - Чеклист
+      security:
+        - SessionCookieAuth: []
+      parameters:
+        - name: fieldId
+          in: path
+          required: true
+          schema:
+            type: string
+            example: "field_228"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CheckListFieldPutRequest"
+      responses:
+        "200":
+          description: "Успешно изменена строка чеклиста. Возвращает все строки обновлённого чеклиста"
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CheckListField"
+        "400":
+          $ref: "#/components/responses/BadRequestResponse"
+        "401":
+          $ref: "#/components/responses/NoAuthResponse"
+        "403":
+          $ref: "#/components/responses/ForbiddenResponse"
+        "404":
+          $ref: "#/components/responses/NotFoundResponse"
+    delete:
+      summary: "Удалить поле чеклиста"
+      tags:
+        - Чеклист
+      security:
+        - SessionCookieAuth: []
+      parameters:
+        - name: fieldId
+          in: path
+          required: true
+          schema:
+            type: string
+            example: "field_228"
+      responses:
+        "200":
+          $ref: "#/components/responses/EmptyOkResponse"
+        "400":
+          $ref: "#/components/responses/BadRequestResponse"
+        "401":
+          $ref: "#/components/responses/NoAuthResponse"
+        "403":
+          $ref: "#/components/responses/ForbiddenResponse"
+        "404":
+          $ref: "#/components/responses/NotFoundResponse"
+
+  /cardCover/{cardId}:
+    put:
+      summary: "Установить обложку карточки"
+      tags:
+        - Обложка карточки
+      security:
+        - SessionCookieAuth: []
+      parameters:
+        - $ref: "#/components/parameters/cardId"
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                avatar:
+                  type: string
+                  format: binary
+                  description: "Прикладываемая обложка"
+      responses:
+        "200":
+          description: "Успешно установлена обложка"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Card"
+        "400":
+          $ref: "#/components/responses/BadRequestResponse"
+        "401":
+          $ref: "#/components/responses/NoAuthResponse"
+        "403":
+          $ref: "#/components/responses/ForbiddenResponse"
+        "404":
+          $ref: "#/components/responses/NotFoundResponse"
+
+    delete:
+      summary: "Удалить обложку карточки"
+      tags:
+        - Обложка карточки
+      security:
+        - SessionCookieAuth: []
+      parameters:
+        - $ref: "#/components/parameters/cardId"
+      responses:
+        "200":
+          $ref: "#/components/responses/EmptyOkResponse"
+        "400":
+          $ref: "#/components/responses/BadRequestResponse"
+        "401":
+          $ref: "#/components/responses/NoAuthResponse"
+        "403":
+          $ref: "#/components/responses/ForbiddenResponse"
+        "404":
+          $ref: "#/components/responses/NotFoundResponse"
+
+  /attachments/{cardId}:
+    put:
+      summary: "Добавить вложение к карточке"
+      tags:
+        - Вложения
+      security:
+        - SessionCookieAuth: []
+      parameters:
+        - $ref: "#/components/parameters/cardId"
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                avatar:
+                  type: string
+                  format: binary
+                  description: "Прикладываемый файл"
+      responses:
+        "200":
+          description: "Успешно загружен файл"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Attachment"
+        "400":
+          $ref: "#/components/responses/BadRequestResponse"
+        "401":
+          $ref: "#/components/responses/NoAuthResponse"
+        "403":
+          $ref: "#/components/responses/ForbiddenResponse"
+        "404":
+          $ref: "#/components/responses/NotFoundResponse"
+
+  /attachments/{attachmentId}:
+    delete:
+      summary: "Удалить вложение с карточки"
+      tags:
+        - Вложения
+      security:
+        - SessionCookieAuth: []
+      parameters:
+        - name: attachmentId
+          in: path
+          required: true
+          schema:
+            type: string
+            example: "attachment_666"
+      responses:
+        "200":
+          $ref: "#/components/responses/EmptyOkResponse"
+        "400":
+          $ref: "#/components/responses/BadRequestResponse"
+        "401":
+          $ref: "#/components/responses/NoAuthResponse"
+        "403":
+          $ref: "#/components/responses/ForbiddenResponse"
+        "404":
+          $ref: "#/components/responses/NotFoundResponse"
+
+  /cardOrder/{cardId}:
+    put:
+      summary: >
+        Переместить карточку.
+        previousCardId задать -1, если новое положение карточки - первое в колонке.
+        nextCardId задать -1, если новое положение карточки - последнее в колонке
+      tags:
+        - Drag-n-Drop
+      security:
+        - SessionCookieAuth: []
+      parameters:
+        - $ref: "#/components/parameters/cardId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CardMoveRequest"
+      responses:
+        "200":
+          $ref: "#/components/responses/EmptyOkResponse"
+        "400":
+          $ref: "#/components/responses/BadRequestResponse"
+        "401":
+          $ref: "#/components/responses/NoAuthResponse"
+        "403":
+          $ref: "#/components/responses/ForbiddenResponse"
+        "404":
+          $ref: "#/components/responses/NotFoundResponse"
+        "409":
+          description: "Не получается переместить карточку. Может быть, кто-то другой перемещал карточки только что"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: number
+                    example: 409
+                  text:
+                    type: string
+                    example: "conflict"
+
+  /columnOrder/{columnId}:
+    put:
+      summary: >
+        Переместить колонку.
+        previousColumnId задать -1, если новое положение колонки - первое на доске.
+        nextColumnId задать -1, если новое положение колонки - последнее на доске
+      tags:
+        - Drag-n-Drop
+      security:
+        - SessionCookieAuth: []
+      parameters:
+        - $ref: "#/components/parameters/columnId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ColumnMoveRequest"
+      responses:
+        "200":
+          $ref: "#/components/responses/EmptyOkResponse"
+        "400":
+          $ref: "#/components/responses/BadRequestResponse"
+        "401":
+          $ref: "#/components/responses/NoAuthResponse"
+        "403":
+          $ref: "#/components/responses/ForbiddenResponse"
+        "404":
+          $ref: "#/components/responses/NotFoundResponse"
+        "409":
+          description: "Не получается переместить колонку. Может быть, кто-то другой перемещал карточки только что"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: number
+                    example: 409
+                  text:
+                    type: string
+                    example: "conflict"
+
+  /sharedCard/{cardUuid}:
+    get:
+      summary: "Получить карточку по ссылке"
+      tags:
+        - Доступ к карточке по ссылке
+      security:
+        - SessionCookieAuth: []
+      parameters:
+        - name: cardUuid
+          in: path
+          required: true
+          schema:
+            type: string
+            example: "4421f872-6945-42ac-b7e4-88842327c76f"
+      responses:
+        "200":
+          description: "Карточка с таким UUID найдена. Смотри схему, там может быть два варианта: или пользователь есть на этой доске, или пользователя нет"
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - type: object
+                    properties:
+                      boardId:
+                        type: integer
+                        example: 123
+                      cardId:
+                        type: integer
+                        example: 234
+                  - type: object
+                    properties:
+                      board:
+                        $ref: "#/components/schemas/Board"
+                      card:
+                        $ref: "#/components/schemas/CardDetails"
+        "400":
+          $ref: "#/components/responses/BadRequestResponse"
+        "404":
+          $ref: "#/components/responses/NotFoundResponse"
+
+  /inviteLink/{boardId}:
+    put:
+      summary: "Или создать новую ссылку, или удалить старую и заменить на новую"
+      tags:
+        - Ссылка-приглашение на доску
+      security:
+        - SessionCookieAuth: []
+      parameters:
+        - $ref: "#/components/parameters/boardId"
+      responses:
+        "200":
+          description: "Успешно задана ссылка-приглашение"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InviteLink"
+        "400":
+          $ref: "#/components/responses/BadRequestResponse"
+        "401":
+          $ref: "#/components/responses/NoAuthResponse"
+        "403":
+          $ref: "#/components/responses/ForbiddenResponse"
+        "404":
+          $ref: "#/components/responses/NotFoundResponse"
+    delete:
+      summary: "Удалена ссылка-приглашение"
+      tags:
+        - Ссылка-приглашение на доску
+      security:
+        - SessionCookieAuth: []
+      parameters:
+        - $ref: "#/components/parameters/boardId"
+      responses:
+        "200":
+          $ref: "#/components/responses/EmptyOkResponse"
+        "400":
+          $ref: "#/components/responses/BadRequestResponse"
+        "401":
+          $ref: "#/components/responses/NoAuthResponse"
+        "403":
+          $ref: "#/components/responses/ForbiddenResponse"
+        "404":
+          $ref: "#/components/responses/NotFoundResponse"
+
+  /joinBoard/{inviteUuid}:
+    get:
+      summary: "Получить информацию о доске, на которую тебя приглашают"
+      tags:
+        - Ссылка-приглашение на доску
+      parameters:
+        - name: inviteUuid
+          in: path
+          required: true
+          schema:
+            type: string
+            example: "611ae8b9-8ab2-4f9f-9b1a-dc641355c59d"
+      security:
+        - SessionCookieAuth: []
+      responses:
+        "200":
+          description: "Информация о доске"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Board"
+        "400":
+          $ref: "#/components/responses/BadRequestResponse"
+        "401":
+          $ref: "#/components/responses/NoAuthResponse"
+        "404":
+          $ref: "#/components/responses/NotFoundResponse"
+    post:
+      summary: "Присоединиться к доске, на которую тебя приглашают"
+      tags:
+        - Ссылка-приглашение на доску
+      parameters:
+        - name: inviteUuid
+          in: path
+          required: true
+          schema:
+            type: string
+            example: "611ae8b9-8ab2-4f9f-9b1a-dc641355c59d"
+      security:
+        - SessionCookieAuth: []
+      responses:
+        "200":
+          description: "Успешно присоединился"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Board"
+        "400":
+          $ref: "#/components/responses/BadRequestResponse"
+        "401":
+          $ref: "#/components/responses/NoAuthResponse"
+        "404":
+          $ref: "#/components/responses/NotFoundResponse"
+        "409":
+          $ref: "#/components/responses/NotFoundResponse"
+
+  /search:
+    post:
+      summary: "Запрос на полнотекстовый поиск"
+      security:
+        - SessionCookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RequestBodySearch"  
+      responses:
+        "200":
+          description: "Результаты запроса"
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SearchResult"
+        "400":
+          $ref: "#/components/responses/BadRequestResponse"
+        "401":
+          $ref: "#/components/responses/NoAuthResponse"
