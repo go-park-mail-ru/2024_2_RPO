@@ -2,11 +2,16 @@ openapi: 3.0.2
 info:
   title: Pumpkin API
   version: 1.3.0
+  version: 1.3.0
   description: RESTful API для облачного канбана Pumpkin
+
 
 servers:
   - url: https://to.be.defined/api
     description: Основной сервер API
+
+security:
+  - SessionCookieAuth: []
 
 security:
   - SessionCookieAuth: []
@@ -77,6 +82,20 @@ components:
               text:
                 type: string
                 example: "not found"
+    ConflictResponse:
+      description: "Такой элемент уже существует"
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              status:
+                type: integer
+                example: 409
+              text:
+                type: string
+                example: "conflict"
+
     ConflictResponse:
       description: "Такой элемент уже существует"
       content:
@@ -163,6 +182,7 @@ components:
         avatarImageUrl:
           type: string
           example: "/uploads/550e8400-e29b-41d4-a716-446655440000.png"
+          example: "/uploads/550e8400-e29b-41d4-a716-446655440000.png"
 
     UserPut:
       type: object
@@ -205,6 +225,9 @@ components:
         myInviteLinkUuid:
           type: string
           example: "7acebd60-9441-4a74-84da-36596103f15d"
+        myInviteLinkUuid:
+          type: string
+          example: "7acebd60-9441-4a74-84da-36596103f15d"
 
     BoardPut:
       type: object
@@ -243,7 +266,9 @@ components:
           type: string
           example: "Задача 1"
         coverImageUrl:
+        coverImageUrl:
           type: string
+          example: "/uploads/b5ce022f-270a-4638-a8e3-799d135d64c7.jpg"
           example: "/uploads/b5ce022f-270a-4638-a8e3-799d135d64c7.jpg"
         columnId:
           type: integer
@@ -278,6 +303,28 @@ components:
         cardUuid:
           type: string
           example: "70f6549b-96d1-47ef-8409-de73e74fd82c"
+        deadline:
+          type: string
+          format: date-time
+          example: "2023-10-01T12:34:56Z"
+        isDone:
+          type: boolean
+          example: false
+        hasCheckList:
+          type: boolean
+          example: false
+        hasAttachments:
+          type: boolean
+          example: false
+        hasAssignedUsers:
+          type: boolean
+          example: false
+        hasComments:
+          type: boolean
+          example: false
+        cardUuid:
+          type: string
+          example: "70f6549b-96d1-47ef-8409-de73e74fd82c"
 
     CardPostRequest:
       type: object
@@ -290,6 +337,20 @@ components:
         columnId:
           type: integer
           example: 3
+
+    CardPatch:
+      type: object
+      properties:
+        title:
+          type: string
+          example: "Посадить цветок"
+        deadline:
+          type: string
+          format: date-time
+          example: "2023-10-01T12:34:56Z"
+        isDone:
+          type: boolean
+          example: false
 
     CardPatch:
       type: object
@@ -374,6 +435,7 @@ components:
           type: string
           format: password
           example: "reddiridabl666"
+          example: "reddiridabl666"
 
     LoginRequest:
       type: object
@@ -388,6 +450,7 @@ components:
         password:
           type: string
           format: password
+          example: "reddiridabl666"
           example: "reddiridabl666"
 
     PasswordChangeRequest:
@@ -887,6 +950,75 @@ paths:
         "401":
           $ref: "#/components/responses/NoAuthResponse"
 
+  /poll/getQuestions:
+    get:
+      summary: "Получить вопросы CSAT для себя"
+      security:
+        - SessionCookieAuth: []
+      tags:
+        - Опрос
+      responses:
+        "200":
+          description: "Непустой массив, если пользователю пришло время проходить CSAT, или пустой массив, если вопросов нет"
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PollQuestion"
+        "401":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BadResponse"
+
+  /poll/submit:
+    post:
+      summary: "Отправить ответ пользователя на опрос"
+      security:
+        - SessionCookieAuth: []
+      tags:
+        - Опрос
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PollSubmit"
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EmptyOkResponse"
+        "401":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BadResponse"
+
+  /poll/results:
+    get:
+      summary: "Получить результаты опроса"
+      security:
+        - SessionCookieAuth: []
+      tags:
+        - Опрос
+      responses:
+        "200":
+          description: Возвращает результаты опроса
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PollResults"
+        "400":
+          $ref: "#/components/responses/BadRequestResponse"
+        "401":
+          $ref: "#/components/responses/NoAuthResponse"
+
   /boards:
     post:
       summary: Создать новую доску
@@ -1154,7 +1286,9 @@ paths:
           $ref: "#/components/responses/NotFoundResponse"
 
   /cards/{cardId}:
+  /cards/{cardId}:
     patch:
+      summary: "Обновить карточку. Если дедлайн равен Go-шной магической дате (которая используется как формат для time.Time), это означает удаление дедлайна"
       summary: "Обновить карточку. Если дедлайн равен Go-шной магической дате (которая используется как формат для time.Time), это означает удаление дедлайна"
       tags:
         - Карточки
@@ -1167,6 +1301,7 @@ paths:
         content:
           application/json:
             schema:
+              $ref: "#/components/schemas/CardPatch"
               $ref: "#/components/schemas/CardPatch"
       responses:
         "200":
@@ -1194,6 +1329,31 @@ paths:
       responses:
         "200":
           $ref: "#/components/responses/EmptyOkResponse"
+        "400":
+          $ref: "#/components/responses/BadRequestResponse"
+        "401":
+          $ref: "#/components/responses/NoAuthResponse"
+        "403":
+          $ref: "#/components/responses/ForbiddenResponse"
+        "404":
+          $ref: "#/components/responses/NotFoundResponse"
+
+  /cardDetails/{cardId}:
+    get:
+      summary: "Получить подробную информацию о карточке"
+      tags:
+        - Карточки
+      security:
+        - SessionCookieAuth: []
+      parameters:
+        - $ref: "#/components/parameters/cardId"
+      responses:
+        "200":
+          description: "Получена информация о карточке"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CardDetails"
         "400":
           $ref: "#/components/responses/BadRequestResponse"
         "401":
@@ -1258,6 +1418,7 @@ paths:
           $ref: "#/components/responses/ForbiddenResponse"
         "404":
           $ref: "#/components/responses/NotFoundResponse"
+  /columns/{columnId}:
   /columns/{columnId}:
     put:
       summary: "Изменить колонку"
