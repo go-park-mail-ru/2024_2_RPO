@@ -628,12 +628,6 @@ components:
         where:
           type: string
           enum: ["card_title", "checklist", "comment"]
-    
-    RequestBodySearch:
-      type: object
-      properties:
-        title:
-          type: string      
 
 paths:
   /auth/register:
@@ -1896,12 +1890,6 @@ paths:
       summary: "Запрос на полнотекстовый поиск"
       security:
         - SessionCookieAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/RequestBodySearch"  
       responses:
         "200":
           description: "Результаты запроса"
