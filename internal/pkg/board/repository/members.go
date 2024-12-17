@@ -692,20 +692,33 @@ func (r *BoardRepository) RearrangeCards(ctx context.Context, column1 []models.C
 
 // RearrangeColumns обновляет позиции всех колонок, чтобы сделать порядок, как в слайсе
 func (r *BoardRepository) RearrangeColumns(ctx context.Context, columns []models.Column) (err error) {
-	panic("not implemented")
 	funcName := "RearrangeColumns"
-	query := ` WITH`
-	batch := &pgx.Batch{}
-	for _, col := range columns {
-		batch.Queue(query, col.OrderIndex)
+	query := `
+	UPDATE kanban_column SET order_index=$1 WHERE col_id=$2;
+	`
+	tx, err := r.db.Begin(ctx)
+	if err != nil {
+		return fmt.Errorf("%s (begin): %w", funcName, err)
 	}
 
-	br := r.db.SendBatch(ctx, batch)
+	batch := &pgx.Batch{}
+	for idx, col := range columns {
+		batch.Queue(query, idx, col.ID)
+	}
+
+	br := tx.SendBatch(ctx, batch)
 	err = br.Close()
 	logging.Debug(ctx, funcName, " batch query has err: ", err)
 	if err != nil {
 		return fmt.Errorf("%s (batch query): %w", funcName, err)
 	}
+
+	tx.Commit(ctx)
+	logging.Debug(ctx, funcName, " commit has err: ", err)
+	if err != nil {
+		return fmt.Errorf("%s (commit): %w", funcName, err)
+	}
+
 	return nil
 }
 
