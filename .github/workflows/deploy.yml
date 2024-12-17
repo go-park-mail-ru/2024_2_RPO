@@ -58,7 +58,7 @@ jobs:
           host: kanban-pumpkin.ru
           username: ubuntu
           key: ${{ secrets.PRIVATE_KEY }}
-          script: cd /home/ubuntu/back && git pull
+          script: cd /home/ubuntu/back && git checkout staging && git pull
       - name: build containers
         uses: appleboy/ssh-action@master
         with:
