@@ -1,7 +1,7 @@
 name: Production Deployment
 on:
   push:
-    branches: 
+    branches:
         - staging
   pull_request:
     branches:
@@ -19,7 +19,7 @@ jobs:
         uses: actions/setup-go@v5
         with:
             go-version: '1.23'
-      - 
+      -
         name: golangci-lint
         uses: golangci/golangci-lint-action@v4
         with:
@@ -29,7 +29,7 @@ jobs:
     needs: linter
     runs-on: ubuntu-latest
     steps:
-      - 
+      -
         name: checkout staging
         uses: actions/checkout@v4
       -
@@ -44,23 +44,31 @@ jobs:
       -
         name: build
         run: go build -v ./...
-      - 
+      -
         name: Test
         run: go test -v ./...
 
   deploy:
-    name: deploy 
+    name: deploy
     needs: tests
     runs-on: ubuntu-latest
     steps:
-      - 
-        name: pull code
+      - name: pull code
         uses: appleboy/ssh-action@master
         with:
           host: kanban-pumpkin.ru
           username: ubuntu
           key: ${{ secrets.PRIVATE_KEY }}
           script: cd /home/ubuntu/back && git pull
+
+      - name: build golang
+        uses: appleboy/ssh-action@master
+        with:
+          host: kanban-pumpkin.ru
+          username: ubuntu
+          key: ${{ secrets.PRIVATE_KEY }}
+          script: cd /home/ubuntu/back && make build_all -j
+
       - name: build containers
         uses: appleboy/ssh-action@master
         with:
@@ -70,10 +78,11 @@ jobs:
           username: ubuntu
           key: ${{ secrets.PRIVATE_KEY }}
           script: cd /home/ubuntu/back && sudo docker compose build
+
       - name: restart service
         uses: appleboy/ssh-action@master
         with:
           host: kanban-pumpkin.ru
           username: ubuntu
           key: ${{ secrets.PRIVATE_KEY }}
-          script: cd /home/ubuntu/back && make build_all -j && docker compose up --build
+          script: cd /home/ubuntu/back && sudo docker compose up

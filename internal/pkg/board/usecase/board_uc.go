@@ -205,10 +205,10 @@ func (uc *BoardUsecase) CreateNewCard(ctx context.Context, userID int64, boardID
 		return nil, fmt.Errorf("CreateNewCard (create): %w", err)
 	}
 
-	err = uc.boardElasticRepository.PutCard(ctx, boardID, card.ID, card.Title)
-	if err != nil {
-		return nil, fmt.Errorf("CreateNewCard (elastic put): %w", err)
-	}
+	// err = uc.boardElasticRepository.PutCard(ctx, boardID, card.ID, card.Title)
+	// if err != nil {
+	// 	return nil, fmt.Errorf("CreateNewCard (elastic put): %w", err)
+	// }
 
 	return &models.Card{
 		ID:        card.ID,
@@ -221,31 +221,32 @@ func (uc *BoardUsecase) CreateNewCard(ctx context.Context, userID int64, boardID
 
 // UpdateCard обновляет карточку и возвращает обновлённую версию
 func (uc *BoardUsecase) UpdateCard(ctx context.Context, userID int64, cardID int64, data *models.CardPatchRequest) (updatedCard *models.Card, err error) {
+	funcName := "UpdateCard"
 	role, boardID, err := uc.boardRepository.GetMemberFromCard(ctx, userID, cardID)
 	if err != nil {
 		if errors.Is(err, errs.ErrNotPermitted) {
-			return nil, fmt.Errorf("UpdateCard (get permissions): %w", err)
+			return nil, fmt.Errorf("%s (get permissions): %w", funcName, err)
 		}
 		if errors.Is(err, errs.ErrNotFound) {
-			return nil, fmt.Errorf("UpdateCard (get permissions): %w", err)
+			return nil, fmt.Errorf("%s (get permissions): %w", funcName, err)
 		}
-		return nil, fmt.Errorf("UpdateCard (get permissions): %w", err)
+		return nil, fmt.Errorf("%s (get permissions): %w", funcName, err)
 	}
 	if role == "viewer" {
-		return nil, fmt.Errorf("UpdateCard (check): %w", errs.ErrNotPermitted)
+		return nil, fmt.Errorf("%s (check): %w", funcName, errs.ErrNotPermitted)
 	}
 
 	updatedCard, err = uc.boardRepository.UpdateCard(ctx, cardID, *data)
 	if err != nil {
-		return nil, fmt.Errorf("UpdateCard (update): %w", err)
+		return nil, fmt.Errorf("%s (update): %w", funcName, err)
 	}
 
 	fmt.Println(boardID)
 
-	err = uc.boardElasticRepository.PutCard(ctx, boardID, updatedCard.ID, updatedCard.Title)
-	if err != nil {
-		return nil, fmt.Errorf("UpdateCard (elastic update): %w", err)
-	}
+	// err = uc.boardElasticRepository.PutCard(ctx, boardID, updatedCard.ID, updatedCard.Title)
+	// if err != nil {
+	// 	return nil, fmt.Errorf("UpdateCard (elastic update): %w", err)
+	// }
 
 	return &models.Card{
 		ID:        updatedCard.ID,

@@ -49,6 +49,8 @@ func (be *BoardElasticRepository) CreateCard(ctx context.Context, boardID int64,
 func (be *BoardElasticRepository) UpdateCard(ctx context.Context, boardID int64, cardID int64, cardTitle string) error {
 	funcName := "UpdateCard"
 
+	panic(funcName + " not implemented")
+
 	return nil
 }
 
