@@ -83,4 +83,4 @@ jobs:
           host: kanban-pumpkin.ru
           username: ubuntu
           key: ${{ secrets.PRIVATE_KEY }}
-          script: cd /home/ubuntu/back && sudo docker compose up
+          script: cd /home/ubuntu/back && sudo docker compose up -d
