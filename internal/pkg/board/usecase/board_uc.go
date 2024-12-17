@@ -205,10 +205,10 @@ func (uc *BoardUsecase) CreateNewCard(ctx context.Context, userID int64, boardID
 		return nil, fmt.Errorf("CreateNewCard (create): %w", err)
 	}
 
-	err = uc.boardElasticRepository.PutCard(ctx, boardID, card.ID, card.Title)
-	if err != nil {
-		return nil, fmt.Errorf("CreateNewCard (elastic put): %w", err)
-	}
+	// err = uc.boardElasticRepository.PutCard(ctx, boardID, card.ID, card.Title)
+	// if err != nil {
+	// 	return nil, fmt.Errorf("CreateNewCard (elastic put): %w", err)
+	// }
 
 	return &models.Card{
 		ID:        card.ID,
@@ -242,10 +242,10 @@ func (uc *BoardUsecase) UpdateCard(ctx context.Context, userID int64, cardID int
 
 	fmt.Println(boardID)
 
-	err = uc.boardElasticRepository.PutCard(ctx, boardID, updatedCard.ID, updatedCard.Title)
-	if err != nil {
-		return nil, fmt.Errorf("UpdateCard (elastic update): %w", err)
-	}
+	// err = uc.boardElasticRepository.PutCard(ctx, boardID, updatedCard.ID, updatedCard.Title)
+	// if err != nil {
+	// 	return nil, fmt.Errorf("UpdateCard (elastic update): %w", err)
+	// }
 
 	return &models.Card{
 		ID:        updatedCard.ID,
