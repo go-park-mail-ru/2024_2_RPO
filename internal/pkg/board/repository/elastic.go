@@ -23,59 +23,82 @@ func CreateBoardElasticRepository(el *elastic.Client) *BoardElasticRepository {
 	}
 }
 
-func (be *BoardElasticRepository) PutCard(ctx context.Context, boardID int64, cardID int64, cardText string) error {
-	funcName := "PutCard"
-	if len(cardText) < ElasticSearchValueMinLength {
-		return fmt.Errorf("%s: cardText must be at least %d characters", funcName, ElasticSearchValueMinLength)
-	}
+func (be *BoardElasticRepository) CreateCard(ctx context.Context, boardID int64, cardID int64, cardTitle string) error {
+	funcName := "CreateCard"
 
-	doc := models.ElasticCard{
-		BoardID:  boardID,
-		CardID:   cardID,
-		CardText: cardText,
-	}
+	docID := fmt.Sprintf("%d", cardID)
 
-	docID := fmt.Sprintf("%d:%d", boardID, cardID)
-
-	_, err := be.elastic.Index().Index(ElasticIdxName).Id(docID).BodyJson(doc).Do(ctx)
+	_, err := be.elastic.Index().
+		Index(ElasticIdxName).
+		Id(docID).
+		BodyJson(map[string]interface{}{
+			"card_id":  cardID,
+			"title":    cardTitle,
+			"board_id": boardID,
+		}).
+		Refresh("wait_for").
+		Do(ctx)
+	logging.Debug(ctx, funcName, "putCard has error: ", err)
 	if err != nil {
-		logging.Warn(ctx, fmt.Sprintf("%s: failed to index card: %v", funcName, err))
-		return fmt.Errorf("%s: index operation failed", funcName)
+		return fmt.Errorf("%s (delete)", funcName)
 	}
 
 	return nil
 }
 
-func (be *BoardElasticRepository) Search(ctx context.Context, query string) ([]int64, error) {
+func (be *BoardElasticRepository) UpdateCard(ctx context.Context, boardID int64, cardID int64, cardTitle string) error {
+	funcName := "UpdateCard"
+
+	return nil
+}
+
+func (be *BoardElasticRepository) Search(ctx context.Context, boards []models.Board, searchValue string) (foundCards []int64, err error) {
 	funcName := "Search"
-	if len(query) < ElasticSearchValueMinLength {
+	if len(searchValue) < ElasticSearchValueMinLength {
 		return nil, fmt.Errorf("%s: query must be at least %d characters", funcName, ElasticSearchValueMinLength)
 	}
 
-	searchQuery := elastic.NewMatchQuery("cardText", query)
-	searchResult, err := be.elastic.Search().Index(ElasticIdxName).Query(searchQuery).Do(ctx)
+	boardIDs := make([]interface{}, len(boards))
+	for i, board := range boards {
+		boardIDs[i] = board.ID
+	}
+
+	boardQuery := elastic.NewTermsQuery("board_id", boardIDs...)
+	searchQuery := elastic.NewMatchQuery("title", searchValue).Fuzziness("AUTO")
+
+	fullQuery := elastic.NewBoolQuery().Filter(boardQuery).Must(searchQuery)
+
+	searchResult, err := be.elastic.Search().
+		Index(ElasticIdxName).
+		Query(fullQuery).
+		Do(ctx)
+	logging.Debug(ctx, funcName, "error performing search: ", err)
 	if err != nil {
-		logging.Error(ctx, fmt.Sprintf("%s: search error: %v", funcName, err))
 		return nil, fmt.Errorf("%s: search operation failed", funcName)
 	}
 
-	var cardIDs []int64
+	foundCards = make([]int64, 0, len(searchResult.Hits.Hits))
 	for _, hit := range searchResult.Hits.Hits {
-		var doc models.ElasticCard
-		if err := json.Unmarshal(hit.Source, &doc); err != nil {
-			logging.Warn(ctx, fmt.Sprintf("%s: failed to unmarshal hit: %v", funcName, err))
+		var card struct {
+			CardID int64 `json:"card_id"`
+		}
+		if err := json.Unmarshal(hit.Source, &card); err != nil {
+			logging.Debug(ctx, funcName, "failed to unmarshal card ID ", err)
 			continue
 		}
-		cardIDs = append(cardIDs, doc.CardID)
+		foundCards = append(foundCards, card.CardID)
 	}
 
-	return cardIDs, nil
+	return foundCards, nil
 }
 
-func (be *BoardElasticRepository) DeleteCard(ctx context.Context, boardID, cardID int64) (err error) {
+func (be *BoardElasticRepository) DeleteCard(ctx context.Context, cardID int64) (err error) {
 	funcName := "DeleteCard"
-	docID := fmt.Sprintf("%d:%d", boardID, cardID)
-	_, err = be.elastic.Delete().Index(ElasticIdxName).Id(docID).Do(ctx)
+	docID := fmt.Sprintf("%d", cardID)
+	_, err = be.elastic.Delete().
+		Index(ElasticIdxName).
+		Id(docID).
+		Do(ctx)
 	logging.Debug(ctx, funcName, "delete has error: ", err)
 	if err != nil {
 		return fmt.Errorf("%s (delete)", funcName)

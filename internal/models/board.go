@@ -9,6 +9,7 @@ type Board struct {
 	CreatedAt          time.Time `json:"createdAt"`
 	UpdatedAt          time.Time `json:"updatedAt"`
 	LastVisitAt        time.Time `json:"lastVisitAt"`
+	MyInviteUUID       *string   `json:"myInviteLinkUuid"`
 }
 
 // MemberWithPermissions - пользователь с правами (в контексте доски)
@@ -42,13 +43,6 @@ type Card struct {
 	HasAttachments   bool       `json:"hasAttachments"`
 	HasAssignedUsers bool       `json:"hasAssignedUsers"`
 	HasComments      bool       `json:"hasComments"`
-	OrderIndex       int64      `json:"-"`
-}
-
-type ElasticCard struct {
-	BoardID  int64  `json:"boardID"`
-	CardID   int64  `json:"cardID"`
-	CardText string `json:"cardText"`
 }
 
 type Column struct {

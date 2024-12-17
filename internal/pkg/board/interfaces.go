@@ -13,13 +13,13 @@ type BoardUsecase interface {
 	DeleteBoard(ctx context.Context, userID int64, boardID int64) error
 	GetMyBoards(ctx context.Context, userID int64) (boards []models.Board, err error)
 	GetMembersPermissions(ctx context.Context, userID int64, boardID int64) (data []models.MemberWithPermissions, err error)
-	AddMember(ctx context.Context, userID int64, boardID int64, addRequest *models.AddMemberRequest) (newMember *models.MemberWithPermissions, err error)
 	UpdateMemberRole(ctx context.Context, userID int64, boardID int64, memberID int64, newRole string) (updatedMember *models.MemberWithPermissions, err error)
 	RemoveMember(ctx context.Context, userID int64, boardID int64, memberID int64) error
 	GetBoardContent(ctx context.Context, userID int64, boardID int64) (content *models.BoardContent, err error)
 	CreateNewCard(ctx context.Context, userID int64, boardID int64, data *models.CardPostRequest) (newCard *models.Card, err error)
 	UpdateCard(ctx context.Context, userID int64, cardID int64, data *models.CardPatchRequest) (updatedCard *models.Card, err error)
 	DeleteCard(ctx context.Context, userID int64, cardID int64) (err error)
+	SearchCards(ctx context.Context, userID int64, searchValue string) (cards []models.Card, err error)
 	CreateColumn(ctx context.Context, userID int64, boardID int64, data *models.ColumnRequest) (newCol *models.Column, err error)
 	UpdateColumn(ctx context.Context, userID int64, columnID int64, data *models.ColumnRequest) (updatedCol *models.Column, err error)
 	DeleteColumn(ctx context.Context, userID int64, columnID int64) (err error)
@@ -44,6 +44,7 @@ type BoardUsecase interface {
 	FetchInvite(ctx context.Context, inviteUUID string) (board *models.Board, err error)
 	AcceptInvite(ctx context.Context, userID int64, inviteUUID string) (board *models.Board, err error)
 	GetCardDetails(ctx context.Context, userID int64, cardID int64) (details *models.CardDetails, err error)
+	GetCardDetailsUnauthorized(ctx context.Context, cardID int64) (details *models.CardDetails, err error)
 }
 
 type BoardRepo interface {
@@ -57,6 +58,7 @@ type BoardRepo interface {
 	CreateNewCard(ctx context.Context, columnID int64, title string) (newCard *models.Card, err error)
 	UpdateCard(ctx context.Context, cardID int64, data models.CardPatchRequest) (updateCard *models.Card, err error)
 	DeleteCard(ctx context.Context, cardID int64) (err error)
+	GetCardsByID(ctx context.Context, cardIDs []int64) (cards []models.Card, err error)
 	CreateColumn(ctx context.Context, boardId int64, title string) (newColumn *models.Column, err error)
 	UpdateColumn(ctx context.Context, columnID int64, data models.ColumnRequest) (updateColumn *models.Column, err error)
 	DeleteColumn(ctx context.Context, columnID int64) (err error)
@@ -65,7 +67,6 @@ type BoardRepo interface {
 	GetMembersWithPermissions(ctx context.Context, boardID int64, userID int64) (members []models.MemberWithPermissions, err error)
 	SetMemberRole(ctx context.Context, userID int64, boardID int64, memberUserID int64, newRole string) (member *models.MemberWithPermissions, err error)
 	RemoveMember(ctx context.Context, boardID int64, memberUserID int64) (err error)
-	AddMember(ctx context.Context, boardID int64, adderID int64, memberUserID int64) (member *models.MemberWithPermissions, err error)
 	GetUserByNickname(ctx context.Context, nickname string) (user *models.UserProfile, err error)
 	SetBoardBackground(ctx context.Context, userID int64, boardID int64, fileID int64) (newBoard *models.Board, err error)
 	GetMemberFromCard(ctx context.Context, userID int64, cardID int64) (role string, boardID int64, err error)
@@ -77,9 +78,9 @@ type BoardRepo interface {
 	GetCardAssignedUsers(ctx context.Context, cardID int64) (assignedUsers []models.UserProfile, err error)
 	GetCardComments(ctx context.Context, cardID int64) (comments []models.Comment, err error)
 	GetCardAttachments(ctx context.Context, cardID int64) (attachments []models.Attachment, err error)
-	GetCardsForMove(ctx context.Context, col1ID int64, col2ID *int64) (column1 []models.Card, column2 []models.Card, err error)
+	GetCardsForMove(ctx context.Context, destColumnID int64, cardID *int64) (columnFrom []models.Card, columnTo []models.Card, err error)
 	GetColumnsForMove(ctx context.Context, boardID int64) (columns []models.Column, err error)
-	RearrangeCards(ctx context.Context, columnID int64, cards []models.Card) (err error)
+	RearrangeCards(ctx context.Context, column1 []models.Card, column2 []models.Card) (err error)
 	RearrangeColumns(ctx context.Context, columns []models.Column) (err error)
 	RearrangeCheckList(ctx context.Context, fields []models.CheckListField) (err error)
 	AssignUserToCard(ctx context.Context, cardID int64, userID int64) (assignedUser *models.UserProfile, err error)
@@ -97,13 +98,14 @@ type BoardRepo interface {
 	PullInviteLink(ctx context.Context, userID int64, boardID int64) (link *models.InviteLink, err error)
 	DeleteInviteLink(ctx context.Context, userID int64, boardID int64) (err error)
 	FetchInvite(ctx context.Context, inviteUUID string) (board *models.Board, err error)
-	AcceptInvite(ctx context.Context, userID int64, boardID int64, invitedUserID int64, inviteUUID string) (board *models.Board, err error)
+	AcceptInvite(ctx context.Context, userID int64, boardID int64, inviteUUID string) (err error)
+	GetSharedCardInfo(ctx context.Context, cardUUID string) (cardID int64, boardID int64, err error)
 	DeduplicateFile(ctx context.Context, file *models.UploadedFile) (fileNames []string, fileIDs []int64, err error)
 	RegisterFile(ctx context.Context, file *models.UploadedFile) (fileID int64, fileUUID string, err error)
 }
 
 type BoardElasticRepo interface {
-	PutCard(ctx context.Context, boardID int64, cardID int64, cardText string) (err error)
-	Search(ctx context.Context, query string) (cardID []int64, err error)
+	PutCard(ctx context.Context, boardID int64, cardID int64, cardTitle string) error
+	Search(ctx context.Context, boards []models.Board, searchValue string) (foundCards []int64, err error)
 	DeleteCard(ctx context.Context, cardID int64) (err error)
 }

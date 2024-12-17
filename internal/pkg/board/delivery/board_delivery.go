@@ -3,6 +3,7 @@ package delivery
 import (
 	"RPO_back/internal/models"
 	"RPO_back/internal/pkg/board"
+	"RPO_back/internal/pkg/middleware/session"
 	"RPO_back/internal/pkg/utils/logging"
 	"RPO_back/internal/pkg/utils/requests"
 	"RPO_back/internal/pkg/utils/responses"
@@ -309,6 +310,29 @@ func (d *BoardDelivery) DeleteCard(w http.ResponseWriter, r *http.Request) {
 	}
 
 	responses.DoEmptyOkResponse(w)
+}
+
+func (d *BoardDelivery) SearchCards(w http.ResponseWriter, r *http.Request) {
+	funcName := "SearchCards"
+	userID, ok := requests.GetUserIDOrFail(w, r, funcName)
+	if !ok {
+		return
+	}
+
+	requestData := &models.ElasticRequest{}
+	err := requests.GetRequestData(r, requestData)
+	if err != nil {
+		responses.DoBadResponseAndLog(r, w, http.StatusBadRequest, "bad request")
+		return
+	}
+
+	cards, err := d.boardUsecase.SearchCards(r.Context(), userID, requestData.Title)
+	if err != nil {
+		responses.ResponseErrorAndLog(r, w, err, funcName)
+		return
+	}
+
+	responses.DoJSONResponse(r, w, cards, http.StatusCreated)
 }
 
 // CreateColumn создаёт колонку канбана на доске и возвращает её
@@ -823,14 +847,12 @@ func (d *BoardDelivery) MoveColumn(w http.ResponseWriter, r *http.Request) {
 // GetSharedCard даёт информацию о карточке, которой поделились по ссылке
 func (d *BoardDelivery) GetSharedCard(w http.ResponseWriter, r *http.Request) {
 	funcName := "GetSharedCard"
-	userID, ok := requests.GetUserIDOrFail(w, r, funcName)
+	userID, ok := session.UserIDFromContext(r.Context())
 	if !ok {
-		return
+		userID = -1
 	}
 
-	//cardUuid: 4421f872-6945-42ac-b7e4-88842327c76f
-
-	cardUUID, err := requests.GetUUIDFromRequest(r, "cardUuid")
+	cardUUID, err := requests.GetUUIDFromRequest(r, "cardUUID")
 	if err != nil {
 		responses.DoBadResponseAndLog(r, w, http.StatusBadRequest, "bad request")
 		return

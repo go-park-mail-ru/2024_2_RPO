@@ -1,12 +1,14 @@
 package repository
 
 import (
+	"RPO_back/internal/errs"
 	"RPO_back/internal/models"
 	"RPO_back/internal/pkg/utils/logging"
 	"RPO_back/internal/pkg/utils/uploads"
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/jackc/pgx/v5"
 )
@@ -31,9 +33,10 @@ func (r *BoardRepository) GetCardsForBoard(ctx context.Context, boardID int64) (
 		COALESCE(uuf.file_extension::text, ''),
 		c.card_uuid
 	FROM card c
-	JOIN kanban_column kc ON c.col_id = kc.col_id
+	JOIN kanban_column kc ON c.col_id = kc.col_id	
 	LEFT JOIN user_uploaded_file uuf ON c.cover_file_id = uuf.file_id
-	WHERE kc.board_id = $1;
+	WHERE kc.board_id = $1
+	ORDER BY c.order_index;
 `
 	rows, err := r.db.Query(ctx, query, boardID)
 	logging.Debug(ctx, funcName, " query has err: ", err)
@@ -130,7 +133,7 @@ func (r *BoardRepository) UpdateCard(ctx context.Context, cardID int64, data mod
 		is_done = COALESCE($4, is_done),
 		updated_at = CURRENT_TIMESTAMP
 		WHERE card_id=$1
-		RETURNING card_id, col_id, title, created_at, updated_at, deadline, is_done
+		RETURNING card_id, col_id, title, created_at, updated_at, deadline, is_done, card_uuid
 	), update_board AS (
 		UPDATE board
 		SET updated_at=CURRENT_TIMESTAMP
@@ -153,7 +156,8 @@ func (r *BoardRepository) UpdateCard(ctx context.Context, cardID int64, data mod
 		(SELECT (NOT COUNT(*)=0) FROM checklist_field AS f WHERE f.card_id=c.card_id),
 		(SELECT (NOT COUNT(*)=0) FROM card_attachment AS f WHERE f.card_id=c.card_id),
 		(SELECT (NOT COUNT(*)=0) FROM card_user_assignment AS f WHERE f.card_id=c.card_id),
-		(SELECT (NOT COUNT(*)=0) FROM card_comment AS f WHERE f.card_id=c.card_id)
+		(SELECT (NOT COUNT(*)=0) FROM card_comment AS f WHERE f.card_id=c.card_id),
+		c.card_uuid::text
 	FROM update_card AS c;
 	`
 	updateCard = &models.Card{}
@@ -172,6 +176,7 @@ func (r *BoardRepository) UpdateCard(ctx context.Context, cardID int64, data mod
 		&updateCard.HasAttachments,
 		&updateCard.HasAssignedUsers,
 		&updateCard.HasComments,
+		&updateCard.UUID,
 	)
 	logging.Debug(ctx, funcName, " query has err: ", err)
 	if err != nil {
@@ -198,9 +203,20 @@ func (r *BoardRepository) DeleteCard(ctx context.Context, cardID int64) (err err
 }
 
 func (r *BoardRepository) GetCardsByID(ctx context.Context, cardIDs []int64) (cards []models.Card, err error) {
-	panic("Not implemented")
 	funcName := "GetCardsByID"
-	query := `
+
+	if len(cardIDs) == 0 {
+		return []models.Card{}, nil
+	}
+
+	placeholders := make([]string, len(cardIDs))
+	args := make([]interface{}, len(cardIDs))
+	for i, id := range cardIDs {
+		placeholders[i] = fmt.Sprintf("$%d", i+1)
+		args[i] = id
+	}
+
+	query := fmt.Sprintf(`
 	SELECT
 		c.card_id,
 		c.col_id,
@@ -208,20 +224,84 @@ func (r *BoardRepository) GetCardsByID(ctx context.Context, cardIDs []int64) (ca
 		c.created_at,
 		c.updated_at,
 		c.deadline,
-    	c.is_done,
+		c.is_done,
 		(SELECT (NOT COUNT(*)=0) FROM checklist_field AS f WHERE f.card_id=c.card_id),
-    	(SELECT (NOT COUNT(*)=0) FROM card_attachment AS f WHERE f.card_id=c.card_id),
-    	(SELECT (NOT COUNT(*)=0) FROM card_user_assignment AS f WHERE f.card_id=c.card_id),
-    	(SELECT (NOT COUNT(*)=0) FROM card_comment AS f WHERE f.card_id=c.card_id),
+		(SELECT (NOT COUNT(*)=0) FROM card_attachment AS f WHERE f.card_id=c.card_id),
+		(SELECT (NOT COUNT(*)=0) FROM card_user_assignment AS f WHERE f.card_id=c.card_id),
+		(SELECT (NOT COUNT(*)=0) FROM card_comment AS f WHERE f.card_id=c.card_id),
 		COALESCE(uuf.file_uuid::text, ''),
 		COALESCE(uuf.file_extension::text, ''),
 		c.card_uuid
 	FROM card AS c
 	LEFT JOIN user_uploaded_file uuf ON c.cover_file_id = uuf.file_id
-	WHERE c.card_id IN (%s);
-	`
+	WHERE c.card_id IN (%s)
+	ORDER BY c.order_index;
+	`, strings.Join(placeholders, ", "))
 
-	fmt.Println(query, funcName)
+	rows, err := r.db.Query(ctx, query, args...)
+	logging.Debug(ctx, funcName, " query has err: ", err)
+
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return make([]models.Card, 0), nil
+		}
+		return nil, fmt.Errorf("%s (query): %w", funcName, err)
+	}
+
+	defer rows.Close()
+
+	cards = make([]models.Card, 0)
+
+	for rows.Next() {
+		var card models.Card
+		var fileUUID, fileExt string
+		err := rows.Scan(
+			&card.ID,
+			&card.ColumnID,
+			&card.Title,
+			&card.CreatedAt,
+			&card.UpdatedAt,
+			&card.Deadline,
+			&card.IsDone,
+			&card.HasCheckList,
+			&card.HasAttachments,
+			&card.HasAssignedUsers,
+			&card.HasComments,
+			&fileUUID,
+			&fileExt,
+			&card.UUID,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("%s (scan): %w", funcName, err)
+		}
+		if fileUUID != "" {
+			card.CoverImageURL = uploads.JoinFileURL(fileUUID, fileExt, uploads.DefaultBackgroundURL)
+		}
+		cards = append(cards, card)
+	}
 
 	return cards, nil
+}
+
+func (r *BoardRepository) GetSharedCardInfo(ctx context.Context, cardUUID string) (cardID int64, boardID int64, err error) {
+	funcName := "GetSharedCardInfo"
+	query := `
+	SELECT col.board_id, c.card_id
+	FROM card AS c
+	JOIN kanban_column AS col ON col.col_id=c.col_id
+	WHERE c.card_uuid=$1::uuid;
+	`
+
+	row := r.db.QueryRow(ctx, query, cardUUID)
+	err = row.Scan(&boardID, &cardID)
+	logging.Debug(ctx, funcName, " query has err: ", err)
+
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return 0, 0, fmt.Errorf("%s (query): %w", funcName, errs.ErrNotFound)
+		}
+		return 0, 0, fmt.Errorf("%s (query): %w", funcName, err)
+	}
+
+	return cardID, boardID, nil
 }

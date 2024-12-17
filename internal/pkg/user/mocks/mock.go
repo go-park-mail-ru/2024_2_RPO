@@ -36,17 +36,17 @@ func (m *MockUserUsecase) EXPECT() *MockUserUsecaseMockRecorder {
 }
 
 // ChangePassword mocks base method.
-func (m *MockUserUsecase) ChangePassword(ctx context.Context, userID int64, oldPassword, newPassword string) error {
+func (m *MockUserUsecase) ChangePassword(ctx context.Context, sessionID, oldPassword, newPassword string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ChangePassword", ctx, userID, oldPassword, newPassword)
+	ret := m.ctrl.Call(m, "ChangePassword", ctx, sessionID, oldPassword, newPassword)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // ChangePassword indicates an expected call of ChangePassword.
-func (mr *MockUserUsecaseMockRecorder) ChangePassword(ctx, userID, oldPassword, newPassword interface{}) *gomock.Call {
+func (mr *MockUserUsecaseMockRecorder) ChangePassword(ctx, sessionID, oldPassword, newPassword interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ChangePassword", reflect.TypeOf((*MockUserUsecase)(nil).ChangePassword), ctx, userID, oldPassword, newPassword)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ChangePassword", reflect.TypeOf((*MockUserUsecase)(nil).ChangePassword), ctx, sessionID, oldPassword, newPassword)
 }
 
 // GetMyProfile mocks base method.
@@ -62,21 +62,6 @@ func (m *MockUserUsecase) GetMyProfile(ctx context.Context, userID int64) (*mode
 func (mr *MockUserUsecaseMockRecorder) GetMyProfile(ctx, userID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMyProfile", reflect.TypeOf((*MockUserUsecase)(nil).GetMyProfile), ctx, userID)
-}
-
-// GetPollResults mocks base method.
-func (m *MockUserUsecase) GetPollResults(ctx context.Context) (*models.PollResults, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetPollResults", ctx)
-	ret0, _ := ret[0].(*models.PollResults)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetPollResults indicates an expected call of GetPollResults.
-func (mr *MockUserUsecaseMockRecorder) GetPollResults(ctx interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPollResults", reflect.TypeOf((*MockUserUsecase)(nil).GetPollResults), ctx)
 }
 
 // LoginUser mocks base method.
@@ -136,20 +121,6 @@ func (m *MockUserUsecase) SetMyAvatar(ctx context.Context, userID int64, file *m
 func (mr *MockUserUsecaseMockRecorder) SetMyAvatar(ctx, userID, file interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetMyAvatar", reflect.TypeOf((*MockUserUsecase)(nil).SetMyAvatar), ctx, userID, file)
-}
-
-// SubmitPoll mocks base method.
-func (m *MockUserUsecase) SubmitPoll(ctx context.Context, userID int64, pollQuestion *models.PollSubmit) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SubmitPoll", ctx, userID, pollQuestion)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// SubmitPoll indicates an expected call of SubmitPoll.
-func (mr *MockUserUsecaseMockRecorder) SubmitPoll(ctx, userID, pollQuestion interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubmitPoll", reflect.TypeOf((*MockUserUsecase)(nil).SubmitPoll), ctx, userID, pollQuestion)
 }
 
 // UpdateMyProfile mocks base method.
@@ -235,36 +206,6 @@ func (mr *MockUserRepoMockRecorder) DeduplicateFile(ctx, file interface{}) *gomo
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeduplicateFile", reflect.TypeOf((*MockUserRepo)(nil).DeduplicateFile), ctx, file)
 }
 
-// GetRatingResults mocks base method.
-func (m *MockUserRepo) GetRatingResults(ctx context.Context) ([]models.RatingResults, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetRatingResults", ctx)
-	ret0, _ := ret[0].([]models.RatingResults)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetRatingResults indicates an expected call of GetRatingResults.
-func (mr *MockUserRepoMockRecorder) GetRatingResults(ctx interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRatingResults", reflect.TypeOf((*MockUserRepo)(nil).GetRatingResults), ctx)
-}
-
-// GetTextResults mocks base method.
-func (m *MockUserRepo) GetTextResults(ctx context.Context) ([]models.AnswerResults, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetTextResults", ctx)
-	ret0, _ := ret[0].([]models.AnswerResults)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetTextResults indicates an expected call of GetTextResults.
-func (mr *MockUserRepoMockRecorder) GetTextResults(ctx interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTextResults", reflect.TypeOf((*MockUserRepo)(nil).GetTextResults), ctx)
-}
-
 // GetUserByEmail mocks base method.
 func (m *MockUserRepo) GetUserByEmail(ctx context.Context, email string) (*models.UserProfile, error) {
 	m.ctrl.T.Helper()
@@ -295,47 +236,20 @@ func (mr *MockUserRepoMockRecorder) GetUserProfile(ctx, userID interface{}) *gom
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUserProfile", reflect.TypeOf((*MockUserRepo)(nil).GetUserProfile), ctx, userID)
 }
 
-// PickPollQuestions mocks base method.
-func (m *MockUserRepo) PickPollQuestions(ctx context.Context) ([]models.PollQuestion, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "PickPollQuestions", ctx)
-	ret0, _ := ret[0].([]models.PollQuestion)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// PickPollQuestions indicates an expected call of PickPollQuestions.
-func (mr *MockUserRepoMockRecorder) PickPollQuestions(ctx interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PickPollQuestions", reflect.TypeOf((*MockUserRepo)(nil).PickPollQuestions), ctx)
-}
-
 // RegisterFile mocks base method.
-func (m *MockUserRepo) RegisterFile(ctx context.Context, file *models.UploadedFile) error {
+func (m *MockUserRepo) RegisterFile(ctx context.Context, file *models.UploadedFile) (int64, string, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "RegisterFile", ctx, file)
-	ret0, _ := ret[0].(error)
-	return ret0
+	ret0, _ := ret[0].(int64)
+	ret1, _ := ret[1].(string)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
 }
 
 // RegisterFile indicates an expected call of RegisterFile.
 func (mr *MockUserRepoMockRecorder) RegisterFile(ctx, file interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RegisterFile", reflect.TypeOf((*MockUserRepo)(nil).RegisterFile), ctx, file)
-}
-
-// SetNextPollDT mocks base method.
-func (m *MockUserRepo) SetNextPollDT(ctx context.Context, userID int64) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SetNextPollDT", ctx, userID)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// SetNextPollDT indicates an expected call of SetNextPollDT.
-func (mr *MockUserRepoMockRecorder) SetNextPollDT(ctx, userID interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetNextPollDT", reflect.TypeOf((*MockUserRepo)(nil).SetNextPollDT), ctx, userID)
 }
 
 // SetUserAvatar mocks base method.
@@ -350,20 +264,6 @@ func (m *MockUserRepo) SetUserAvatar(ctx context.Context, userID, avatarFileID i
 func (mr *MockUserRepoMockRecorder) SetUserAvatar(ctx, userID, avatarFileID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetUserAvatar", reflect.TypeOf((*MockUserRepo)(nil).SetUserAvatar), ctx, userID, avatarFileID)
-}
-
-// SubmitPoll mocks base method.
-func (m *MockUserRepo) SubmitPoll(ctx context.Context, userID int64, pollSubmit *models.PollSubmit) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SubmitPoll", ctx, userID, pollSubmit)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// SubmitPoll indicates an expected call of SubmitPoll.
-func (mr *MockUserRepoMockRecorder) SubmitPoll(ctx, userID, pollSubmit interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubmitPoll", reflect.TypeOf((*MockUserRepo)(nil).SubmitPoll), ctx, userID, pollSubmit)
 }
 
 // UpdateUserProfile mocks base method.

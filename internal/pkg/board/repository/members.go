@@ -299,6 +299,9 @@ func (r *BoardRepository) GetMemberFromCard(ctx context.Context, userID int64, c
 	)
 	logging.Debug(ctx, funcName, " query has err: ", err)
 	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return "", 0, fmt.Errorf("%s (query): %w", funcName, errs.ErrNotFound)
+		}
 		return "", 0, fmt.Errorf("%s (query): %w", funcName, err)
 	}
 	return role, boardID, nil
@@ -582,15 +585,15 @@ func (r *BoardRepository) GetCardAttachments(ctx context.Context, cardID int64) 
 
 // GetCardsForMove получает списки карточек на двух колонках. (карточки неполные)
 // Нужно для Drag-n-Drop (колонки откуда перемещаем и куда)
-func (r *BoardRepository) GetCardsForMove(ctx context.Context, col1ID int64, col2ID *int64) (column1 []models.Card, column2 []models.Card, err error) {
+func (r *BoardRepository) GetCardsForMove(ctx context.Context, destColumnID int64, cardID *int64) (columnFrom []models.Card, columnTo []models.Card, err error) {
 	query := `
-	SELECT c.card_id, c.col_id, c.order_index
+	SELECT c.card_id, c.col_id
 	FROM card AS c
-	WHERE c.col_id = $1 OR c.col_id = $2
+	WHERE c.col_id = $1 OR c.col_id = (SELECT col_id FROM card WHERE card_id=$2)
 	ORDER BY c.order_index;
 	`
 
-	rows, err := r.db.Query(ctx, query, col1ID, col2ID)
+	rows, err := r.db.Query(ctx, query, destColumnID, cardID)
 	logging.Debug(ctx, "GetCardsForMove query has err: ", err)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -602,18 +605,22 @@ func (r *BoardRepository) GetCardsForMove(ctx context.Context, col1ID int64, col
 	for rows.Next() {
 		c := models.Card{}
 
-		if err := rows.Scan(&c.ID, &c.ColumnID, c.OrderIndex); err != nil {
+		if err := rows.Scan(&c.ID, &c.ColumnID); err != nil {
 			return nil, nil, fmt.Errorf("GetCardsForMove (scan): %w", err)
 		}
 
-		if c.ColumnID == col1ID {
-			column1 = append(column1, c)
-		} else if col2ID != nil && c.ColumnID == *col2ID {
-			column2 = append(column2, c)
+		if c.ColumnID == destColumnID {
+			columnTo = append(columnTo, c)
+		} else {
+			columnFrom = append(columnFrom, c)
 		}
 	}
 
-	return column1, column2, nil
+	if len(columnFrom) == 0 {
+		columnFrom = columnTo
+	}
+
+	return columnFrom, columnTo, nil
 }
 
 // GetColumnsForMove получает список всех колонок, чтобы сделать Drag-n-Drop
@@ -649,30 +656,37 @@ func (r *BoardRepository) GetColumnsForMove(ctx context.Context, boardID int64) 
 }
 
 // RearrangeCards обновляет позиции всех карточек колонки, чтобы сделать порядок, как в слайсе
-func (r *BoardRepository) RearrangeCards(ctx context.Context, columnID int64, cards []models.Card) (err error) {
+func (r *BoardRepository) RearrangeCards(ctx context.Context, column1 []models.Card, column2 []models.Card) (err error) {
 	funcName := "RearrangeCards"
 	query := `
-	WITH update_position_cards AS (
-		UPDATE card SET order_index = $1 WHERE col_id = $2
-	),
-	update_board AS (
-		UPDATE board SET updated_at = CURRENT_TIMESTAMP WHERE board_id = (
-			SELECT board_id FROM kanban_column WHERE col_id = $2
-		)
-	)
-	SELECT;
+	UPDATE card SET order_index=$1, col_id=$2 WHERE card_id=$3;
 	`
-	batch := &pgx.Batch{}
-	for _, card := range cards {
-		batch.Queue(query, card.OrderIndex)
+	tx, err := r.db.Begin(ctx)
+	if err != nil {
+		return fmt.Errorf("%s (begin): %w", funcName, err)
 	}
 
-	br := r.db.SendBatch(ctx, batch)
+	batch := &pgx.Batch{}
+	for idx, card := range column1 {
+		batch.Queue(query, idx, card.ColumnID, card.ID)
+	}
+	for idx, card := range column2 {
+		batch.Queue(query, idx, card.ColumnID, card.ID)
+	}
+
+	br := tx.SendBatch(ctx, batch)
 	err = br.Close()
 	logging.Debug(ctx, funcName, " batch query has err: ", err)
 	if err != nil {
 		return fmt.Errorf("%s (batch query): %w", funcName, err)
 	}
+
+	tx.Commit(ctx)
+	logging.Debug(ctx, funcName, " commit has err: ", err)
+	if err != nil {
+		return fmt.Errorf("%s (commit): %w", funcName, err)
+	}
+
 	return nil
 }
 
@@ -928,7 +942,7 @@ func (r *BoardRepository) CreateCheckListField(ctx context.Context, cardID int64
 	newField = &models.CheckListField{}
 	row := r.db.QueryRow(ctx, query, cardID, field.Title)
 	err = row.Scan(&newField.ID) //&newField.Title, &newField.CreatedAt, &newField.IsDone,
-	newField.Title = field.Title
+	newField.Title = *field.Title
 
 	logging.Debug(ctx, funcName, " query has err: ", err)
 	if err != nil {
@@ -1131,7 +1145,7 @@ func (r *BoardRepository) RemoveAttachment(ctx context.Context, attachmentID int
 	)
 	SELECT;
 	`
-	tag, err := r.db.Exec(ctx, query)
+	tag, err := r.db.Exec(ctx, query, attachmentID)
 	logging.Debug(ctx, funcName, " query has err: ", err)
 	if err != nil {
 		return fmt.Errorf("%s (query): %w", funcName, err)
@@ -1146,15 +1160,15 @@ func (r *BoardRepository) RemoveAttachment(ctx context.Context, attachmentID int
 func (r *BoardRepository) PullInviteLink(ctx context.Context, userID int64, boardID int64) (link *models.InviteLink, err error) {
 	funcName := "PullInviteLink"
 	query := `
-	WITH update_invite_link AS (
-		UPDATE user_to_board SET invite_uuid = uuid_generate_v4() WHERE u_id = $1 AND board_id = $2
-	)
-	SELECT;
+	UPDATE user_to_board
+	SET invite_link_uuid = uuid_generate_v4()
+	WHERE u_id = $1 AND board_id = $2
+	RETURNING invite_link_uuid;
 	`
 
 	link = &models.InviteLink{}
-	row := r.db.QueryRow(ctx, query)
-	err = row.Scan()
+	row := r.db.QueryRow(ctx, query, userID, boardID)
+	err = row.Scan(&link.InviteLinkUUID)
 	logging.Debug(ctx, funcName, " query has err: ", err)
 	if err != nil {
 		return nil, fmt.Errorf("%s (query): %w", funcName, err)
@@ -1167,7 +1181,7 @@ func (r *BoardRepository) DeleteInviteLink(ctx context.Context, userID int64, bo
 	funcName := "DeleteInviteLink"
 	query := `
 	WITH delete_invite_link AS (
-		UPDATE user_to_board SET invite_uuid = NULL WHERE u_id = $1 AND board_id = $2
+		UPDATE user_to_board SET invite_link_uuid = NULL WHERE u_id = $1 AND board_id = $2
 	)
 	SELECT;
 	`
@@ -1187,54 +1201,54 @@ func (r *BoardRepository) DeleteInviteLink(ctx context.Context, userID int64, bo
 func (r *BoardRepository) FetchInvite(ctx context.Context, inviteUUID string) (board *models.Board, err error) {
 	funcName := "FetchInvite"
 	query := `
-		SELECT b.board_id, b.name, b.created_at, b.updated_at, ub.last_visit_at,
+		SELECT b.board_id, b.name, b.created_at, b.updated_at,
 		COALESCE(f.file_uuid::text, ''), COALESCE(f.file_extension, '')
-		FROM user_to_board AS utb
-		JOIN board AS b ON utb.board_id = b.board_id
+		FROM user_to_board AS ub
+		JOIN board AS b ON ub.board_id = b.board_id
 		LEFT JOIN user_uploaded_file AS f ON f.file_id=b.background_image_id
-		WHERE utb.invite_uuid = $1;
+		WHERE ub.invite_link_uuid = $1::UUID;
 	`
 
 	board = &models.Board{}
-	row := r.db.QueryRow(ctx, query)
-	err = row.Scan()
+	var fileUUID, fileExt string
+	row := r.db.QueryRow(ctx, query, inviteUUID)
+	err = row.Scan(
+		&board.ID,
+		&board.Name,
+		&board.CreatedAt,
+		&board.UpdatedAt,
+		&fileUUID,
+		&fileExt,
+	)
 	logging.Debug(ctx, funcName, " query has err: ", err)
 	if err != nil {
 		return nil, fmt.Errorf("%s (query): %w", funcName, err)
 	}
+	board.BackgroundImageURL = uploads.JoinFileURL(fileUUID, fileExt, uploads.DefaultBackgroundURL)
 	return board, nil
 }
 
 // AcceptInvite добавляет приглашённого пользователя на доску с правами зрителя
-func (r *BoardRepository) AcceptInvite(ctx context.Context, userID int64, boardID int64, invitedUserID int64, inviteUUID string) (board *models.Board, err error) {
+func (r *BoardRepository) AcceptInvite(ctx context.Context, userID int64, boardID int64, inviteUUID string) (err error) {
 	funcName := "AcceptInvite"
 	query := `
 	WITH update_board AS (
 		UPDATE board SET updated_at=CURRENT_TIMESTAMP WHERE board_id = $1
-	),
-	update_user_to_board AS (
-		INSERT INTO user_to_board (u_id, board_id, role) VALUES ($2, $1, 'viewer')
 	)
-	SELECT
-		b.board_id,
-        b.name,
-        b.created_at,
-        b.updated_at,
-        ub.last_visit_at,
-        COALESCE(file.file_uuid::text,''),
-        COALESCE(file.file_extension,'')
-    FROM board AS b
-    LEFT JOIN user_to_board AS ub ON ub.board_id = b.board_id AND ub.u_id = $1
-    LEFT JOIN user_uploaded_file AS file ON file.file_id=b.background_image_id
-    WHERE b.board_id = $1;
+	INSERT INTO user_to_board (u_id, board_id, role, added_by, updated_by)
+	VALUES ($2, $1, 'viewer',
+		(SELECT u_id FROM user_to_board WHERE invite_link_uuid=$3),
+		(SELECT u_id FROM user_to_board WHERE invite_link_uuid=$3)
+	);
 	`
 
-	board = &models.Board{}
-	row := r.db.QueryRow(ctx, query)
-	err = row.Scan()
+	tag, err := r.db.Exec(ctx, query, boardID, userID, inviteUUID)
 	logging.Debug(ctx, funcName, " query has err: ", err)
 	if err != nil {
-		return nil, fmt.Errorf("%s (query): %w", funcName, err)
+		return fmt.Errorf("%s (query): %w", funcName, err)
 	}
-	return board, nil
+	if tag.RowsAffected() == 0 {
+		return fmt.Errorf("%s (query): no rows affected", funcName)
+	}
+	return nil
 }

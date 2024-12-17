@@ -23,6 +23,7 @@ import (
 	"os"
 
 	"github.com/gorilla/mux"
+	"github.com/olivere/elastic/v7"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
@@ -59,10 +60,16 @@ func main() {
 	}
 	defer postgresDB.Close()
 
+	elasticClient, err := elastic.NewClient(elastic.SetURL("http://elastic:9200"), elastic.SetSniff(false))
+	if err != nil {
+		log.Error("error connecting to elasticsearch: " + err.Error())
+		return
+	}
+
 	// Подключение к GRPC сервису авторизаци
 	dialer := func(ctx context.Context, addr string) (net.Conn, error) {
 		d := net.Dialer{
-			Timeout: 5 * time.Second, // Установите подходящее время ожидания
+			Timeout: 5 * time.Second,
 		}
 		return d.DialContext(ctx, "tcp4", addr) // Используем "tcp4" для IPv4
 	}
@@ -82,7 +89,8 @@ func main() {
 
 	//Board
 	boardRepository := BoardRepository.CreateBoardRepository(postgresDB)
-	boardUsecase := BoardUsecase.CreateBoardUsecase(boardRepository)
+	boardElasticRepository := BoardRepository.CreateBoardElasticRepository(elasticClient)
+	boardUsecase := BoardUsecase.CreateBoardUsecase(boardRepository, boardElasticRepository)
 	boardDelivery := BoardDelivery.CreateBoardDelivery(boardUsecase)
 
 	// Создаём новый маршрутизатор
@@ -148,6 +156,7 @@ func main() {
 	router.HandleFunc("/inviteLink/{boardID}", boardDelivery.DeleteInviteLink).Methods("DELETE", "OPTIONS")
 	router.HandleFunc("/joinBoard/{inviteUUID}", boardDelivery.FetchInvite).Methods("GET", "OPTIONS")
 	router.HandleFunc("/joinBoard/{inviteUUID}", boardDelivery.AcceptInvite).Methods("POST", "OPTIONS")
+	router.HandleFunc("/search", boardDelivery.SearchCards).Methods("POST", "OPTIONS")
 
 	// Регистрируем обработчик Prometheus
 	metricsRouter := mux.NewRouter()

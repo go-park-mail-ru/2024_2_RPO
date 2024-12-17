@@ -17,6 +17,10 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+var (
+	uuidRegex = regexp.MustCompile(`^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$`)
+)
+
 // Получить тело запроса. Прочитать данные из json, разместить в структуру
 func GetRequestData(r *http.Request, requestData interface{}) error {
 	body, err := io.ReadAll(r.Body)
@@ -61,7 +65,6 @@ func GetIDFromRequest(r *http.Request, requestVarName string, prefix string) (in
 
 // GetUUIDFromRequest получает UUID из параметра запроса.
 func GetUUIDFromRequest(r *http.Request, requestVarName string) (string, error) {
-	uuidRegex := regexp.MustCompile(`^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$`)
 	vars := mux.Vars(r)
 	rawID, isExist := vars[requestVarName]
 	if !isExist {
