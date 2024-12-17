@@ -45,12 +45,6 @@ type Card struct {
 	HasComments      bool       `json:"hasComments"`
 }
 
-type ElasticCard struct {
-	BoardID  int64  `json:"boardID"`
-	CardID   int64  `json:"cardID"`
-	CardText string `json:"cardText"`
-}
-
 type Column struct {
 	ID         int64  `json:"id"`
 	Title      string `json:"title"`

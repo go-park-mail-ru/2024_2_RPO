@@ -312,6 +312,29 @@ func (d *BoardDelivery) DeleteCard(w http.ResponseWriter, r *http.Request) {
 	responses.DoEmptyOkResponse(w)
 }
 
+func (d *BoardDelivery) SearchCards(w http.ResponseWriter, r *http.Request) {
+	funcName := "SearchCards"
+	userID, ok := requests.GetUserIDOrFail(w, r, funcName)
+	if !ok {
+		return
+	}
+
+	requestData := &models.ElasticRequest{}
+	err := requests.GetRequestData(r, requestData)
+	if err != nil {
+		responses.DoBadResponseAndLog(r, w, http.StatusBadRequest, "bad request")
+		return
+	}
+
+	cards, err := d.boardUsecase.SearchCards(r.Context(), userID, requestData.Title)
+	if err != nil {
+		responses.ResponseErrorAndLog(r, w, err, funcName)
+		return
+	}
+
+	responses.DoJSONResponse(r, w, cards, http.StatusCreated)
+}
+
 // CreateColumn создаёт колонку канбана на доске и возвращает её
 func (d *BoardDelivery) CreateColumn(w http.ResponseWriter, r *http.Request) {
 	funcName := "CreateColumn"

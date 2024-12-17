@@ -205,10 +205,10 @@ func (uc *BoardUsecase) CreateNewCard(ctx context.Context, userID int64, boardID
 		return nil, fmt.Errorf("CreateNewCard (create): %w", err)
 	}
 
-	// err = uc.boardElasticRepository.PutCard(ctx, boardID, card.ID, card.Title)
-	// if err != nil {
-	// 	return nil, fmt.Errorf("CreateNewCard (elastic put): %w", err)
-	// }
+	err = uc.boardElasticRepository.PutCard(ctx, boardID, card.ID, card.Title)
+	if err != nil {
+		return nil, fmt.Errorf("CreateNewCard (elastic put): %w", err)
+	}
 
 	return &models.Card{
 		ID:        card.ID,
@@ -242,10 +242,10 @@ func (uc *BoardUsecase) UpdateCard(ctx context.Context, userID int64, cardID int
 
 	fmt.Println(boardID)
 
-	// err = uc.boardElasticRepository.PutCard(ctx, boardID, updatedCard.ID, updatedCard.Title)
-	// if err != nil {
-	// 	return nil, fmt.Errorf("UpdateCard (elastic update): %w", err)
-	// }
+	err = uc.boardElasticRepository.PutCard(ctx, boardID, updatedCard.ID, updatedCard.Title)
+	if err != nil {
+		return nil, fmt.Errorf("UpdateCard (elastic update): %w", err)
+	}
 
 	return &models.Card{
 		ID:        updatedCard.ID,
@@ -273,23 +273,28 @@ func (uc *BoardUsecase) DeleteCard(ctx context.Context, userID int64, cardID int
 
 	fmt.Println(boardID)
 
-	// err = uc.boardElasticRepository.DeleteCard(ctx, boardID, cardID)
-	// if err != nil {
-	// 	return fmt.Errorf("DeleteCard (elastic delete): %w", err)
-	// }
+	err = uc.boardElasticRepository.DeleteCard(ctx, cardID)
+	if err != nil {
+		return fmt.Errorf("DeleteCard (elastic delete): %w", err)
+	}
 
 	return nil
 }
 
-func (uc *BoardUsecase) SearchCards(ctx context.Context, userID int64, query string) (cards []models.ElasticCard, err error) {
+func (uc *BoardUsecase) SearchCards(ctx context.Context, userID int64, searchValue string) (cards []models.Card, err error) {
 	boardArray, err := uc.boardRepository.GetBoardsForUser(ctx, userID)
 	if err != nil {
 		return nil, fmt.Errorf("SearchCards (GetBoardsForUser): %w", err)
 	}
 
-	cards, err = uc.boardElasticRepository.Search(ctx, boardArray, query)
+	cardIDs, err := uc.boardElasticRepository.Search(ctx, boardArray, searchValue)
 	if err != nil {
-		return nil, fmt.Errorf("SearchCards (GetBoardsForUser): %w", err)
+		return nil, fmt.Errorf("SearchCards (Search): %w", err)
+	}
+
+	cards, err = uc.boardRepository.GetCardsByID(ctx, cardIDs)
+	if err != nil {
+		return nil, fmt.Errorf("SearchCards (GetCardsByID): %w", err)
 	}
 
 	return cards, err

@@ -173,10 +173,10 @@ services:
   elastic:
     image: bitnami/elasticsearch
     container_name: elastic
-    environment:
-      - ELASTICSEARCH_PORT_NUMBER=9201
     networks:
       - Pumpkin-network
+    ports:
+      - "9200:9200"
 
   nginx:
     image: nginx:alpine
