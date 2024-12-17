@@ -19,7 +19,7 @@ type BoardUsecase interface {
 	CreateNewCard(ctx context.Context, userID int64, boardID int64, data *models.CardPostRequest) (newCard *models.Card, err error)
 	UpdateCard(ctx context.Context, userID int64, cardID int64, data *models.CardPatchRequest) (updatedCard *models.Card, err error)
 	DeleteCard(ctx context.Context, userID int64, cardID int64) (err error)
-	SearchCards(ctx context.Context, userID int64, query string) (cards []models.Card, err error)
+	SearchCards(ctx context.Context, userID int64, query string) (cards []models.ElasticCard, err error)
 	CreateColumn(ctx context.Context, userID int64, boardID int64, data *models.ColumnRequest) (newCol *models.Column, err error)
 	UpdateColumn(ctx context.Context, userID int64, columnID int64, data *models.ColumnRequest) (updatedCol *models.Column, err error)
 	DeleteColumn(ctx context.Context, userID int64, columnID int64) (err error)

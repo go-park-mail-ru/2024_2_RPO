@@ -19,7 +19,8 @@ func (r *BoardRepository) GetColumnsForBoard(ctx context.Context, boardID int64)
 		col_id,
 		title
 	FROM kanban_column
-	WHERE board_id = $1;
+	WHERE board_id = $1
+	ORDER BY order_index;
 	`
 	rows, err := r.db.Query(ctx, query, boardID)
 	logging.Debug(ctx, funcName, " query has err: ", err)

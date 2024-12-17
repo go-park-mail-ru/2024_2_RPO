@@ -685,7 +685,52 @@ func (uc *BoardUsecase) MoveCard(ctx context.Context, userID int64, cardID int64
 
 // MoveColumn перемещает колонку на доске
 func (uc *BoardUsecase) MoveColumn(ctx context.Context, userID int64, columnID int64, moveReq *models.ColumnMoveRequest) (err error) {
-	panic("not implemented")
+	funcName := "MoveColumn"
+	role, boardID, err := uc.boardRepository.GetMemberFromColumn(ctx, userID, columnID)
+	if err != nil {
+		return fmt.Errorf("%s (get): %w", funcName, err)
+	}
+	if role == "viewer" {
+		return fmt.Errorf("%s (check): %w", funcName, errs.ErrNotPermitted)
+	}
+
+	columns, err := uc.boardRepository.GetColumnsForMove(ctx, boardID)
+	if err != nil {
+		return fmt.Errorf("%s (column): %w", funcName, err)
+	}
+
+	fromIdx := -1
+	destIdx := -1
+
+	for idx, col := range columns {
+		if col.ID == columnID {
+			fromIdx = idx
+			break
+		}
+		if col.ID == *moveReq.NextColumnID {
+			destIdx = idx
+		}
+	}
+
+	if fromIdx == -1 {
+		return fmt.Errorf("%s (from idx): not found", funcName)
+	}
+
+	if destIdx == -1 {
+		destIdx = len(columns) - 1
+	}
+
+	col := columns[fromIdx]
+	columns = slices.Delete(columns, fromIdx, fromIdx+1)
+	if fromIdx > destIdx {
+		columns = slices.Insert(columns, destIdx, col)
+	} else {
+		columns = slices.Insert(columns, destIdx-1, col)
+	}
+
+	uc.boardRepository.RearrangeColumns(ctx, columns)
+
+	return nil
 }
 
 // GetCardDetailsUnauthorized получает подробности карточки даже без авторизации
