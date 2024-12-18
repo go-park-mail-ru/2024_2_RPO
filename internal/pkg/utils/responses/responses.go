@@ -40,7 +40,15 @@ func DoEmptyOkResponse(w http.ResponseWriter) {
 }
 
 func DoJSONResponse(r *http.Request, w http.ResponseWriter, responseData interface{}, successStatusCode int) {
-	body, err := json.Marshal(responseData)
+	var body []byte
+	var err error
+
+	ez, ok := responseData.(json.Marshaler)
+	if ok {
+		body, err = ez.MarshalJSON()
+	} else {
+		body, err = json.Marshal(responseData)
+	}
 	if err != nil {
 		DoBadResponseAndLog(r, w, http.StatusInternalServerError, "internal error")
 		log.Error(fmt.Errorf("error marshalling response body: %v", err))

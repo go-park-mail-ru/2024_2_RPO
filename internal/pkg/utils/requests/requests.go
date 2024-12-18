@@ -22,14 +22,14 @@ var (
 )
 
 // Получить тело запроса. Прочитать данные из json, разместить в структуру
-func GetRequestData(r *http.Request, requestData interface{}) error {
+func GetRequestData(r *http.Request, requestData json.Unmarshaler) error {
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
 		return err
 	}
 	defer r.Body.Close()
 
-	if err := json.Unmarshal(body, &requestData); err != nil {
+	if err := requestData.UnmarshalJSON(body); err != nil {
 		return err
 	}
 
