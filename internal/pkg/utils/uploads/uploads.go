@@ -78,7 +78,10 @@ func CompareFiles(fileNames []string, fileIDs []int64, newFile *models.UploadedF
 }
 
 func FormFile(r *http.Request) (file *models.UploadedFile, err error) {
-	r.ParseMultipartForm(10 << 20)
+	err = r.ParseMultipartForm(10 << 20)
+	if err != nil {
+		return nil, fmt.Errorf("FormFile: %w", err)
+	}
 
 	fileContent, fileHeader, err := r.FormFile("file")
 	if err != nil {

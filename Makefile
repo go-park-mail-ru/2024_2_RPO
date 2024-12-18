@@ -39,7 +39,7 @@ build_all: build_auth build_user build_poll build_board
 
 run_tests:
 	@echo "==> Running tests..."
-	@go test $(GOFLAGS) -coverprofile ../coverage_raw.out -v ./...
+	@go test $(GOFLAGS) -coverprofile coverage_raw.out -v ./...
 
 test: run_tests
 	@echo "==> Calculating coverage..."

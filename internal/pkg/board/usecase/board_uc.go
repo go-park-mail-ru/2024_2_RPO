@@ -734,7 +734,10 @@ func (uc *BoardUsecase) MoveColumn(ctx context.Context, userID int64, columnID i
 		columns = slices.Insert(columns, destIdx-1, col)
 	}
 
-	uc.boardRepository.RearrangeColumns(ctx, columns)
+	err = uc.boardRepository.RearrangeColumns(ctx, columns)
+	if err != nil {
+		return fmt.Errorf("%s: %w", funcName, err)
+	}
 
 	return nil
 }
@@ -805,6 +808,9 @@ func (uc *BoardUsecase) GetSharedCard(ctx context.Context, userID int64, cardUUI
 	}
 
 	board, err := uc.boardRepository.GetBoard(ctx, boardID, -1)
+	if err != nil {
+		return nil, nil, err
+	}
 
 	return nil, &models.SharedCardDummyResponse{
 		Card:  cardDetails,

@@ -28,7 +28,10 @@ func DoBadResponseAndLog(r *http.Request, w http.ResponseWriter, statusCode int,
 		http.Error(w, "internal error", http.StatusInternalServerError)
 		return
 	}
-	w.Write(jsonResponse)
+	_, err = w.Write(jsonResponse)
+	if err != nil {
+		panic(err)
+	}
 
 	logging.Error(r.Context(), "Bad response with status ", statusCode, " and message ", message)
 }
@@ -36,7 +39,10 @@ func DoBadResponseAndLog(r *http.Request, w http.ResponseWriter, statusCode int,
 func DoEmptyOkResponse(w http.ResponseWriter) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte("{\"status\": 200, \"text\": \"success\"}"))
+	_, err := w.Write([]byte("{\"status\": 200, \"text\": \"success\"}"))
+	if err != nil {
+		panic(err)
+	}
 }
 
 func DoJSONResponse(r *http.Request, w http.ResponseWriter, responseData interface{}, successStatusCode int) {

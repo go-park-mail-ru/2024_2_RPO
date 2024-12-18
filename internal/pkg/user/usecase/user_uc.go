@@ -51,6 +51,9 @@ func (uc *UserUsecase) SetMyAvatar(ctx context.Context, userID int64, file *mode
 	}
 
 	err = uc.userRepo.SetUserAvatar(ctx, userID, fileID)
+	if err != nil {
+		return nil, fmt.Errorf("%s: %w", funcName, err)
+	}
 
 	return uc.userRepo.GetUserProfile(ctx, userID)
 }

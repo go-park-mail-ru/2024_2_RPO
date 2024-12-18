@@ -6,8 +6,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"log"
+	"os"
 	"strings"
 
 	"github.com/elastic/go-elasticsearch/v8"
@@ -110,7 +110,7 @@ func deleteIndex(index string, es *elasticsearch.Client) {
 
 func createIndexWithMapping(index, mappingFile string, es *elasticsearch.Client) {
 	// Read mapping JSON from file
-	mapping, err := ioutil.ReadFile(mappingFile)
+	mapping, err := os.ReadFile(mappingFile)
 	if err != nil {
 		log.Fatalf("Error reading mapping file: %s", err)
 	}
@@ -189,10 +189,22 @@ func loadDataToElasticsearch(ctx context.Context, cfg Configuration, es *elastic
 		}
 
 		// Write to buffer
-		writer.Write(metaLine)
-		writer.WriteByte('\n')
-		writer.Write(dataLine)
-		writer.WriteByte('\n')
+		_, err = writer.Write(metaLine)
+		if err != nil {
+			return fmt.Errorf("elastic: %w", err)
+		}
+		err = writer.WriteByte('\n')
+		if err != nil {
+			return fmt.Errorf("elastic: %w", err)
+		}
+		_, err = writer.Write(dataLine)
+		if err != nil {
+			return fmt.Errorf("elastic: %w", err)
+		}
+		err = writer.WriteByte('\n')
+		if err != nil {
+			return fmt.Errorf("elastic: %w", err)
+		}
 
 		count++
 		if count%batchSize == 0 {

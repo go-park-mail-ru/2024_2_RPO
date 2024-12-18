@@ -681,7 +681,7 @@ func (r *BoardRepository) RearrangeCards(ctx context.Context, column1 []models.C
 		return fmt.Errorf("%s (batch query): %w", funcName, err)
 	}
 
-	tx.Commit(ctx)
+	err = tx.Commit(ctx)
 	logging.Debug(ctx, funcName, " commit has err: ", err)
 	if err != nil {
 		return fmt.Errorf("%s (commit): %w", funcName, err)
@@ -713,7 +713,7 @@ func (r *BoardRepository) RearrangeColumns(ctx context.Context, columns []models
 		return fmt.Errorf("%s (batch query): %w", funcName, err)
 	}
 
-	tx.Commit(ctx)
+	err = tx.Commit(ctx)
 	logging.Debug(ctx, funcName, " commit has err: ", err)
 	if err != nil {
 		return fmt.Errorf("%s (commit): %w", funcName, err)

@@ -35,7 +35,7 @@ func Validate(ctx context.Context, v interface{}) error {
 		return err
 	}
 
-	if v, ok := v.(Validatable); ok == true && v != nil {
+	if v, ok := v.(Validatable); ok && v != nil {
 		if err := v.Validate(); err != nil {
 			return fmt.Errorf("Validate: %w", err)
 		}
@@ -73,10 +73,8 @@ func CheckUserName(name string) error {
 		return fmt.Errorf("%w: name must be between 3 and 30 characters", errs.ErrValidation)
 	}
 
-	done, err := regexp.MatchString("^([A-Za-z0-9_.-])+$", name)
-	if err != nil {
-		return fmt.Errorf("CheckUserName (MatchString [Alphanumeric]): %w", err)
-	}
+	done := usernameRegex.Match([]byte(name))
+
 	if !done {
 		return fmt.Errorf("%w: name contains forbidden characters. Only allowed A-Z, a-z, 0-9, '_', '-', '.'", errs.ErrValidation)
 	}
