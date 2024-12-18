@@ -45,7 +45,7 @@ func easyjson202377feDecodeRPOBackInternalModels(in *jlexer.Lexer, out *MemberWi
 				if out.User == nil {
 					out.User = new(UserProfile)
 				}
-				easyjson202377feDecodeRPOBackInternalModels1(in, out.User)
+				(*out.User).UnmarshalEasyJSON(in)
 			}
 		case "role":
 			out.Role = string(in.String())
@@ -65,7 +65,7 @@ func easyjson202377feDecodeRPOBackInternalModels(in *jlexer.Lexer, out *MemberWi
 				if out.AddedBy == nil {
 					out.AddedBy = new(UserProfile)
 				}
-				easyjson202377feDecodeRPOBackInternalModels1(in, out.AddedBy)
+				(*out.AddedBy).UnmarshalEasyJSON(in)
 			}
 		case "updatedBy":
 			if in.IsNull() {
@@ -75,7 +75,7 @@ func easyjson202377feDecodeRPOBackInternalModels(in *jlexer.Lexer, out *MemberWi
 				if out.UpdatedBy == nil {
 					out.UpdatedBy = new(UserProfile)
 				}
-				easyjson202377feDecodeRPOBackInternalModels1(in, out.UpdatedBy)
+				(*out.UpdatedBy).UnmarshalEasyJSON(in)
 			}
 		default:
 			in.SkipRecursive()
@@ -97,7 +97,7 @@ func easyjson202377feEncodeRPOBackInternalModels(out *jwriter.Writer, in MemberW
 		if in.User == nil {
 			out.RawString("null")
 		} else {
-			easyjson202377feEncodeRPOBackInternalModels1(out, *in.User)
+			(*in.User).MarshalEasyJSON(out)
 		}
 	}
 	{
@@ -121,7 +121,7 @@ func easyjson202377feEncodeRPOBackInternalModels(out *jwriter.Writer, in MemberW
 		if in.AddedBy == nil {
 			out.RawString("null")
 		} else {
-			easyjson202377feEncodeRPOBackInternalModels1(out, *in.AddedBy)
+			(*in.AddedBy).MarshalEasyJSON(out)
 		}
 	}
 	{
@@ -130,7 +130,7 @@ func easyjson202377feEncodeRPOBackInternalModels(out *jwriter.Writer, in MemberW
 		if in.UpdatedBy == nil {
 			out.RawString("null")
 		} else {
-			easyjson202377feEncodeRPOBackInternalModels1(out, *in.UpdatedBy)
+			(*in.UpdatedBy).MarshalEasyJSON(out)
 		}
 	}
 	out.RawByte('}')
@@ -159,181 +159,7 @@ func (v *MemberWithPermissions) UnmarshalJSON(data []byte) error {
 func (v *MemberWithPermissions) UnmarshalEasyJSON(l *jlexer.Lexer) {
 	easyjson202377feDecodeRPOBackInternalModels(l, v)
 }
-func easyjson202377feDecodeRPOBackInternalModels1(in *jlexer.Lexer, out *UserProfile) {
-	isTopLevel := in.IsStart()
-	if in.IsNull() {
-		if isTopLevel {
-			in.Consumed()
-		}
-		in.Skip()
-		return
-	}
-	in.Delim('{')
-	for !in.IsDelim('}') {
-		key := in.UnsafeFieldName(false)
-		in.WantColon()
-		if in.IsNull() {
-			in.Skip()
-			in.WantComma()
-			continue
-		}
-		switch key {
-		case "id":
-			out.ID = int64(in.Int64())
-		case "name":
-			out.Name = string(in.String())
-		case "email":
-			out.Email = string(in.String())
-		case "joinedAt":
-			if data := in.Raw(); in.Ok() {
-				in.AddError((out.JoinedAt).UnmarshalJSON(data))
-			}
-		case "updatedAt":
-			if data := in.Raw(); in.Ok() {
-				in.AddError((out.UpdatedAt).UnmarshalJSON(data))
-			}
-		case "avatarImageUrl":
-			out.AvatarImageURL = string(in.String())
-		case "pollQuestions":
-			if in.IsNull() {
-				in.Skip()
-				out.PollQuestions = nil
-			} else {
-				in.Delim('[')
-				if out.PollQuestions == nil {
-					if !in.IsDelim(']') {
-						out.PollQuestions = make([]PollQuestion, 0, 1)
-					} else {
-						out.PollQuestions = []PollQuestion{}
-					}
-				} else {
-					out.PollQuestions = (out.PollQuestions)[:0]
-				}
-				for !in.IsDelim(']') {
-					var v1 PollQuestion
-					easyjson202377feDecodeRPOBackInternalModels2(in, &v1)
-					out.PollQuestions = append(out.PollQuestions, v1)
-					in.WantComma()
-				}
-				in.Delim(']')
-			}
-		default:
-			in.SkipRecursive()
-		}
-		in.WantComma()
-	}
-	in.Delim('}')
-	if isTopLevel {
-		in.Consumed()
-	}
-}
-func easyjson202377feEncodeRPOBackInternalModels1(out *jwriter.Writer, in UserProfile) {
-	out.RawByte('{')
-	first := true
-	_ = first
-	{
-		const prefix string = ",\"id\":"
-		out.RawString(prefix[1:])
-		out.Int64(int64(in.ID))
-	}
-	{
-		const prefix string = ",\"name\":"
-		out.RawString(prefix)
-		out.String(string(in.Name))
-	}
-	{
-		const prefix string = ",\"email\":"
-		out.RawString(prefix)
-		out.String(string(in.Email))
-	}
-	{
-		const prefix string = ",\"joinedAt\":"
-		out.RawString(prefix)
-		out.Raw((in.JoinedAt).MarshalJSON())
-	}
-	{
-		const prefix string = ",\"updatedAt\":"
-		out.RawString(prefix)
-		out.Raw((in.UpdatedAt).MarshalJSON())
-	}
-	{
-		const prefix string = ",\"avatarImageUrl\":"
-		out.RawString(prefix)
-		out.String(string(in.AvatarImageURL))
-	}
-	if len(in.PollQuestions) != 0 {
-		const prefix string = ",\"pollQuestions\":"
-		out.RawString(prefix)
-		{
-			out.RawByte('[')
-			for v2, v3 := range in.PollQuestions {
-				if v2 > 0 {
-					out.RawByte(',')
-				}
-				easyjson202377feEncodeRPOBackInternalModels2(out, v3)
-			}
-			out.RawByte(']')
-		}
-	}
-	out.RawByte('}')
-}
-func easyjson202377feDecodeRPOBackInternalModels2(in *jlexer.Lexer, out *PollQuestion) {
-	isTopLevel := in.IsStart()
-	if in.IsNull() {
-		if isTopLevel {
-			in.Consumed()
-		}
-		in.Skip()
-		return
-	}
-	in.Delim('{')
-	for !in.IsDelim('}') {
-		key := in.UnsafeFieldName(false)
-		in.WantColon()
-		if in.IsNull() {
-			in.Skip()
-			in.WantComma()
-			continue
-		}
-		switch key {
-		case "questionId":
-			out.QuestionID = int64(in.Int64())
-		case "questionText":
-			out.QuestionText = string(in.String())
-		case "questionType":
-			out.QuestionType = string(in.String())
-		default:
-			in.SkipRecursive()
-		}
-		in.WantComma()
-	}
-	in.Delim('}')
-	if isTopLevel {
-		in.Consumed()
-	}
-}
-func easyjson202377feEncodeRPOBackInternalModels2(out *jwriter.Writer, in PollQuestion) {
-	out.RawByte('{')
-	first := true
-	_ = first
-	{
-		const prefix string = ",\"questionId\":"
-		out.RawString(prefix[1:])
-		out.Int64(int64(in.QuestionID))
-	}
-	{
-		const prefix string = ",\"questionText\":"
-		out.RawString(prefix)
-		out.String(string(in.QuestionText))
-	}
-	{
-		const prefix string = ",\"questionType\":"
-		out.RawString(prefix)
-		out.String(string(in.QuestionType))
-	}
-	out.RawByte('}')
-}
-func easyjson202377feDecodeRPOBackInternalModels3(in *jlexer.Lexer, out *InviteLink) {
+func easyjson202377feDecodeRPOBackInternalModels1(in *jlexer.Lexer, out *InviteLink) {
 	isTopLevel := in.IsStart()
 	if in.IsNull() {
 		if isTopLevel {
@@ -364,7 +190,7 @@ func easyjson202377feDecodeRPOBackInternalModels3(in *jlexer.Lexer, out *InviteL
 		in.Consumed()
 	}
 }
-func easyjson202377feEncodeRPOBackInternalModels3(out *jwriter.Writer, in InviteLink) {
+func easyjson202377feEncodeRPOBackInternalModels1(out *jwriter.Writer, in InviteLink) {
 	out.RawByte('{')
 	first := true
 	_ = first
@@ -379,27 +205,27 @@ func easyjson202377feEncodeRPOBackInternalModels3(out *jwriter.Writer, in Invite
 // MarshalJSON supports json.Marshaler interface
 func (v InviteLink) MarshalJSON() ([]byte, error) {
 	w := jwriter.Writer{}
-	easyjson202377feEncodeRPOBackInternalModels3(&w, v)
+	easyjson202377feEncodeRPOBackInternalModels1(&w, v)
 	return w.Buffer.BuildBytes(), w.Error
 }
 
 // MarshalEasyJSON supports easyjson.Marshaler interface
 func (v InviteLink) MarshalEasyJSON(w *jwriter.Writer) {
-	easyjson202377feEncodeRPOBackInternalModels3(w, v)
+	easyjson202377feEncodeRPOBackInternalModels1(w, v)
 }
 
 // UnmarshalJSON supports json.Unmarshaler interface
 func (v *InviteLink) UnmarshalJSON(data []byte) error {
 	r := jlexer.Lexer{Data: data}
-	easyjson202377feDecodeRPOBackInternalModels3(&r, v)
+	easyjson202377feDecodeRPOBackInternalModels1(&r, v)
 	return r.Error()
 }
 
 // UnmarshalEasyJSON supports easyjson.Unmarshaler interface
 func (v *InviteLink) UnmarshalEasyJSON(l *jlexer.Lexer) {
-	easyjson202377feDecodeRPOBackInternalModels3(l, v)
+	easyjson202377feDecodeRPOBackInternalModels1(l, v)
 }
-func easyjson202377feDecodeRPOBackInternalModels4(in *jlexer.Lexer, out *Comment) {
+func easyjson202377feDecodeRPOBackInternalModels2(in *jlexer.Lexer, out *Comment) {
 	isTopLevel := in.IsStart()
 	if in.IsNull() {
 		if isTopLevel {
@@ -432,7 +258,7 @@ func easyjson202377feDecodeRPOBackInternalModels4(in *jlexer.Lexer, out *Comment
 				if out.CreatedBy == nil {
 					out.CreatedBy = new(UserProfile)
 				}
-				easyjson202377feDecodeRPOBackInternalModels1(in, out.CreatedBy)
+				(*out.CreatedBy).UnmarshalEasyJSON(in)
 			}
 		case "createdAt":
 			if data := in.Raw(); in.Ok() {
@@ -448,7 +274,7 @@ func easyjson202377feDecodeRPOBackInternalModels4(in *jlexer.Lexer, out *Comment
 		in.Consumed()
 	}
 }
-func easyjson202377feEncodeRPOBackInternalModels4(out *jwriter.Writer, in Comment) {
+func easyjson202377feEncodeRPOBackInternalModels2(out *jwriter.Writer, in Comment) {
 	out.RawByte('{')
 	first := true
 	_ = first
@@ -473,7 +299,7 @@ func easyjson202377feEncodeRPOBackInternalModels4(out *jwriter.Writer, in Commen
 		if in.CreatedBy == nil {
 			out.RawString("null")
 		} else {
-			easyjson202377feEncodeRPOBackInternalModels1(out, *in.CreatedBy)
+			(*in.CreatedBy).MarshalEasyJSON(out)
 		}
 	}
 	{
@@ -487,27 +313,27 @@ func easyjson202377feEncodeRPOBackInternalModels4(out *jwriter.Writer, in Commen
 // MarshalJSON supports json.Marshaler interface
 func (v Comment) MarshalJSON() ([]byte, error) {
 	w := jwriter.Writer{}
-	easyjson202377feEncodeRPOBackInternalModels4(&w, v)
+	easyjson202377feEncodeRPOBackInternalModels2(&w, v)
 	return w.Buffer.BuildBytes(), w.Error
 }
 
 // MarshalEasyJSON supports easyjson.Marshaler interface
 func (v Comment) MarshalEasyJSON(w *jwriter.Writer) {
-	easyjson202377feEncodeRPOBackInternalModels4(w, v)
+	easyjson202377feEncodeRPOBackInternalModels2(w, v)
 }
 
 // UnmarshalJSON supports json.Unmarshaler interface
 func (v *Comment) UnmarshalJSON(data []byte) error {
 	r := jlexer.Lexer{Data: data}
-	easyjson202377feDecodeRPOBackInternalModels4(&r, v)
+	easyjson202377feDecodeRPOBackInternalModels2(&r, v)
 	return r.Error()
 }
 
 // UnmarshalEasyJSON supports easyjson.Unmarshaler interface
 func (v *Comment) UnmarshalEasyJSON(l *jlexer.Lexer) {
-	easyjson202377feDecodeRPOBackInternalModels4(l, v)
+	easyjson202377feDecodeRPOBackInternalModels2(l, v)
 }
-func easyjson202377feDecodeRPOBackInternalModels5(in *jlexer.Lexer, out *Column) {
+func easyjson202377feDecodeRPOBackInternalModels3(in *jlexer.Lexer, out *Column) {
 	isTopLevel := in.IsStart()
 	if in.IsNull() {
 		if isTopLevel {
@@ -540,7 +366,7 @@ func easyjson202377feDecodeRPOBackInternalModels5(in *jlexer.Lexer, out *Column)
 		in.Consumed()
 	}
 }
-func easyjson202377feEncodeRPOBackInternalModels5(out *jwriter.Writer, in Column) {
+func easyjson202377feEncodeRPOBackInternalModels3(out *jwriter.Writer, in Column) {
 	out.RawByte('{')
 	first := true
 	_ = first
@@ -560,27 +386,27 @@ func easyjson202377feEncodeRPOBackInternalModels5(out *jwriter.Writer, in Column
 // MarshalJSON supports json.Marshaler interface
 func (v Column) MarshalJSON() ([]byte, error) {
 	w := jwriter.Writer{}
-	easyjson202377feEncodeRPOBackInternalModels5(&w, v)
+	easyjson202377feEncodeRPOBackInternalModels3(&w, v)
 	return w.Buffer.BuildBytes(), w.Error
 }
 
 // MarshalEasyJSON supports easyjson.Marshaler interface
 func (v Column) MarshalEasyJSON(w *jwriter.Writer) {
-	easyjson202377feEncodeRPOBackInternalModels5(w, v)
+	easyjson202377feEncodeRPOBackInternalModels3(w, v)
 }
 
 // UnmarshalJSON supports json.Unmarshaler interface
 func (v *Column) UnmarshalJSON(data []byte) error {
 	r := jlexer.Lexer{Data: data}
-	easyjson202377feDecodeRPOBackInternalModels5(&r, v)
+	easyjson202377feDecodeRPOBackInternalModels3(&r, v)
 	return r.Error()
 }
 
 // UnmarshalEasyJSON supports easyjson.Unmarshaler interface
 func (v *Column) UnmarshalEasyJSON(l *jlexer.Lexer) {
-	easyjson202377feDecodeRPOBackInternalModels5(l, v)
+	easyjson202377feDecodeRPOBackInternalModels3(l, v)
 }
-func easyjson202377feDecodeRPOBackInternalModels6(in *jlexer.Lexer, out *CheckListField) {
+func easyjson202377feDecodeRPOBackInternalModels4(in *jlexer.Lexer, out *CheckListField) {
 	isTopLevel := in.IsStart()
 	if in.IsNull() {
 		if isTopLevel {
@@ -619,7 +445,7 @@ func easyjson202377feDecodeRPOBackInternalModels6(in *jlexer.Lexer, out *CheckLi
 		in.Consumed()
 	}
 }
-func easyjson202377feEncodeRPOBackInternalModels6(out *jwriter.Writer, in CheckListField) {
+func easyjson202377feEncodeRPOBackInternalModels4(out *jwriter.Writer, in CheckListField) {
 	out.RawByte('{')
 	first := true
 	_ = first
@@ -649,27 +475,27 @@ func easyjson202377feEncodeRPOBackInternalModels6(out *jwriter.Writer, in CheckL
 // MarshalJSON supports json.Marshaler interface
 func (v CheckListField) MarshalJSON() ([]byte, error) {
 	w := jwriter.Writer{}
-	easyjson202377feEncodeRPOBackInternalModels6(&w, v)
+	easyjson202377feEncodeRPOBackInternalModels4(&w, v)
 	return w.Buffer.BuildBytes(), w.Error
 }
 
 // MarshalEasyJSON supports easyjson.Marshaler interface
 func (v CheckListField) MarshalEasyJSON(w *jwriter.Writer) {
-	easyjson202377feEncodeRPOBackInternalModels6(w, v)
+	easyjson202377feEncodeRPOBackInternalModels4(w, v)
 }
 
 // UnmarshalJSON supports json.Unmarshaler interface
 func (v *CheckListField) UnmarshalJSON(data []byte) error {
 	r := jlexer.Lexer{Data: data}
-	easyjson202377feDecodeRPOBackInternalModels6(&r, v)
+	easyjson202377feDecodeRPOBackInternalModels4(&r, v)
 	return r.Error()
 }
 
 // UnmarshalEasyJSON supports easyjson.Unmarshaler interface
 func (v *CheckListField) UnmarshalEasyJSON(l *jlexer.Lexer) {
-	easyjson202377feDecodeRPOBackInternalModels6(l, v)
+	easyjson202377feDecodeRPOBackInternalModels4(l, v)
 }
-func easyjson202377feDecodeRPOBackInternalModels7(in *jlexer.Lexer, out *CardDetails) {
+func easyjson202377feDecodeRPOBackInternalModels5(in *jlexer.Lexer, out *CardDetails) {
 	isTopLevel := in.IsStart()
 	if in.IsNull() {
 		if isTopLevel {
@@ -714,9 +540,9 @@ func easyjson202377feDecodeRPOBackInternalModels7(in *jlexer.Lexer, out *CardDet
 					out.CheckList = (out.CheckList)[:0]
 				}
 				for !in.IsDelim(']') {
-					var v4 CheckListField
-					(v4).UnmarshalEasyJSON(in)
-					out.CheckList = append(out.CheckList, v4)
+					var v1 CheckListField
+					(v1).UnmarshalEasyJSON(in)
+					out.CheckList = append(out.CheckList, v1)
 					in.WantComma()
 				}
 				in.Delim(']')
@@ -737,9 +563,9 @@ func easyjson202377feDecodeRPOBackInternalModels7(in *jlexer.Lexer, out *CardDet
 					out.Attachments = (out.Attachments)[:0]
 				}
 				for !in.IsDelim(']') {
-					var v5 Attachment
-					(v5).UnmarshalEasyJSON(in)
-					out.Attachments = append(out.Attachments, v5)
+					var v2 Attachment
+					(v2).UnmarshalEasyJSON(in)
+					out.Attachments = append(out.Attachments, v2)
 					in.WantComma()
 				}
 				in.Delim(']')
@@ -760,9 +586,9 @@ func easyjson202377feDecodeRPOBackInternalModels7(in *jlexer.Lexer, out *CardDet
 					out.Comments = (out.Comments)[:0]
 				}
 				for !in.IsDelim(']') {
-					var v6 Comment
-					(v6).UnmarshalEasyJSON(in)
-					out.Comments = append(out.Comments, v6)
+					var v3 Comment
+					(v3).UnmarshalEasyJSON(in)
+					out.Comments = append(out.Comments, v3)
 					in.WantComma()
 				}
 				in.Delim(']')
@@ -783,9 +609,9 @@ func easyjson202377feDecodeRPOBackInternalModels7(in *jlexer.Lexer, out *CardDet
 					out.AssignedUsers = (out.AssignedUsers)[:0]
 				}
 				for !in.IsDelim(']') {
-					var v7 UserProfile
-					easyjson202377feDecodeRPOBackInternalModels1(in, &v7)
-					out.AssignedUsers = append(out.AssignedUsers, v7)
+					var v4 UserProfile
+					(v4).UnmarshalEasyJSON(in)
+					out.AssignedUsers = append(out.AssignedUsers, v4)
 					in.WantComma()
 				}
 				in.Delim(']')
@@ -800,7 +626,7 @@ func easyjson202377feDecodeRPOBackInternalModels7(in *jlexer.Lexer, out *CardDet
 		in.Consumed()
 	}
 }
-func easyjson202377feEncodeRPOBackInternalModels7(out *jwriter.Writer, in CardDetails) {
+func easyjson202377feEncodeRPOBackInternalModels5(out *jwriter.Writer, in CardDetails) {
 	out.RawByte('{')
 	first := true
 	_ = first
@@ -820,11 +646,11 @@ func easyjson202377feEncodeRPOBackInternalModels7(out *jwriter.Writer, in CardDe
 			out.RawString("null")
 		} else {
 			out.RawByte('[')
-			for v8, v9 := range in.CheckList {
-				if v8 > 0 {
+			for v5, v6 := range in.CheckList {
+				if v5 > 0 {
 					out.RawByte(',')
 				}
-				(v9).MarshalEasyJSON(out)
+				(v6).MarshalEasyJSON(out)
 			}
 			out.RawByte(']')
 		}
@@ -836,11 +662,11 @@ func easyjson202377feEncodeRPOBackInternalModels7(out *jwriter.Writer, in CardDe
 			out.RawString("null")
 		} else {
 			out.RawByte('[')
-			for v10, v11 := range in.Attachments {
-				if v10 > 0 {
+			for v7, v8 := range in.Attachments {
+				if v7 > 0 {
 					out.RawByte(',')
 				}
-				(v11).MarshalEasyJSON(out)
+				(v8).MarshalEasyJSON(out)
 			}
 			out.RawByte(']')
 		}
@@ -852,11 +678,11 @@ func easyjson202377feEncodeRPOBackInternalModels7(out *jwriter.Writer, in CardDe
 			out.RawString("null")
 		} else {
 			out.RawByte('[')
-			for v12, v13 := range in.Comments {
-				if v12 > 0 {
+			for v9, v10 := range in.Comments {
+				if v9 > 0 {
 					out.RawByte(',')
 				}
-				(v13).MarshalEasyJSON(out)
+				(v10).MarshalEasyJSON(out)
 			}
 			out.RawByte(']')
 		}
@@ -868,11 +694,11 @@ func easyjson202377feEncodeRPOBackInternalModels7(out *jwriter.Writer, in CardDe
 			out.RawString("null")
 		} else {
 			out.RawByte('[')
-			for v14, v15 := range in.AssignedUsers {
-				if v14 > 0 {
+			for v11, v12 := range in.AssignedUsers {
+				if v11 > 0 {
 					out.RawByte(',')
 				}
-				easyjson202377feEncodeRPOBackInternalModels1(out, v15)
+				(v12).MarshalEasyJSON(out)
 			}
 			out.RawByte(']')
 		}
@@ -883,27 +709,27 @@ func easyjson202377feEncodeRPOBackInternalModels7(out *jwriter.Writer, in CardDe
 // MarshalJSON supports json.Marshaler interface
 func (v CardDetails) MarshalJSON() ([]byte, error) {
 	w := jwriter.Writer{}
-	easyjson202377feEncodeRPOBackInternalModels7(&w, v)
+	easyjson202377feEncodeRPOBackInternalModels5(&w, v)
 	return w.Buffer.BuildBytes(), w.Error
 }
 
 // MarshalEasyJSON supports easyjson.Marshaler interface
 func (v CardDetails) MarshalEasyJSON(w *jwriter.Writer) {
-	easyjson202377feEncodeRPOBackInternalModels7(w, v)
+	easyjson202377feEncodeRPOBackInternalModels5(w, v)
 }
 
 // UnmarshalJSON supports json.Unmarshaler interface
 func (v *CardDetails) UnmarshalJSON(data []byte) error {
 	r := jlexer.Lexer{Data: data}
-	easyjson202377feDecodeRPOBackInternalModels7(&r, v)
+	easyjson202377feDecodeRPOBackInternalModels5(&r, v)
 	return r.Error()
 }
 
 // UnmarshalEasyJSON supports easyjson.Unmarshaler interface
 func (v *CardDetails) UnmarshalEasyJSON(l *jlexer.Lexer) {
-	easyjson202377feDecodeRPOBackInternalModels7(l, v)
+	easyjson202377feDecodeRPOBackInternalModels5(l, v)
 }
-func easyjson202377feDecodeRPOBackInternalModels8(in *jlexer.Lexer, out *Card) {
+func easyjson202377feDecodeRPOBackInternalModels6(in *jlexer.Lexer, out *Card) {
 	isTopLevel := in.IsStart()
 	if in.IsNull() {
 		if isTopLevel {
@@ -972,7 +798,7 @@ func easyjson202377feDecodeRPOBackInternalModels8(in *jlexer.Lexer, out *Card) {
 		in.Consumed()
 	}
 }
-func easyjson202377feEncodeRPOBackInternalModels8(out *jwriter.Writer, in Card) {
+func easyjson202377feEncodeRPOBackInternalModels6(out *jwriter.Writer, in Card) {
 	out.RawByte('{')
 	first := true
 	_ = first
@@ -1047,27 +873,27 @@ func easyjson202377feEncodeRPOBackInternalModels8(out *jwriter.Writer, in Card) 
 // MarshalJSON supports json.Marshaler interface
 func (v Card) MarshalJSON() ([]byte, error) {
 	w := jwriter.Writer{}
-	easyjson202377feEncodeRPOBackInternalModels8(&w, v)
+	easyjson202377feEncodeRPOBackInternalModels6(&w, v)
 	return w.Buffer.BuildBytes(), w.Error
 }
 
 // MarshalEasyJSON supports easyjson.Marshaler interface
 func (v Card) MarshalEasyJSON(w *jwriter.Writer) {
-	easyjson202377feEncodeRPOBackInternalModels8(w, v)
+	easyjson202377feEncodeRPOBackInternalModels6(w, v)
 }
 
 // UnmarshalJSON supports json.Unmarshaler interface
 func (v *Card) UnmarshalJSON(data []byte) error {
 	r := jlexer.Lexer{Data: data}
-	easyjson202377feDecodeRPOBackInternalModels8(&r, v)
+	easyjson202377feDecodeRPOBackInternalModels6(&r, v)
 	return r.Error()
 }
 
 // UnmarshalEasyJSON supports easyjson.Unmarshaler interface
 func (v *Card) UnmarshalEasyJSON(l *jlexer.Lexer) {
-	easyjson202377feDecodeRPOBackInternalModels8(l, v)
+	easyjson202377feDecodeRPOBackInternalModels6(l, v)
 }
-func easyjson202377feDecodeRPOBackInternalModels9(in *jlexer.Lexer, out *BoardContent) {
+func easyjson202377feDecodeRPOBackInternalModels7(in *jlexer.Lexer, out *BoardContent) {
 	isTopLevel := in.IsStart()
 	if in.IsNull() {
 		if isTopLevel {
@@ -1104,9 +930,9 @@ func easyjson202377feDecodeRPOBackInternalModels9(in *jlexer.Lexer, out *BoardCo
 					out.Cards = (out.Cards)[:0]
 				}
 				for !in.IsDelim(']') {
-					var v16 Card
-					(v16).UnmarshalEasyJSON(in)
-					out.Cards = append(out.Cards, v16)
+					var v13 Card
+					(v13).UnmarshalEasyJSON(in)
+					out.Cards = append(out.Cards, v13)
 					in.WantComma()
 				}
 				in.Delim(']')
@@ -1127,9 +953,9 @@ func easyjson202377feDecodeRPOBackInternalModels9(in *jlexer.Lexer, out *BoardCo
 					out.Columns = (out.Columns)[:0]
 				}
 				for !in.IsDelim(']') {
-					var v17 Column
-					(v17).UnmarshalEasyJSON(in)
-					out.Columns = append(out.Columns, v17)
+					var v14 Column
+					(v14).UnmarshalEasyJSON(in)
+					out.Columns = append(out.Columns, v14)
 					in.WantComma()
 				}
 				in.Delim(']')
@@ -1154,7 +980,7 @@ func easyjson202377feDecodeRPOBackInternalModels9(in *jlexer.Lexer, out *BoardCo
 		in.Consumed()
 	}
 }
-func easyjson202377feEncodeRPOBackInternalModels9(out *jwriter.Writer, in BoardContent) {
+func easyjson202377feEncodeRPOBackInternalModels7(out *jwriter.Writer, in BoardContent) {
 	out.RawByte('{')
 	first := true
 	_ = first
@@ -1170,11 +996,11 @@ func easyjson202377feEncodeRPOBackInternalModels9(out *jwriter.Writer, in BoardC
 			out.RawString("null")
 		} else {
 			out.RawByte('[')
-			for v18, v19 := range in.Cards {
-				if v18 > 0 {
+			for v15, v16 := range in.Cards {
+				if v15 > 0 {
 					out.RawByte(',')
 				}
-				(v19).MarshalEasyJSON(out)
+				(v16).MarshalEasyJSON(out)
 			}
 			out.RawByte(']')
 		}
@@ -1186,11 +1012,11 @@ func easyjson202377feEncodeRPOBackInternalModels9(out *jwriter.Writer, in BoardC
 			out.RawString("null")
 		} else {
 			out.RawByte('[')
-			for v20, v21 := range in.Columns {
-				if v20 > 0 {
+			for v17, v18 := range in.Columns {
+				if v17 > 0 {
 					out.RawByte(',')
 				}
-				(v21).MarshalEasyJSON(out)
+				(v18).MarshalEasyJSON(out)
 			}
 			out.RawByte(']')
 		}
@@ -1210,27 +1036,27 @@ func easyjson202377feEncodeRPOBackInternalModels9(out *jwriter.Writer, in BoardC
 // MarshalJSON supports json.Marshaler interface
 func (v BoardContent) MarshalJSON() ([]byte, error) {
 	w := jwriter.Writer{}
-	easyjson202377feEncodeRPOBackInternalModels9(&w, v)
+	easyjson202377feEncodeRPOBackInternalModels7(&w, v)
 	return w.Buffer.BuildBytes(), w.Error
 }
 
 // MarshalEasyJSON supports easyjson.Marshaler interface
 func (v BoardContent) MarshalEasyJSON(w *jwriter.Writer) {
-	easyjson202377feEncodeRPOBackInternalModels9(w, v)
+	easyjson202377feEncodeRPOBackInternalModels7(w, v)
 }
 
 // UnmarshalJSON supports json.Unmarshaler interface
 func (v *BoardContent) UnmarshalJSON(data []byte) error {
 	r := jlexer.Lexer{Data: data}
-	easyjson202377feDecodeRPOBackInternalModels9(&r, v)
+	easyjson202377feDecodeRPOBackInternalModels7(&r, v)
 	return r.Error()
 }
 
 // UnmarshalEasyJSON supports easyjson.Unmarshaler interface
 func (v *BoardContent) UnmarshalEasyJSON(l *jlexer.Lexer) {
-	easyjson202377feDecodeRPOBackInternalModels9(l, v)
+	easyjson202377feDecodeRPOBackInternalModels7(l, v)
 }
-func easyjson202377feDecodeRPOBackInternalModels10(in *jlexer.Lexer, out *Board) {
+func easyjson202377feDecodeRPOBackInternalModels8(in *jlexer.Lexer, out *Board) {
 	isTopLevel := in.IsStart()
 	if in.IsNull() {
 		if isTopLevel {
@@ -1287,7 +1113,7 @@ func easyjson202377feDecodeRPOBackInternalModels10(in *jlexer.Lexer, out *Board)
 		in.Consumed()
 	}
 }
-func easyjson202377feEncodeRPOBackInternalModels10(out *jwriter.Writer, in Board) {
+func easyjson202377feEncodeRPOBackInternalModels8(out *jwriter.Writer, in Board) {
 	out.RawByte('{')
 	first := true
 	_ = first
@@ -1336,27 +1162,27 @@ func easyjson202377feEncodeRPOBackInternalModels10(out *jwriter.Writer, in Board
 // MarshalJSON supports json.Marshaler interface
 func (v Board) MarshalJSON() ([]byte, error) {
 	w := jwriter.Writer{}
-	easyjson202377feEncodeRPOBackInternalModels10(&w, v)
+	easyjson202377feEncodeRPOBackInternalModels8(&w, v)
 	return w.Buffer.BuildBytes(), w.Error
 }
 
 // MarshalEasyJSON supports easyjson.Marshaler interface
 func (v Board) MarshalEasyJSON(w *jwriter.Writer) {
-	easyjson202377feEncodeRPOBackInternalModels10(w, v)
+	easyjson202377feEncodeRPOBackInternalModels8(w, v)
 }
 
 // UnmarshalJSON supports json.Unmarshaler interface
 func (v *Board) UnmarshalJSON(data []byte) error {
 	r := jlexer.Lexer{Data: data}
-	easyjson202377feDecodeRPOBackInternalModels10(&r, v)
+	easyjson202377feDecodeRPOBackInternalModels8(&r, v)
 	return r.Error()
 }
 
 // UnmarshalEasyJSON supports easyjson.Unmarshaler interface
 func (v *Board) UnmarshalEasyJSON(l *jlexer.Lexer) {
-	easyjson202377feDecodeRPOBackInternalModels10(l, v)
+	easyjson202377feDecodeRPOBackInternalModels8(l, v)
 }
-func easyjson202377feDecodeRPOBackInternalModels11(in *jlexer.Lexer, out *Attachment) {
+func easyjson202377feDecodeRPOBackInternalModels9(in *jlexer.Lexer, out *Attachment) {
 	isTopLevel := in.IsStart()
 	if in.IsNull() {
 		if isTopLevel {
@@ -1395,7 +1221,7 @@ func easyjson202377feDecodeRPOBackInternalModels11(in *jlexer.Lexer, out *Attach
 		in.Consumed()
 	}
 }
-func easyjson202377feEncodeRPOBackInternalModels11(out *jwriter.Writer, in Attachment) {
+func easyjson202377feEncodeRPOBackInternalModels9(out *jwriter.Writer, in Attachment) {
 	out.RawByte('{')
 	first := true
 	_ = first
@@ -1425,23 +1251,23 @@ func easyjson202377feEncodeRPOBackInternalModels11(out *jwriter.Writer, in Attac
 // MarshalJSON supports json.Marshaler interface
 func (v Attachment) MarshalJSON() ([]byte, error) {
 	w := jwriter.Writer{}
-	easyjson202377feEncodeRPOBackInternalModels11(&w, v)
+	easyjson202377feEncodeRPOBackInternalModels9(&w, v)
 	return w.Buffer.BuildBytes(), w.Error
 }
 
 // MarshalEasyJSON supports easyjson.Marshaler interface
 func (v Attachment) MarshalEasyJSON(w *jwriter.Writer) {
-	easyjson202377feEncodeRPOBackInternalModels11(w, v)
+	easyjson202377feEncodeRPOBackInternalModels9(w, v)
 }
 
 // UnmarshalJSON supports json.Unmarshaler interface
 func (v *Attachment) UnmarshalJSON(data []byte) error {
 	r := jlexer.Lexer{Data: data}
-	easyjson202377feDecodeRPOBackInternalModels11(&r, v)
+	easyjson202377feDecodeRPOBackInternalModels9(&r, v)
 	return r.Error()
 }
 
 // UnmarshalEasyJSON supports easyjson.Unmarshaler interface
 func (v *Attachment) UnmarshalEasyJSON(l *jlexer.Lexer) {
-	easyjson202377feDecodeRPOBackInternalModels11(l, v)
+	easyjson202377feDecodeRPOBackInternalModels9(l, v)
 }

@@ -593,6 +593,9 @@ func (r *BoardRepository) GetCardsForMove(ctx context.Context, destColumnID int6
 	ORDER BY c.order_index;
 	`
 
+	columnFrom = make([]models.Card, 0, 10)
+	columnTo = make([]models.Card, 0, 10)
+
 	rows, err := r.db.Query(ctx, query, destColumnID, cardID)
 	logging.Debug(ctx, "GetCardsForMove query has err: ", err)
 	if err != nil {
@@ -633,6 +636,8 @@ func (r *BoardRepository) GetColumnsForMove(ctx context.Context, boardID int64) 
 	ORDER BY kc.order_index;
 	`
 
+	columns = make([]models.Column, 0, 10)
+
 	rows, err := r.db.Query(ctx, query, boardID)
 	logging.Debug(ctx, funcName, " query has err: ", err)
 	if err != nil {
@@ -661,7 +666,6 @@ func (r *BoardRepository) RearrangeCards(ctx context.Context, column1 []models.C
 	query := `
 	UPDATE card SET order_index=$1, col_id=$2 WHERE card_id=$3;
 	`
-	tx, err := r.db.Begin(ctx)
 	if err != nil {
 		return fmt.Errorf("%s (begin): %w", funcName, err)
 	}
@@ -674,6 +678,7 @@ func (r *BoardRepository) RearrangeCards(ctx context.Context, column1 []models.C
 		batch.Queue(query, idx, card.ColumnID, card.ID)
 	}
 
+	tx, err := r.db.Begin(ctx)
 	br := tx.SendBatch(ctx, batch)
 	err = br.Close()
 	logging.Debug(ctx, funcName, " batch query has err: ", err)

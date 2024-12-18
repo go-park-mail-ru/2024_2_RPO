@@ -646,6 +646,7 @@ func (uc *BoardUsecase) MoveCard(ctx context.Context, userID int64, cardID int64
 	for idx, card := range columnFrom {
 		if card.ID == cardID {
 			prevCardIdx = idx
+			break
 		}
 	}
 	if prevCardIdx == -1 {
@@ -667,11 +668,18 @@ func (uc *BoardUsecase) MoveCard(ctx context.Context, userID int64, cardID int64
 
 	card := columnFrom[prevCardIdx]
 
-	if len(columnTo) > 0 && columnFrom[0] != columnTo[0] {
+	if len(columnTo) == 0 {
+		fmt.Println("CASE 0 =====")
+		card.ColumnID = *moveReq.NewColumnID
+		columnTo = append(columnTo, card)
+		columnFrom = slices.Delete(columnFrom, prevCardIdx, prevCardIdx+1)
+	} else if columnFrom[0].ColumnID != columnTo[0].ColumnID {
+		fmt.Println("CASE 1 =====")
 		card.ColumnID = *moveReq.NewColumnID
 		columnTo = slices.Insert(columnTo, destCardIdx, card)
 		columnFrom = slices.Delete(columnFrom, prevCardIdx, prevCardIdx+1)
 	} else {
+		fmt.Println("CASE 2 =====")
 		columnFrom = nil
 		columnTo = slices.Delete(columnTo, prevCardIdx, prevCardIdx+1)
 		if prevCardIdx > destCardIdx {
@@ -692,6 +700,10 @@ func (uc *BoardUsecase) MoveCard(ctx context.Context, userID int64, cardID int64
 // MoveColumn перемещает колонку на доске
 func (uc *BoardUsecase) MoveColumn(ctx context.Context, userID int64, columnID int64, moveReq *models.ColumnMoveRequest) (err error) {
 	funcName := "MoveColumn"
+
+	if moveReq == nil {
+		return fmt.Errorf("%s: nil pointer", funcName)
+	}
 	role, boardID, err := uc.boardRepository.GetMemberFromColumn(ctx, userID, columnID)
 	if err != nil {
 		return fmt.Errorf("%s (get): %w", funcName, err)
@@ -711,7 +723,12 @@ func (uc *BoardUsecase) MoveColumn(ctx context.Context, userID int64, columnID i
 	for idx, col := range columns {
 		if col.ID == columnID {
 			fromIdx = idx
-			break
+		}
+		if moveReq.NextColumnID == nil {
+			return fmt.Errorf("%s: moveReq.NextColumnID == nil", funcName)
+		}
+		if col.ID == *moveReq.PreviousColumnID {
+			destIdx = idx + 1
 		}
 		if col.ID == *moveReq.NextColumnID {
 			destIdx = idx
@@ -723,7 +740,7 @@ func (uc *BoardUsecase) MoveColumn(ctx context.Context, userID int64, columnID i
 	}
 
 	if destIdx == -1 {
-		destIdx = len(columns) - 1
+		return fmt.Errorf("%s (dest idx): not found", funcName)
 	}
 
 	col := columns[fromIdx]
