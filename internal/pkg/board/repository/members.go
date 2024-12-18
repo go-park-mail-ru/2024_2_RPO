@@ -722,24 +722,24 @@ func (r *BoardRepository) RearrangeColumns(ctx context.Context, columns []models
 	return nil
 }
 
-// RearrangeCheckList устанавливает порядок полей чеклиста как в слайсе
-func (r *BoardRepository) RearrangeCheckList(ctx context.Context, fields []models.CheckListField) (err error) {
-	panic("not implemented")
-	funcName := "RearrangeCheckList"
-	query := ``
-	batch := &pgx.Batch{}
-	for _, col := range fields {
-		batch.Queue(query, col.OrderIndex)
-	}
+// // RearrangeCheckList устанавливает порядок полей чеклиста как в слайсе
+// func (r *BoardRepository) RearrangeCheckList(ctx context.Context, fields []models.CheckListField) (err error) {
+// 	panic("not implemented")
+// 	funcName := "RearrangeCheckList"
+// 	query := ``
+// 	batch := &pgx.Batch{}
+// 	for _, col := range fields {
+// 		batch.Queue(query, col.OrderIndex)
+// 	}
 
-	br := r.db.SendBatch(ctx, batch)
-	err = br.Close()
-	logging.Debug(ctx, funcName, " batch query has err: ", err)
-	if err != nil {
-		return fmt.Errorf("%s (batch query): %w", funcName, err)
-	}
-	return nil
-}
+// 	br := r.db.SendBatch(ctx, batch)
+// 	err = br.Close()
+// 	logging.Debug(ctx, funcName, " batch query has err: ", err)
+// 	if err != nil {
+// 		return fmt.Errorf("%s (batch query): %w", funcName, err)
+// 	}
+// 	return nil
+// }
 
 // AssignUserToCard назначает пользователя на карточку
 func (r *BoardRepository) AssignUserToCard(ctx context.Context, cardID int64, assignedUserID int64) (assignedUser *models.UserProfile, err error) {

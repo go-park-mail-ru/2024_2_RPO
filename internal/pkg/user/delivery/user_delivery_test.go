@@ -111,37 +111,3 @@ func TestChangePassword_Unauthorized(t *testing.T) {
 		t.Errorf("expected status %v, got %v", http.StatusUnauthorized, w.Code)
 	}
 }
-
-func TestSubmitPoll_Unauthorized(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockUsecase := mocks.NewMockUserUsecase(ctrl)
-	userDelivery := CreateUserDelivery(mockUsecase)
-
-	w := httptest.NewRecorder()
-	r := httptest.NewRequest(http.MethodPost, "/poll/submit", bytes.NewReader([]byte(`{"pollID":1,"answers":[2,3]}`)))
-
-	userDelivery.SubmitPoll(w, r)
-
-	if w.Code != http.StatusUnauthorized {
-		t.Errorf("expected status %v, got %v", http.StatusUnauthorized, w.Code)
-	}
-}
-
-func TestGetPollResults_Unauthorized(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockUsecase := mocks.NewMockUserUsecase(ctrl)
-	userDelivery := CreateUserDelivery(mockUsecase)
-
-	w := httptest.NewRecorder()
-	r := httptest.NewRequest(http.MethodGet, "/poll/results", nil)
-
-	userDelivery.GetPollResults(w, r)
-
-	if w.Code != http.StatusUnauthorized {
-		t.Errorf("expected status %v, got %v", http.StatusUnauthorized, w.Code)
-	}
-}

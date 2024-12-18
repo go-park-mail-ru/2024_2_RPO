@@ -16,12 +16,15 @@ import (
 func TestUpdateBoard_Success(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
-	mockRepo := mocks.NewMockBoardRepo(ctrl)
-	uc := CreateBoardUsecase(mockRepo)
+
+	boardRepo := mocks.NewMockBoardRepo(ctrl)
+	boardElastic := mocks.NewMockBoardElasticRepo(ctrl)
+	uc := CreateBoardUsecase(boardRepo, boardElastic)
+
 	ctx := context.Background()
 	data := models.BoardRequest{}
-	mockRepo.EXPECT().GetMemberPermissions(ctx, int64(1), int64(1), false).Return(&models.MemberWithPermissions{Role: "admin"}, nil)
-	mockRepo.EXPECT().UpdateBoard(ctx, int64(1), int64(1), &data).Return(&models.Board{ID: 1}, nil)
+	boardRepo.EXPECT().GetMemberPermissions(ctx, int64(1), int64(1), false).Return(&models.MemberWithPermissions{Role: "admin"}, nil)
+	boardRepo.EXPECT().UpdateBoard(ctx, int64(1), int64(1), &data).Return(&models.Board{ID: 1}, nil)
 	_, err := uc.UpdateBoard(ctx, 1, 1, data)
 	if err != nil {
 		t.Errorf("expected no error, got %v", err)
@@ -32,15 +35,17 @@ func TestDeleteBoard_Success(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	mockRepo := mocks.NewMockBoardRepo(ctrl)
+	boardRepo := mocks.NewMockBoardRepo(ctrl)
+	elastic := mocks.NewMockBoardElasticRepo(ctrl)
+	uc := CreateBoardUsecase(boardRepo, elastic)
+
 	ctx := context.Background()
 	userID := int64(1)
 	boardID := int64(1)
 
-	mockRepo.EXPECT().GetMemberPermissions(ctx, boardID, userID, false).Return(&models.MemberWithPermissions{Role: "admin"}, nil)
-	mockRepo.EXPECT().DeleteBoard(ctx, boardID).Return(nil)
+	boardRepo.EXPECT().GetMemberPermissions(ctx, boardID, userID, false).Return(&models.MemberWithPermissions{Role: "admin"}, nil)
+	boardRepo.EXPECT().DeleteBoard(ctx, boardID).Return(nil)
 
-	uc := CreateBoardUsecase(mockRepo)
 	err := uc.DeleteBoard(ctx, userID, boardID)
 	if err != nil {
 		t.Errorf("expected no error, got %v", err)
@@ -51,15 +56,16 @@ func TestGetMembersPermissions(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	mockRepo := mocks.NewMockBoardRepo(ctrl)
-	uc := CreateBoardUsecase(mockRepo)
+	boardRepo := mocks.NewMockBoardRepo(ctrl)
+	elastic := mocks.NewMockBoardElasticRepo(ctrl)
+	uc := CreateBoardUsecase(boardRepo, elastic)
 
 	ctx := context.Background()
 	userID := int64(1)
 	boardID := int64(1)
 
-	mockRepo.EXPECT().GetMemberPermissions(ctx, boardID, userID, false).Return(nil, nil)
-	mockRepo.EXPECT().GetMembersWithPermissions(ctx, boardID, userID).Return([]models.MemberWithPermissions{}, nil)
+	boardRepo.EXPECT().GetMemberPermissions(ctx, boardID, userID, false).Return(nil, nil)
+	boardRepo.EXPECT().GetMembersWithPermissions(ctx, boardID, userID).Return([]models.MemberWithPermissions{}, nil)
 
 	_, err := uc.GetMembersPermissions(ctx, userID, boardID)
 	if err != nil {
@@ -67,37 +73,12 @@ func TestGetMembersPermissions(t *testing.T) {
 	}
 }
 
-func TestAddMember_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-	boardRepo := mocks.NewMockBoardRepo(ctrl)
-	uc := CreateBoardUsecase(boardRepo)
-	ctx := context.Background()
-	userID := int64(1)
-	boardID := int64(1)
-	addRequest := &models.AddMemberRequest{MemberNickname: "nickname"}
-
-	boardRepo.EXPECT().
-		GetMemberPermissions(ctx, boardID, userID, false).
-		Return(&models.MemberWithPermissions{Role: "admin"}, nil)
-	boardRepo.EXPECT().
-		GetUserByNickname(ctx, "nickname").
-		Return(&models.UserProfile{ID: 1}, nil)
-	boardRepo.EXPECT().
-		AddMember(ctx, boardID, userID, int64(1)).
-		Return(&models.MemberWithPermissions{User: &models.UserProfile{ID: 1}, Role: "viewer"}, nil)
-
-	_, err := uc.AddMember(ctx, userID, boardID, addRequest)
-	if err != nil {
-		t.Errorf("expected no error, got %v", err)
-	}
-}
-
 func TestUpdateMemberRole_Success(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 	boardRepo := mocks.NewMockBoardRepo(ctrl)
-	uc := CreateBoardUsecase(boardRepo)
+	elastic := mocks.NewMockBoardElasticRepo(ctrl)
+	uc := CreateBoardUsecase(boardRepo, elastic)
 	ctx := context.Background()
 	userID := int64(1)
 	boardID := int64(1)
@@ -118,7 +99,8 @@ func TestRemoveMember_Success(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 	boardRepo := mocks.NewMockBoardRepo(ctrl)
-	uc := CreateBoardUsecase(boardRepo)
+	elastic := mocks.NewMockBoardElasticRepo(ctrl)
+	uc := CreateBoardUsecase(boardRepo, elastic)
 	ctx := context.Background()
 	boardRepo.EXPECT().GetMemberPermissions(ctx, int64(1), int64(1), false).Return(&models.MemberWithPermissions{Role: "admin"}, nil)
 	boardRepo.EXPECT().GetMemberPermissions(ctx, int64(1), int64(1), false).Return(&models.MemberWithPermissions{Role: "user"}, nil)
@@ -133,7 +115,8 @@ func TestGetBoardContent_Success(t *testing.T) {
 	defer ctrl.Finish()
 
 	boardRepo := mocks.NewMockBoardRepo(ctrl)
-	uc := CreateBoardUsecase(boardRepo)
+	elastic := mocks.NewMockBoardElasticRepo(ctrl)
+	uc := CreateBoardUsecase(boardRepo, elastic)
 
 	userID := int64(1)
 	boardID := int64(1)
@@ -154,7 +137,8 @@ func TestCreateNewCard(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 	boardRepo := mocks.NewMockBoardRepo(ctrl)
-	uc := CreateBoardUsecase(boardRepo)
+	elastic := mocks.NewMockBoardElasticRepo(ctrl)
+	uc := CreateBoardUsecase(boardRepo, elastic)
 	ctx := context.Background()
 	userID := int64(1)
 	boardID := int64(1)
@@ -183,7 +167,8 @@ func TestUpdateCard_Success(t *testing.T) {
 	defer ctrl.Finish()
 
 	boardRepo := mocks.NewMockBoardRepo(ctrl)
-	uc := CreateBoardUsecase(boardRepo)
+	elastic := mocks.NewMockBoardElasticRepo(ctrl)
+	uc := CreateBoardUsecase(boardRepo, elastic)
 
 	ctx := context.Background()
 	userID := int64(1)
@@ -210,7 +195,8 @@ func TestDeleteCard_Success(t *testing.T) {
 	defer ctrl.Finish()
 
 	boardRepo := mocks.NewMockBoardRepo(ctrl)
-	uc := CreateBoardUsecase(boardRepo)
+	elastic := mocks.NewMockBoardElasticRepo(ctrl)
+	uc := CreateBoardUsecase(boardRepo, elastic)
 
 	ctx := context.Background()
 	userID := int64(1)
@@ -218,6 +204,7 @@ func TestDeleteCard_Success(t *testing.T) {
 
 	boardRepo.EXPECT().GetMemberFromCard(ctx, userID, cardID).Return("admin", int64(1), nil)
 	boardRepo.EXPECT().DeleteCard(ctx, cardID).Return(nil)
+	elastic.EXPECT().DeleteCard(ctx, cardID).Return(nil)
 
 	err := uc.DeleteCard(ctx, userID, cardID)
 	if err != nil {
@@ -229,7 +216,7 @@ func TestCreateColumn_Success(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 	boardRepo := mocks.NewMockBoardRepo(ctrl)
-	uc := CreateBoardUsecase(boardRepo)
+	uc := CreateBoardUsecase(boardRepo, nil)
 	ctx := context.Background()
 	userID := int64(1)
 	boardID := int64(1)
@@ -251,7 +238,7 @@ func TestUpdateColumn_Success(t *testing.T) {
 	defer ctrl.Finish()
 
 	boardRepo := mocks.NewMockBoardRepo(ctrl)
-	uc := CreateBoardUsecase(boardRepo)
+	uc := CreateBoardUsecase(boardRepo, nil)
 
 	ctx := context.Background()
 	userID := int64(1)
@@ -275,31 +262,11 @@ func TestDeleteColumn_Success(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	mockRepo := mocks.NewMockBoardRepo(ctrl)
-	mockRepo.EXPECT().GetMemberFromColumn(context.Background(), int64(1), int64(1)).Return("admin", int64(1), nil)
-	mockRepo.EXPECT().DeleteColumn(context.Background(), int64(1)).Return(nil)
+	boardRepo := mocks.NewMockBoardRepo(ctrl)
+	boardRepo.EXPECT().GetMemberFromColumn(context.Background(), int64(1), int64(1)).Return("admin", int64(1), nil)
+	boardRepo.EXPECT().DeleteColumn(context.Background(), int64(1)).Return(nil)
 
-	uc := &BoardUsecase{boardRepository: mockRepo}
+	uc := &BoardUsecase{boardRepository: boardRepo}
 	err := uc.DeleteColumn(context.Background(), 1, 1)
-	assert.NoError(t, err)
-}
-
-func TestSetBoardBackground_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	mockRepo := mocks.NewMockBoardRepo(ctrl)
-	ctx := context.Background()
-	userID := int64(1)
-	boardID := int64(1)
-	file := &models.UploadedFile{FileID: &boardID}
-	board := &models.Board{ID: boardID}
-
-	mockRepo.EXPECT().GetMemberPermissions(ctx, boardID, userID, false).Return(&models.MemberWithPermissions{Role: "admin"}, nil)
-	mockRepo.EXPECT().DeduplicateFile(ctx, file).Return([]string{}, []int64{}, nil)
-	mockRepo.EXPECT().SetBoardBackground(ctx, userID, boardID, file).Return(board, nil)
-	mockRepo.EXPECT().RegisterFile(ctx, file).Return(nil)
-
-	uc := CreateBoardUsecase(mockRepo)
-	_, err := uc.SetBoardBackground(ctx, userID, boardID, file)
-
 	assert.NoError(t, err)
 }

@@ -49,6 +49,7 @@ jobs:
 
   deploy:
     name: deploy
+    needs: tests
     runs-on: ubuntu-latest
     steps:
       - name: pull code

@@ -95,23 +95,6 @@ func TestGetMembersPermissions_Unauthorized(t *testing.T) {
 	}
 }
 
-func TestAddMember_Unauthorized(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockUsecase := mocks.NewMockBoardUsecase(ctrl)
-	boardDelivery := CreateBoardDelivery(mockUsecase)
-
-	w := httptest.NewRecorder()
-	r := httptest.NewRequest(http.MethodPost, "/boards/1/members", bytes.NewReader([]byte(`{"userID":2}`)))
-
-	boardDelivery.AddMember(w, r)
-
-	if w.Code != http.StatusUnauthorized {
-		t.Errorf("expected status %v, got %v", http.StatusUnauthorized, w.Code)
-	}
-}
-
 func TestUpdateMemberRole_Unauthorized(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()

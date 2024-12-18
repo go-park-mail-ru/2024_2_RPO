@@ -16,11 +16,11 @@ func TestRegisterSessionRedis(t *testing.T) {
 
 	ctx := context.Background()
 	sessionID := "session_1"
-	userID := 1
+	userID := int64(1)
 
-	authRepo.EXPECT().RegisterSessionRedis(ctx, sessionID, userID).Return(nil)
+	authRepo.EXPECT().CreateSession(ctx, sessionID, userID).Return(nil)
 
-	err := authRepo.RegisterSessionRedis(ctx, sessionID, userID)
+	err := authRepo.CreateSession(ctx, sessionID, userID)
 	if err != nil {
 		t.Errorf("expected no error, got %v", err)
 	}
@@ -35,9 +35,9 @@ func TestKillSessionRedis(t *testing.T) {
 	ctx := context.Background()
 	sessionID := "session_1"
 
-	authRepo.EXPECT().KillSessionRedis(ctx, sessionID).Return(nil)
+	authRepo.EXPECT().RemoveSession(ctx, sessionID).Return(nil)
 
-	err := authRepo.KillSessionRedis(ctx, sessionID)
+	err := authRepo.RemoveSession(ctx, sessionID)
 	if err != nil {
 		t.Errorf("expected no error, got %v", err)
 	}
@@ -69,7 +69,7 @@ func TestCheckSession(t *testing.T) {
 
 	ctx := context.Background()
 	sessionID := "session_1"
-	userID := 1
+	userID := int64(1)
 
 	authRepo.EXPECT().CheckSession(ctx, sessionID).Return(userID, nil)
 

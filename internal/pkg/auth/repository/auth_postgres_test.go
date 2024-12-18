@@ -18,9 +18,9 @@ func TestSetNewPasswordHash(t *testing.T) {
 	userID := int64(1)
 	newPasswordHash := "new_password_hash"
 
-	authRepo.EXPECT().SetNewPasswordHash(ctx, int(userID), newPasswordHash).Return(nil)
+	authRepo.EXPECT().SetNewPasswordHash(ctx, userID, newPasswordHash).Return(nil)
 
-	err := authRepo.SetNewPasswordHash(ctx, int(userID), newPasswordHash)
+	err := authRepo.SetNewPasswordHash(ctx, userID, newPasswordHash)
 	if err != nil {
 		t.Errorf("expected no error, got %v", err)
 	}
@@ -36,9 +36,9 @@ func TestGetUserPasswordHash(t *testing.T) {
 	userID := int64(1)
 	passwordHash := "hashed_password"
 
-	authRepo.EXPECT().GetUserPasswordHash(ctx, int(userID)).Return(&passwordHash, nil)
+	authRepo.EXPECT().GetUserPasswordHash(ctx, userID).Return(&passwordHash, nil)
 
-	_, err := authRepo.GetUserPasswordHash(ctx, int(userID))
+	_, err := authRepo.GetUserPasswordHash(ctx, userID)
 	if err != nil {
 		t.Errorf("expected no error, got %v", err)
 	}
