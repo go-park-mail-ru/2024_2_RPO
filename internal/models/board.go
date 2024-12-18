@@ -1,5 +1,7 @@
 package models
 
+//go:generate easyjson -all board.go
+
 import "time"
 
 type Board struct {

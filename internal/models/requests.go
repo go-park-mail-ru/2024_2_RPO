@@ -1,5 +1,7 @@
 package models
 
+//go:generate easyjson -all requests.go
+
 import (
 	"RPO_back/internal/pkg/utils/validate"
 	"time"

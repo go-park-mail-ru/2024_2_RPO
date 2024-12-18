@@ -444,6 +444,21 @@ func (mr *MockBoardUsecaseMockRecorder) RemoveMember(ctx, userID, boardID, membe
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveMember", reflect.TypeOf((*MockBoardUsecase)(nil).RemoveMember), ctx, userID, boardID, memberID)
 }
 
+// SearchCards mocks base method.
+func (m *MockBoardUsecase) SearchCards(ctx context.Context, userID int64, searchValue string) ([]models.Card, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SearchCards", ctx, userID, searchValue)
+	ret0, _ := ret[0].([]models.Card)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// SearchCards indicates an expected call of SearchCards.
+func (mr *MockBoardUsecaseMockRecorder) SearchCards(ctx, userID, searchValue interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchCards", reflect.TypeOf((*MockBoardUsecase)(nil).SearchCards), ctx, userID, searchValue)
+}
+
 // SetBoardBackground mocks base method.
 func (m *MockBoardUsecase) SetBoardBackground(ctx context.Context, userID, boardID int64, file *models.UploadedFile) (*models.Board, error) {
 	m.ctrl.T.Helper()
@@ -588,18 +603,17 @@ func (m *MockBoardRepo) EXPECT() *MockBoardRepoMockRecorder {
 }
 
 // AcceptInvite mocks base method.
-func (m *MockBoardRepo) AcceptInvite(ctx context.Context, userID, boardID, invitedUserID int64, inviteUUID string) (*models.Board, error) {
+func (m *MockBoardRepo) AcceptInvite(ctx context.Context, userID, boardID int64, inviteUUID string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AcceptInvite", ctx, userID, boardID, invitedUserID, inviteUUID)
-	ret0, _ := ret[0].(*models.Board)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
+	ret := m.ctrl.Call(m, "AcceptInvite", ctx, userID, boardID, inviteUUID)
+	ret0, _ := ret[0].(error)
+	return ret0
 }
 
 // AcceptInvite indicates an expected call of AcceptInvite.
-func (mr *MockBoardRepoMockRecorder) AcceptInvite(ctx, userID, boardID, invitedUserID, inviteUUID interface{}) *gomock.Call {
+func (mr *MockBoardRepoMockRecorder) AcceptInvite(ctx, userID, boardID, inviteUUID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AcceptInvite", reflect.TypeOf((*MockBoardRepo)(nil).AcceptInvite), ctx, userID, boardID, invitedUserID, inviteUUID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AcceptInvite", reflect.TypeOf((*MockBoardRepo)(nil).AcceptInvite), ctx, userID, boardID, inviteUUID)
 }
 
 // AddAttachment mocks base method.
@@ -926,6 +940,21 @@ func (mr *MockBoardRepoMockRecorder) GetCardComments(ctx, cardID interface{}) *g
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCardComments", reflect.TypeOf((*MockBoardRepo)(nil).GetCardComments), ctx, cardID)
 }
 
+// GetCardsByID mocks base method.
+func (m *MockBoardRepo) GetCardsByID(ctx context.Context, cardIDs []int64) ([]models.Card, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetCardsByID", ctx, cardIDs)
+	ret0, _ := ret[0].([]models.Card)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetCardsByID indicates an expected call of GetCardsByID.
+func (mr *MockBoardRepoMockRecorder) GetCardsByID(ctx, cardIDs interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCardsByID", reflect.TypeOf((*MockBoardRepo)(nil).GetCardsByID), ctx, cardIDs)
+}
+
 // GetCardsForBoard mocks base method.
 func (m *MockBoardRepo) GetCardsForBoard(ctx context.Context, boardID int64) ([]models.Card, error) {
 	m.ctrl.T.Helper()
@@ -942,9 +971,9 @@ func (mr *MockBoardRepoMockRecorder) GetCardsForBoard(ctx, boardID interface{}) 
 }
 
 // GetCardsForMove mocks base method.
-func (m *MockBoardRepo) GetCardsForMove(ctx context.Context, col1ID int64, col2ID *int64) ([]models.Card, []models.Card, error) {
+func (m *MockBoardRepo) GetCardsForMove(ctx context.Context, destColumnID int64, cardID *int64) ([]models.Card, []models.Card, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetCardsForMove", ctx, col1ID, col2ID)
+	ret := m.ctrl.Call(m, "GetCardsForMove", ctx, destColumnID, cardID)
 	ret0, _ := ret[0].([]models.Card)
 	ret1, _ := ret[1].([]models.Card)
 	ret2, _ := ret[2].(error)
@@ -952,9 +981,9 @@ func (m *MockBoardRepo) GetCardsForMove(ctx context.Context, col1ID int64, col2I
 }
 
 // GetCardsForMove indicates an expected call of GetCardsForMove.
-func (mr *MockBoardRepoMockRecorder) GetCardsForMove(ctx, col1ID, col2ID interface{}) *gomock.Call {
+func (mr *MockBoardRepoMockRecorder) GetCardsForMove(ctx, destColumnID, cardID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCardsForMove", reflect.TypeOf((*MockBoardRepo)(nil).GetCardsForMove), ctx, col1ID, col2ID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCardsForMove", reflect.TypeOf((*MockBoardRepo)(nil).GetCardsForMove), ctx, destColumnID, cardID)
 }
 
 // GetColumnsForBoard mocks base method.
@@ -1162,17 +1191,17 @@ func (mr *MockBoardRepoMockRecorder) PullInviteLink(ctx, userID, boardID interfa
 }
 
 // RearrangeCards mocks base method.
-func (m *MockBoardRepo) RearrangeCards(ctx context.Context, columnID int64, cards []models.Card) error {
+func (m *MockBoardRepo) RearrangeCards(ctx context.Context, column1, column2 []models.Card) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "RearrangeCards", ctx, columnID, cards)
+	ret := m.ctrl.Call(m, "RearrangeCards", ctx, column1, column2)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // RearrangeCards indicates an expected call of RearrangeCards.
-func (mr *MockBoardRepoMockRecorder) RearrangeCards(ctx, columnID, cards interface{}) *gomock.Call {
+func (mr *MockBoardRepoMockRecorder) RearrangeCards(ctx, column1, column2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RearrangeCards", reflect.TypeOf((*MockBoardRepo)(nil).RearrangeCards), ctx, columnID, cards)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RearrangeCards", reflect.TypeOf((*MockBoardRepo)(nil).RearrangeCards), ctx, column1, column2)
 }
 
 // RearrangeCheckList mocks base method.
@@ -1418,31 +1447,17 @@ func (mr *MockBoardElasticRepoMockRecorder) DeleteCard(ctx, cardID interface{}) 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteCard", reflect.TypeOf((*MockBoardElasticRepo)(nil).DeleteCard), ctx, cardID)
 }
 
-// PutCard mocks base method.
-func (m *MockBoardElasticRepo) PutCard(ctx context.Context, boardID, cardID int64, cardText string) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "PutCard", ctx, boardID, cardID, cardText)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// PutCard indicates an expected call of PutCard.
-func (mr *MockBoardElasticRepoMockRecorder) PutCard(ctx, boardID, cardID, cardText interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PutCard", reflect.TypeOf((*MockBoardElasticRepo)(nil).PutCard), ctx, boardID, cardID, cardText)
-}
-
 // Search mocks base method.
-func (m *MockBoardElasticRepo) Search(ctx context.Context, query string) ([]int64, error) {
+func (m *MockBoardElasticRepo) Search(ctx context.Context, boards []models.Board, searchValue string) ([]int64, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Search", ctx, query)
+	ret := m.ctrl.Call(m, "Search", ctx, boards, searchValue)
 	ret0, _ := ret[0].([]int64)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // Search indicates an expected call of Search.
-func (mr *MockBoardElasticRepoMockRecorder) Search(ctx, query interface{}) *gomock.Call {
+func (mr *MockBoardElasticRepoMockRecorder) Search(ctx, boards, searchValue interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Search", reflect.TypeOf((*MockBoardElasticRepo)(nil).Search), ctx, query)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Search", reflect.TypeOf((*MockBoardElasticRepo)(nil).Search), ctx, boards, searchValue)
 }

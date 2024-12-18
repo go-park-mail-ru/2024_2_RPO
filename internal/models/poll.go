@@ -1,5 +1,7 @@
 package models
 
+//go:generate easyjson -all poll.go
+
 type RatingResults struct {
 	Question string `json:"question"`
 	Rating   string `json:"rating"`

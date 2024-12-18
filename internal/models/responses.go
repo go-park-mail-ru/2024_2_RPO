@@ -1,5 +1,7 @@
 package models
 
+//go:generate easyjson -all responses.go
+
 type BadResponse struct {
 	Status int    `json:"status"`
 	Text   string `json:"text"`

@@ -1,5 +1,7 @@
 package models
 
+//go:generate easyjson -all user.go
+
 import "time"
 
 type UserProfile struct {
