@@ -666,9 +666,6 @@ func (r *BoardRepository) RearrangeCards(ctx context.Context, column1 []models.C
 	query := `
 	UPDATE card SET order_index=$1, col_id=$2 WHERE card_id=$3;
 	`
-	if err != nil {
-		return fmt.Errorf("%s (begin): %w", funcName, err)
-	}
 
 	batch := &pgx.Batch{}
 	for idx, card := range column1 {
@@ -679,6 +676,10 @@ func (r *BoardRepository) RearrangeCards(ctx context.Context, column1 []models.C
 	}
 
 	tx, err := r.db.Begin(ctx)
+	if err != nil {
+		return fmt.Errorf("%s (begin): %w", funcName, err)
+	}
+
 	br := tx.SendBatch(ctx, batch)
 	err = br.Close()
 	logging.Debug(ctx, funcName, " batch query has err: ", err)
