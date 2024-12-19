@@ -62,7 +62,7 @@ TEST_DATABASE_URL = postgresql://3kybika:12345678@localhost:5432/migrate_gen_db?
 Потом можно запускать сами сервисы через Docker. Команда:
 
 ```sh
-make build_all -j && docker compose up --build
+make build_all -j && docker compose up --build -d
 ```
 
 Эта команда на хост-машине соберёт все бинари и будет исполнять их на докерах.

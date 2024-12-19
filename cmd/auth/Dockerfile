@@ -11,6 +11,7 @@ RUN rm -rf migrate migrate.tar.gz
 
 WORKDIR /app
 COPY ./Makefile .
+COPY ./database/elastic/mapping.json .
 COPY ./database/migrations/ ./migrations/
 COPY ./build/auth_app .
 COPY ./build/utils .

@@ -5,7 +5,7 @@
                 "ru": {
                     "type": "custom",
                     "tokenizer": "standard",
-                    "filter": ["lowercase", "russian_morphology", "english_morphology", "ru_stopwords", "ru_stemming"]
+                    "filter": ["lowercase", "russian_morphology", "ru_stopwords", "ru_stemming"]
                 }
             },
             "filter": {
@@ -16,6 +16,10 @@
                 "ru_stemming": {
                     "type": "snowball",
                     "language": "russian"
+                },
+                "russian_morphology": {
+                    "type":       "stemmer",
+                    "language":   "russian"
                 }
             }
         }
@@ -24,13 +28,7 @@
         "properties": {
             "title": {
                 "type": "text",
-                "analyzer": "ru",
-                "boost": 2.0
-            },
-            "content": {
-                "type": "text",
-                "analyzer": "ru",
-                "boost": 1.0
+                "analyzer": "ru"
             }
         }
     }
