@@ -1,24 +1,36 @@
 package main
 
-// Программа для обслуживания сервиса.
+// Программа CLI для обслуживания сервиса.
 // Возможности:
 // * Заполнить базу данных для нагрузочного тестирования;
-// *
+// * Заменить индексы elasticsearch-а
 
 import (
 	"RPO_back/internal/pkg/config"
 	"RPO_back/internal/pkg/routines"
 	"RPO_back/internal/pkg/utils/misc"
+	"context"
 	"os"
 
+	"github.com/jackc/pgx/v4/pgxpool"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/olivere/elastic/v7"
 )
 
 func main() {
-	// Формирование конфига
-	err := config.LoadConfig()
+	switch os.Args[1] {
+	case "elastic-migrator":
+		break
+	case "fill-db":
+		fill_db()
+	}
+}
+
+func fill_db() {
+	ctx := context.Background()
+
+	cfg, err := pgxpool.ParseConfig(os.Getenv("POSTGRES_URL"))
 	if err != nil {
 		log.Fatalf("environment configuration is invalid: %s", err.Error())
 		return
