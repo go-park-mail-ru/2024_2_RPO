@@ -24,6 +24,7 @@ type Config struct {
 	Auth  *AuthConfig
 	User  *UserConfig
 	Board *BoardConfig
+	Poll  *PollConfig
 }
 
 type AuthConfig struct {
@@ -35,6 +36,11 @@ type UserConfig struct {
 	LogFile          string
 }
 type BoardConfig struct {
+	PostgresPoolSize int
+	LogFile          string
+}
+
+type PollConfig struct {
 	PostgresPoolSize int
 	LogFile          string
 }

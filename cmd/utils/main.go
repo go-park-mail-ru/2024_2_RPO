@@ -9,34 +9,21 @@ import (
 	"RPO_back/internal/pkg/config"
 	"RPO_back/internal/pkg/routines"
 	"RPO_back/internal/pkg/utils/misc"
-	"context"
 	"os"
 
-	"github.com/jackc/pgx/v4/pgxpool"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/olivere/elastic/v7"
 )
 
 func main() {
-	switch os.Args[1] {
-	case "elastic-migrator":
-		break
-	case "fill-db":
-		fill_db()
-	}
-}
-
-func fill_db() {
-	ctx := context.Background()
-
-	cfg, err := pgxpool.ParseConfig(os.Getenv("POSTGRES_URL"))
+	err := config.LoadConfig()
 	if err != nil {
-		log.Fatalf("environment configuration is invalid: %s", err.Error())
+		log.Fatalf("environment configuration is invalid: %v", err)
 		return
 	}
-	// Подключение к PostgreSQL
-	postgresDB, err := misc.ConnectToPgx(config.CurrentConfig.Board.PostgresPoolSize)
+
+	postgresDB, err := misc.ConnectToPgx(config.CurrentConfig.Poll.PostgresPoolSize)
 	if err != nil {
 		log.Fatal("error connecting to PostgreSQL: ", err)
 		return
