@@ -67,7 +67,10 @@ func createIndexWithMapping(index, mappingFile string, el *elastic.Client, ctx c
 }
 
 func loadDataToElasticsearch(ctx context.Context, db *pgxpool.Pool, el *elastic.Client, indexName string) error {
-	query := "SELECT id, name, description FROM some_table"
+	query := `SELECT c.card_id, c.title, b.board_id
+	FROM card AS c
+	JOIN kanban_column AS kc ON c.col_id = kc.col_id
+	JOIN board AS b ON kc.board_id = b.board_id;`
 
 	rows, err := db.Query(ctx, query)
 	if err != nil {
@@ -79,28 +82,23 @@ func loadDataToElasticsearch(ctx context.Context, db *pgxpool.Pool, el *elastic.
 	count := 0
 
 	for rows.Next() {
-		// Считать строку значений
-		var id, name, description string
-		err := rows.Scan(&id, &name, &description)
+		var cardID, cardTitle, boardID string
+		err := rows.Scan(&cardID, &cardTitle, &boardID)
 		if err != nil {
 			return fmt.Errorf("failed to scan row: %w", err)
 		}
 
-		// Создаем JSON-документ для индексации
 		doc := map[string]interface{}{
-			"id":          id,
-			"name":        name,
-			"description": description,
+			"card_id":  cardID,
+			"title":    cardTitle,
+			"board_id": boardID,
 		}
 
-		// Create bulk request item
-		req := elastic.NewBulkIndexRequest().Index(indexName).Id(id).Doc(doc)
+		req := elastic.NewBulkIndexRequest().Index(indexName).Id(cardID).Doc(doc)
 		bulkRequest.Add(req)
 		count++
 
-		// Execute in batches
 		if count%1000 == 0 {
-			// Отправить собранные данные в Elasticsearch
 			_, err := bulkRequest.Do(ctx)
 			if err != nil {
 				return fmt.Errorf("bulk indexing failed: %w", err)
@@ -109,7 +107,6 @@ func loadDataToElasticsearch(ctx context.Context, db *pgxpool.Pool, el *elastic.
 		}
 	}
 
-	// Execute remaining requests (если остались неотправленные документы)
 	if bulkRequest.NumberOfActions() > 0 {
 		_, err := bulkRequest.Do(ctx)
 		if err != nil {
