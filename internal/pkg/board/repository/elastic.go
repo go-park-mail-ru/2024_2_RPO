@@ -38,19 +38,32 @@ func (be *BoardElasticRepository) CreateCard(ctx context.Context, boardID int64,
 		}).
 		Refresh("wait_for").
 		Do(ctx)
-	logging.Debug(ctx, funcName, "putCard has error: ", err)
+	logging.Debug(ctx, funcName, "CreateCard has error: ", err)
 	if err != nil {
-		return fmt.Errorf("%s (delete)", funcName)
+		return fmt.Errorf("%s create has error", funcName)
 	}
 
 	return nil
 }
 
 func (be *BoardElasticRepository) UpdateCard(ctx context.Context, boardID int64, cardID int64, cardTitle string) error {
-	// funcName := "UpdateCard"
-	// if 1 == 1 {
-	// 	panic(funcName + " not implemented")
-	// }
+	funcName := "UpdateCard"
+
+	docID := fmt.Sprintf("%d", cardID)
+
+	_, err := be.elastic.Update().
+		Index(ElasticIdxName).
+		Id(docID).
+		Doc(map[string]interface{}{
+			"title":    cardTitle,
+			"board_id": boardID,
+		}).
+		Refresh("wait_for").
+		Do(ctx)
+	logging.Debug(ctx, funcName, "UpdateCard has error: ", err)
+	if err != nil {
+		return fmt.Errorf("%s update has error", funcName)
+	}
 
 	return nil
 }

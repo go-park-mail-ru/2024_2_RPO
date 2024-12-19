@@ -332,7 +332,7 @@ func (d *BoardDelivery) SearchCards(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	responses.DoJSONResponse(r, w, cards, http.StatusCreated)
+	responses.DoJSONResponse(r, w, cards, http.StatusOK)
 }
 
 // CreateColumn создаёт колонку канбана на доске и возвращает её

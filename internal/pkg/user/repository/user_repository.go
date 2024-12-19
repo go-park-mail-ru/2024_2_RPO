@@ -70,7 +70,7 @@ func (r *UserRepository) UpdateUserProfile(ctx context.Context, userID int64, da
 	query1 := `SELECT COUNT(*) FROM "user" WHERE (email=$1 OR nickname=$2) AND u_id!=$3;`
 	query2 := `
 	UPDATE "user" u
-	SET email = $1, nickname = $2
+	SET email = COALESCE($1, email), nickname = COALESCE($2, nickname)
 	WHERE u.u_id = $3
 	RETURNING
 	    u.u_id,
@@ -90,7 +90,7 @@ func (r *UserRepository) UpdateUserProfile(ctx context.Context, userID int64, da
 
 	var duplicateCount int
 
-	row := r.db.QueryRow(ctx, query1, data.Email, userID)
+	row := r.db.QueryRow(ctx, query1, data.Email, data.NewName, userID)
 	err = row.Scan(&duplicateCount)
 	logging.Debugf(ctx, "%s query 1 has err: %v", funcName, err)
 	if err != nil {
