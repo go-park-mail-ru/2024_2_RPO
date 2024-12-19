@@ -85,12 +85,12 @@ type CheckListFieldPostRequest struct {
 type CardMoveRequest struct {
 	NewColumnID    *int64 `json:"newColumnId" validate:"required"`
 	PreviousCardID *int64 `json:"previousCardId" validate:"required"`
-	NextCardID     *int64 `json:"NextCardId" validate:"required"`
+	NextCardID     *int64 `json:"nextCardId" validate:"required"`
 }
 
 type ColumnMoveRequest struct {
 	PreviousColumnID *int64 `json:"previousColumnId" validate:"required"`
-	NextColumnID     *int64 `json:"NextColumnId" validate:"required"`
+	NextColumnID     *int64 `json:"nextColumnId" validate:"required"`
 }
 
 type AssignUserRequest struct {

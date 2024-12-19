@@ -799,7 +799,7 @@ func (d *BoardDelivery) MoveCard(w http.ResponseWriter, r *http.Request) {
 	}
 
 	moveReq := &models.CardMoveRequest{}
-	err = json.NewDecoder(r.Body).Decode(moveReq)
+	err = requests.GetRequestData(r, moveReq)
 	if err != nil {
 		responses.DoBadResponseAndLog(r, w, http.StatusBadRequest, "bad request")
 		return
@@ -829,7 +829,7 @@ func (d *BoardDelivery) MoveColumn(w http.ResponseWriter, r *http.Request) {
 	}
 
 	moveReq := &models.ColumnMoveRequest{}
-	err = json.NewDecoder(r.Body).Decode(moveReq)
+	err = requests.GetRequestData(r, moveReq)
 	if err != nil {
 		responses.DoBadResponseAndLog(r, w, http.StatusBadRequest, "bad request")
 		return

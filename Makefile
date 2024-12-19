@@ -49,7 +49,7 @@ test: run_tests
 	@echo "==> Done! Check coverage.html file!"
 
 generate:
-	@echo "==> Generating mocks and protobuf..."
+	@echo "==> Generating mocks and protobuf and easyjson..."
 	@go generate ./...
 
 clean:

@@ -537,7 +537,7 @@ func easyjson11d1a9baDecodeRPOBackInternalModels7(in *jlexer.Lexer, out *ColumnM
 				}
 				*out.PreviousColumnID = int64(in.Int64())
 			}
-		case "NextColumnId":
+		case "nextColumnId":
 			if in.IsNull() {
 				in.Skip()
 				out.NextColumnID = nil
@@ -571,7 +571,7 @@ func easyjson11d1a9baEncodeRPOBackInternalModels7(out *jwriter.Writer, in Column
 		}
 	}
 	{
-		const prefix string = ",\"NextColumnId\":"
+		const prefix string = ",\"nextColumnId\":"
 		out.RawString(prefix)
 		if in.NextColumnID == nil {
 			out.RawString("null")
@@ -1145,7 +1145,7 @@ func easyjson11d1a9baDecodeRPOBackInternalModels13(in *jlexer.Lexer, out *CardMo
 				}
 				*out.PreviousCardID = int64(in.Int64())
 			}
-		case "NextCardId":
+		case "nextCardId":
 			if in.IsNull() {
 				in.Skip()
 				out.NextCardID = nil
@@ -1188,7 +1188,7 @@ func easyjson11d1a9baEncodeRPOBackInternalModels13(out *jwriter.Writer, in CardM
 		}
 	}
 	{
-		const prefix string = ",\"NextCardId\":"
+		const prefix string = ",\"nextCardId\":"
 		out.RawString(prefix)
 		if in.NextCardID == nil {
 			out.RawString("null")

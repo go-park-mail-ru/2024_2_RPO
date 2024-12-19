@@ -1204,20 +1204,6 @@ func (mr *MockBoardRepoMockRecorder) RearrangeCards(ctx, column1, column2 interf
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RearrangeCards", reflect.TypeOf((*MockBoardRepo)(nil).RearrangeCards), ctx, column1, column2)
 }
 
-// RearrangeCheckList mocks base method.
-func (m *MockBoardRepo) RearrangeCheckList(ctx context.Context, fields []models.CheckListField) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "RearrangeCheckList", ctx, fields)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// RearrangeCheckList indicates an expected call of RearrangeCheckList.
-func (mr *MockBoardRepoMockRecorder) RearrangeCheckList(ctx, fields interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RearrangeCheckList", reflect.TypeOf((*MockBoardRepo)(nil).RearrangeCheckList), ctx, fields)
-}
-
 // RearrangeColumns mocks base method.
 func (m *MockBoardRepo) RearrangeColumns(ctx context.Context, columns []models.Column) error {
 	m.ctrl.T.Helper()
