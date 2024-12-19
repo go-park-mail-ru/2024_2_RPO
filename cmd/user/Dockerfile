@@ -1,7 +1,6 @@
-FROM ubuntu
+FROM scratch
 
 WORKDIR /app
 COPY ./build/user_app .
-RUN chmod +x ./user_app
 
-ENTRYPOINT /app/user_app
+CMD ["/app/user_app"]

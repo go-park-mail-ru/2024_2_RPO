@@ -1,7 +1,6 @@
-FROM ubuntu
+FROM scratch
 
 WORKDIR /app
 COPY ./build/poll_app .
-RUN chmod +x ./poll_app
 
-ENTRYPOINT /app/poll_app
+CMD ["/app/poll_app"]
