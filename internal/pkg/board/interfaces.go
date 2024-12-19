@@ -107,5 +107,6 @@ type BoardRepo interface {
 type BoardElasticRepo interface {
 	Search(ctx context.Context, boards []models.Board, searchValue string) (foundCards []int64, err error)
 	DeleteCard(ctx context.Context, cardID int64) (err error)
-	// Добавить CreateCard и UpdateCard
+	CreateCard(ctx context.Context, boardID int64, cardID int64, cardTitle string) error
+	UpdateCard(ctx context.Context, boardID int64, cardID int64, cardTitle string) error
 }
