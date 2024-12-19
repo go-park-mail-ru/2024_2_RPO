@@ -12,7 +12,7 @@ GOFLAGS := # Может, когда-нибудь пригодятся
 LDFLAGS := -ldflags="-s -w" # Отключить дебаг-информацию
 
 # Цели Makefile, которые не привязываются к файлам
-.PHONY: build_auth build_user build_board build_poll build_all run_tests test clean coverage run generate
+.PHONY: build_auth build_user build_board build_poll build_utils build_all run_tests test clean coverage run generate
 
 build_auth:
 	@echo "==> Building auth application..."
@@ -30,9 +30,9 @@ build_poll:
 	@echo "==> Building poll application..."
 	@GOOS=linux go build $(GOFLAGS) $(LDFLAGS) -o $(BUILD_DIR)/poll_app ./cmd/poll
 
-# build_migrator:
-# 	@echo "==> Building elastic migrator..."
-# 	@GOOS=linux go build $(GOFLAGS) $(LDFLAGS) -o $(BUILD_DIR)/migrator ./database/elastic/migrator.go
+build_utils:
+	@echo "==> Building elastic migrator..."
+	@GOOS=linux go build $(GOFLAGS) $(LDFLAGS) -o $(BUILD_DIR)/migrator ./cmd/utils
 
 build_all: build_auth build_user build_poll build_board
 	@echo "==> All applications are built!"

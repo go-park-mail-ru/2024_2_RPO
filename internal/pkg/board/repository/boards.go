@@ -191,13 +191,12 @@ func (r *BoardRepository) SetBoardBackground(ctx context.Context, userID int64, 
 		SET background_image_id=$1,
 			updated_at=CURRENT_TIMESTAMP
 		WHERE board_id=$2
-		RETURNING board_id
+		RETURNING board_id, name, created_at, updated_at, background_image_id
 	)
 	SELECT b.board_id, b.name, b.created_at, b.updated_at,
 	COALESCE(f.file_uuid::text, ''), COALESCE(f.file_extension, '')
-	FROM board AS b
-	LEFT JOIN user_uploaded_file AS f ON f.file_id=b.background_image_id
-	WHERE b.board_id=$2;
+	FROM update_board AS b
+	LEFT JOIN user_uploaded_file AS f ON f.file_id=b.background_image_id;
 	`
 
 	newBoard = &models.Board{}
