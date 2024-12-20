@@ -88,19 +88,22 @@ CREATE TABLE "card" (
 );
 
 CREATE TABLE tag (
-    tag_id        BIGINT      GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    title         TEXT        NOT NULL,
-    color         TEXT        NOT NULL,
-    created_at    TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at    TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+    tag_id     BIGINT      GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    title      TEXT        NOT NULL,
+    board_id   BIGINT,
+    color      TEXT        NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    FOREIGN KEY (board_id) REFERENCES board(board_id) ON UPDATE CASCADE ON DELETE CASCADE
 );
 
 CREATE TABLE tag_to_card (
-    tag_id        BIGINT      GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    card_id       BIGINT      GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    tag_id        BIGINT,
+    card_id       BIGINT,
 
     FOREIGN KEY (card_id) REFERENCES card(card_id) ON UPDATE CASCADE ON DELETE CASCADE,
-    FOREIGN KEY (tag_id) REFERENCES tag(tag_id) ON UPDATE CASCADE ON DELETE SET NULL,
+    FOREIGN KEY (tag_id) REFERENCES tag(tag_id) ON UPDATE CASCADE ON DELETE CASCADE,
     PRIMARY KEY(tag_id, card_id)
 );
 

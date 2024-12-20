@@ -1,8 +1,9 @@
-h1:Fi1oZKZY+Hhv0wzuuMRAfkicPCB5Qi9LAsCbcCcGqcQ=
+h1:+KOcZcBqeiC2un/0o1HjbcqomsRCajl97R5BzDwaFiA=
 20241115153518_create_tables.up.sql h1:W96eSKMroscgv19rfcMkNBWrBjyRlH7nHxfdh13kenc=
 20241116220131_tag_attach_share_comment.up.sql h1:5SNrfFikZZlsMb9BLYnl/pbkHXqbpmmd6jLaUB9vzaw=
 20241116231100_define_roles.up.sql h1:h2TpSe6NYfs3tWVD9cTMuLotVjB4qZabi3afPKFhrGo=
-20241117163200_homework_2.up.sql h1:gADn1zc47v54fE416W/8J+rBG0v1C6MEc12dxLSiibI=
-20241119150136_remove_description.up.sql h1:1p0oLB+qKi6CONLwuZGln+IAtvHZnz0zkOZWb1w41jM=
-20241123073430_fix.up.sql h1:2JPZ3+AuKxxvG6jX3Aux0KJ+0aDCDSBHgiPq+mMZ074=
-20241123074346_hackatone.up.sql h1:Gs5T+eUmQT24JRGV24wSj9UiWpIOlzw69bgFoqi9hH4=
+20241117163200_homework_2.up.sql h1:ibgi/FRbb8xnePwq3tXAju7WpK8ik/AQQjskXyJehzU=
+20241119150136_remove_description.up.sql h1:CrCAZIU56qDODIwLKyu5wBGYBZkcpgiUJgHd8yrHdU0=
+20241123073430_fix.up.sql h1:LwOkeHUUpAyAy1EuYKW9tgAZtdXKAaX/yoU3cF3QnXg=
+20241123074346_hackatone.up.sql h1:4yU5ALqRJdMEYR4xhX/vnVYjP52uXqNr3F6jlO7fn9g=
+20241220003419_add_tags.up.sql h1:bcaj26ZBYC9dM2Exquvf+akHHLD0m/u/M1k4Dqo2knc=

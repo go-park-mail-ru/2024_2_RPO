@@ -1,0 +1,4 @@
+-- Create "tag" table
+CREATE TABLE "public"."tag" ("tag_id" bigint NOT NULL GENERATED ALWAYS AS IDENTITY, "title" text NOT NULL, "board_id" bigint NULL, "color" text NOT NULL, "created_at" timestamptz NOT NULL DEFAULT CURRENT_TIMESTAMP, "updated_at" timestamptz NOT NULL DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY ("tag_id"), CONSTRAINT "tag_board_id_fkey" FOREIGN KEY ("board_id") REFERENCES "public"."board" ("board_id") ON UPDATE CASCADE ON DELETE CASCADE);
+-- Create "tag_to_card" table
+CREATE TABLE "public"."tag_to_card" ("tag_id" bigint NOT NULL, "card_id" bigint NOT NULL, PRIMARY KEY ("tag_id", "card_id"), CONSTRAINT "tag_to_card_card_id_fkey" FOREIGN KEY ("card_id") REFERENCES "public"."card" ("card_id") ON UPDATE CASCADE ON DELETE CASCADE, CONSTRAINT "tag_to_card_tag_id_fkey" FOREIGN KEY ("tag_id") REFERENCES "public"."tag" ("tag_id") ON UPDATE CASCADE ON DELETE CASCADE);
