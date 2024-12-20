@@ -9,6 +9,32 @@
 
 ## Получение содержимого доски
 
+### Стресс-тест для получения маленькой доски
+
+Для этого был создан файл `run_vegeta.sh`:
+
+```
+=====
+Start stress test
+URL: https://kanban-pumpkin.ru/api/cards/board_193/allContent
+Method: GET
+Duration: 60s
+Max workers: 16
+=====
+=====
+Test finished! Creating report...
+Requests      [total, rate, throughput]         125, 2.08, 2.00
+Duration      [total, attack, wait]             1m2s, 1m0s, 2.412s
+Latencies     [min, mean, 50, 90, 95, 99, max]  2.412s, 7.801s, 7.018s, 19.835s, 23.241s, 23.454s, 23.457s
+Bytes In      [total, mean]                     874500, 6996.00
+Bytes Out     [total, mean]                     0, 0.00
+Success       [ratio]                           100.00%
+Status Codes  [code:count]                      200:125
+Error Set:
+```
+
+Очень плохо :(
+
 ### Откроем большую доску
 
 Оно не вернуло список карточек. Это из-за того, что выражение отменено по таймауту. Почему не было 500-ки? Потому что pgx вернул ошибку `pgx.ErrNoRows`
@@ -72,7 +98,7 @@ ORDER BY c.order_index;
 
 Теперь оно загружает доску за 10 секунд.
 
-Теперь попробуем сделать stress-тестирование большой доски. Для этого был создан файл `run_vegeta.sh`:
+Теперь попробуем сделать stress-тестирование большой доски:
 
 ```
 =====
@@ -135,6 +161,12 @@ Error Set:
 ```
 
 Как мы видим, индексы не помогли. Удалим их вообще.
+
+```sql
+DROP INDEX pumpkin_idx0;
+DROP INDEX pumpkin_idx1;
+ANALYZE;
+```
 
 [План на explain.dalibo.com](https://explain.dalibo.com/plan/4eb3f729a36c8754)
 
@@ -287,3 +319,25 @@ ANALYZE;
 Дальнейшее улучшение производительности можно получить за счёт денормализации.
 
 Чтобы подвести итоги, проведём жёсткое стресс-тестирование для маленькой доски:
+
+```
+=====
+Start stress test
+URL: https://kanban-pumpkin.ru/api/cards/board_193/allContent
+Method: GET
+Duration: 60s
+Max workers: 16
+=====
+=====
+Test finished! Creating report...
+Requests      [total, rate, throughput]         3000, 50.02, 50.01
+Duration      [total, attack, wait]             59.989s, 59.973s, 15.864ms
+Latencies     [min, mean, 50, 90, 95, 99, max]  616.8µs, 10.443ms, 9.402ms, 15.717ms, 17.45ms, 25.405ms, 260.156ms
+Bytes In      [total, mean]                     20988000, 6996.00
+Bytes Out     [total, mean]                     0, 0.00
+Success       [ratio]                           100.00%
+Status Codes  [code:count]                      200:3000
+Error Set:
+```
+
+Стало значительно лучше!
