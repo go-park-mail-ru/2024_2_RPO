@@ -44,7 +44,8 @@ func (r *BoardRepository) GetCardsForBoard(ctx context.Context, boardID int64) (
 			WHERE card_id IN (SELECT card_id FROM all_cards)),
 		COALESCE(uuf.file_uuid::text, ''),
 		COALESCE(uuf.file_extension::text, ''),
-		c.card_uuid
+		c.card_uuid,
+		array_remove(array_agg((SELECT tag_id FROM tag_to_card WHERE card_id=c.card_id)),NULL)
 	FROM card c
 	JOIN kanban_column kc ON c.col_id = kc.col_id
 	LEFT JOIN user_uploaded_file uuf ON c.cover_file_id = uuf.file_id
@@ -85,6 +86,7 @@ func (r *BoardRepository) GetCardsForBoard(ctx context.Context, boardID int64) (
 			&fileUUID,
 			&fileExt,
 			&card.UUID,
+			&card.Tags,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("%s (scan): %w", funcName, err)
