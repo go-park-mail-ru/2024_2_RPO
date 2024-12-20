@@ -99,3 +99,87 @@ Error Set:
 ### Рассмотрим EXPLAIN и разработаем стратегию оптимизации
 
 ![](./screens/1.svg)
+
+[План на explain.dalibo.com](https://explain.dalibo.com/plan/ffd95bg3537d6eb7)
+
+### Индексы - попытка 1
+
+Здесь есть очень "толстая" нода на Sort полей чеклиста после Sequential Scan. Можно попробовать добавить индекс на `checklist_field.card_id`. Также можно добавить индекс на `card_comment.card_id`:
+
+```sql
+CREATE INDEX pumpkin_idx0 ON checklist_field(card_id);
+CREATE INDEX pumpkin_idx1 ON card_comment(card_id);
+ANALYZE;
+```
+
+```
+=====
+Start stress test
+URL: https://kanban-pumpkin.ru/api/cards/board_209/allContent
+Method: GET
+Duration: 60s
+Max workers: 2
+=====
+=====
+Test finished! Creating report...
+Requests      [total, rate, throughput]         12, 0.19, 0.17
+Duration      [total, attack, wait]             1m12s, 1m2s, 9.894s
+Latencies     [min, mean, 50, 90, 95, 99, max]  9.84s, 11.78s, 10.863s, 15.969s, 15.988s, 15.991s, 15.991s
+Bytes In      [total, mean]                     37178244, 3098187.00
+Bytes Out     [total, mean]                     0, 0.00
+Success       [ratio]                           100.00%
+Status Codes  [code:count]                      200:12
+Error Set:
+```
+
+Как мы видим, индексы не помогли. Удалим их вообще.
+
+[План на explain.dalibo.com](https://explain.dalibo.com/plan/4eb3f729a36c8754)
+
+### Грамотно сделать некоррелирующий подзапрос
+
+После JOIN-а получаются миллионы кортежей. Это очень плохо, хотя всего вложений и полей чеклиста на доске намного меньше (50к). Можно попытаться отказаться от JOIN-ов вообще:
+
+```sql
+SELECT
+    c.card_id,
+    c.col_id,
+    c.title,
+    c.created_at,
+    c.updated_at,
+    c.deadline,
+    c.is_done,
+	c.card_id IN (SELECT DISTINCT f.card_id
+		FROM checklist_field f
+		JOIN card c ON c.card_id=f.card_id
+		JOIN kanban_column k ON c.col_id=k.col_id
+		WHERE k.board_id=209),
+	c.card_id IN (SELECT DISTINCT f.card_id
+		FROM card_attachment f
+		JOIN card c ON c.card_id=f.card_id
+		JOIN kanban_column k ON c.col_id=k.col_id
+		WHERE k.board_id=209),
+	c.card_id IN (SELECT DISTINCT f.card_id
+		FROM card_user_assignment f
+		JOIN card c ON c.card_id=f.card_id
+		JOIN kanban_column k ON c.col_id=k.col_id
+		WHERE k.board_id=209),
+	c.card_id IN (SELECT DISTINCT f.card_id
+		FROM card_comment f
+		JOIN card c ON c.card_id=f.card_id
+		JOIN kanban_column k ON c.col_id=k.col_id
+		WHERE k.board_id=209),
+    COALESCE(uuf.file_uuid::text, ''),
+    COALESCE(uuf.file_extension::text, ''),
+    c.card_uuid
+FROM card c
+JOIN kanban_column kc ON c.col_id = kc.col_id
+LEFT JOIN user_uploaded_file uuf ON c.cover_file_id = uuf.file_id
+WHERE kc.board_id = 209
+GROUP BY c.card_id, uuf.file_id
+ORDER BY c.order_index;
+```
+
+Теперь запрос стал намного быстрее!
+
+Сделаем стресс-тест:

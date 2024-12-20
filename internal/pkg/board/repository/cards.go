@@ -18,27 +18,39 @@ func (r *BoardRepository) GetCardsForBoard(ctx context.Context, boardID int64) (
 	funcName := "GetCardsForBoard"
 	query := `
 	SELECT
-		c.card_id,
-		c.col_id,
-		c.title,
-		c.created_at,
-		c.updated_at,
-		c.deadline,
-		c.is_done,
-		COUNT(clf.checklist_field_id)>0,
-		COUNT(a.attachment_id)>0,
-		COUNT(ua.assignment_id)>0,
-		COUNT(com.comment_id)>0,
-		COALESCE(uuf.file_uuid::text, ''),
-		COALESCE(uuf.file_extension::text, ''),
-		c.card_uuid
+	c.card_id,
+	c.col_id,
+	c.title,
+	c.created_at,
+	c.updated_at,
+	c.deadline,
+	c.is_done,
+	c.card_id IN (SELECT DISTINCT f.card_id
+		FROM checklist_field f
+		JOIN card c ON c.card_id=f.card_id
+		JOIN kanban_column k ON c.col_id=k.col_id
+		WHERE k.board_id=$1),
+	c.card_id IN (SELECT DISTINCT f.card_id
+		FROM card_attachment f
+		JOIN card c ON c.card_id=f.card_id
+		JOIN kanban_column k ON c.col_id=k.col_id
+		WHERE k.board_id=$1),
+	c.card_id IN (SELECT DISTINCT f.card_id
+		FROM card_user_assignment f
+		JOIN card c ON c.card_id=f.card_id
+		JOIN kanban_column k ON c.col_id=k.col_id
+		WHERE k.board_id=$1),
+	c.card_id IN (SELECT DISTINCT f.card_id
+		FROM card_comment f
+		JOIN card c ON c.card_id=f.card_id
+		JOIN kanban_column k ON c.col_id=k.col_id
+		WHERE k.board_id=$1),
+	COALESCE(uuf.file_uuid::text, ''),
+	COALESCE(uuf.file_extension::text, ''),
+	c.card_uuid
 	FROM card c
 	JOIN kanban_column kc ON c.col_id = kc.col_id
 	LEFT JOIN user_uploaded_file uuf ON c.cover_file_id = uuf.file_id
-	LEFT JOIN checklist_field clf ON clf.card_id=c.card_id
-	LEFT JOIN card_attachment a ON a.card_id=c.card_id
-	LEFT JOIN card_comment com ON com.card_id=c.card_id
-	LEFT JOIN card_user_assignment ua ON ua.card_id=c.card_id
 	WHERE kc.board_id = $1
 	GROUP BY c.card_id, uuf.file_id
 	ORDER BY c.order_index;
