@@ -61,7 +61,7 @@ func (r *BoardRepository) UpdateTag(ctx context.Context, tagID int64, data *mode
 				WHERE t.tag_id=$1
 			)
 		)
-		SELECT 
+		SELECT
 			t.tag_id, t.color, t.title
 		FROM update_tag AS t;
 	`
@@ -86,7 +86,7 @@ func (r *BoardRepository) DeleteTag(ctx context.Context, tagID int64) (err error
 	funcName := "DeleteTag"
 	query := `
 		DELETE FROM tag
-		WHERE tag.tag_id=$1;
+		WHERE tag_id=$1;
 	`
 	tag, err := r.db.Exec(ctx, query, tagID)
 	if tag.RowsAffected() == 0 {

@@ -223,7 +223,7 @@ func (r *BoardRepository) SetMemberRole(ctx context.Context, userID int64, board
 	AND board_id=$4;
 	`
 
-	tag, err := r.db.Exec(ctx, query, memberUserID, boardID)
+	tag, err := r.db.Exec(ctx, query, newRole, userID, memberUserID, boardID)
 	logging.Debug(ctx, funcName, " query has err: ", err)
 	if tag.RowsAffected() == 0 {
 		return nil, fmt.Errorf("%s (update): %w", funcName, errs.ErrNotFound)
@@ -415,7 +415,7 @@ func (r *BoardRepository) GetMemberFromTag(ctx context.Context, userID int64, ta
 	query := `
         SELECT
             utb.role,
-            t.board_id,
+            t.board_id
         FROM tag AS t
         JOIN user_to_board AS utb ON utb.board_id = t.board_id
         WHERE utb.u_id = $1 AND t.tag_id = $2;

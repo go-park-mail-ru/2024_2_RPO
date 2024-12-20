@@ -156,7 +156,7 @@ func main() {
 	router.HandleFunc("/tags/{boardID}", boardDelivery.CreateNewTag).Methods("POST", "OPTIONS")
 	router.HandleFunc("/tags/{tagID}", boardDelivery.UpdateTag).Methods("PUT", "OPTIONS")
 	router.HandleFunc("/tags/{tagID}", boardDelivery.DeleteTag).Methods("DELETE", "OPTIONS")
-	router.HandleFunc("/tags/{cardID}", boardDelivery.AssignTagToCard).Methods("PUT", "OPTIONS")
+	router.HandleFunc("/tags/{cardID}/{tagID}", boardDelivery.AssignTagToCard).Methods("PUT", "OPTIONS")
 	router.HandleFunc("/tags/{cardID}/{tagID}", boardDelivery.DeassignTagFromCard).Methods("DELETE", "OPTIONS")
 
 	// Регистрируем обработчик Prometheus
