@@ -636,6 +636,15 @@ func (uc *BoardUsecase) DeleteAttachment(ctx context.Context, userID int64, atta
 func (uc *BoardUsecase) MoveCard(ctx context.Context, userID int64, cardID int64, moveReq *models.CardMoveRequest) (err error) {
 	funcName := "MoveCard"
 
+	role, _, err := uc.boardRepository.GetMemberFromCard(ctx, userID, cardID)
+	if err != nil {
+		return fmt.Errorf("%s (get member): %w", funcName, err)
+	}
+
+	if role == "viewer" {
+		return fmt.Errorf("%s (check): %w", funcName, errs.ErrNotPermitted)
+	}
+
 	columnFrom, columnTo, err := uc.boardRepository.GetCardsForMove(ctx,
 		*moveReq.NewColumnID, &cardID)
 	if err != nil {
