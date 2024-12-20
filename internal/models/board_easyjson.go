@@ -868,6 +868,29 @@ func easyjson202377feDecodeRPOBackInternalModels7(in *jlexer.Lexer, out *Card) {
 			out.HasAssignedUsers = bool(in.Bool())
 		case "hasComments":
 			out.HasComments = bool(in.Bool())
+		case "tags":
+			if in.IsNull() {
+				in.Skip()
+				out.Tags = nil
+			} else {
+				in.Delim('[')
+				if out.Tags == nil {
+					if !in.IsDelim(']') {
+						out.Tags = make([]int64, 0, 8)
+					} else {
+						out.Tags = []int64{}
+					}
+				} else {
+					out.Tags = (out.Tags)[:0]
+				}
+				for !in.IsDelim(']') {
+					var v13 int64
+					v13 = int64(in.Int64())
+					out.Tags = append(out.Tags, v13)
+					in.WantComma()
+				}
+				in.Delim(']')
+			}
 		default:
 			in.SkipRecursive()
 		}
@@ -947,6 +970,22 @@ func easyjson202377feEncodeRPOBackInternalModels7(out *jwriter.Writer, in Card) 
 		out.RawString(prefix)
 		out.Bool(bool(in.HasComments))
 	}
+	{
+		const prefix string = ",\"tags\":"
+		out.RawString(prefix)
+		if in.Tags == nil && (out.Flags&jwriter.NilSliceAsEmpty) == 0 {
+			out.RawString("null")
+		} else {
+			out.RawByte('[')
+			for v14, v15 := range in.Tags {
+				if v14 > 0 {
+					out.RawByte(',')
+				}
+				out.Int64(int64(v15))
+			}
+			out.RawByte(']')
+		}
+	}
 	out.RawByte('}')
 }
 
@@ -1010,9 +1049,9 @@ func easyjson202377feDecodeRPOBackInternalModels8(in *jlexer.Lexer, out *BoardCo
 					out.Cards = (out.Cards)[:0]
 				}
 				for !in.IsDelim(']') {
-					var v13 Card
-					(v13).UnmarshalEasyJSON(in)
-					out.Cards = append(out.Cards, v13)
+					var v16 Card
+					(v16).UnmarshalEasyJSON(in)
+					out.Cards = append(out.Cards, v16)
 					in.WantComma()
 				}
 				in.Delim(']')
@@ -1033,9 +1072,9 @@ func easyjson202377feDecodeRPOBackInternalModels8(in *jlexer.Lexer, out *BoardCo
 					out.Columns = (out.Columns)[:0]
 				}
 				for !in.IsDelim(']') {
-					var v14 Column
-					(v14).UnmarshalEasyJSON(in)
-					out.Columns = append(out.Columns, v14)
+					var v17 Column
+					(v17).UnmarshalEasyJSON(in)
+					out.Columns = append(out.Columns, v17)
 					in.WantComma()
 				}
 				in.Delim(']')
@@ -1049,6 +1088,29 @@ func easyjson202377feDecodeRPOBackInternalModels8(in *jlexer.Lexer, out *BoardCo
 					out.BoardInfo = new(Board)
 				}
 				(*out.BoardInfo).UnmarshalEasyJSON(in)
+			}
+		case "allTags":
+			if in.IsNull() {
+				in.Skip()
+				out.Tags = nil
+			} else {
+				in.Delim('[')
+				if out.Tags == nil {
+					if !in.IsDelim(']') {
+						out.Tags = make([]Tag, 0, 1)
+					} else {
+						out.Tags = []Tag{}
+					}
+				} else {
+					out.Tags = (out.Tags)[:0]
+				}
+				for !in.IsDelim(']') {
+					var v18 Tag
+					(v18).UnmarshalEasyJSON(in)
+					out.Tags = append(out.Tags, v18)
+					in.WantComma()
+				}
+				in.Delim(']')
 			}
 		default:
 			in.SkipRecursive()
@@ -1076,11 +1138,11 @@ func easyjson202377feEncodeRPOBackInternalModels8(out *jwriter.Writer, in BoardC
 			out.RawString("null")
 		} else {
 			out.RawByte('[')
-			for v15, v16 := range in.Cards {
-				if v15 > 0 {
+			for v19, v20 := range in.Cards {
+				if v19 > 0 {
 					out.RawByte(',')
 				}
-				(v16).MarshalEasyJSON(out)
+				(v20).MarshalEasyJSON(out)
 			}
 			out.RawByte(']')
 		}
@@ -1092,11 +1154,11 @@ func easyjson202377feEncodeRPOBackInternalModels8(out *jwriter.Writer, in BoardC
 			out.RawString("null")
 		} else {
 			out.RawByte('[')
-			for v17, v18 := range in.Columns {
-				if v17 > 0 {
+			for v21, v22 := range in.Columns {
+				if v21 > 0 {
 					out.RawByte(',')
 				}
-				(v18).MarshalEasyJSON(out)
+				(v22).MarshalEasyJSON(out)
 			}
 			out.RawByte(']')
 		}
@@ -1108,6 +1170,22 @@ func easyjson202377feEncodeRPOBackInternalModels8(out *jwriter.Writer, in BoardC
 			out.RawString("null")
 		} else {
 			(*in.BoardInfo).MarshalEasyJSON(out)
+		}
+	}
+	{
+		const prefix string = ",\"allTags\":"
+		out.RawString(prefix)
+		if in.Tags == nil && (out.Flags&jwriter.NilSliceAsEmpty) == 0 {
+			out.RawString("null")
+		} else {
+			out.RawByte('[')
+			for v23, v24 := range in.Tags {
+				if v23 > 0 {
+					out.RawByte(',')
+				}
+				(v24).MarshalEasyJSON(out)
+			}
+			out.RawByte(']')
 		}
 	}
 	out.RawByte('}')

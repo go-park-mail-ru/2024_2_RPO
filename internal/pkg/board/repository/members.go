@@ -413,9 +413,9 @@ func (r *BoardRepository) GetMemberFromComment(ctx context.Context, userID int64
 func (r *BoardRepository) GetMemberFromTag(ctx context.Context, userID int64, tagID int64) (role string, boardID int64, err error) {
 	funcName := "GetMemberFromTag"
 	query := `
-        SELECT 
-            utb.role, 
-            t.board_id, 
+        SELECT
+            utb.role,
+            t.board_id,
         FROM tag AS t
         JOIN user_to_board AS utb ON utb.board_id = t.board_id
         WHERE utb.u_id = $1 AND t.tag_id = $2;
@@ -1058,15 +1058,15 @@ func (r *BoardRepository) SetCardCover(ctx context.Context, userID int64, cardID
 	funcName := "SetCardCover"
 	query := `
 	WITH update_cover AS (
-		UPDATE "card"
+		UPDATE card
 		SET updated_at=CURRENT_TIMESTAMP, cover_file_id=$1 WHERE card_id = $2
 	),
 	update_board AS (
 		UPDATE board SET updated_at=CURRENT_TIMESTAMP WHERE board_id = (
 			SELECT b.board_id
 			FROM card AS c
-			JOIN kanban_column AS kc ON c.col_id=kc.col_id
-			JOIN board AS b ON b.board_id = kc.board_id
+			JOIN kanban_column k ON c.col_id=k.col_id
+			JOIN board AS b ON b.board_id = k.board_id
 			WHERE c.card_id=$1
 		)
 	),
@@ -1074,8 +1074,8 @@ func (r *BoardRepository) SetCardCover(ctx context.Context, userID int64, cardID
 		UPDATE user_to_board SET last_visit_at=CURRENT_TIMESTAMP
 		WHERE u_id=$3 AND board_id=(
 			SELECT board_id
-			FROM kanban_column AS cc
-			JOIN kanban_card AS c ON c.col_id=cc.col_id
+			FROM kanban_column AS k
+			JOIN card AS c ON c.col_id=k.col_id
 			WHERE card_id=$1
 		)
 	)
@@ -1111,7 +1111,7 @@ func (r *BoardRepository) RemoveCardCover(ctx context.Context, cardID int64) (er
 	SELECT;
 	`
 
-	tag, err := r.db.Exec(ctx, query)
+	tag, err := r.db.Exec(ctx, query, cardID)
 	logging.Debug(ctx, funcName, " query has err: ", err)
 	if err != nil {
 		return fmt.Errorf("%s (query): %w", funcName, err)
