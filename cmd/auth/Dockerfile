@@ -13,9 +13,7 @@ WORKDIR /app
 COPY ./Makefile .
 COPY ./database/elastic/mapping.json .
 COPY ./database/migrations/ ./migrations/
-COPY ./build/auth_app .
-COPY ./build/utils .
-RUN chmod +x ./auth_app
-RUN chmod +x utils
+COPY ./build/auth_app ./build/utils ./
+RUN chmod +x ./auth_app && chmod +x utils
 
-ENTRYPOINT /app/auth_app
+CMD ["/app/auth_app"]

@@ -4,8 +4,10 @@ import (
 	"RPO_back/internal/pkg/config"
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
+	log "github.com/sirupsen/logrus"
 )
 
 // ConnectToPgx подключается к PostgreSQL и делает ping
@@ -24,9 +26,12 @@ func ConnectToPgx(maxConns int) (db *pgxpool.Pool, err error) {
 	}
 
 	// Проверка подключения к PostgreSQL
-	if err = db.Ping(context.Background()); err != nil {
-		return nil, fmt.Errorf("error while pinging PostgreSQL: %w", err)
-
+	for range 10 {
+		if err = db.Ping(context.Background()); err == nil {
+			return db, nil
+		}
+		log.Warn("Retry Postgres ping")
+		time.Sleep(1 * time.Second)
 	}
-	return db, nil
+	return nil, fmt.Errorf("error while pinging PostgreSQL: %w", err)
 }

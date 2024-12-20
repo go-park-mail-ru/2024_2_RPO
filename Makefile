@@ -31,7 +31,7 @@ build_poll:
 	@GOOS=linux go build $(GOFLAGS) $(LDFLAGS) -o $(BUILD_DIR)/poll_app ./cmd/poll
 
 build_utils:
-	@echo "==> Building elastic migrator..."
+	@echo "==> Building service utils program..."
 	@GOOS=linux go build $(GOFLAGS) $(LDFLAGS) -o $(BUILD_DIR)/utils ./cmd/utils
 
 build_all: build_auth build_user build_poll build_board build_utils

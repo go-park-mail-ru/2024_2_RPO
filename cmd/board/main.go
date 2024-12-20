@@ -31,10 +31,6 @@ import (
 )
 
 func main() {
-	// Костыль
-	log.Info("Sleeping 10 seconds waiting Postgres to start...")
-	time.Sleep(10 * time.Second)
-
 	// Формирование конфига
 	err := config.LoadConfig()
 	if err != nil {

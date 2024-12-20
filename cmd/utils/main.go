@@ -23,7 +23,7 @@ func main() {
 		return
 	}
 
-	postgresDB, err := misc.ConnectToPgx(config.CurrentConfig.Poll.PostgresPoolSize)
+	postgresDB, err := misc.ConnectToPgx(config.CurrentConfig.User.PostgresPoolSize)
 	if err != nil {
 		log.Fatal("error connecting to PostgreSQL: ", err)
 		return

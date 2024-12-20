@@ -5,17 +5,19 @@ import (
 	"fmt"
 	"log"
 	"math/rand"
+	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 const (
-	totalBoards      = 1000
-	columnsPerBoard  = 10
-	cardsPerColumn   = 10
-	simpleCards      = 5
-	interestingCards = 5
+	totalBoards      = 1
+	columnsPerBoard  = 100
+	cardsPerColumn   = 100
+	simpleCards      = 50
+	interestingCards = 50
 
 	attachmentsPerCard    = 10
 	commentsPerCard       = 10
@@ -25,6 +27,8 @@ const (
 func FillDB(pool *pgxpool.Pool) {
 	ctx := context.Background()
 
+	cardsLeft := int64(totalBoards * columnsPerBoard * cardsPerColumn)
+
 	// Начало операции
 	startTime := time.Now()
 	log.Println("Starting user and data creation...")
@@ -32,17 +36,15 @@ func FillDB(pool *pgxpool.Pool) {
 	r := rand.New(rand.NewSource(time.Now().UnixNano()))
 
 	nick := fmt.Sprintf("Nick_%d", r.Intn(10000))
-	email := fmt.Sprintf("email%d%d@mail.ru", r.Intn(10000))
-	passwordHash := fmt.Sprintf("asd%d%d", r.Intn(10000))
+	email := fmt.Sprintf("email%d@mail.ru", r.Intn(10000))
+	passwordHash := "12345"
 
-	// Create user
 	userID, err := createUser(ctx, pool, nick, email, passwordHash)
 	if err != nil {
 		log.Fatalf("Failed to create user: %v", err)
 	}
 	log.Printf("Created user with u_id: %d", userID)
 
-	// Iterate through boards
 	for b := 1; b <= totalBoards; b++ {
 		boardName := fmt.Sprintf("board_%d", b)
 		boardID, err := createBoard(ctx, pool, userID, boardName)
@@ -50,62 +52,71 @@ func FillDB(pool *pgxpool.Pool) {
 			log.Fatalf("Failed to create board %s: %v", boardName, err)
 		}
 
-		// Iterate through columns
+		wg := sync.WaitGroup{}
+
 		for c := 1; c <= columnsPerBoard; c++ {
-			columnTitle := fmt.Sprintf("column_%d", c)
-			orderIndex := c
-			colID, err := createKanbanColumn(ctx, pool, boardID, columnTitle, orderIndex)
-			if err != nil {
-				log.Fatalf("Failed to create column %s for board %d: %v", columnTitle, boardID, err)
-			}
+			wg.Add(1)
+			go func() {
+				columnTitle := fmt.Sprintf("column_%d", c)
+				orderIndex := c
+				colID, err := createKanbanColumn(ctx, pool, boardID, columnTitle, orderIndex)
+				if err != nil {
+					log.Fatalf("Failed to create column %s for board %d: %v", columnTitle, boardID, err)
+				}
 
-			// Iterate through cards
-			for card := 1; card <= cardsPerColumn; card++ {
-				if card <= simpleCards {
-					cardTitle := fmt.Sprintf("card_simple_%d", card)
-					_, err := createCard(ctx, pool, colID, cardTitle, card, false, userID)
-					if err != nil {
-						log.Fatalf("Failed to create simple card %s: %v", cardTitle, err)
+				for card := 1; card <= cardsPerColumn; card++ {
+					left := atomic.AddInt64(&cardsLeft, -1)
+					if left%100 == 0 {
+						fmt.Println(left, " cards left")
 					}
-				} else {
-					cardTitle := fmt.Sprintf("card_interesting_%d", card-simpleCards)
-					cardID, err := createCard(ctx, pool, colID, cardTitle, card, true, userID)
-					if err != nil {
-						log.Fatalf("Failed to create interesting card %s: %v", cardTitle, err)
-					}
-
-					for a := 1; a <= attachmentsPerCard; a++ {
-						originalName := fmt.Sprintf("attachment_%d", a)
-						fileID, err := createUploadedFile(ctx, pool, a)
+					if card <= simpleCards {
+						cardTitle := fmt.Sprintf("card_simple_%d", card)
+						_, err := createCard(ctx, pool, colID, cardTitle, card, false, userID)
 						if err != nil {
-							log.Fatalf("Failed to create uploaded file for attachment %s: %v", originalName, err)
+							log.Fatalf("Failed to create simple card %s: %v", cardTitle, err)
 						}
-						err = createAttachment(ctx, pool, cardID, fileID, originalName, userID)
+					} else {
+						cardTitle := fmt.Sprintf("card_interesting_%d", card-simpleCards)
+						cardID, err := createCard(ctx, pool, colID, cardTitle, card, true, userID)
 						if err != nil {
-							log.Fatalf("Failed to create attachment %s for card %d: %v", originalName, cardID, err)
+							log.Fatalf("Failed to create interesting card %s: %v", cardTitle, err)
 						}
-					}
 
-					for m := 1; m <= commentsPerCard; m++ {
-						commentTitle := fmt.Sprintf("comment_%d", m)
-						err = createComment(ctx, pool, cardID, commentTitle, userID)
-						if err != nil {
-							log.Fatalf("Failed to create comment %s for card %d: %v", commentTitle, cardID, err)
+						for a := 1; a <= attachmentsPerCard; a++ {
+							originalName := fmt.Sprintf("attachment_%d", a)
+							fileID, err := createUploadedFile(ctx, pool, a)
+							if err != nil {
+								log.Fatalf("Failed to create uploaded file for attachment %s: %v", originalName, err)
+							}
+							err = createAttachment(ctx, pool, cardID, fileID, originalName, userID)
+							if err != nil {
+								log.Fatalf("Failed to create attachment %s for card %d: %v", originalName, cardID, err)
+							}
 						}
-					}
 
-					for chk := 1; chk <= checklistItemsPerCard; chk++ {
-						checklistTitle := fmt.Sprintf("checklist_%d", chk)
-						orderIdx := chk
-						err = createChecklistField(ctx, pool, cardID, checklistTitle, orderIdx)
-						if err != nil {
-							log.Fatalf("Failed to create checklist item %s for card %d: %v", checklistTitle, cardID, err)
+						for m := 1; m <= commentsPerCard; m++ {
+							commentTitle := fmt.Sprintf("comment_%d", m)
+							err = createComment(ctx, pool, cardID, commentTitle, userID)
+							if err != nil {
+								log.Fatalf("Failed to create comment %s for card %d: %v", commentTitle, cardID, err)
+							}
+						}
+
+						for chk := 1; chk <= checklistItemsPerCard; chk++ {
+							checklistTitle := fmt.Sprintf("checklist_%d", chk)
+							orderIdx := chk
+							err = createChecklistField(ctx, pool, cardID, checklistTitle, orderIdx)
+							if err != nil {
+								log.Fatalf("Failed to create checklist item %s for card %d: %v", checklistTitle, cardID, err)
+							}
 						}
 					}
 				}
-			}
+				wg.Done()
+			}()
+			wg.Wait()
 
-			if b%100 == 0 && c == columnsPerBoard {
+			if c == columnsPerBoard {
 				log.Printf("Created %d/%d boards", b, totalBoards)
 			}
 		}
@@ -169,7 +180,7 @@ func createUploadedFile(ctx context.Context, pool *pgxpool.Pool, fileNumber int)
 	`
 	fileHash := fmt.Sprintf("hash_%d", fileNumber)
 	fileExtension := ".txt"
-	size := 1024 // example size in bytes
+	size := 1024
 
 	var fileID int64
 	err := pool.QueryRow(ctx, query, fileHash, fileExtension, size).Scan(&fileID)

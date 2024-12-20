@@ -14,7 +14,6 @@ import (
 	"net/http"
 	"os/signal"
 	"syscall"
-	"time"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -29,10 +28,6 @@ import (
 )
 
 func main() {
-	// Костыль
-	log.Info("Sleeping 10 seconds waiting Postgres to start...")
-	time.Sleep(10 * time.Second)
-
 	// Формирование конфига
 	err := config.LoadConfig()
 	if err != nil {
@@ -54,8 +49,6 @@ func main() {
 	postgresDB, err := misc.ConnectToPgx(config.CurrentConfig.Auth.PostgresPoolSize)
 	if err != nil {
 		log.Error("error connecting to PostgreSQL: ", err)
-		log.Error("Sleeping 100 seconds (maybe it will helpful if you need to do migrations)")
-		time.Sleep(100 * time.Second)
 		return
 	}
 	defer postgresDB.Close()
@@ -126,6 +119,5 @@ func main() {
 	signal.Notify(stop, os.Interrupt, syscall.SIGTERM, syscall.SIGINT)
 
 	<-stop
-	log.Info("Shutting down gRPC server...")
-	grpcServer.GracefulStop()
+	os.Exit(0)
 }
