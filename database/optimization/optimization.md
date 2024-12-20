@@ -214,6 +214,43 @@ Error Set:
 
 Можно сразу найти список всех card_id и для них искать checklist_field и т.д.
 
+```sql
+WITH all_cards AS (
+	SELECT c.* FROM card c
+	JOIN kanban_column k USING(col_id)
+	WHERE k.board_id=209
+)
+SELECT
+    c.card_id,
+    c.col_id,
+    c.title,
+    c.created_at,
+    c.updated_at,
+    c.deadline,
+    c.is_done,
+	c.card_id IN (SELECT DISTINCT card_id
+		FROM checklist_field
+		WHERE card_id IN (SELECT card_id FROM all_cards)),
+	c.card_id IN (SELECT DISTINCT card_id
+		FROM card_attachment
+		WHERE card_id IN (SELECT card_id FROM all_cards)),
+	c.card_id IN (SELECT DISTINCT card_id
+		FROM card_user_assignment
+		WHERE card_id IN (SELECT card_id FROM all_cards)),
+	c.card_id IN (SELECT DISTINCT card_id
+		FROM card_comment
+		WHERE card_id IN (SELECT card_id FROM all_cards)),
+    COALESCE(uuf.file_uuid::text, ''),
+    COALESCE(uuf.file_extension::text, ''),
+    c.card_uuid
+FROM card c
+JOIN kanban_column kc ON c.col_id = kc.col_id
+LEFT JOIN user_uploaded_file uuf ON c.cover_file_id = uuf.file_id
+WHERE kc.board_id = 209
+GROUP BY c.card_id, uuf.file_id
+ORDER BY c.order_index;
+```
+
 Это дало время выполнения запроса 457 мс. Это открывает возможности по применению индексов.
 
 [План запроса на explain.dalibo.com](https://explain.dalibo.com/plan/54a9f1e293029e91)
@@ -248,3 +285,5 @@ ANALYZE;
 Раньше sequential scan в коррелирующих подзапросах отсеивал очень много данных, и это было очень плохо.
 
 Дальнейшее улучшение производительности можно получить за счёт денормализации.
+
+Чтобы подвести итоги, проведём жёсткое стресс-тестирование для маленькой доски:

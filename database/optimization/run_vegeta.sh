@@ -1,9 +1,9 @@
-URL=https://kanban-pumpkin.ru/api/cards/board_209/allContent
+URL=https://kanban-pumpkin.ru/api/cards/board_193/allContent
 METHOD=GET
 DURATION=60s
 CSRF_TOKEN=12345
 SESSION_ID=ed0626543ef422de1a5296e8f97b8750d5b6ac43f70384ea726ac0eb5b7b23e4
-MAX_WORKERS=4
+MAX_WORKERS=16
 
 echo =====
 echo Start stress test
