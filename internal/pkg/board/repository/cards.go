@@ -177,8 +177,6 @@ func (r *BoardRepository) UpdateCard(ctx context.Context, cardID int64, data mod
 	`
 	updateCard = &models.Card{}
 
-	fmt.Printf("%#v\n", data)
-
 	err = r.db.QueryRow(ctx, query, cardID, data.NewTitle, data.NewDeadline, data.IsDone).Scan(
 		&updateCard.ID,
 		&updateCard.ColumnID,

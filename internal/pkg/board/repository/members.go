@@ -410,6 +410,29 @@ func (r *BoardRepository) GetMemberFromComment(ctx context.Context, userID int64
 	return role, boardID, cardID, err
 }
 
+func (r *BoardRepository) GetMemberFromTag(ctx context.Context, userID int64, tagID int64) (role string, boardID int64, err error) {
+	funcName := "GetMemberFromTag"
+	query := `
+        SELECT 
+            utb.role, 
+            t.board_id, 
+        FROM tag AS t
+        JOIN user_to_board AS utb ON utb.board_id = t.board_id
+        WHERE utb.u_id = $1 AND t.tag_id = $2;
+    `
+	err = r.db.QueryRow(ctx, query, userID, tagID).Scan(
+		&role, &boardID,
+	)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return "", 0, fmt.Errorf("%s (query): %w", funcName, errs.ErrNotFound)
+		}
+		return "", 0, fmt.Errorf("%s (query): %w", funcName, err)
+	}
+
+	return role, boardID, nil
+}
+
 // GetCardCheckList получает чеклисты для карточки
 func (r *BoardRepository) GetCardCheckList(ctx context.Context, cardID int64) (checkList []models.CheckListField, err error) {
 	funcName := "GetCardCheckList"

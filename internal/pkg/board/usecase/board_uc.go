@@ -921,3 +921,100 @@ func (uc *BoardUsecase) GetCardDetails(ctx context.Context, userID int64, cardID
 
 	return uc.GetCardDetailsUnauthorized(ctx, cardID)
 }
+
+func (uc *BoardUsecase) CreateNewTag(ctx context.Context, userID int64, boardID int64, data *models.TagRequest) (newTag *models.Tag, err error) {
+	funcName := "CreateNewTag"
+	perms, err := uc.boardRepository.GetMemberPermissions(ctx, boardID, userID, false)
+	if err != nil {
+		return nil, fmt.Errorf("%s (get permissions): %w", funcName, err)
+	}
+
+	if perms.Role == "viewer" {
+		return nil, fmt.Errorf("%s (check): %w", funcName, errs.ErrNotPermitted)
+	}
+
+	newTag, err = uc.boardRepository.CreateNewTag(ctx, boardID, data)
+	if err != nil {
+		return nil, fmt.Errorf("%s: %w", funcName, err)
+	}
+
+	return newTag, err
+}
+
+func (uc *BoardUsecase) UpdateTag(ctx context.Context, userID int64, tagID int64, data *models.TagRequest) (updatedTag *models.Tag, err error) {
+	funcName := "UpdateTag"
+	role, _, err := uc.boardRepository.GetMemberFromTag(ctx, userID, tagID)
+	if err != nil {
+		return nil, fmt.Errorf("%s (get permissions): %w", funcName, err)
+	}
+	if role == "viewer" {
+		return nil, fmt.Errorf("%s (check): %w", funcName, errs.ErrNotPermitted)
+	}
+
+	updatedTag, err = uc.boardRepository.UpdateTag(ctx, tagID, data)
+	if err != nil {
+		return nil, fmt.Errorf("%s: %w", funcName, err)
+	}
+
+	return updatedTag, nil
+}
+
+func (uc *BoardUsecase) DeleteTag(ctx context.Context, userID int64, tagID int64) (err error) {
+	funcName := "DeleteTag"
+	role, _, err := uc.boardRepository.GetMemberFromTag(ctx, userID, tagID)
+	if err != nil {
+		return fmt.Errorf("%s (get permissions): %w", funcName, err)
+	}
+	if role == "viewer" {
+		return fmt.Errorf("%s (check): %w", funcName, errs.ErrNotPermitted)
+	}
+
+	err = uc.boardRepository.DeleteTag(ctx, tagID)
+	if err != nil {
+		return fmt.Errorf("%s: %w", funcName, err)
+	}
+
+	return nil
+}
+
+func (uc *BoardUsecase) AssignTagToCard(ctx context.Context, userID int64, cardID int64, tagID int64) (err error) {
+	funcName := "AssignTagToCard"
+	role, _, err := uc.boardRepository.GetMemberFromCard(ctx, userID, cardID)
+	if err != nil {
+		return fmt.Errorf("%s (get permissions): %w", funcName, err)
+	}
+	if role == "viewer" {
+		return fmt.Errorf("%s (check): %w", funcName, errs.ErrNotPermitted)
+	}
+
+	err = uc.boardRepository.AssignTagToCard(ctx, tagID, cardID)
+	if err != nil {
+		if errors.Is(err, errs.ErrAlreadyExists) {
+			return fmt.Errorf("%s: tag is already assigned: %w", funcName, err)
+		}
+		return fmt.Errorf("%s (assign query error): %w", funcName, err)
+	}
+
+	return nil
+}
+
+func (uc *BoardUsecase) DeassignTagFromCard(ctx context.Context, userID int64, tagID int64, cardID int64) (err error) {
+	funcName := "DeassignTagFromCard"
+	role, _, err := uc.boardRepository.GetMemberFromTag(ctx, userID, tagID)
+	if err != nil {
+		return fmt.Errorf("%s (get permissions): %w", funcName, err)
+	}
+	if role == "viewer" {
+		return fmt.Errorf("%s (check): %w", funcName, errs.ErrNotPermitted)
+	}
+
+	err = uc.boardRepository.DeassignTagFromCard(ctx, tagID, cardID)
+	if err != nil {
+		if errors.Is(err, errs.ErrNotFound) {
+			return fmt.Errorf("%s tag is not found: %w", funcName, err)
+		}
+		return fmt.Errorf("%s (deassign query error): %w", funcName, err)
+	}
+
+	return nil
+}

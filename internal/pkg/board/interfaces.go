@@ -45,6 +45,11 @@ type BoardUsecase interface {
 	AcceptInvite(ctx context.Context, userID int64, inviteUUID string) (board *models.Board, err error)
 	GetCardDetails(ctx context.Context, userID int64, cardID int64) (details *models.CardDetails, err error)
 	GetCardDetailsUnauthorized(ctx context.Context, cardID int64) (details *models.CardDetails, err error)
+	CreateNewTag(ctx context.Context, userID int64, boardID int64, data *models.TagRequest) (newTag *models.Tag, err error)
+	UpdateTag(ctx context.Context, userID int64, tagID int64, data *models.TagRequest) (updatedTag *models.Tag, err error)
+	DeleteTag(ctx context.Context, userID int64, tagID int64) (err error)
+	AssignTagToCard(ctx context.Context, userID int64, cardID int64, tagID int64) (err error)
+	DeassignTagFromCard(ctx context.Context, userID int64, tagID int64, cardID int64) (err error)
 }
 
 type BoardRepo interface {
@@ -74,6 +79,7 @@ type BoardRepo interface {
 	GetMemberFromAttachment(ctx context.Context, userID int64, attachmentID int64) (role string, boardID int64, cardID int64, err error)
 	GetMemberFromColumn(ctx context.Context, userID int64, columnID int64) (role string, boardID int64, err error)
 	GetMemberFromComment(ctx context.Context, userID int64, commentID int64) (role string, boardID int64, cardID int64, err error)
+	GetMemberFromTag(ctx context.Context, userID int64, tagID int64) (role string, boardID int64, err error)
 	GetCardCheckList(ctx context.Context, cardID int64) (checkList []models.CheckListField, err error)
 	GetCardAssignedUsers(ctx context.Context, cardID int64) (assignedUsers []models.UserProfile, err error)
 	GetCardComments(ctx context.Context, cardID int64) (comments []models.Comment, err error)
@@ -102,6 +108,11 @@ type BoardRepo interface {
 	GetSharedCardInfo(ctx context.Context, cardUUID string) (cardID int64, boardID int64, err error)
 	DeduplicateFile(ctx context.Context, file *models.UploadedFile) (fileNames []string, fileIDs []int64, err error)
 	RegisterFile(ctx context.Context, file *models.UploadedFile) (fileID int64, fileUUID string, err error)
+	CreateNewTag(ctx context.Context, boardID int64, data *models.TagRequest) (newTag *models.Tag, err error)
+	UpdateTag(ctx context.Context, tagID int64, data *models.TagRequest) (updatedTag *models.Tag, err error)
+	DeleteTag(ctx context.Context, tagID int64) (err error)
+	AssignTagToCard(ctx context.Context, tagID int64, cardID int64) (err error)
+	DeassignTagFromCard(ctx context.Context, tagID int64, cardID int64) (err error)
 }
 
 type BoardElasticRepo interface {

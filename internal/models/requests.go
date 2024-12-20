@@ -78,6 +78,11 @@ type CheckListFieldPatchRequest struct {
 	NextFieldID     *int64  `json:"nextFieldId"`
 }
 
+type TagRequest struct {
+	Text  string `json:"text" validate:"required,min=3,max=30"`
+	Color string `json:"color" validate:"required,hexcolor,min=4,max=7"`
+}
+
 type CheckListFieldPostRequest struct {
 	Title *string `json:"title" validate:"required,min=3"`
 }

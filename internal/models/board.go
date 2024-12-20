@@ -61,6 +61,12 @@ type Comment struct {
 	CreatedAt time.Time    `json:"createdAt"`
 }
 
+type Tag struct {
+	ID    int64  `json:"id"`
+	Text  string `json:"text"`
+	Color string `json:"color"`
+}
+
 type CheckListField struct {
 	ID         int64     `json:"id"`
 	Title      string    `json:"title"`
