@@ -5,7 +5,10 @@ import (
 	"RPO_back/internal/models"
 	"RPO_back/internal/pkg/utils/logging"
 	"context"
+	"errors"
 	"fmt"
+
+	"github.com/jackc/pgx/v5"
 )
 
 // CreateNewTag создает тег на доске
@@ -136,4 +139,40 @@ func (r *BoardRepository) DeassignTagFromCard(ctx context.Context, tagID int64, 
 	}
 
 	return nil
+}
+
+func (r *BoardRepository) GetTagsForBoard(ctx context.Context, boardID int64) (tags []models.Tag, err error) {
+	funcName := "GetTagsForBoard"
+	query := `
+		SELECT t.tag_id, t.color, t.title
+		FROM tag AS t
+		WHERE t.board_id = $1;
+	`
+	rows, err := r.db.Query(ctx, query, boardID)
+	logging.Debug(ctx, funcName, " query has err: ", err)
+
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return make([]models.Tag, 0), nil
+		}
+		return nil, fmt.Errorf("%s (query): %w", funcName, err)
+	}
+
+	defer rows.Close()
+
+	tags = make([]models.Tag, 0)
+	for rows.Next() {
+		var tag models.Tag
+		err := rows.Scan(
+			&tag.ID,
+			&tag.Color,
+			&tag.Text,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("%s (scan): %w", funcName, err)
+		}
+		tags = append(tags, tag)
+	}
+
+	return tags, nil
 }

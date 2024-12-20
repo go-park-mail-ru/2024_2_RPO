@@ -86,6 +86,7 @@ type BoardRepo interface {
 	GetCardAttachments(ctx context.Context, cardID int64) (attachments []models.Attachment, err error)
 	GetCardsForMove(ctx context.Context, destColumnID int64, cardID *int64) (columnFrom []models.Card, columnTo []models.Card, err error)
 	GetColumnsForMove(ctx context.Context, boardID int64) (columns []models.Column, err error)
+	GetTagsForBoard(ctx context.Context, boardID int64) (tags []models.Tag, err error)
 	RearrangeCards(ctx context.Context, column1 []models.Card, column2 []models.Card) (err error)
 	RearrangeColumns(ctx context.Context, columns []models.Column) (err error)
 	// RearrangeCheckList(ctx context.Context, fields []models.CheckListField) (err error)

@@ -29,6 +29,7 @@ type BoardContent struct {
 	Cards     []Card   `json:"allCards"`
 	Columns   []Column `json:"allColumns"`
 	BoardInfo *Board   `json:"boardInfo"`
+	Tags      []Tag    `json:"allTags"`
 }
 
 type Card struct {

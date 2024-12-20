@@ -175,11 +175,17 @@ func (uc *BoardUsecase) GetBoardContent(ctx context.Context, userID int64, board
 		return nil, fmt.Errorf("GetBoardContent (add GetBoard): %w", err)
 	}
 
+	tags, err := uc.boardRepository.GetTagsForBoard(ctx, boardID)
+	if err != nil {
+		return nil, fmt.Errorf("GetBoardContent (add GetTagsForBoard): %w", err)
+	}
+
 	return &models.BoardContent{
 		Cards:     cards,
 		Columns:   cols,
 		BoardInfo: info,
 		MyRole:    userPermissions.Role,
+		Tags:      tags,
 	}, nil
 }
 
