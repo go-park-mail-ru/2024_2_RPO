@@ -996,8 +996,8 @@ func (d *BoardDelivery) CreateNewTag(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	tagReq := &models.TagPatchRequest{}
-	err = json.NewDecoder(r.Body).Decode(tagReq)
+	tagReq := &models.TagRequest{}
+	err = requests.GetRequestData(r, tagReq)
 	if err != nil {
 		logging.Error(r.Context(), err)
 		responses.DoBadResponseAndLog(r, w, http.StatusBadRequest, "bad request")
@@ -1028,8 +1028,8 @@ func (d *BoardDelivery) UpdateTag(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	tagReq := &models.TagPatchRequest{}
-	err = json.NewDecoder(r.Body).Decode(tagReq)
+	tagReq := &models.TagRequest{}
+	err = requests.GetRequestData(r, tagReq)
 	if err != nil {
 		logging.Error(r.Context(), err)
 		responses.DoBadResponseAndLog(r, w, http.StatusBadRequest, "bad request")
@@ -1116,7 +1116,13 @@ func (d *BoardDelivery) DeassignTagFromCard(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	err = d.boardUsecase.DeassignTagFromCard(r.Context(), userID, tagID)
+	cardID, err := requests.GetIDFromRequest(r, "cardID", "card_")
+	if err != nil {
+		responses.DoBadResponseAndLog(r, w, http.StatusBadRequest, "bad request")
+		return
+	}
+
+	err = d.boardUsecase.DeassignTagFromCard(r.Context(), userID, tagID, cardID)
 	if err != nil {
 		logging.Error(r.Context(), err)
 		responses.ResponseErrorAndLog(r, w, err, funcName)

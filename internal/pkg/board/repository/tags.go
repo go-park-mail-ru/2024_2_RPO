@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"RPO_back/internal/errs"
 	"RPO_back/internal/models"
 	"RPO_back/internal/pkg/utils/logging"
 	"context"
@@ -8,7 +9,7 @@ import (
 )
 
 // CreateNewTag создает тег на доске
-func (r *BoardRepository) CreateNewTag(ctx context.Context, boardID int64, data *models.TagPatchRequest) (newTag *models.Tag, err error) {
+func (r *BoardRepository) CreateNewTag(ctx context.Context, boardID int64, data *models.TagRequest) (newTag *models.Tag, err error) {
 	funcName := "CreateNewTag"
 	query := `
 		WITH new_tag AS (
@@ -38,7 +39,7 @@ func (r *BoardRepository) CreateNewTag(ctx context.Context, boardID int64, data 
 }
 
 // UpdateTag обновляет тег
-func (r *BoardRepository) UpdateTag(ctx context.Context, tagID int64, data *models.TagPatchRequest) (updatedTag *models.Tag, err error) {
+func (r *BoardRepository) UpdateTag(ctx context.Context, tagID int64, data *models.TagRequest) (updatedTag *models.Tag, err error) {
 	funcName := "UpdateTag"
 	query := `
 		WITH update_tag AS (
@@ -84,7 +85,11 @@ func (r *BoardRepository) DeleteTag(ctx context.Context, tagID int64) (err error
 		DELETE FROM tag
 		WHERE tag.tag_id=$1;
 	`
-	_, err = r.db.Exec(ctx, query, tagID)
+	tag, err := r.db.Exec(ctx, query, tagID)
+	if tag.RowsAffected() == 0 {
+		return fmt.Errorf("%s: %w", funcName, errs.ErrNotFound)
+	}
+
 	logging.Debug(ctx, funcName, " query has err: ", err)
 	if err != nil {
 		return err
@@ -100,7 +105,11 @@ func (r *BoardRepository) AssignTagToCard(ctx context.Context, tagID int64, card
 		INSERT INTO tag_to_card (tag_id, card_id)
 		VALUES ($1, $2);
 	`
-	_, err = r.db.Exec(ctx, query, tagID, cardID)
+	tag, err := r.db.Exec(ctx, query, tagID, cardID)
+	if tag.RowsAffected() == 0 {
+		return fmt.Errorf("%s: %w", funcName, errs.ErrNotFound)
+	}
+
 	logging.Debug(ctx, funcName, " query has err: ", err)
 	if err != nil {
 		return fmt.Errorf("%s (query): %w", funcName, err)
@@ -116,7 +125,11 @@ func (r *BoardRepository) DeassignTagFromCard(ctx context.Context, tagID int64, 
 		DELETE FROM tag_to_card
 		WHERE tag_id = $1 AND card_id = $2;
 	`
-	_, err = r.db.Exec(ctx, query, tagID, cardID)
+	tag, err := r.db.Exec(ctx, query, tagID, cardID)
+	if tag.RowsAffected() == 0 {
+		return fmt.Errorf("%s: %w", funcName, errs.ErrNotFound)
+	}
+
 	logging.Debug(ctx, funcName, " query has err: ", err)
 	if err != nil {
 		return fmt.Errorf("%s (query): %w", funcName, err)

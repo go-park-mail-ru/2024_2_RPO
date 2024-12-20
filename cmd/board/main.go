@@ -153,6 +153,11 @@ func main() {
 	router.HandleFunc("/joinBoard/{inviteUUID}", boardDelivery.FetchInvite).Methods("GET", "OPTIONS")
 	router.HandleFunc("/joinBoard/{inviteUUID}", boardDelivery.AcceptInvite).Methods("POST", "OPTIONS")
 	router.HandleFunc("/search", boardDelivery.SearchCards).Methods("POST", "OPTIONS")
+	router.HandleFunc("/tags/{boardID}", boardDelivery.CreateNewTag).Methods("POST", "OPTIONS")
+	router.HandleFunc("/tags/{tagID}", boardDelivery.UpdateTag).Methods("PUT", "OPTIONS")
+	router.HandleFunc("/tags/{tagID}", boardDelivery.DeleteTag).Methods("DELETE", "OPTIONS")
+	router.HandleFunc("/tags/{cardID}", boardDelivery.AssignTagToCard).Methods("PUT", "OPTIONS")
+	router.HandleFunc("/tags/{cardID}/{tagID}", boardDelivery.DeassignTagFromCard).Methods("DELETE", "OPTIONS")
 
 	// Регистрируем обработчик Prometheus
 	metricsRouter := mux.NewRouter()
