@@ -46,6 +46,7 @@ type Card struct {
 	HasAttachments   bool       `json:"hasAttachments"`
 	HasAssignedUsers bool       `json:"hasAssignedUsers"`
 	HasComments      bool       `json:"hasComments"`
+	Tags             []int64    `json:"tags"`
 }
 
 type Column struct {
