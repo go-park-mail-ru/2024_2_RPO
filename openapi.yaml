@@ -231,6 +231,10 @@ components:
           type: string
           enum: ["viewer", "editor", "editor_chief", "admin"]
           example: "viewer"
+        allTags:
+          type: array
+          items:
+            $ref: "#/components/schemas/Tag"
 
     Card:
       type: object
@@ -277,6 +281,11 @@ components:
         cardUuid:
           type: string
           example: "70f6549b-96d1-47ef-8409-de73e74fd82c"
+        tags:
+          type: array
+          items:
+            type: integer
+            example: 228
 
     CardPostRequest:
       type: object
@@ -431,6 +440,38 @@ components:
           type: string
           format: date-time
           example: "2023-10-01T12:34:56Z"
+    
+    Tag:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 395
+        text:
+          type: string
+          example: "Tag 1"
+        color:
+          type: string
+          example: "#dfc6bb"
+          
+    TagRequest:
+      type: object
+      required:
+        - text
+      properties:
+        text:
+          type: string
+          example: "Tag 1"
+        color:
+          type: string
+          example: "#dfc6bb"  
+          
+    CardTagAssignRequest:
+      type: object
+      properties:
+        text:
+          type: string
+          example: "Tag 1"      
 
     CheckListField:
       type: object
@@ -1914,3 +1955,154 @@ paths:
           $ref: "#/components/responses/BadRequestResponse"
         "401":
           $ref: "#/components/responses/NoAuthResponse"
+          
+  /tags/{boardId}:
+    post:
+      summary: "Создать тег"
+      tags:
+        - Теги
+      security:
+        - SessionCookieAuth: []
+      parameters:
+        - $ref: "#/components/parameters/boardId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TagRequest"
+      responses:
+        "201":
+          description: "Тег упешно добавлен"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Tag"
+        "400":
+          $ref: "#/components/responses/BadRequestResponse"
+        "401":
+          $ref: "#/components/responses/NoAuthResponse"
+        "403":
+          $ref: "#/components/responses/ForbiddenResponse"
+        "404":
+          $ref: "#/components/responses/NotFoundResponse"
+
+  /tags/{tagId}:
+    put:
+      summary: "Изменить тег"
+      tags:
+        - Теги
+      security:
+        - SessionCookieAuth: []
+      parameters:
+        - name: tagId
+          in: path
+          required: true
+          schema:
+            type: string
+            example: "tag_228"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TagRequest"
+      responses:
+        "200":
+          description: "Тег упешно изменен"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Tag"
+        "400":
+          $ref: "#/components/responses/BadRequestResponse"
+        "401":
+          $ref: "#/components/responses/NoAuthResponse"
+        "403":
+          $ref: "#/components/responses/ForbiddenResponse"
+        "404":
+          $ref: "#/components/responses/NotFoundResponse"
+    delete:
+      summary: "Удалить тег"
+      tags:
+        - Теги
+      security:
+        - SessionCookieAuth: []
+      parameters:
+        - name: tagId
+          in: path
+          required: true
+          schema:
+            type: string
+            example: "tag_228"
+      responses:
+        "200":
+          $ref: "#/components/responses/EmptyOkResponse"
+        "400":
+          $ref: "#/components/responses/BadRequestResponse"
+        "401":
+          $ref: "#/components/responses/NoAuthResponse"
+        "403":
+          $ref: "#/components/responses/ForbiddenResponse"
+        "404":
+          $ref: "#/components/responses/NotFoundResponse"   
+          
+  /tags/{cardId}:
+    put:
+      summary: "Назначить тег на карточку"
+      tags:
+        - Назначение тега на карточку
+      security:
+        - SessionCookieAuth: []
+      parameters:
+        - $ref: "#/components/parameters/cardId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CardTagAssignRequest"
+      responses:
+        "200":
+          description: "Тег назначен на карточку"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Tag"
+        "400":
+          $ref: "#/components/responses/BadRequestResponse"
+        "401":
+          $ref: "#/components/responses/NoAuthResponse"
+        "403":
+          $ref: "#/components/responses/ForbiddenResponse"
+        "404":
+          $ref: "#/components/responses/NotFoundResponse"
+        "409":
+          $ref: "#/components/responses/ConflictResponse"
+
+  /tags/{cardId}/{tagId}:
+    delete:
+      summary: "Убрать назначение тега на карточку"
+      tags:
+        - Назначение тега на карточку
+      security:
+        - SessionCookieAuth: []
+      parameters:
+        - $ref: "#/components/parameters/cardId"
+        - name: tagId
+          in: path
+          required: true
+          schema:
+            type: string
+            example: "tag_228"
+      responses:
+        "200":
+          $ref: "#/components/responses/EmptyOkResponse"
+        "400":
+          $ref: "#/components/responses/BadRequestResponse"
+        "401":
+          $ref: "#/components/responses/NoAuthResponse"
+        "403":
+          $ref: "#/components/responses/ForbiddenResponse"
+        "404":
+          $ref: "#/components/responses/NotFoundResponse"
