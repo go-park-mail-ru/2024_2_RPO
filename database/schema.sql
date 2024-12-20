@@ -80,11 +80,28 @@ CREATE TABLE "card" (
     created_at    TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at    TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     cover_file_id BIGINT,
-    deadline TIMESTAMPTZ,
-    is_done BOOLEAN NOT NULL DEFAULT FALSE, -- Видна, когда задан deadline или чеклист
+    deadline      TIMESTAMPTZ,
+    is_done       BOOLEAN NOT NULL DEFAULT FALSE, -- Видна, когда задан deadline или чеклист
 
     FOREIGN KEY (col_id) REFERENCES kanban_column(col_id) ON UPDATE CASCADE ON DELETE CASCADE,
     FOREIGN KEY (cover_file_id) REFERENCES user_uploaded_file(file_id) ON UPDATE CASCADE ON DELETE SET NULL
+);
+
+CREATE TABLE tag (
+    tag_id        BIGINT      GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    title         TEXT        NOT NULL,
+    color         TEXT        NOT NULL,
+    created_at    TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at    TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE tag_to_card (
+    tag_id        BIGINT      GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    card_id       BIGINT      GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+
+    FOREIGN KEY (card_id) REFERENCES card(card_id) ON UPDATE CASCADE ON DELETE CASCADE,
+    FOREIGN KEY (tag_id) REFERENCES tag(tag_id) ON UPDATE CASCADE ON DELETE SET NULL,
+    PRIMARY KEY(tag_id, card_id)
 );
 
 CREATE TABLE card_attachment (
