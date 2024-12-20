@@ -981,3 +981,147 @@ func (d *BoardDelivery) GetCardDetails(w http.ResponseWriter, r *http.Request) {
 
 	responses.DoJSONResponse(r, w, cd, http.StatusOK)
 }
+
+func (d *BoardDelivery) CreateNewTag(w http.ResponseWriter, r *http.Request) {
+	funcName := "CreateNewTag"
+	userID, ok := requests.GetUserIDOrFail(w, r, funcName)
+	if !ok {
+		return
+	}
+
+	boardID, err := requests.GetIDFromRequest(r, "boardID", "board_")
+	if err != nil {
+		logging.Error(r.Context(), err)
+		responses.DoBadResponseAndLog(r, w, http.StatusBadRequest, "bad request")
+		return
+	}
+
+	tagReq := &models.TagPatchRequest{}
+	err = json.NewDecoder(r.Body).Decode(tagReq)
+	if err != nil {
+		logging.Error(r.Context(), err)
+		responses.DoBadResponseAndLog(r, w, http.StatusBadRequest, "bad request")
+		return
+	}
+
+	newTag, err := d.boardUsecase.CreateNewTag(r.Context(), userID, boardID, tagReq)
+	if err != nil {
+		logging.Error(r.Context(), err)
+		responses.ResponseErrorAndLog(r, w, err, funcName)
+		return
+	}
+
+	responses.DoJSONResponse(r, w, newTag, http.StatusCreated)
+}
+
+func (d *BoardDelivery) UpdateTag(w http.ResponseWriter, r *http.Request) {
+	funcName := "UpdateTag"
+	userID, ok := requests.GetUserIDOrFail(w, r, funcName)
+	if !ok {
+		return
+	}
+
+	tagID, err := requests.GetIDFromRequest(r, "tagID", "tag_")
+	if err != nil {
+		logging.Error(r.Context(), err)
+		responses.DoBadResponseAndLog(r, w, http.StatusBadRequest, "bad request")
+		return
+	}
+
+	tagReq := &models.TagPatchRequest{}
+	err = json.NewDecoder(r.Body).Decode(tagReq)
+	if err != nil {
+		logging.Error(r.Context(), err)
+		responses.DoBadResponseAndLog(r, w, http.StatusBadRequest, "bad request")
+		return
+	}
+
+	updatedTag, err := d.boardUsecase.UpdateTag(r.Context(), userID, tagID, tagReq)
+	if err != nil {
+		logging.Error(r.Context(), err)
+		responses.ResponseErrorAndLog(r, w, err, funcName)
+		return
+	}
+
+	responses.DoJSONResponse(r, w, updatedTag, http.StatusOK)
+}
+
+func (d *BoardDelivery) DeleteTag(w http.ResponseWriter, r *http.Request) {
+	funcName := "DeleteTag"
+	userID, ok := requests.GetUserIDOrFail(w, r, funcName)
+	if !ok {
+		return
+	}
+
+	tagID, err := requests.GetIDFromRequest(r, "tagID", "tag_")
+	if err != nil {
+		logging.Error(r.Context(), err)
+		responses.DoBadResponseAndLog(r, w, http.StatusBadRequest, "bad request")
+		return
+	}
+
+	err = d.boardUsecase.DeleteTag(r.Context(), userID, tagID)
+	if err != nil {
+		logging.Error(r.Context(), err)
+		responses.ResponseErrorAndLog(r, w, err, funcName)
+		return
+	}
+
+	responses.DoEmptyOkResponse(w)
+}
+
+func (d *BoardDelivery) AssignTagToCard(w http.ResponseWriter, r *http.Request) {
+	funcName := "AssignTagToCard"
+	userID, ok := requests.GetUserIDOrFail(w, r, funcName)
+	if !ok {
+		return
+	}
+
+	cardID, err := requests.GetIDFromRequest(r, "cardID", "card_")
+	if err != nil {
+		logging.Error(r.Context(), err)
+		responses.DoBadResponseAndLog(r, w, http.StatusBadRequest, "bad request")
+		return
+	}
+
+	tagID, err := requests.GetIDFromRequest(r, "tagID", "tag_")
+	if err != nil {
+		logging.Error(r.Context(), err)
+		responses.DoBadResponseAndLog(r, w, http.StatusBadRequest, "bad request")
+		return
+	}
+
+	err = d.boardUsecase.AssignTagToCard(r.Context(), userID, cardID, tagID)
+	if err != nil {
+		logging.Error(r.Context(), err)
+		responses.ResponseErrorAndLog(r, w, err, funcName)
+		return
+	}
+
+	responses.DoEmptyOkResponse(w)
+}
+
+func (d *BoardDelivery) DeassignTagFromCard(w http.ResponseWriter, r *http.Request) {
+	funcName := "DeassignTagFromCard"
+
+	userID, ok := requests.GetUserIDOrFail(w, r, funcName)
+	if !ok {
+		return
+	}
+
+	tagID, err := requests.GetIDFromRequest(r, "tagID", "tag_")
+	if err != nil {
+		logging.Error(r.Context(), err)
+		responses.DoBadResponseAndLog(r, w, http.StatusBadRequest, "bad request")
+		return
+	}
+
+	err = d.boardUsecase.DeassignTagFromCard(r.Context(), userID, tagID)
+	if err != nil {
+		logging.Error(r.Context(), err)
+		responses.ResponseErrorAndLog(r, w, err, funcName)
+		return
+	}
+
+	responses.DoEmptyOkResponse(w)
+}
