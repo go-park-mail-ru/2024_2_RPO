@@ -18,41 +18,24 @@ func (r *BoardRepository) GetCardsForBoard(ctx context.Context, boardID int64) (
 	funcName := "GetCardsForBoard"
 	query := `
 	SELECT
-	c.card_id,
-	c.col_id,
-	c.title,
-	c.created_at,
-	c.updated_at,
-	c.deadline,
-	c.is_done,
-	c.card_id IN (SELECT DISTINCT f.card_id
-		FROM checklist_field f
-		JOIN card c ON c.card_id=f.card_id
-		JOIN kanban_column k ON c.col_id=k.col_id
-		WHERE k.board_id=$1),
-	c.card_id IN (SELECT DISTINCT f.card_id
-		FROM card_attachment f
-		JOIN card c ON c.card_id=f.card_id
-		JOIN kanban_column k ON c.col_id=k.col_id
-		WHERE k.board_id=$1),
-	c.card_id IN (SELECT DISTINCT f.card_id
-		FROM card_user_assignment f
-		JOIN card c ON c.card_id=f.card_id
-		JOIN kanban_column k ON c.col_id=k.col_id
-		WHERE k.board_id=$1),
-	c.card_id IN (SELECT DISTINCT f.card_id
-		FROM card_comment f
-		JOIN card c ON c.card_id=f.card_id
-		JOIN kanban_column k ON c.col_id=k.col_id
-		WHERE k.board_id=$1),
-	COALESCE(uuf.file_uuid::text, ''),
-	COALESCE(uuf.file_extension::text, ''),
-	c.card_uuid
+    c.card_id,
+    c.col_id,
+    c.title,
+    c.created_at,
+    c.updated_at,
+    c.deadline,
+    c.is_done,
+    (SELECT (NOT COUNT(*)=0) FROM checklist_field AS f WHERE f.card_id=c.card_id),
+    (SELECT (NOT COUNT(*)=0) FROM card_attachment AS f WHERE f.card_id=c.card_id),
+    (SELECT (NOT COUNT(*)=0) FROM card_user_assignment AS f WHERE f.card_id=c.card_id),
+    (SELECT (NOT COUNT(*)=0) FROM card_comment AS f WHERE f.card_id=c.card_id),
+    COALESCE(uuf.file_uuid::text, ''),
+    COALESCE(uuf.file_extension::text, ''),
+    c.card_uuid
 	FROM card c
 	JOIN kanban_column kc ON c.col_id = kc.col_id
 	LEFT JOIN user_uploaded_file uuf ON c.cover_file_id = uuf.file_id
 	WHERE kc.board_id = $1
-	GROUP BY c.card_id, uuf.file_id
 	ORDER BY c.order_index;
 	`
 

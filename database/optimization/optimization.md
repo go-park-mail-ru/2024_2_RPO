@@ -72,7 +72,7 @@ ORDER BY c.order_index;
 
 Теперь оно загружает доску за 10 секунд.
 
-Теперь попробуем сделать stress-тестирование. Для этого был создан файл `run_vegeta.sh`:
+Теперь попробуем сделать stress-тестирование большой доски. Для этого был создан файл `run_vegeta.sh`:
 
 ```
 =====
@@ -111,6 +111,8 @@ CREATE INDEX pumpkin_idx0 ON checklist_field(card_id);
 CREATE INDEX pumpkin_idx1 ON card_comment(card_id);
 ANALYZE;
 ```
+
+Сделаем стресс-тест большой доски:
 
 ```
 =====
@@ -182,4 +184,67 @@ ORDER BY c.order_index;
 
 Теперь запрос стал намного быстрее!
 
-Сделаем стресс-тест:
+Сделаем стресс-тест большой доски:
+
+```
+=====
+Start stress test
+URL: https://kanban-pumpkin.ru/api/cards/board_209/allContent
+Method: GET
+Duration: 60s
+Max workers: 4
+=====
+=====
+Test finished! Creating report...
+Requests      [total, rate, throughput]         171, 2.81, 2.78
+Duration      [total, attack, wait]             1m2s, 1m1s, 648.243ms
+Latencies     [min, mean, 50, 90, 95, 99, max]  648.243ms, 1.429s, 1.335s, 2.148s, 2.32s, 2.467s, 2.532s
+Bytes In      [total, mean]                     529789977, 3098187.00
+Bytes Out     [total, mean]                     0, 0.00
+Success       [ratio]                           100.00%
+Status Codes  [code:count]                      200:171
+Error Set:
+```
+
+Стало значительно лучше!
+
+[План запроса на explain.dalibo.com](https://explain.dalibo.com/plan/56ce7bd9dgf889a1)
+
+### Подзапросы - попытка улучшить за счёт CTE
+
+Можно сразу найти список всех card_id и для них искать checklist_field и т.д.
+
+Это дало время выполнения запроса 457 мс. Это открывает возможности по применению индексов.
+
+[План запроса на explain.dalibo.com](https://explain.dalibo.com/plan/54a9f1e293029e91)
+
+### Индексы - попытка №2
+
+Можно попробовать оптимизировать подзапросы, применяя индексы. Тогда будет применяться Merge Join:
+
+```sql
+CREATE INDEX pumpkin_idx0 ON checklist_field(card_id);
+CREATE INDEX pumpkin_idx1 ON card_attachment(card_id);
+CREATE INDEX pumpkin_idx2 ON card_comment(card_id);
+CREATE INDEX pumpkin_idx4 ON card(col_id);
+CREATE INDEX pumpkin_idx5 ON kanban_column(board_id);
+ANALYZE;
+```
+
+Теперь выполняется за 341 мс.
+
+[План запроса на explain.dalibo.com](https://explain.dalibo.com/plan/5d1f0474gfb19c61)
+
+### Выводы
+
+В реальной жизни столько карточек не будет добавлено на доску. Но мы добились того, чтобы база корректно отрабатывала и не уходила в таймаут.
+
+А теперь сравним планы запросов для маленькой доски до и после добавления индексов:
+
+[План до добавления индексов и переписывания запроса (320 мс)](https://explain.dalibo.com/plan/ga6dbffb671fcfde)
+
+[План после добавления индексов и переписывания запроса (47 мс)](https://explain.dalibo.com/plan/e877c8639h478b80)
+
+Раньше sequential scan в коррелирующих подзапросах отсеивал очень много данных, и это было очень плохо.
+
+Дальнейшее улучшение производительности можно получить за счёт денормализации.
