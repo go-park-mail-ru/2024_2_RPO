@@ -16,23 +16,23 @@ LDFLAGS := -ldflags="-s -w" # Отключить дебаг-информацию
 
 build_auth:
 	@echo "==> Building auth application..."
-	@GOOS=linux go build $(GOFLAGS) $(LDFLAGS) -o $(BUILD_DIR)/auth_app ./cmd/auth
+	@CGO_ENABLED=0 GOOS=linux go build $(GOFLAGS) $(LDFLAGS) -o $(BUILD_DIR)/auth_app ./cmd/auth
 
 build_user:
 	@echo "==> Building user application..."
-	@GOOS=linux go build $(GOFLAGS) $(LDFLAGS) -o $(BUILD_DIR)/user_app ./cmd/user
+	@CGO_ENABLED=0 GOOS=linux go build $(GOFLAGS) $(LDFLAGS) -o $(BUILD_DIR)/user_app ./cmd/user
 
 build_board:
 	@echo "==> Building board application..."
-	@GOOS=linux go build $(GOFLAGS) $(LDFLAGS) -o $(BUILD_DIR)/board_app ./cmd/board
+	@CGO_ENABLED=0 GOOS=linux go build $(GOFLAGS) $(LDFLAGS) -o $(BUILD_DIR)/board_app ./cmd/board
 
 build_poll:
 	@echo "==> Building poll application..."
-	@GOOS=linux go build $(GOFLAGS) $(LDFLAGS) -o $(BUILD_DIR)/poll_app ./cmd/poll
+	@CGO_ENABLED=0 GOOS=linux go build $(GOFLAGS) $(LDFLAGS) -o $(BUILD_DIR)/poll_app ./cmd/poll
 
 build_utils:
 	@echo "==> Building service utils program..."
-	@GOOS=linux go build $(GOFLAGS) $(LDFLAGS) -o $(BUILD_DIR)/utils ./cmd/utils
+	@CGO_ENABLED=0 GOOS=linux go build $(GOFLAGS) $(LDFLAGS) -o $(BUILD_DIR)/utils ./cmd/utils
 
 build_all: build_auth build_user build_poll build_board build_utils
 	@echo "==> All applications are built!"
