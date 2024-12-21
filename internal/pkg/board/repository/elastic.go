@@ -79,11 +79,10 @@ func (be *BoardElasticRepository) Search(ctx context.Context, boards []models.Bo
 		boardIDs[i] = board.ID
 	}
 
-	// boardQuery := elastic.NewTermsQuery("board_id", boardIDs...)
+	boardQuery := elastic.NewTermsQuery("board_id", boardIDs...)
 	searchQuery := elastic.NewMatchQuery("title", searchValue).Fuzziness("AUTO")
 
-	// fullQuery := elastic.NewBoolQuery().Filter(boardQuery).Must(searchQuery)
-	fullQuery := elastic.NewBoolQuery().Must(searchQuery)
+	fullQuery := elastic.NewBoolQuery().Filter(boardQuery).Must(searchQuery)
 
 	searchResult, err := be.elastic.Search().
 		Index(ElasticIdxName).
