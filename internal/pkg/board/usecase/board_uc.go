@@ -401,12 +401,17 @@ func (uc *BoardUsecase) AssignUser(ctx context.Context, userID int64, cardID int
 		return nil, fmt.Errorf("%s (check): %w", funcName, errs.ErrNotPermitted)
 	}
 
-	assignedUserID, err := uc.boardRepository.GetUserByNickname(ctx, data.NickName)
+	assignedUser1, err := uc.boardRepository.GetUserByNickname(ctx, data.NickName)
 	if err != nil {
 		return nil, fmt.Errorf("%s (check): %w", funcName, err)
 	}
 
-	assignedUser, err = uc.boardRepository.AssignUserToCard(ctx, cardID, assignedUserID.ID)
+	_, _, err = uc.boardRepository.GetMemberFromCard(ctx, assignedUser1.ID, cardID)
+	if err != nil {
+		return nil, fmt.Errorf("%s (get perms): %w", funcName, err)
+	}
+
+	assignedUser, err = uc.boardRepository.AssignUserToCard(ctx, cardID, assignedUser1.ID)
 	if err != nil {
 		return nil, fmt.Errorf("%s (assign user): %w", funcName, err)
 	}
