@@ -94,16 +94,13 @@ func loadDataToElasticsearch(ctx context.Context, db *pgxpool.Pool, el *elastic.
 			"board_id": boardID,
 		}
 
-		req := elastic.NewBulkIndexRequest().Index(indexName).Id(cardID).Doc(doc)
-		bulkRequest.Add(req)
+		_, err = el.Index().Index(indexName).Id(cardID).BodyJson(doc).Refresh("wait_for").Do(context.Background())
+		if err != nil {
+			log.Fatal(err)
+		}
 		count++
-
-		if count%1000 == 0 {
-			_, err := bulkRequest.Do(ctx)
-			if err != nil {
-				return fmt.Errorf("bulk indexing failed: %w", err)
-			}
-			log.Printf("Indexed %d documents...\n", count)
+		if count%100 == 0 {
+			fmt.Printf("Indexed %d docs\n", count)
 		}
 	}
 

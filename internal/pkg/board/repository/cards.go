@@ -54,7 +54,6 @@ func (r *BoardRepository) GetCardsForBoard(ctx context.Context, boardID int64) (
 	JOIN kanban_column kc ON c.col_id = kc.col_id
 	LEFT JOIN user_uploaded_file uuf ON c.cover_file_id = uuf.file_id
 	WHERE kc.board_id = $1
-	GROUP BY c.card_id, uuf.file_id
 	ORDER BY c.order_index;
 	`
 
@@ -157,7 +156,7 @@ func (r *BoardRepository) UpdateCard(ctx context.Context, cardID int64, data mod
 		is_done = COALESCE($4, is_done),
 		updated_at = CURRENT_TIMESTAMP
 		WHERE card_id=$1
-		RETURNING card_id, col_id, title, created_at, updated_at, deadline, is_done, card_uuid
+		RETURNING card_id, col_id, title, created_at, updated_at, deadline, is_done, card_uuid, cover_file_id
 	), update_board AS (
 		UPDATE board
 		SET updated_at=CURRENT_TIMESTAMP
@@ -168,6 +167,11 @@ func (r *BoardRepository) UpdateCard(ctx context.Context, cardID int64, data mod
 			JOIN board AS b ON b.board_id=cc.board_id
 			WHERE c.card_id=$1
 		)
+	),
+	all_cards AS (
+		SELECT c.* FROM card c
+		JOIN kanban_column k USING(col_id)
+		WHERE k.board_id=$1
 	)
 	SELECT
 		c.card_id,
@@ -177,14 +181,32 @@ func (r *BoardRepository) UpdateCard(ctx context.Context, cardID int64, data mod
 		c.updated_at,
 		c.deadline,
 		c.is_done,
-		(SELECT (NOT COUNT(*)=0) FROM checklist_field AS f WHERE f.card_id=c.card_id),
-		(SELECT (NOT COUNT(*)=0) FROM card_attachment AS f WHERE f.card_id=c.card_id),
-		(SELECT (NOT COUNT(*)=0) FROM card_user_assignment AS f WHERE f.card_id=c.card_id),
-		(SELECT (NOT COUNT(*)=0) FROM card_comment AS f WHERE f.card_id=c.card_id),
-		c.card_uuid::text
-	FROM update_card AS c;
+		c.card_id IN (SELECT DISTINCT card_id
+			FROM checklist_field
+			WHERE card_id IN (SELECT card_id FROM all_cards)),
+		c.card_id IN (SELECT DISTINCT card_id
+			FROM card_attachment
+			WHERE card_id IN (SELECT card_id FROM all_cards)),
+		c.card_id IN (SELECT DISTINCT card_id
+			FROM card_user_assignment
+			WHERE card_id IN (SELECT card_id FROM all_cards)),
+		c.card_id IN (SELECT DISTINCT card_id
+			FROM card_comment
+			WHERE card_id IN (SELECT card_id FROM all_cards)),
+		COALESCE(uuf.file_uuid::text, ''),
+		COALESCE(uuf.file_extension::text, ''),
+		c.card_uuid,
+		(
+			SELECT array_remove(array_agg(t.tag_id), NULL)
+			FROM tag_to_card t
+			WHERE t.card_id = c.card_id
+		) AS tags
+	FROM update_card c
+	JOIN kanban_column kc ON c.col_id = kc.col_id
+	LEFT JOIN user_uploaded_file uuf ON c.cover_file_id = uuf.file_id;
 	`
 	updateCard = &models.Card{}
+	var fileUUID, fileExt string
 
 	err = r.db.QueryRow(ctx, query, cardID, data.NewTitle, data.NewDeadline, data.IsDone).Scan(
 		&updateCard.ID,
@@ -198,12 +220,19 @@ func (r *BoardRepository) UpdateCard(ctx context.Context, cardID int64, data mod
 		&updateCard.HasAttachments,
 		&updateCard.HasAssignedUsers,
 		&updateCard.HasComments,
+		&fileUUID,
+		&fileExt,
 		&updateCard.UUID,
+		&updateCard.Tags,
 	)
+	if updateCard.Tags == nil {
+		updateCard.Tags = make([]int64, 0)
+	}
 	logging.Debug(ctx, funcName, " query has err: ", err)
 	if err != nil {
 		return nil, err
 	}
+	updateCard.CoverImageURL = uploads.JoinFileURL(fileUUID, fileExt, "")
 
 	return updateCard, nil
 }

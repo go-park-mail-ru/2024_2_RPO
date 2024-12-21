@@ -79,10 +79,11 @@ func (be *BoardElasticRepository) Search(ctx context.Context, boards []models.Bo
 		boardIDs[i] = board.ID
 	}
 
-	boardQuery := elastic.NewTermsQuery("board_id", boardIDs...)
+	// boardQuery := elastic.NewTermsQuery("board_id", boardIDs...)
 	searchQuery := elastic.NewMatchQuery("title", searchValue).Fuzziness("AUTO")
 
-	fullQuery := elastic.NewBoolQuery().Filter(boardQuery).Must(searchQuery)
+	// fullQuery := elastic.NewBoolQuery().Filter(boardQuery).Must(searchQuery)
+	fullQuery := elastic.NewBoolQuery().Must(searchQuery)
 
 	searchResult, err := be.elastic.Search().
 		Index(ElasticIdxName).
@@ -94,6 +95,7 @@ func (be *BoardElasticRepository) Search(ctx context.Context, boards []models.Bo
 	}
 
 	foundCards = make([]int64, 0, len(searchResult.Hits.Hits))
+
 	for _, hit := range searchResult.Hits.Hits {
 		var card struct {
 			CardID int64 `json:"card_id"`
@@ -104,6 +106,10 @@ func (be *BoardElasticRepository) Search(ctx context.Context, boards []models.Bo
 		}
 		foundCards = append(foundCards, card.CardID)
 	}
+
+	fmt.Println("===FOUND CARDS HERE===")
+	fmt.Printf("%#v\n", foundCards)
+	fmt.Println("===FOUND CARDS HERE===")
 
 	return foundCards, nil
 }
