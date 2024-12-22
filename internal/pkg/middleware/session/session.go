@@ -32,7 +32,8 @@ func (mw *SessionMiddleware) Middleware(next http.Handler) http.Handler {
 		}
 
 		responce, err := mw.authGRPC.CheckSession(r.Context(), &AuthGRPC.CheckSessionRequest{SessionID: cookie.Value})
-		if err != nil {
+		authErr := responce.GetError()
+		if err != nil || authErr != AuthGRPC.Error_NONE {
 			http.SetCookie(w, &http.Cookie{
 				Name:   auth.SessionCookieName,
 				MaxAge: -1,

@@ -27,15 +27,15 @@ func TestLoggingMiddleware(t *testing.T) {
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 }
 
-type testWriter struct {
-	content []byte
-}
+// type testWriter struct {
+// 	content []byte
+// }
 
-func (tw *testWriter) Write(p []byte) (n int, err error) {
-	tw.content = append(tw.content, p...)
-	return len(p), nil
-}
+// func (tw *testWriter) Write(p []byte) (n int, err error) {
+// 	tw.content = append(tw.content, p...)
+// 	return len(p), nil
+// }
 
-func (tw *testWriter) String() string {
-	return string(tw.content)
-}
+// func (tw *testWriter) String() string {
+// 	return string(tw.content)
+// }

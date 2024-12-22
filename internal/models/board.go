@@ -1,5 +1,7 @@
 package models
 
+//go:generate easyjson -all board.go
+
 import "time"
 
 type Board struct {
@@ -9,6 +11,7 @@ type Board struct {
 	CreatedAt          time.Time `json:"createdAt"`
 	UpdatedAt          time.Time `json:"updatedAt"`
 	LastVisitAt        time.Time `json:"lastVisitAt"`
+	MyInviteUUID       *string   `json:"myInviteLinkUuid"`
 }
 
 // MemberWithPermissions - пользователь с правами (в контексте доски)
@@ -26,6 +29,7 @@ type BoardContent struct {
 	Cards     []Card   `json:"allCards"`
 	Columns   []Column `json:"allColumns"`
 	BoardInfo *Board   `json:"boardInfo"`
+	Tags      []Tag    `json:"allTags"`
 }
 
 type Card struct {
@@ -36,17 +40,17 @@ type Card struct {
 	ColumnID         int64      `json:"columnId"`
 	CreatedAt        time.Time  `json:"createdAt"`
 	UpdatedAt        time.Time  `json:"updatedAt"`
-	Deadine          *time.Time `json:"deadline,omitempty"`
+	Deadline         *time.Time `json:"deadline,omitempty"`
 	IsDone           bool       `json:"isDone"`
 	HasCheckList     bool       `json:"hasCheckList"`
 	HasAttachments   bool       `json:"hasAttachments"`
 	HasAssignedUsers bool       `json:"hasAssignedUsers"`
 	HasComments      bool       `json:"hasComments"`
-	OrderIndex       int64      `json:"-"`
+	Tags             []int64    `json:"tags"`
 }
 
 type Column struct {
-	ID         int    `json:"id"`
+	ID         int64  `json:"id"`
 	Title      string `json:"title"`
 	OrderIndex int64  `json:"-"`
 }
@@ -57,6 +61,12 @@ type Comment struct {
 	IsEdited  bool         `json:"isEdited"`
 	CreatedBy *UserProfile `json:"createdBy"`
 	CreatedAt time.Time    `json:"createdAt"`
+}
+
+type Tag struct {
+	ID    int64  `json:"id"`
+	Text  string `json:"text"`
+	Color string `json:"color"`
 }
 
 type CheckListField struct {

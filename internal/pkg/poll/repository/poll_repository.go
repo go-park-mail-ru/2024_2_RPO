@@ -41,7 +41,7 @@ func (r *PollRepository) GetRatingResults(ctx context.Context) (results []models
 	JOIN csat_question AS cq ON cr.question_id = cq.question_id
 	WHERE cq.type='answer_rating'
 	AND cr.rating IS NOT NULL
-	GROUP BY cq.question_id, cr.rating;
+	GROUP BY cq.question_id;
 	`
 
 	results = make([]models.RatingResults, 0)
@@ -122,7 +122,7 @@ func (r *PollRepository) SetNextPollDT(ctx context.Context, userID int64) error 
 	return nil
 }
 
-func (r *PollRepository) PickPollQuestions(ctx context.Context) (pollQuestions []models.PollQuestion, err error) {
+func (r *PollRepository) GetPollQuestions(ctx context.Context) (pollQuestions []models.PollQuestion, err error) {
 	funcName := "PickPollQuestions"
 	query := `
 	SELECT cq.question_id, cq.question_text, cq.type

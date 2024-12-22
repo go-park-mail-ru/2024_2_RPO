@@ -6,7 +6,7 @@
 
 - [Жуков Георгий](https://github.com/dedxyk594)
 
-- [Константин Сафронов](https://github.com/kosafronov)
+- [Сафронов Константин](https://github.com/kosafronov)
 
 Менторы:
 
@@ -33,66 +33,46 @@
 
 ### Docker
 
-Этот вариант подходит для Production, поскольку его легко разворачивать.
+Сначала надо убедиться, что в трёх файлах используется не CRLF, а LF:
 
-Для docker-compose файла, который лежит в репе, надо задать следующие настройки в .env:
+* `/database/postgres/start-postgres.sh`
+* `/database/postgres/certgen.sh`
+* `/database/redis/start-redis.sh`
 
-```
-POSTGRES_HOST = postgres
-POSTGRES_PORT = 5432
+Далее надо сгенерировать сертификаты для Postgres вызовом скрипта `/database/postgres/certgen.sh`. Вызывать его надо в той директории, где находится скрипт. Возможно, надо поставить OpenSSL. Этот скрипт сгенерирует самоподписанные сертификаты.
 
-REDIS_HOST = redis
-REDIS_PORT = 6379
-
-SERVER_PORT = 8800
-
-USER_UPLOADS_DIR = /uploads
-```
-
-### Локальный
-
-> [!CAUTION]
-> Этот раздел может значительно измениться при внедрении микросервисов
-
-Надо развернуть PostgreSQL и Redis
-
-Создать в PostgresQL базу данных pumpkin
-
-Запустить `CREATE TABLE`, который лежит в ветке `swagger_approved`
-
-Затем надо оформить файл `.env`. Пример:
+Надо оформить файл `.env`. Пример:
 
 ```
-POSTGRES_HOST = localhost
-POSTGRES_PORT = 5432
-POSTGRES_USER = tarasovxx
-POSTGRES_PASSWORD = my_secure_password
-POSTGRES_DB = pumpkin
-POSTGRES_SSLMODE = require
+CORS_ORIGIN = https://example.com
 
-SERVER_PORT = 8800
+SERVER_NAME = example.com
 
-REDIS_HOST = localhost
-REDIS_PORT = 6379
-REDIS_PASSWORD = my_secure_password
+# Важно - замыкающий слеш!
+USER_UPLOADS_URL = https://example.com/uploads/
 
-CORS_ORIGIN = https://mysite.com
-
-LOGS_FILE = log.json
-
-USER_UPLOADS_DIR = /opt/uploads
-USER_UPLOADS_URL = /files
-
+# Эту переменную надо задавать, если Вам надо создать миграции с помощью Atlas
 TEST_DATABASE_URL = postgresql://3kybika:12345678@localhost:5432/migrate_gen_db?sslmode=disable
 ```
 
-Запуск: `make run`
+Далее надо подтянуть сертификаты для самого бэкенда. На проде надо сделать символьные ссылки на сертификаты в директории certs.
+На локальной машине можно сгенерировать сертификаты для локалхоста через `make gen-test-certs`.
+В директории `certs` должно быть два файла: `cert.crt` и `cert.pem`
 
-Миграции: `make migrate-up`
+Потом можно запускать сами сервисы через Docker. Команда:
 
-### Установка зависимостей
+```sh
+make build_all -j && docker compose up --build -d
+```
 
-go install -tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@latest
+Эта команда на хост-машине соберёт все бинари и будет исполнять их на докерах.
+
+Это ещё не все шаги: мы не накатили миграции. Для миграций надо зайти в контейнер `auth_service` и там вызвать команду `make migrate-up`.
+Имейте в виду, что auth_service, если не смог подключиться к PostgreSQL, ждёт 100 секунд, чтобы мы смогли накатить миграции и создать базу данных.
+Также имейте в виду, что контейнер с PostgreSQL при первом запуске запускает наш самописный скрипт инициализации, поэтому не спешите выключать контейнер, дождитесь, пока база создастся.
+
+> [!CAUTION]
+> Часто бывает, что в volume, где хранится сокет PostgreSQL, слетают права. Тогда postgres завершает свою работу, и бэк ложится. Если такой случай произошёл, надо удалить все контейнеры, удалить volume `pumpkin-postgres-socket` и заново поднять docker compose
 
 ### Запуск тестов
 
@@ -106,7 +86,7 @@ go install -tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@lat
 
 После изменения модели данных надо сгенерировать миграцию. Чтобы её сгенерировать, понадобится dev-база (и развёрнутый Postgres), потому что [без него Atlas не создаст миграции](https://atlasgo.io/atlas-schema/sql#dev-database).
 
-URL dev-базы надо указать в файлe `.env` по имени `TEST_DATABASE_URL`. Эта база должна быть пустая; после работы atlas очистит всё, что он насоздавал. У пользователя должны быть все права на базу, а также права на создание ролей
+URL dev-базы надо указать в файлe `.env` по имени `TEST_DATABASE_URL`. Эта база должна быть пустая; после работы atlas очистит всё, что он насоздавал. У пользователя, который указан в `TEST_DATABASE_URL` должны быть все права на базу, а также права на создание ролей. Его имя должно быть "postgres"
 
 Миграцию надо генерировать командой `make make-migrations`. Имя миграции не должно содержать пробелы, должно быть типа `add_tags_table`
 

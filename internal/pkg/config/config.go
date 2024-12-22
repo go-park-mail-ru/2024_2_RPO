@@ -24,6 +24,7 @@ type Config struct {
 	Auth  *AuthConfig
 	User  *UserConfig
 	Board *BoardConfig
+	Poll  *PollConfig
 }
 
 type AuthConfig struct {
@@ -35,6 +36,11 @@ type UserConfig struct {
 	LogFile          string
 }
 type BoardConfig struct {
+	PostgresPoolSize int
+	LogFile          string
+}
+
+type PollConfig struct {
 	PostgresPoolSize int
 	LogFile          string
 }
@@ -78,10 +84,12 @@ func ValidateEnv() error {
 		"AUTH_POSTGRES_MAX_CONNS",
 		"USER_POSTGRES_MAX_CONNS",
 		"BOARD_POSTGRES_MAX_CONNS",
+		"POLL_POSTGRES_MAX_CONNS",
 
 		"AUTH_LOG_FILE",
 		"USER_LOG_FILE",
 		"BOARD_LOG_FILE",
+		"POLL_LOG_FILE",
 	})
 	if err != nil {
 		return err
@@ -105,6 +113,7 @@ func LoadConfig() (err error) {
 	CurrentConfig.Auth = &AuthConfig{}
 	CurrentConfig.User = &UserConfig{}
 	CurrentConfig.Board = &BoardConfig{}
+	CurrentConfig.Poll = &PollConfig{}
 
 	logRoot := os.Getenv("LOG_ROOT")
 
@@ -117,9 +126,11 @@ func LoadConfig() (err error) {
 	CurrentConfig.Auth.PostgresPoolSize = stringToInt(os.Getenv("AUTH_POSTGRES_MAX_CONNS"))
 	CurrentConfig.User.PostgresPoolSize = stringToInt(os.Getenv("USER_POSTGRES_MAX_CONNS"))
 	CurrentConfig.Board.PostgresPoolSize = stringToInt(os.Getenv("BOARD_POSTGRES_MAX_CONNS"))
+	CurrentConfig.Poll.PostgresPoolSize = stringToInt(os.Getenv("POLL_POSTGRES_MAX_CONNS"))
 	CurrentConfig.Auth.LogFile = filepath.Join(logRoot, os.Getenv("AUTH_LOG_FILE"))
 	CurrentConfig.User.LogFile = filepath.Join(logRoot, os.Getenv("USER_LOG_FILE"))
 	CurrentConfig.Board.LogFile = filepath.Join(logRoot, os.Getenv("BOARD_LOG_FILE"))
+	CurrentConfig.Poll.LogFile = filepath.Join(logRoot, os.Getenv("POLL_LOG_FILE"))
 	CurrentConfig.CorsOriging = os.Getenv("CORS_ORIGIN")
 
 	return nil

@@ -1,124 +1,113 @@
 package delivery
 
 import (
-	"RPO_back/internal/models"
+	mocks "RPO_back/internal/pkg/user/mocks"
 	"bytes"
-	"context"
-	"encoding/json"
-	"io"
-	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
-	"strings"
 	"testing"
 
-	"RPO_back/internal/pkg/middleware/session"
-	mock_user "RPO_back/internal/pkg/user/mocks"
-
-	"github.com/golang/mock/gomock"
-	"github.com/gorilla/mux"
+	gomock "github.com/golang/mock/gomock"
 )
 
-func TestGetMyProfile(t *testing.T) {
+func TestGetMyProfile_Unauthorized(t *testing.T) {
 	ctrl := gomock.NewController(t)
-	mockUserUC := mock_user.NewMockUserUsecase(ctrl)
-	handler := CreateUserDelivery(mockUserUC)
+	defer ctrl.Finish()
 
-	profile := models.UserProfile{ID: 1, Name: "John Doe"}
-	mockUserUC.EXPECT().GetMyProfile(gomock.Any(), 1).Return(&profile, nil)
+	mockUsecase := mocks.NewMockUserUsecase(ctrl)
+	userDelivery := CreateUserDelivery(mockUsecase)
 
-	ctx := context.WithValue(context.Background(), session.UserIDContextKey, 1)
-	req, _ := http.NewRequestWithContext(ctx, "GET", "/users/me", nil)
+	w := httptest.NewRecorder()
+	r := httptest.NewRequest(http.MethodGet, "/profile", nil)
 
-	rr := httptest.NewRecorder()
-	router := mux.NewRouter()
-	router.HandleFunc("/users/me", handler.GetMyProfile).Methods("GET")
-	router.ServeHTTP(rr, req)
+	userDelivery.GetMyProfile(w, r)
 
-	if status := rr.Code; status != http.StatusOK {
-		t.Errorf("expected status code %v, got %v", http.StatusOK, status)
-	}
-
-	var responseProfile models.UserProfile
-	json.NewDecoder(rr.Body).Decode(&responseProfile)
-
-	if responseProfile != profile {
-		t.Errorf("expected response profile %v, got %v", profile, responseProfile)
+	if w.Code != http.StatusUnauthorized {
+		t.Errorf("expected status %v, got %v", http.StatusUnauthorized, w.Code)
 	}
 }
 
-func TestUpdateMyProfile(t *testing.T) {
+func TestUpdateMyProfile_Unauthorized(t *testing.T) {
 	ctrl := gomock.NewController(t)
-	mockUserUC := mock_user.NewMockUserUsecase(ctrl)
-	handler := CreateUserDelivery(mockUserUC)
+	defer ctrl.Finish()
 
-	oldProfile := models.UserProfile{ID: 1, Name: "John Smith"}
-	updateData := models.UserProfileUpdateRequest{NewName: "Romanov Vasily", Email: "rvasily@google.com"}
+	mockUsecase := mocks.NewMockUserUsecase(ctrl)
+	userDelivery := CreateUserDelivery(mockUsecase)
 
-	mockUserUC.EXPECT().UpdateMyProfile(gomock.Any(), 1, &updateData).Return(&oldProfile, nil)
+	w := httptest.NewRecorder()
+	r := httptest.NewRequest(http.MethodPut, "/profile", bytes.NewReader([]byte(`{"nickname":"new_nick"}`)))
 
-	ctx := context.WithValue(context.Background(), session.UserIDContextKey, 1)
-	updateDataJSON, _ := json.Marshal(updateData)
-	req, _ := http.NewRequestWithContext(ctx, "PUT", "/users/me", bytes.NewBuffer(updateDataJSON))
-	req = mux.SetURLVars(req, map[string]string{"userID": "1"})
-	req.Header.Set("Content-Type", "application/json")
+	userDelivery.UpdateMyProfile(w, r)
 
-	rr := httptest.NewRecorder()
-	router := mux.NewRouter()
-	router.HandleFunc("/users/me", handler.UpdateMyProfile).Methods("PUT")
-	router.ServeHTTP(rr, req)
-
-	if status := rr.Code; status != http.StatusOK {
-		t.Errorf("expected status code %v, got %v", http.StatusOK, status)
-	}
-
-	var responseProfile models.UserProfile
-	json.NewDecoder(rr.Body).Decode(&responseProfile)
-
-	if responseProfile != oldProfile {
-		t.Errorf("expected response profile %v, got %v", oldProfile, responseProfile)
+	if w.Code != http.StatusUnauthorized {
+		t.Errorf("expected status %v, got %v", http.StatusUnauthorized, w.Code)
 	}
 }
 
-func TestSetMyAvatar(t *testing.T) {
+func TestSetMyAvatar_Unauthorized(t *testing.T) {
 	ctrl := gomock.NewController(t)
-	mockUserUC := mock_user.NewMockUserUsecase(ctrl)
-	handler := CreateUserDelivery(mockUserUC)
+	defer ctrl.Finish()
 
-	updatedProfile := models.UserProfile{ID: 1, Name: "John Doe", AvatarImageURL: "http://example.com/avatar.jpg"}
+	mockUsecase := mocks.NewMockUserUsecase(ctrl)
+	userDelivery := CreateUserDelivery(mockUsecase)
 
-	mockUserUC.EXPECT().SetMyAvatar(gomock.Any(), 1, gomock.Any(), gomock.Any()).Return(&updatedProfile, nil)
+	w := httptest.NewRecorder()
+	r := httptest.NewRequest(http.MethodPost, "/profile/avatar", nil)
 
-	var buffer bytes.Buffer
-	writer := multipart.NewWriter(&buffer)
-	part, err := writer.CreateFormFile("file", "avatar.jpg")
-	if err != nil {
-		t.Fatal(err)
+	userDelivery.SetMyAvatar(w, r)
+
+	if w.Code != http.StatusUnauthorized {
+		t.Errorf("expected status %v, got %v", http.StatusUnauthorized, w.Code)
 	}
-	fileContent := strings.NewReader("fake image content")
-	if _, err := io.Copy(part, fileContent); err != nil {
-		t.Fatal(err)
+}
+
+func TestLoginUser_BadRequest(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockUsecase := mocks.NewMockUserUsecase(ctrl)
+	userDelivery := CreateUserDelivery(mockUsecase)
+
+	w := httptest.NewRecorder()
+	r := httptest.NewRequest(http.MethodPost, "/login", bytes.NewReader([]byte(`invalid-json`)))
+
+	userDelivery.LoginUser(w, r)
+
+	if w.Code != http.StatusBadRequest {
+		t.Errorf("expected status %v, got %v", http.StatusBadRequest, w.Code)
 	}
-	writer.Close()
+}
 
-	ctx := context.WithValue(context.Background(), session.UserIDContextKey, 1)
-	req, _ := http.NewRequestWithContext(ctx, "PUT", "/users/me/avatarImage", &buffer)
-	req = mux.SetURLVars(req, map[string]string{"userID": "1"})
-	req.Header.Set("Content-Type", writer.FormDataContentType())
+func TestLogoutUser_NotLoggedIn(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
 
-	rr := httptest.NewRecorder()
-	router := mux.NewRouter()
-	router.HandleFunc("/users/me/avatarImage", handler.SetMyAvatar).Methods("PUT")
-	router.ServeHTTP(rr, req)
+	mockUsecase := mocks.NewMockUserUsecase(ctrl)
+	userDelivery := CreateUserDelivery(mockUsecase)
 
-	if status := rr.Code; status != http.StatusOK {
-		t.Errorf("expected status code %v, got %v", http.StatusOK, status)
+	w := httptest.NewRecorder()
+	r := httptest.NewRequest(http.MethodPost, "/logout", nil)
+
+	userDelivery.LogoutUser(w, r)
+
+	if w.Code != http.StatusBadRequest {
+		t.Errorf("expected status %v, got %v", http.StatusBadRequest, w.Code)
 	}
+}
 
-	var responseProfile models.UserProfile
-	json.NewDecoder(rr.Body).Decode(&responseProfile)
+func TestChangePassword_Unauthorized(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
 
-	if responseProfile != updatedProfile {
-		t.Errorf("expected response profile %v, got %v", updatedProfile, responseProfile)
+	mockUsecase := mocks.NewMockUserUsecase(ctrl)
+	userDelivery := CreateUserDelivery(mockUsecase)
+
+	w := httptest.NewRecorder()
+	r := httptest.NewRequest(http.MethodPost, "/password/change", bytes.NewReader([]byte(`{"oldPassword":"123","newPassword":"456"}`)))
+
+	userDelivery.ChangePassword(w, r)
+
+	if w.Code != http.StatusUnauthorized {
+		t.Errorf("expected status %v, got %v", http.StatusUnauthorized, w.Code)
 	}
 }

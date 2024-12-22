@@ -17,15 +17,19 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+var (
+	uuidRegex = regexp.MustCompile(`^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$`)
+)
+
 // Получить тело запроса. Прочитать данные из json, разместить в структуру
-func GetRequestData(r *http.Request, requestData interface{}) error {
+func GetRequestData(r *http.Request, requestData json.Unmarshaler) error {
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
 		return err
 	}
 	defer r.Body.Close()
 
-	if err := json.Unmarshal(body, &requestData); err != nil {
+	if err := requestData.UnmarshalJSON(body); err != nil {
 		return err
 	}
 
@@ -61,7 +65,6 @@ func GetIDFromRequest(r *http.Request, requestVarName string, prefix string) (in
 
 // GetUUIDFromRequest получает UUID из параметра запроса.
 func GetUUIDFromRequest(r *http.Request, requestVarName string) (string, error) {
-	uuidRegex := regexp.MustCompile(`^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$`)
 	vars := mux.Vars(r)
 	rawID, isExist := vars[requestVarName]
 	if !isExist {
@@ -80,7 +83,7 @@ func GetUserIDOrFail(w http.ResponseWriter, r *http.Request, prefix string) (use
 	userID, ok = session.UserIDFromContext(r.Context())
 
 	if !ok {
-		responses.DoBadResponse(w, http.StatusUnauthorized, "unauthorized")
+		responses.DoBadResponseAndLog(r, w, http.StatusUnauthorized, "unauthorized")
 		log.Warn(prefix, ": unauthorized")
 		return 0, false
 	}

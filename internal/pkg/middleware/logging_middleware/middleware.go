@@ -1,16 +1,13 @@
 package logging_middleware
 
 import (
+	"RPO_back/internal/pkg/utils/logging"
 	"context"
 	"net/http"
 	"sync"
 
 	log "github.com/sirupsen/logrus"
 )
-
-type contextKey string
-
-const rIDKey = contextKey("requestID")
 
 var (
 	rIDCounter uint64 = 1
@@ -24,7 +21,7 @@ func LoggingMiddleware(next http.Handler) http.Handler {
 		rID := rIDCounter
 		mu.Unlock()
 
-		ctx := context.WithValue(r.Context(), rIDKey, rID)
+		ctx := context.WithValue(r.Context(), logging.RequestIDkey, rID)
 		log.Infof("Запрос: %s %s, RequestID: %d", r.Method, r.RequestURI, rID)
 
 		next.ServeHTTP(w, r.WithContext(ctx))

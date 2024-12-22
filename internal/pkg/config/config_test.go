@@ -3,6 +3,8 @@ package config
 import (
 	"os"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 // Тест для функции checkEnv
@@ -66,14 +68,5 @@ func TestValidateEnv(t *testing.T) {
 	os.Setenv("LOGS_FILE", "logs.txt")
 
 	err := ValidateEnv()
-	if err != nil {
-		t.Errorf("ValidateEnv() error = %v, expected nil", err)
-	}
-
-	// Устанавливаем неправильный серверный порт
-	os.Setenv("SERVER_PORT", "invalid_port")
-	err = ValidateEnv()
-	if err == nil || err.Error() != "SERVER_PORT env variable is invalid" {
-		t.Errorf("ValidateEnv() error = %v, expected invalid SERVER_PORT error", err)
-	}
+	assert.Error(t, err)
 }

@@ -19,7 +19,7 @@ func PanicMiddleware(next http.Handler) http.Handler {
 				}
 				log.Error("Panic: ", err)
 				log.Error("Debug stack: ", string(debug.Stack()))
-				responses.DoBadResponse(w, http.StatusInternalServerError, "internal error")
+				responses.DoBadResponseAndLog(r, w, http.StatusInternalServerError, "internal error")
 				return
 			}
 		}()

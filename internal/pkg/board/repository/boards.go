@@ -57,9 +57,10 @@ func (r *BoardRepository) GetBoard(ctx context.Context, boardID int64, userID in
         b.name,
         b.created_at,
         b.updated_at,
-        ub.last_visit_at,
+        COALESCE(ub.last_visit_at, CURRENT_TIMESTAMP),
         COALESCE(file.file_uuid::text,''),
-        COALESCE(file.file_extension,'')
+        COALESCE(file.file_extension,''),
+		ub.invite_link_uuid::text
     FROM board AS b
     LEFT JOIN user_to_board AS ub ON ub.board_id = b.board_id AND ub.u_id = $1
     LEFT JOIN user_uploaded_file AS file ON file.file_id=b.background_image_id
@@ -76,6 +77,7 @@ func (r *BoardRepository) GetBoard(ctx context.Context, boardID int64, userID in
 		&board.LastVisitAt,
 		&fileUUID,
 		&fileExtension,
+		&board.MyInviteUUID,
 	)
 	logging.Debug(ctx, "GetBoard query has err: ", err)
 	if err != nil {
@@ -91,22 +93,23 @@ func (r *BoardRepository) GetBoard(ctx context.Context, boardID int64, userID in
 
 // UpdateBoard обновляет информацию о доске
 func (r *BoardRepository) UpdateBoard(ctx context.Context, boardID int64, userID int64, data *models.BoardRequest) (updatedBoard *models.Board, err error) {
+	funcName := "UpdateBoard"
 	query := `
 		UPDATE board
-		SET name=$1, updated_at = CURRENT_TIMESTAMP
-		WHERE board_id = $3;
+		SET name=$1, updated_at=CURRENT_TIMESTAMP
+		WHERE board_id=$2;
 	`
 
 	tag, err := r.db.Exec(ctx, query, data.NewName, boardID)
-	logging.Debug(ctx, "UpdateBoard query has err: ", err, " tag: ", tag)
+	logging.Debug(ctx, funcName, " query has err: ", err, " tag: ", tag)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, fmt.Errorf("UpdateBoard: %w", errs.ErrNotFound)
+			return nil, fmt.Errorf("%s: %w", funcName, errs.ErrNotFound)
 		}
-		return nil, fmt.Errorf("UpdateBoard: %w", err)
+		return nil, fmt.Errorf("%s: %w", funcName, err)
 	}
 	if tag.RowsAffected() == 0 {
-		return nil, fmt.Errorf("UpdateBoard: %w", errs.ErrNotFound)
+		return nil, fmt.Errorf("%s: %w", funcName, errs.ErrNotFound)
 	}
 	return r.GetBoard(ctx, boardID, userID)
 }
@@ -136,7 +139,7 @@ func (r *BoardRepository) GetBoardsForUser(ctx context.Context, userID int64) (b
 	query := `
 		SELECT b.board_id, b.name, b.created_at, b.updated_at,
 		COALESCE(f.file_uuid::text, ''),
-		COALESCE(f.file_extension, '')
+		COALESCE(f.file_extension, ''), ub.invite_link_uuid
 		FROM user_to_board AS ub
 		JOIN board AS b ON b.board_id = ub.board_id
 		LEFT JOIN user_uploaded_file AS f ON f.file_id=b.background_image_id
@@ -163,6 +166,7 @@ func (r *BoardRepository) GetBoardsForUser(ctx context.Context, userID int64) (b
 			&board.UpdatedAt,
 			&fileUUID,
 			&fileExtension,
+			&board.MyInviteUUID,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("GetBoardsForUser (for rows): %w", err)
@@ -179,7 +183,7 @@ func (r *BoardRepository) GetBoardsForUser(ctx context.Context, userID int64) (b
 }
 
 // SetBoardBackground задаёт файл заднего фона доски
-func (r *BoardRepository) SetBoardBackground(ctx context.Context, userID int64, boardID int64, file *models.UploadedFile) (newBoard *models.Board, err error) {
+func (r *BoardRepository) SetBoardBackground(ctx context.Context, userID int64, boardID int64, fileID int64) (newBoard *models.Board, err error) {
 	funcName := "SetBoardBackground"
 	query := `
 	WITH update_board AS (
@@ -187,31 +191,30 @@ func (r *BoardRepository) SetBoardBackground(ctx context.Context, userID int64, 
 		SET background_image_id=$1,
 			updated_at=CURRENT_TIMESTAMP
 		WHERE board_id=$2
-		RETURNING board_id, name, created_at, b.updated_at,
+		RETURNING board_id, name, created_at, updated_at, background_image_id
 	)
-	SELECT ub.board_id, ub.name, ub.created_at, ub.updated_at,
-		COALESCE(f.file_uuid::text, ''),
-		COALESCE(f.file_extension, '')
-	FROM user_uploaded_file AS f
-	WHERE f.file_id=$1;
+	SELECT b.board_id, b.name, b.created_at, b.updated_at,
+	COALESCE(f.file_uuid::text, ''), COALESCE(f.file_extension, '')
+	FROM update_board AS b
+	LEFT JOIN user_uploaded_file AS f ON f.file_id=b.background_image_id;
 	`
 
 	newBoard = &models.Board{}
-	var fileUUID, fileExtension string
+	var fileUUID, fileExt string
 
-	row := r.db.QueryRow(ctx, query, fileUUID, boardID)
+	row := r.db.QueryRow(ctx, query, fileID, boardID)
 	err = row.Scan(
 		&newBoard.ID,
 		&newBoard.Name,
 		&newBoard.CreatedAt,
 		&newBoard.UpdatedAt,
 		&fileUUID,
-		&fileExtension,
+		&fileExt,
 	)
 	logging.Debug(ctx, funcName, " query has err: ", err)
 	if err != nil {
 		return nil, fmt.Errorf("%s (query): %w", funcName, err)
 	}
-	newBoard.BackgroundImageURL = uploads.JoinFileURL(fileUUID, fileExtension, uploads.DefaultBackgroundURL)
+	newBoard.BackgroundImageURL = uploads.JoinFileURL(fileUUID, fileExt, uploads.DefaultBackgroundURL)
 	return newBoard, nil
 }

@@ -6,6 +6,7 @@ import (
 	"RPO_back/internal/pkg/middleware/csrf"
 	"RPO_back/internal/pkg/middleware/logging_middleware"
 	"RPO_back/internal/pkg/middleware/no_panic"
+	"RPO_back/internal/pkg/middleware/performance"
 	"RPO_back/internal/pkg/middleware/session"
 	PollDelivery "RPO_back/internal/pkg/poll/delivery"
 	PollRepository "RPO_back/internal/pkg/poll/repository"
@@ -13,7 +14,6 @@ import (
 	"RPO_back/internal/pkg/utils/logging"
 	"RPO_back/internal/pkg/utils/misc"
 	"net/http"
-	"time"
 
 	"context"
 	"fmt"
@@ -22,16 +22,13 @@ import (
 	AuthGRPC "RPO_back/internal/pkg/auth/delivery/grpc/gen"
 
 	"github.com/gorilla/mux"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 )
 
 func main() {
-	// Костыль
-	log.Info("Sleeping 10 seconds waiting Postgres to start...")
-	time.Sleep(10 * time.Second)
-
 	// Формирование конфига
 	err := config.LoadConfig()
 	if err != nil {
@@ -82,20 +79,48 @@ func main() {
 
 	// Применяем middleware
 	router.Use(no_panic.PanicMiddleware)
+	router.Use(no_panic.PanicMiddleware)
+	pm, err := performance.CreateHTTPPerformanceMiddleware("poll")
+	if err != nil {
+		log.Fatal("create HTTP middleware: ", err)
+	}
+	router.Use(pm.Middleware)
 	router.Use(logging_middleware.LoggingMiddleware)
 	router.Use(cors.CorsMiddleware)
 	router.Use(csrf.CSRFMiddleware)
 	sm := session.CreateSessionMiddleware(authGRPC)
 	router.Use(sm.Middleware)
 
+	// Настраиваем обработку 404 и 405
+	router.NotFoundHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		log.Warn("no such handler: ", r.Method, " ", r.URL.Path)
+		http.Error(w, "poll service: no such handler: "+r.URL.Path, http.StatusNotFound)
+	})
+	router.MethodNotAllowedHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		log.Warn("method not allowed: ", r.Method, " ", r.URL.Path)
+		http.Error(w, "poll service: method not allowed: "+r.Method+" "+r.URL.Path, http.StatusMethodNotAllowed)
+	})
+
 	// Регистрируем обработчики
+	router.HandleFunc("/poll/questions", pollDelivery.GetPollQuestions).Methods("GET", "OPTIONS")
 	router.HandleFunc("/poll/submit", pollDelivery.SubmitPoll).Methods("POST", "OPTIONS")
 	router.HandleFunc("/poll/results", pollDelivery.GetPollResults).Methods("GET", "OPTIONS")
 
-	// Запускаем сервер
-	addr := fmt.Sprintf(":%s", os.Getenv("SERVER_PORT"))
-	log.Infof("server started at http://0.0.0.0%s", addr)
-	if err := http.ListenAndServe(addr, router); err != nil {
-		log.Fatalf("error while starting server: %w", err)
+	// Регистрируем обработчик Prometheus
+	metricsRouter := mux.NewRouter()
+	metricsRouter.Handle("/prometheus/metrics", promhttp.Handler())
+
+	// Объявляем серверы
+	mainAddr := fmt.Sprintf(":%s", os.Getenv("SERVER_PORT"))
+	promAddr := ":8087"
+	mainServer := &http.Server{
+		Addr:    mainAddr,
+		Handler: router,
 	}
+	promServer := &http.Server{
+		Addr:    promAddr,
+		Handler: metricsRouter,
+	}
+
+	misc.StartServers(mainServer, promServer)
 }

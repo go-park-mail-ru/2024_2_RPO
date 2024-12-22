@@ -8,6 +8,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"slices"
 )
 
 var roleLevels = map[string]int{
@@ -18,12 +19,14 @@ var roleLevels = map[string]int{
 }
 
 type BoardUsecase struct {
-	boardRepository board.BoardRepo
+	boardRepository        board.BoardRepo
+	boardElasticRepository board.BoardElasticRepo
 }
 
-func CreateBoardUsecase(boardRepository board.BoardRepo) *BoardUsecase {
+func CreateBoardUsecase(boardRepository board.BoardRepo, boardElasticRepository board.BoardElasticRepo) *BoardUsecase {
 	return &BoardUsecase{
-		boardRepository: boardRepository,
+		boardRepository:        boardRepository,
+		boardElasticRepository: boardElasticRepository,
 	}
 }
 
@@ -83,26 +86,6 @@ func (uc *BoardUsecase) GetMembersPermissions(ctx context.Context, userID int64,
 		return nil, fmt.Errorf("GetMembersPermissions (query): %w", err)
 	}
 	return permissions, nil
-}
-
-// AddMember добавляет участника на доску с правами "viewer" и возвращает его права
-func (uc *BoardUsecase) AddMember(ctx context.Context, userID int64, boardID int64, addRequest *models.AddMemberRequest) (newMember *models.MemberWithPermissions, err error) {
-	adderMember, err := uc.boardRepository.GetMemberPermissions(ctx, boardID, userID, false)
-	if err != nil {
-		return nil, fmt.Errorf("GetMembersPermissions (permissions): %w", err)
-	}
-	if (adderMember.Role != "admin") && (adderMember.Role != "editor_chief") {
-		return nil, fmt.Errorf("GetMembersPermissions (permissions): %w", errs.ErrNotPermitted)
-	}
-	newMemberProfile, err := uc.boardRepository.GetUserByNickname(ctx, addRequest.MemberNickname)
-	if err != nil {
-		return nil, fmt.Errorf("GetMembersPermissions (get new user ID): %w", err)
-	}
-	newMember, err = uc.boardRepository.AddMember(ctx, boardID, userID, newMemberProfile.ID)
-	if err != nil {
-		return nil, fmt.Errorf("GetMembersPermissions (action): %w", err)
-	}
-	return newMember, nil
 }
 
 // UpdateMemberRole обновляет роль участника и возвращает обновлённые права
@@ -192,11 +175,17 @@ func (uc *BoardUsecase) GetBoardContent(ctx context.Context, userID int64, board
 		return nil, fmt.Errorf("GetBoardContent (add GetBoard): %w", err)
 	}
 
+	tags, err := uc.boardRepository.GetTagsForBoard(ctx, boardID)
+	if err != nil {
+		return nil, fmt.Errorf("GetBoardContent (add GetTagsForBoard): %w", err)
+	}
+
 	return &models.BoardContent{
 		Cards:     cards,
 		Columns:   cols,
 		BoardInfo: info,
 		MyRole:    userPermissions.Role,
+		Tags:      tags,
 	}, nil
 }
 
@@ -222,6 +211,11 @@ func (uc *BoardUsecase) CreateNewCard(ctx context.Context, userID int64, boardID
 		return nil, fmt.Errorf("CreateNewCard (create): %w", err)
 	}
 
+	err = uc.boardElasticRepository.CreateCard(ctx, boardID, card.ID, card.Title)
+	if err != nil {
+		return nil, fmt.Errorf("CreateNewCard (elastic put): %w", err)
+	}
+
 	return &models.Card{
 		ID:        card.ID,
 		Title:     card.Title,
@@ -233,23 +227,31 @@ func (uc *BoardUsecase) CreateNewCard(ctx context.Context, userID int64, boardID
 
 // UpdateCard обновляет карточку и возвращает обновлённую версию
 func (uc *BoardUsecase) UpdateCard(ctx context.Context, userID int64, cardID int64, data *models.CardPatchRequest) (updatedCard *models.Card, err error) {
-	role, _, err := uc.boardRepository.GetMemberFromCard(ctx, userID, cardID)
+	funcName := "UpdateCard"
+	role, boardID, err := uc.boardRepository.GetMemberFromCard(ctx, userID, cardID)
 	if err != nil {
 		if errors.Is(err, errs.ErrNotPermitted) {
-			return nil, fmt.Errorf("UpdateCard (get permissions): %w", err)
+			return nil, fmt.Errorf("%s (get permissions): %w", funcName, err)
 		}
 		if errors.Is(err, errs.ErrNotFound) {
-			return nil, fmt.Errorf("UpdateCard (get permissions): %w", err)
+			return nil, fmt.Errorf("%s (get permissions): %w", funcName, err)
 		}
-		return nil, fmt.Errorf("UpdateCard (get permissions): %w", err)
+		return nil, fmt.Errorf("%s (get permissions): %w", funcName, err)
 	}
 	if role == "viewer" {
-		return nil, fmt.Errorf("UpdateCard (check): %w", errs.ErrNotPermitted)
+		return nil, fmt.Errorf("%s (check): %w", funcName, errs.ErrNotPermitted)
 	}
 
 	updatedCard, err = uc.boardRepository.UpdateCard(ctx, cardID, *data)
 	if err != nil {
-		return nil, fmt.Errorf("UpdateCard (update): %w", err)
+		return nil, fmt.Errorf("%s (update): %w", funcName, err)
+	}
+
+	fmt.Println(boardID)
+
+	err = uc.boardElasticRepository.UpdateCard(ctx, boardID, updatedCard.ID, updatedCard.Title)
+	if err != nil {
+		return nil, fmt.Errorf("UpdateCard (elastic update): %w", err)
 	}
 
 	return &models.Card{
@@ -263,7 +265,7 @@ func (uc *BoardUsecase) UpdateCard(ctx context.Context, userID int64, cardID int
 
 // DeleteCard удаляет карточку
 func (uc *BoardUsecase) DeleteCard(ctx context.Context, userID int64, cardID int64) (err error) {
-	role, _, err := uc.boardRepository.GetMemberFromCard(ctx, userID, cardID)
+	role, boardID, err := uc.boardRepository.GetMemberFromCard(ctx, userID, cardID)
 	if err != nil {
 		return err
 	}
@@ -276,7 +278,33 @@ func (uc *BoardUsecase) DeleteCard(ctx context.Context, userID int64, cardID int
 		return fmt.Errorf("DeleteCard (delete): %w", err)
 	}
 
+	fmt.Println(boardID)
+
+	err = uc.boardElasticRepository.DeleteCard(ctx, cardID)
+	if err != nil {
+		return fmt.Errorf("DeleteCard (elastic delete): %w", err)
+	}
+
 	return nil
+}
+
+func (uc *BoardUsecase) SearchCards(ctx context.Context, userID int64, searchValue string) (cards []models.Card, err error) {
+	boardArray, err := uc.boardRepository.GetBoardsForUser(ctx, userID)
+	if err != nil {
+		return nil, fmt.Errorf("SearchCards (GetBoardsForUser): %w", err)
+	}
+
+	cardIDs, err := uc.boardElasticRepository.Search(ctx, boardArray, searchValue)
+	if err != nil {
+		return nil, fmt.Errorf("SearchCards (Search): %w", err)
+	}
+
+	cards, err = uc.boardRepository.GetCardsByID(ctx, cardIDs)
+	if err != nil {
+		return nil, fmt.Errorf("SearchCards (GetCardsByID): %w", err)
+	}
+
+	return cards, err
 }
 
 // CreateColumn создаёт колонку канбана на доске и возвращает её
@@ -348,35 +376,21 @@ func (uc *BoardUsecase) SetBoardBackground(ctx context.Context, userID int64, bo
 		return nil, fmt.Errorf("UpdateColumn (check): %w", errs.ErrNotPermitted)
 	}
 
-	fileNames, fileIDs, err := uc.boardRepository.DeduplicateFile(ctx, file)
+	fileID, err := uploads.UsecaseUploadFile(ctx, file, uc.boardRepository)
 	if err != nil {
-		return nil, fmt.Errorf("%s (deduplicate): %w", funcName, err)
+		return nil, fmt.Errorf("%s (upload): %w", funcName, err)
 	}
 
-	fileID, err := uploads.CompareFiles(fileNames, fileIDs, file)
+	newBoard, err := uc.boardRepository.SetBoardBackground(ctx, userID, boardID, fileID)
 	if err != nil {
-		return nil, fmt.Errorf("%s (compare): %w", funcName, err)
-	}
-
-	if fileID == nil {
-		err = uc.boardRepository.RegisterFile(ctx, file)
-		if err != nil {
-			return nil, fmt.Errorf("%s (save file): %w", funcName, err)
-		}
-		fileID = file.FileID
-	}
-	file.FileID = fileID
-
-	newBoard, err := uc.boardRepository.SetBoardBackground(ctx, userID, boardID, file)
-	if err != nil {
-		return nil, fmt.Errorf("%s (): %w", funcName, err)
+		return nil, fmt.Errorf("%s (set): %w", funcName, err)
 	}
 
 	return newBoard, nil
 }
 
 // AssignUser назначает карточку пользователю
-func (uc *BoardUsecase) AssignUser(ctx context.Context, userID int64, cardID int64, assignedUserID int64) (assignedUser *models.UserProfile, err error) {
+func (uc *BoardUsecase) AssignUser(ctx context.Context, userID int64, cardID int64, data *models.AssignUserRequest) (assignedUser *models.UserProfile, err error) {
 	funcName := "AssignUser"
 	perms, _, err := uc.boardRepository.GetMemberFromCard(ctx, userID, cardID)
 	if err != nil {
@@ -387,7 +401,17 @@ func (uc *BoardUsecase) AssignUser(ctx context.Context, userID int64, cardID int
 		return nil, fmt.Errorf("%s (check): %w", funcName, errs.ErrNotPermitted)
 	}
 
-	assignedUser, err = uc.boardRepository.AssignUserToCard(ctx, cardID, assignedUserID)
+	assignedUser1, err := uc.boardRepository.GetUserByNickname(ctx, data.NickName)
+	if err != nil {
+		return nil, fmt.Errorf("%s (check): %w", funcName, err)
+	}
+
+	_, _, err = uc.boardRepository.GetMemberFromCard(ctx, assignedUser1.ID, cardID)
+	if err != nil {
+		return nil, fmt.Errorf("%s (get perms): %w", funcName, err)
+	}
+
+	assignedUser, err = uc.boardRepository.AssignUserToCard(ctx, cardID, assignedUser1.ID)
 	if err != nil {
 		return nil, fmt.Errorf("%s (assign user): %w", funcName, err)
 	}
@@ -541,7 +565,12 @@ func (uc *BoardUsecase) SetCardCover(ctx context.Context, userID int64, cardID i
 		return nil, fmt.Errorf("%s (check): %w", funcName, errs.ErrNotPermitted)
 	}
 
-	updatedCard, err = uc.boardRepository.SetCardCover(ctx, userID, cardID, file)
+	fileID, err := uploads.UsecaseUploadFile(ctx, file, uc.boardRepository)
+	if err != nil {
+		return nil, fmt.Errorf("%s (upload): %w", funcName, err)
+	}
+
+	updatedCard, err = uc.boardRepository.SetCardCover(ctx, userID, cardID, fileID)
 	if err != nil {
 		return nil, fmt.Errorf("%s (update): %w", funcName, err)
 	}
@@ -581,7 +610,12 @@ func (uc *BoardUsecase) AddAttachment(ctx context.Context, userID int64, cardID 
 		return nil, fmt.Errorf("%s (check): %w", funcName, errs.ErrNotPermitted)
 	}
 
-	newAttachment, err = uc.boardRepository.AddAttachment(ctx, userID, cardID, file)
+	fileID, err := uploads.UsecaseUploadFile(ctx, file, uc.boardRepository)
+	if err != nil {
+		return nil, fmt.Errorf("%s (upload): %w", funcName, err)
+	}
+
+	newAttachment, err = uc.boardRepository.AddAttachment(ctx, userID, cardID, fileID, file.OriginalName)
 	if err != nil {
 		return nil, fmt.Errorf("%s (update): %w", funcName, err)
 	}
@@ -611,17 +645,214 @@ func (uc *BoardUsecase) DeleteAttachment(ctx context.Context, userID int64, atta
 
 // MoveCard перемещает карточку на доске
 func (uc *BoardUsecase) MoveCard(ctx context.Context, userID int64, cardID int64, moveReq *models.CardMoveRequest) (err error) {
-	panic("not implemented")
+	funcName := "MoveCard"
+
+	role, _, err := uc.boardRepository.GetMemberFromCard(ctx, userID, cardID)
+	if err != nil {
+		return fmt.Errorf("%s (get member): %w", funcName, err)
+	}
+
+	if role == "viewer" {
+		return fmt.Errorf("%s (check): %w", funcName, errs.ErrNotPermitted)
+	}
+
+	columnFrom, columnTo, err := uc.boardRepository.GetCardsForMove(ctx,
+		*moveReq.NewColumnID, &cardID)
+	if err != nil {
+		return fmt.Errorf("%s (get): %w", funcName, err)
+	}
+
+	prevCardIdx := -1
+	for idx, card := range columnFrom {
+		if card.ID == cardID {
+			prevCardIdx = idx
+			break
+		}
+	}
+	if prevCardIdx == -1 {
+		return fmt.Errorf("%s (prev idx): previous card not found", funcName)
+	}
+
+	destCardIdx := -1
+	for idx, card := range columnTo {
+		if card.ID == *moveReq.PreviousCardID {
+			destCardIdx = idx + 1
+		}
+	}
+	if destCardIdx != -1 && destCardIdx != len(columnTo) && columnTo[destCardIdx].ID != *moveReq.NextCardID {
+		return fmt.Errorf("%s (check dest): previous card pos not found", funcName)
+	}
+	if destCardIdx == -1 {
+		destCardIdx = 0
+	}
+
+	card := columnFrom[prevCardIdx]
+
+	if len(columnTo) == 0 {
+		fmt.Println("CASE 0 =====")
+		card.ColumnID = *moveReq.NewColumnID
+		columnTo = append(columnTo, card)
+		columnFrom = slices.Delete(columnFrom, prevCardIdx, prevCardIdx+1)
+	} else if columnFrom[0].ColumnID != columnTo[0].ColumnID {
+		fmt.Println("CASE 1 =====")
+		card.ColumnID = *moveReq.NewColumnID
+		columnTo = slices.Insert(columnTo, destCardIdx, card)
+		columnFrom = slices.Delete(columnFrom, prevCardIdx, prevCardIdx+1)
+	} else {
+		fmt.Println("CASE 2 =====")
+		columnFrom = nil
+		columnTo = slices.Delete(columnTo, prevCardIdx, prevCardIdx+1)
+		if prevCardIdx > destCardIdx {
+			columnTo = slices.Insert(columnTo, destCardIdx, card)
+		} else {
+			columnTo = slices.Insert(columnTo, destCardIdx-1, card)
+		}
+	}
+
+	err = uc.boardRepository.RearrangeCards(ctx, columnFrom, columnTo)
+	if err != nil {
+		return fmt.Errorf("%s (rearrange): %w", funcName, err)
+	}
+
+	return nil
 }
 
 // MoveColumn перемещает колонку на доске
 func (uc *BoardUsecase) MoveColumn(ctx context.Context, userID int64, columnID int64, moveReq *models.ColumnMoveRequest) (err error) {
-	panic("not implemented")
+	funcName := "MoveColumn"
+
+	if moveReq == nil {
+		return fmt.Errorf("%s: nil pointer", funcName)
+	}
+	role, boardID, err := uc.boardRepository.GetMemberFromColumn(ctx, userID, columnID)
+	if err != nil {
+		return fmt.Errorf("%s (get): %w", funcName, err)
+	}
+	if role == "viewer" {
+		return fmt.Errorf("%s (check): %w", funcName, errs.ErrNotPermitted)
+	}
+
+	columns, err := uc.boardRepository.GetColumnsForMove(ctx, boardID)
+	if err != nil {
+		return fmt.Errorf("%s (column): %w", funcName, err)
+	}
+
+	fromIdx := -1
+	destIdx := -1
+
+	for idx, col := range columns {
+		if col.ID == columnID {
+			fromIdx = idx
+		}
+		if moveReq.NextColumnID == nil {
+			return fmt.Errorf("%s: moveReq.NextColumnID == nil", funcName)
+		}
+		if col.ID == *moveReq.PreviousColumnID {
+			destIdx = idx + 1
+		}
+		if col.ID == *moveReq.NextColumnID {
+			destIdx = idx
+		}
+	}
+
+	if fromIdx == -1 {
+		return fmt.Errorf("%s (from idx): not found", funcName)
+	}
+
+	if destIdx == -1 {
+		return fmt.Errorf("%s (dest idx): not found", funcName)
+	}
+
+	col := columns[fromIdx]
+	columns = slices.Delete(columns, fromIdx, fromIdx+1)
+	if fromIdx > destIdx {
+		columns = slices.Insert(columns, destIdx, col)
+	} else {
+		columns = slices.Insert(columns, destIdx-1, col)
+	}
+
+	err = uc.boardRepository.RearrangeColumns(ctx, columns)
+	if err != nil {
+		return fmt.Errorf("%s: %w", funcName, err)
+	}
+
+	return nil
+}
+
+// GetCardDetailsUnauthorized получает подробности карточки даже без авторизации
+func (uc *BoardUsecase) GetCardDetailsUnauthorized(ctx context.Context, cardID int64) (details *models.CardDetails, err error) {
+	funcName := "GetCardDetailsUnauthorized"
+	assignedUsers, err := uc.boardRepository.GetCardAssignedUsers(ctx, cardID)
+	if err != nil {
+		return nil, fmt.Errorf("%s (assigned): %w", funcName, err)
+	}
+
+	attachments, err := uc.boardRepository.GetCardAttachments(ctx, cardID)
+	if err != nil {
+		return nil, fmt.Errorf("%s (attachments): %w", funcName, err)
+	}
+
+	checkList, err := uc.boardRepository.GetCardCheckList(ctx, cardID)
+	if err != nil {
+		return nil, fmt.Errorf("%s (checklist): %w", funcName, err)
+	}
+
+	comments, err := uc.boardRepository.GetCardComments(ctx, cardID)
+	if err != nil {
+		return nil, fmt.Errorf("%s (comments): %w", funcName, err)
+	}
+
+	//TODO убрать это позорище
+	card, err := uc.boardRepository.UpdateCard(ctx, cardID, models.CardPatchRequest{})
+	if err != nil {
+		return nil, fmt.Errorf("%s (card): %w", funcName, err)
+	}
+
+	return &models.CardDetails{
+		Attachments:   attachments,
+		CheckList:     checkList,
+		Comments:      comments,
+		AssignedUsers: assignedUsers,
+		Card:          card,
+	}, nil
 }
 
 // GetSharedCard даёт информацию о карточке, которой поделились по ссылке
-func (uc *BoardUsecase) GetSharedCard(ctx context.Context, userID int64, cardUuid string) (found *models.SharedCardFoundResponse, dummy *models.SharedCardDummyResponse, err error) {
-	panic("not implemented")
+func (uc *BoardUsecase) GetSharedCard(ctx context.Context, userID int64, cardUUID string) (found *models.SharedCardFoundResponse, dummy *models.SharedCardDummyResponse, err error) {
+	funcName := "GetSharedCard"
+
+	cardID, boardID, err := uc.boardRepository.GetSharedCardInfo(ctx, cardUUID)
+	if err != nil {
+		return nil, nil, fmt.Errorf("%s (get found): %w", funcName, err)
+	}
+	if found != nil {
+		return found, nil, nil
+	}
+
+	_, _, err = uc.boardRepository.GetMemberFromCard(ctx, userID, cardID)
+	if err != nil {
+		if !errors.Is(err, errs.ErrNotFound) {
+			return nil, nil, fmt.Errorf("%s (check): %w", funcName, err)
+		}
+	} else {
+		found = &models.SharedCardFoundResponse{BoardID: boardID, CardID: cardID}
+		return found, nil, nil
+	}
+
+	cardDetails, err := uc.GetCardDetailsUnauthorized(ctx, cardID)
+	if err != nil {
+		return nil, nil, fmt.Errorf("%s (details): %w", funcName, err)
+	}
+
+	board, err := uc.boardRepository.GetBoard(ctx, boardID, -1)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return nil, &models.SharedCardDummyResponse{
+		Card:  cardDetails,
+		Board: board,
+	}, nil
 }
 
 // RaiseInviteLink устанавливает ссылку-приглашение на доску
@@ -677,48 +908,124 @@ func (uc *BoardUsecase) FetchInvite(ctx context.Context, inviteUUID string) (boa
 
 // AcceptInvite добавляет пользователя как зрителя на доску
 func (uc *BoardUsecase) AcceptInvite(ctx context.Context, userID int64, inviteUUID string) (board *models.Board, err error) {
-	panic("not implemented")
+	funcName := "AcceptInvite"
+
+	board, err = uc.FetchInvite(ctx, inviteUUID)
+	if err != nil {
+		return nil, fmt.Errorf("%s (fetch): %w", funcName, err)
+	}
+
+	err = uc.boardRepository.AcceptInvite(ctx, userID, board.ID, inviteUUID)
+	if err != nil {
+		return nil, fmt.Errorf("%s (go): %w", funcName, err)
+	}
+	return board, nil
 }
 
 // GetCardDetails возвращает подробное содержание карточки
-func (d *BoardUsecase) GetCardDetails(ctx context.Context, userID int64, cardID int64) (details *models.CardDetails, err error) {
+func (uc *BoardUsecase) GetCardDetails(ctx context.Context, userID int64, cardID int64) (details *models.CardDetails, err error) {
 	funcName := "GetCardDetails"
-	_, _, err = d.boardRepository.GetMemberFromCard(ctx, userID, cardID)
+	_, _, err = uc.boardRepository.GetMemberFromCard(ctx, userID, cardID)
 	if err != nil {
 		return nil, fmt.Errorf("%s: %w", funcName, err)
 	}
 
-	assignedUsers, err := d.boardRepository.GetCardAssignedUsers(ctx, cardID)
+	return uc.GetCardDetailsUnauthorized(ctx, cardID)
+}
+
+func (uc *BoardUsecase) CreateNewTag(ctx context.Context, userID int64, boardID int64, data *models.TagRequest) (newTag *models.Tag, err error) {
+	funcName := "CreateNewTag"
+	perms, err := uc.boardRepository.GetMemberPermissions(ctx, boardID, userID, false)
 	if err != nil {
-		return nil, fmt.Errorf("%s (assigned): %w", funcName, err)
+		return nil, fmt.Errorf("%s (get permissions): %w", funcName, err)
 	}
 
-	attachments, err := d.boardRepository.GetCardAttachments(ctx, cardID)
-	if err != nil {
-		return nil, fmt.Errorf("%s (attachments): %w", funcName, err)
+	if perms.Role == "viewer" {
+		return nil, fmt.Errorf("%s (check): %w", funcName, errs.ErrNotPermitted)
 	}
 
-	checkList, err := d.boardRepository.GetCardCheckList(ctx, cardID)
+	newTag, err = uc.boardRepository.CreateNewTag(ctx, boardID, data)
 	if err != nil {
-		return nil, fmt.Errorf("%s (checklist): %w", funcName, err)
+		return nil, fmt.Errorf("%s: %w", funcName, err)
 	}
 
-	comments, err := d.boardRepository.GetCardComments(ctx, cardID)
+	return newTag, err
+}
+
+func (uc *BoardUsecase) UpdateTag(ctx context.Context, userID int64, tagID int64, data *models.TagRequest) (updatedTag *models.Tag, err error) {
+	funcName := "UpdateTag"
+	role, _, err := uc.boardRepository.GetMemberFromTag(ctx, userID, tagID)
 	if err != nil {
-		return nil, fmt.Errorf("%s (comments): %w", funcName, err)
+		return nil, fmt.Errorf("%s (get permissions): %w", funcName, err)
+	}
+	if role == "viewer" {
+		return nil, fmt.Errorf("%s (check): %w", funcName, errs.ErrNotPermitted)
 	}
 
-	//TODO убрать это позорище
-	card, err := d.boardRepository.UpdateCard(ctx, cardID, models.CardPatchRequest{})
+	updatedTag, err = uc.boardRepository.UpdateTag(ctx, tagID, data)
 	if err != nil {
-		return nil, fmt.Errorf("%s (card): %w", funcName, err)
+		return nil, fmt.Errorf("%s: %w", funcName, err)
 	}
 
-	return &models.CardDetails{
-		Attachments:   attachments,
-		CheckList:     checkList,
-		Comments:      comments,
-		AssignedUsers: assignedUsers,
-		Card:          card,
-	}, nil
+	return updatedTag, nil
+}
+
+func (uc *BoardUsecase) DeleteTag(ctx context.Context, userID int64, tagID int64) (err error) {
+	funcName := "DeleteTag"
+	role, _, err := uc.boardRepository.GetMemberFromTag(ctx, userID, tagID)
+	if err != nil {
+		return fmt.Errorf("%s (get permissions): %w", funcName, err)
+	}
+	if role == "viewer" {
+		return fmt.Errorf("%s (check): %w", funcName, errs.ErrNotPermitted)
+	}
+
+	err = uc.boardRepository.DeleteTag(ctx, tagID)
+	if err != nil {
+		return fmt.Errorf("%s: %w", funcName, err)
+	}
+
+	return nil
+}
+
+func (uc *BoardUsecase) AssignTagToCard(ctx context.Context, userID int64, cardID int64, tagID int64) (err error) {
+	funcName := "AssignTagToCard"
+	role, _, err := uc.boardRepository.GetMemberFromCard(ctx, userID, cardID)
+	if err != nil {
+		return fmt.Errorf("%s (get permissions): %w", funcName, err)
+	}
+	if role == "viewer" {
+		return fmt.Errorf("%s (check): %w", funcName, errs.ErrNotPermitted)
+	}
+
+	err = uc.boardRepository.AssignTagToCard(ctx, tagID, cardID)
+	if err != nil {
+		if errors.Is(err, errs.ErrAlreadyExists) {
+			return fmt.Errorf("%s: tag is already assigned: %w", funcName, err)
+		}
+		return fmt.Errorf("%s (assign query error): %w", funcName, err)
+	}
+
+	return nil
+}
+
+func (uc *BoardUsecase) DeassignTagFromCard(ctx context.Context, userID int64, tagID int64, cardID int64) (err error) {
+	funcName := "DeassignTagFromCard"
+	role, _, err := uc.boardRepository.GetMemberFromTag(ctx, userID, tagID)
+	if err != nil {
+		return fmt.Errorf("%s (get permissions): %w", funcName, err)
+	}
+	if role == "viewer" {
+		return fmt.Errorf("%s (check): %w", funcName, errs.ErrNotPermitted)
+	}
+
+	err = uc.boardRepository.DeassignTagFromCard(ctx, tagID, cardID)
+	if err != nil {
+		if errors.Is(err, errs.ErrNotFound) {
+			return fmt.Errorf("%s tag is not found: %w", funcName, err)
+		}
+		return fmt.Errorf("%s (deassign query error): %w", funcName, err)
+	}
+
+	return nil
 }

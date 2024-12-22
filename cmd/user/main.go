@@ -6,6 +6,7 @@ import (
 	"RPO_back/internal/pkg/middleware/csrf"
 	"RPO_back/internal/pkg/middleware/logging_middleware"
 	"RPO_back/internal/pkg/middleware/no_panic"
+	"RPO_back/internal/pkg/middleware/performance"
 	"RPO_back/internal/pkg/middleware/session"
 	UserDelivery "RPO_back/internal/pkg/user/delivery"
 	UserRepository "RPO_back/internal/pkg/user/repository"
@@ -13,7 +14,6 @@ import (
 	"RPO_back/internal/pkg/utils/logging"
 	"RPO_back/internal/pkg/utils/misc"
 	"net/http"
-	"time"
 
 	"context"
 	"fmt"
@@ -22,16 +22,13 @@ import (
 	AuthGRPC "RPO_back/internal/pkg/auth/delivery/grpc/gen"
 
 	"github.com/gorilla/mux"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 )
 
 func main() {
-	// Костыль
-	log.Info("Sleeping 10 seconds waiting Postgres to start...")
-	time.Sleep(10 * time.Second)
-
 	// Формирование конфига
 	err := config.LoadConfig()
 	if err != nil {
@@ -82,13 +79,29 @@ func main() {
 
 	// Применяем middleware
 	router.Use(no_panic.PanicMiddleware)
+	pm, err := performance.CreateHTTPPerformanceMiddleware("user")
+	if err != nil {
+		log.Fatal("create HTTP middleware: ", err)
+	}
+	router.Use(pm.Middleware)
 	router.Use(logging_middleware.LoggingMiddleware)
 	router.Use(cors.CorsMiddleware)
 	router.Use(csrf.CSRFMiddleware)
 	sm := session.CreateSessionMiddleware(authGRPC)
 	router.Use(sm.Middleware)
 
+	// Настраиваем обработку 404 и 405
+	router.NotFoundHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		log.Warn("no such handler: ", r.Method, " ", r.URL.Path)
+		http.Error(w, "user service: no such handler: "+r.URL.Path, http.StatusNotFound)
+	})
+	router.MethodNotAllowedHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		log.Warn("method not allowed: ", r.Method, " ", r.URL.Path)
+		http.Error(w, "user service: method not allowed: "+r.Method+" "+r.URL.Path, http.StatusMethodNotAllowed)
+	})
+
 	// Регистрируем обработчики
+	router.HandleFunc("/prometheus/metrics", promhttp.Handler().ServeHTTP)
 	router.HandleFunc("/auth/register", userDelivery.RegisterUser).Methods("POST", "OPTIONS")
 	router.HandleFunc("/auth/login", userDelivery.LoginUser).Methods("POST", "OPTIONS")
 	router.HandleFunc("/auth/logout", userDelivery.LogoutUser).Methods("POST", "OPTIONS")
@@ -97,10 +110,21 @@ func main() {
 	router.HandleFunc("/users/me", userDelivery.UpdateMyProfile).Methods("PUT", "OPTIONS")
 	router.HandleFunc("/users/me/avatar", userDelivery.SetMyAvatar).Methods("PUT", "OPTIONS")
 
-	// Запускаем сервер
-	addr := fmt.Sprintf(":%s", os.Getenv("SERVER_PORT"))
-	log.Infof("server started at http://0.0.0.0%s", addr)
-	if err := http.ListenAndServe(addr, router); err != nil {
-		log.Fatalf("error while starting server: %w", err)
+	// Регистрируем обработчик Prometheus
+	metricsRouter := mux.NewRouter()
+	metricsRouter.Handle("/prometheus/metrics", promhttp.Handler())
+
+	// Объявляем серверы
+	mainAddr := fmt.Sprintf(":%s", os.Getenv("SERVER_PORT"))
+	promAddr := ":8087"
+	mainServer := &http.Server{
+		Addr:    mainAddr,
+		Handler: router,
 	}
+	promServer := &http.Server{
+		Addr:    promAddr,
+		Handler: metricsRouter,
+	}
+
+	misc.StartServers(mainServer, promServer)
 }

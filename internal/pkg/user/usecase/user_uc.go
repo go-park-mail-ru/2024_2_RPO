@@ -8,7 +8,6 @@ import (
 	"RPO_back/internal/pkg/utils/uploads"
 	"context"
 	"fmt"
-	"time"
 )
 
 type UserUsecase struct {
@@ -30,15 +29,6 @@ func (uc *UserUsecase) GetMyProfile(ctx context.Context, userID int64) (profile 
 		return nil, fmt.Errorf("GetMyProfile: %w", err)
 	}
 
-	if profile.CsatPollDT.Second() < time.Now().Second() {
-		uc.userRepo.SetNextPollDT(ctx, userID)
-		poll, err := uc.userRepo.PickPollQuestions(ctx)
-		if err != nil {
-			return nil, fmt.Errorf("GetMyProfile: %w", err)
-		}
-		profile.PollQuestions = poll
-	}
-
 	return
 }
 
@@ -54,32 +44,25 @@ func (uc *UserUsecase) UpdateMyProfile(ctx context.Context, userID int64, data *
 
 // SetMyAvatar устанавливает пользователю аватарку
 func (uc *UserUsecase) SetMyAvatar(ctx context.Context, userID int64, file *models.UploadedFile) (updated *models.UserProfile, err error) {
-	fileNames, fileIDs, err := uc.userRepo.DeduplicateFile(ctx, file)
+	funcName := "SetMyAvatar"
+	fileID, err := uploads.UsecaseUploadFile(ctx, file, uc.userRepo)
 	if err != nil {
-		return nil, fmt.Errorf("SetMyAvatar: %w", err)
+		return nil, fmt.Errorf("%s (upload file): %w", funcName, err)
 	}
 
-	existingID, err := uploads.CompareFiles(fileNames, fileIDs, file)
+	err = uc.userRepo.SetUserAvatar(ctx, userID, fileID)
 	if err != nil {
-		return nil, fmt.Errorf("SetMyAvatar: %w", err)
+		return nil, fmt.Errorf("%s: %w", funcName, err)
 	}
-
-	if existingID != nil {
-		file.FileID = existingID
-	} else {
-		uc.userRepo.RegisterFile(ctx, file)
-		uploads.SaveFile(file)
-	}
-
-	uploads.SaveFile(file)
 
 	return uc.userRepo.GetUserProfile(ctx, userID)
 }
 
-func (uc *UserUsecase) ChangePassword(ctx context.Context, userID int64, oldPassword string, newPassword string) error {
+func (uc *UserUsecase) ChangePassword(ctx context.Context, sessionID string, oldPassword string, newPassword string) error {
 	responce, err := uc.authClient.ChangePassword(ctx, &authGRPC.ChangePasswordRequest{
 		PasswordOld: oldPassword,
 		PasswordNew: newPassword,
+		SessionID:   sessionID,
 	})
 	if err != nil {
 		return fmt.Errorf("ChangePassword: %w", err)
@@ -140,55 +123,47 @@ func (uc *UserUsecase) LogoutUser(ctx context.Context, sessionID string) error {
 }
 
 func (uc *UserUsecase) RegisterUser(ctx context.Context, user *models.UserRegisterRequest) (sessionID string, err error) {
-	newUser, err := uc.userRepo.CreateUser(ctx, user)
+	funcName := "RegisterUser"
+
+	err = uc.userRepo.CheckUniqueCredentials(ctx, user.Name, user.Email)
 	if err != nil {
-		return "", fmt.Errorf("RegisterUser (CreateUser): %w", err)
+		return "", fmt.Errorf("%s (uniq): %w", funcName, err)
 	}
 
-	responce, err := uc.authClient.CreateSession(ctx, &authGRPC.UserDataRequest{
+	newUser, err := uc.userRepo.CreateUser(ctx, user)
+	if err != nil {
+		return "", fmt.Errorf("%s (create): %w", funcName, err)
+	}
+
+	response, err := uc.authClient.CreateSession(ctx, &authGRPC.UserDataRequest{
 		UserID:   int64(newUser.ID),
 		Password: user.Password,
 	})
 	if err != nil {
-		return "", fmt.Errorf("RegisterUser (GRPC request): %w", err)
+		return "", fmt.Errorf("%s (session): %w", funcName, err)
 	}
-
-	errGRPC := responce.GetError()
+	errGRPC := response.GetError()
 	if errGRPC == authGRPC.Error_INVALID_CREDENTIALS {
-		return "", fmt.Errorf("CreateSession (GRPC response): %w", errs.ErrWrongCredentials)
+		return "", fmt.Errorf("%s (GRPC response 1): %w", funcName, errs.ErrWrongCredentials)
 	} else if errGRPC == authGRPC.Error_INTERNAL_SERVER_ERROR {
-		return "", fmt.Errorf("CreateSession (GRPC response): internal error at auth service")
+		return "", fmt.Errorf("%s (GRPC response 1): internal error at auth service", funcName)
 	}
+	sessionID = response.GetSessionID()
 
-	sessionID = responce.GetSessionID()
+	response2, err := uc.authClient.ChangePassword(ctx, &authGRPC.ChangePasswordRequest{
+		PasswordOld: "",
+		PasswordNew: user.Password,
+		SessionID:   sessionID,
+	})
+	if err != nil {
+		return "", fmt.Errorf("%s (password): %w", funcName, err)
+	}
+	errGRPC = response2.GetError()
+	if errGRPC == authGRPC.Error_INVALID_CREDENTIALS {
+		return "", fmt.Errorf("%s (GRPC response 2): %w", funcName, errs.ErrWrongCredentials)
+	} else if errGRPC == authGRPC.Error_INTERNAL_SERVER_ERROR {
+		return "", fmt.Errorf("%s (GRPC response 2): internal error at auth service", funcName)
+	}
 
 	return sessionID, nil
-}
-
-func (uc *UserUsecase) SubmitPoll(ctx context.Context, userID int64, pollSubmit *models.PollSubmit) error {
-	err := uc.userRepo.SubmitPoll(ctx, userID, pollSubmit)
-	if err != nil {
-		return fmt.Errorf("SubmitPoll: %w", err)
-	}
-
-	return nil
-}
-
-func (uc *UserUsecase) GetPollResults(ctx context.Context) (pollResults *models.PollResults, err error) {
-	pollRating, err := uc.userRepo.GetRatingResults(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("GetPollResults (GetRatingResults): %w", err)
-	}
-
-	pollText, err := uc.userRepo.GetTextResults(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("GetPollResults (GetTextResults): %w", err)
-	}
-
-	pollResults = &models.PollResults{
-		RatingResults: pollRating,
-		TextResults:   pollText,
-	}
-
-	return pollResults, nil
 }

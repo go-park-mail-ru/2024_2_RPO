@@ -1,5 +1,8 @@
 #!/bin/bash
 
+echo "Waiting 1 second for doxxr to mnt those volumz"
+sleep 1
+
 chmod 777 /pg_logs
 chmod 777 /tmp/postgres/postgres.sock/
 chown postgres /pg_data/

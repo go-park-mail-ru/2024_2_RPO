@@ -1,0 +1,79 @@
+name: Production Deployment
+on:
+  push:
+    branches:
+        - staging
+  pull_request:
+    branches:
+        - staging
+jobs:
+  linter:
+    name: linters
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout staging
+        uses: actions/checkout@v4
+
+      - name: install Go
+        uses: actions/setup-go@v5
+        with:
+            go-version: '1.23'
+
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v4
+        with:
+            version: v1.62.2
+
+  tests:
+    runs-on: ubuntu-latest
+    needs: linter
+    steps:
+      - name: checkout staging
+        uses: actions/checkout@v4
+
+      - name: install Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.23'
+
+      - name: Test
+        run: go test -v ./...
+
+  deploy:
+    name: deploy
+    needs: tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: pull code
+        uses: appleboy/ssh-action@master
+        with:
+          host: kanban-pumpkin.ru
+          username: ubuntu
+          key: ${{ secrets.PRIVATE_KEY }}
+          script: cd /home/ubuntu/back && git pull
+
+      - name: build golang
+        uses: appleboy/ssh-action@master
+        with:
+          host: kanban-pumpkin.ru
+          username: ubuntu
+          key: ${{ secrets.PRIVATE_KEY }}
+          script: cd /home/ubuntu/back && make build_all -j
+
+      - name: build containers
+        uses: appleboy/ssh-action@master
+        with:
+          timeout: 200m
+          command_timeout: 200m
+          host: kanban-pumpkin.ru
+          username: ubuntu
+          key: ${{ secrets.PRIVATE_KEY }}
+          script: cd /home/ubuntu/back && sudo docker compose build
+
+      - name: restart service
+        uses: appleboy/ssh-action@master
+        with:
+          host: kanban-pumpkin.ru
+          username: ubuntu
+          key: ${{ secrets.PRIVATE_KEY }}
+          script: cd /home/ubuntu/back && sudo docker compose up -d

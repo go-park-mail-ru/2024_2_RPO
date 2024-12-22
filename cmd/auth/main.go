@@ -7,12 +7,13 @@ import (
 	AuthUsecase "RPO_back/internal/pkg/auth/usecase"
 	"RPO_back/internal/pkg/config"
 	"RPO_back/internal/pkg/middleware/logging_middleware"
+	"RPO_back/internal/pkg/middleware/performance"
 	"RPO_back/internal/pkg/utils/logging"
 	"RPO_back/internal/pkg/utils/misc"
 	"net"
+	"net/http"
 	"os/signal"
 	"syscall"
-	"time"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -21,14 +22,12 @@ import (
 	"os"
 
 	"github.com/go-redis/redis/v8"
+	"github.com/gorilla/mux"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	log "github.com/sirupsen/logrus"
 )
 
 func main() {
-	// Костыль
-	log.Info("Sleeping 10 seconds waiting Postgres to start...")
-	time.Sleep(10 * time.Second)
-
 	// Формирование конфига
 	err := config.LoadConfig()
 	if err != nil {
@@ -50,8 +49,6 @@ func main() {
 	postgresDB, err := misc.ConnectToPgx(config.CurrentConfig.Auth.PostgresPoolSize)
 	if err != nil {
 		log.Error("error connecting to PostgreSQL: ", err)
-		log.Error("Sleeping 100 seconds (maybe it will helpful if you need to do migrations)")
-		time.Sleep(100 * time.Second)
 		return
 	}
 	defer postgresDB.Close()
@@ -75,6 +72,11 @@ func main() {
 		return
 	}
 
+	grpcMetricsMiddleware, err := performance.CreateGRPCPerformanceMiddleware("auth")
+	if err != nil {
+		log.Error("error creating gRPC performance middleware: ", err)
+	}
+
 	// Auth
 	authRepository := AuthRepository.CreateAuthRepository(postgresDB, redisDB)
 	authUsecase := AuthUsecase.CreateAuthUsecase(authRepository)
@@ -88,26 +90,34 @@ func main() {
 
 	grpcServer := grpc.NewServer(
 		grpc.Creds(insecure.NewCredentials()),
-		grpc.UnaryInterceptor(LogMiddleware.InterceptorLogger),
+		grpc.ChainUnaryInterceptor(grpcMetricsMiddleware.GRPCMetricsInterceptor, LogMiddleware.InterceptorLogger),
 	)
-
 	gen.RegisterAuthServer(grpcServer, authDelivery)
 
-	listener, err := net.Listen("tcp4", ":"+config.CurrentConfig.ServerPort)
-	if err != nil {
-		log.Fatalf("failed to listen on port %s: %v", config.CurrentConfig.ServerPort, err)
-	}
-	log.Infof("gRPC server is listening on port %s", config.CurrentConfig.ServerPort)
+	router := mux.NewRouter()
+	router.Use(logging_middleware.LoggingMiddleware)
+	router.HandleFunc("/prometheus/metrics", promhttp.Handler().ServeHTTP)
+
+	go func() {
+		if err := http.ListenAndServe(":8087", router); err != nil {
+			log.Fatal(err)
+		}
+	}()
+
+	go func() {
+		listener, err := net.Listen("tcp4", ":"+config.CurrentConfig.ServerPort)
+		if err != nil {
+			log.Fatalf("failed to listen on port %s: %v", config.CurrentConfig.ServerPort, err)
+		}
+		if err := grpcServer.Serve(listener); err != nil {
+			log.Fatalf("failed to serve gRPC server: %v", err)
+		}
+		log.Infof("gRPC server is listening on port %s", config.CurrentConfig.ServerPort)
+	}()
 
 	stop := make(chan os.Signal, 1)
 	signal.Notify(stop, os.Interrupt, syscall.SIGTERM, syscall.SIGINT)
-	go func() {
-		<-stop
-		log.Info("Shutting down gRPC server...")
-		grpcServer.GracefulStop()
-	}()
 
-	if err := grpcServer.Serve(listener); err != nil {
-		log.Fatalf("failed to serve gRPC server: %v", err)
-	}
+	<-stop
+	os.Exit(0)
 }

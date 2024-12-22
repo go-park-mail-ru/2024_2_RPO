@@ -1,5 +1,5 @@
 services:
-  auth:
+  auth_service:
     container_name: auth_service
     build:
       context: .
@@ -20,7 +20,7 @@ services:
       - pumpkin-postgres-socket:/tmp/postgres/postgres.sock
       - pumpkin-all-logs:/pumpkin_logs
 
-  board:
+  board_service:
     container_name: board_service
     build:
       context: .
@@ -33,11 +33,11 @@ services:
         condition: service_started
       redis:
         condition: service_started
-      auth:
+      auth_service:
         condition: service_started
     restart: always
     ports:
-      - "127.0.0.1:8802:8888"
+      - "0.0.0.0:8802:8888"
     networks:
       - Pumpkin-network
     volumes:
@@ -45,7 +45,7 @@ services:
       - pumpkin-postgres-socket:/tmp/postgres/postgres.sock
       - pumpkin-all-logs:/pumpkin_logs
 
-  user:
+  user_service:
     container_name: user_service
     build:
       context: .
@@ -58,11 +58,11 @@ services:
         condition: service_started
       redis:
         condition: service_started
-      auth:
+      auth_service:
         condition: service_started
     restart: always
     ports:
-      - "127.0.0.1:8803:8888"
+      - "0.0.0.0:8803:8888"
     networks:
       - Pumpkin-network
     volumes:
@@ -70,7 +70,7 @@ services:
       - pumpkin-postgres-socket:/tmp/postgres/postgres.sock
       - pumpkin-all-logs:/pumpkin_logs
 
-  poll:
+  poll_service:
     container_name: poll_service
     build:
       context: .
@@ -83,11 +83,11 @@ services:
         condition: service_started
       redis:
         condition: service_started
-      auth:
+      auth_service:
         condition: service_started
     restart: always
     ports:
-      - "127.0.0.1:8804:8888"
+      - "0.0.0.0:8804:8888"
     networks:
       - Pumpkin-network
     volumes:
@@ -104,7 +104,7 @@ services:
     container_name: postgres
     image: postgres:bookworm
     ports:
-      - "0.0.0.0:5432:5432"
+      - "0.0.0.0:8032:5432"
     networks:
       - Pumpkin-network
     volumes:
@@ -131,15 +131,75 @@ services:
   grafana:
     container_name: grafana
     image: grafana/grafana
+    ports:
+      - 0.0.0.0:8010:3000
+    env_file:
+      - .env
+    networks:
+      - Pumpkin-network
 
   prometheus:
-    image: prom/prometheus:latest
     container_name: prometheus
+    image: prom/prometheus:latest
+    env_file:
+      - .env
+    networks:
+      - Pumpkin-network
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
 
   node_exporter:
     depends_on:
       - prometheus
     image: quay.io/prometheus/node-exporter:latest
+    container_name: node_exporter
+    command:
+      - "--path.procfs=/host/proc"
+      - "--path.rootfs=/rootfs"
+      - "--path.sysfs=/host/sys"
+      - "--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)"
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    hostname: node_exporter
+    ports:
+      - "8011:9100"
+    networks:
+      - Pumpkin-network
+
+  elastic:
+    image: bitnami/elasticsearch
+    container_name: elastic
+    networks:
+      - Pumpkin-network
+    ports:
+      - "9200:9200"
+
+  nginx:
+    image: nginx:alpine
+    depends_on:
+      user_service:
+        condition: service_started
+      board_service:
+        condition: service_started
+      poll_service:
+        condition: service_started
+    container_name: nginx_back
+    volumes:
+      - ./certs/cert.crt:/certs/cert.crt:ro
+      - ./certs/cert.pem:/certs/cert.pem:ro
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+      - pumpkin-user-uploads:/uploads/:ro
+    ports:
+      - "0.0.0.0:80:80"
+      - "0.0.0.0:443:443"
+    networks:
+      - Pumpkin-network
+    env_file:
+      - .env
 
 networks:
   Pumpkin-network:

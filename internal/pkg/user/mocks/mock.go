@@ -36,17 +36,17 @@ func (m *MockUserUsecase) EXPECT() *MockUserUsecaseMockRecorder {
 }
 
 // ChangePassword mocks base method.
-func (m *MockUserUsecase) ChangePassword(ctx context.Context, userID int64, oldPassword, newPassword string) error {
+func (m *MockUserUsecase) ChangePassword(ctx context.Context, sessionID, oldPassword, newPassword string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ChangePassword", ctx, userID, oldPassword, newPassword)
+	ret := m.ctrl.Call(m, "ChangePassword", ctx, sessionID, oldPassword, newPassword)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // ChangePassword indicates an expected call of ChangePassword.
-func (mr *MockUserUsecaseMockRecorder) ChangePassword(ctx, userID, oldPassword, newPassword interface{}) *gomock.Call {
+func (mr *MockUserUsecaseMockRecorder) ChangePassword(ctx, sessionID, oldPassword, newPassword interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ChangePassword", reflect.TypeOf((*MockUserUsecase)(nil).ChangePassword), ctx, userID, oldPassword, newPassword)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ChangePassword", reflect.TypeOf((*MockUserUsecase)(nil).ChangePassword), ctx, sessionID, oldPassword, newPassword)
 }
 
 // GetMyProfile mocks base method.
@@ -237,11 +237,13 @@ func (mr *MockUserRepoMockRecorder) GetUserProfile(ctx, userID interface{}) *gom
 }
 
 // RegisterFile mocks base method.
-func (m *MockUserRepo) RegisterFile(ctx context.Context, file *models.UploadedFile) error {
+func (m *MockUserRepo) RegisterFile(ctx context.Context, file *models.UploadedFile) (int64, string, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "RegisterFile", ctx, file)
-	ret0, _ := ret[0].(error)
-	return ret0
+	ret0, _ := ret[0].(int64)
+	ret1, _ := ret[1].(string)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
 }
 
 // RegisterFile indicates an expected call of RegisterFile.

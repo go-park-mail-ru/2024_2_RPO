@@ -10,6 +10,7 @@ import (
 	"RPO_back/internal/pkg/middleware/csrf"
 	"RPO_back/internal/pkg/middleware/logging_middleware"
 	"RPO_back/internal/pkg/middleware/no_panic"
+	"RPO_back/internal/pkg/middleware/performance"
 	"RPO_back/internal/pkg/middleware/session"
 	"RPO_back/internal/pkg/utils/logging"
 	"RPO_back/internal/pkg/utils/misc"
@@ -22,16 +23,14 @@ import (
 	"os"
 
 	"github.com/gorilla/mux"
+	"github.com/olivere/elastic/v7"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 )
 
 func main() {
-	// Костыль
-	log.Info("Sleeping 10 seconds waiting Postgres to start...")
-	time.Sleep(10 * time.Second)
-
 	// Формирование конфига
 	err := config.LoadConfig()
 	if err != nil {
@@ -57,10 +56,16 @@ func main() {
 	}
 	defer postgresDB.Close()
 
+	elasticClient, err := elastic.NewClient(elastic.SetURL("http://elastic:9200"), elastic.SetSniff(false))
+	if err != nil {
+		log.Error("error connecting to elasticsearch: " + err.Error())
+		return
+	}
+
 	// Подключение к GRPC сервису авторизаци
 	dialer := func(ctx context.Context, addr string) (net.Conn, error) {
 		d := net.Dialer{
-			Timeout: 5 * time.Second, // Установите подходящее время ожидания
+			Timeout: 5 * time.Second,
 		}
 		return d.DialContext(ctx, "tcp4", addr) // Используем "tcp4" для IPv4
 	}
@@ -80,7 +85,8 @@ func main() {
 
 	//Board
 	boardRepository := BoardRepository.CreateBoardRepository(postgresDB)
-	boardUsecase := BoardUsecase.CreateBoardUsecase(boardRepository)
+	boardElasticRepository := BoardRepository.CreateBoardElasticRepository(elasticClient)
+	boardUsecase := BoardUsecase.CreateBoardUsecase(boardRepository, boardElasticRepository)
 	boardDelivery := BoardDelivery.CreateBoardDelivery(boardUsecase)
 
 	// Создаём новый маршрутизатор
@@ -88,20 +94,35 @@ func main() {
 
 	// Применяем middleware
 	router.Use(no_panic.PanicMiddleware)
+	pm, err := performance.CreateHTTPPerformanceMiddleware("board")
+	if err != nil {
+		log.Fatal("create HTTP middleware: ", err)
+	}
+	router.Use(pm.Middleware)
 	router.Use(logging_middleware.LoggingMiddleware)
 	router.Use(cors.CorsMiddleware)
 	router.Use(csrf.CSRFMiddleware)
 	sm := session.CreateSessionMiddleware(authGRPC)
 	router.Use(sm.Middleware)
 
+	// Настраиваем обработку 404 и 405
+	router.NotFoundHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		log.Warn("no such handler: ", r.Method, " ", r.URL.Path)
+		http.Error(w, "board service: no such handler: "+r.URL.Path, http.StatusNotFound)
+	})
+	router.MethodNotAllowedHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		log.Warn("method not allowed: ", r.Method, " ", r.URL.Path)
+		http.Error(w, "board service: method not allowed: "+r.Method+" "+r.URL.Path, http.StatusMethodNotAllowed)
+	})
+
 	// Регистрируем обработчики
+	router.HandleFunc("/prometheus/metrics", promhttp.Handler().ServeHTTP)
 	router.HandleFunc("/boards", boardDelivery.CreateNewBoard).Methods("POST", "OPTIONS")
 	router.HandleFunc("/boards/{boardID}", boardDelivery.DeleteBoard).Methods("DELETE", "OPTIONS")
 	router.HandleFunc("/boards/{boardID}", boardDelivery.UpdateBoard).Methods("PUT", "OPTIONS")
 	router.HandleFunc("/boards/{boardID}/backgroundImage", boardDelivery.SetBoardBackground).Methods("PUT", "OPTIONS")
 	router.HandleFunc("/boards/my", boardDelivery.GetMyBoards).Methods("GET", "OPTIONS")
 	router.HandleFunc("/userPermissions/{boardID}", boardDelivery.GetMembersPermissions).Methods("GET", "OPTIONS")
-	router.HandleFunc("/userPermissions/{boardID}", boardDelivery.AddMember).Methods("POST", "OPTIONS")
 	router.HandleFunc("/userPermissions/{boardID}/{userID}", boardDelivery.UpdateMemberRole).Methods("PUT", "OPTIONS")
 	router.HandleFunc("/userPermissions/{boardID}/{userID}", boardDelivery.RemoveMember).Methods("DELETE", "OPTIONS")
 	router.HandleFunc("/cards/{boardID}/allContent", boardDelivery.GetBoardContent).Methods("GET", "OPTIONS")
@@ -112,7 +133,7 @@ func main() {
 	router.HandleFunc("/columns/{boardID}", boardDelivery.CreateColumn).Methods("POST", "OPTIONS")
 	router.HandleFunc("/columns/{columnID}", boardDelivery.UpdateColumn).Methods("PUT", "OPTIONS")
 	router.HandleFunc("/columns/{columnID}", boardDelivery.DeleteColumn).Methods("DELETE", "OPTIONS")
-	router.HandleFunc("/assignedUser/{cardID}/{userID}", boardDelivery.AssignUser).Methods("PUT", "OPTIONS")
+	router.HandleFunc("/assignedUser/{cardID}", boardDelivery.AssignUser).Methods("PUT", "OPTIONS")
 	router.HandleFunc("/assignedUser/{cardID}/{userID}", boardDelivery.DeassignUser).Methods("DELETE", "OPTIONS")
 	router.HandleFunc("/comments/{cardID}", boardDelivery.AddComment).Methods("POST", "OPTIONS")
 	router.HandleFunc("/comments/{commentID}", boardDelivery.UpdateComment).Methods("PUT", "OPTIONS")
@@ -131,11 +152,28 @@ func main() {
 	router.HandleFunc("/inviteLink/{boardID}", boardDelivery.DeleteInviteLink).Methods("DELETE", "OPTIONS")
 	router.HandleFunc("/joinBoard/{inviteUUID}", boardDelivery.FetchInvite).Methods("GET", "OPTIONS")
 	router.HandleFunc("/joinBoard/{inviteUUID}", boardDelivery.AcceptInvite).Methods("POST", "OPTIONS")
+	router.HandleFunc("/search", boardDelivery.SearchCards).Methods("POST", "OPTIONS")
+	router.HandleFunc("/tags/{boardID}", boardDelivery.CreateNewTag).Methods("POST", "OPTIONS")
+	router.HandleFunc("/tags/{tagID}", boardDelivery.UpdateTag).Methods("PUT", "OPTIONS")
+	router.HandleFunc("/tags/{tagID}", boardDelivery.DeleteTag).Methods("DELETE", "OPTIONS")
+	router.HandleFunc("/tags/{cardID}/{tagID}", boardDelivery.AssignTagToCard).Methods("PUT", "OPTIONS")
+	router.HandleFunc("/tags/{cardID}/{tagID}", boardDelivery.DeassignTagFromCard).Methods("DELETE", "OPTIONS")
 
-	// Запускаем сервер
-	addr := fmt.Sprintf(":%s", os.Getenv("SERVER_PORT"))
-	log.Infof("server started at http://0.0.0.0%s", addr)
-	if err := http.ListenAndServe(addr, router); err != nil {
-		log.Fatalf("error while starting server: %w", err)
+	// Регистрируем обработчик Prometheus
+	metricsRouter := mux.NewRouter()
+	metricsRouter.Handle("/prometheus/metrics", promhttp.Handler())
+
+	// Объявляем серверы
+	mainAddr := fmt.Sprintf(":%s", os.Getenv("SERVER_PORT"))
+	promAddr := ":8087"
+	mainServer := &http.Server{
+		Addr:    mainAddr,
+		Handler: router,
 	}
+	promServer := &http.Server{
+		Addr:    promAddr,
+		Handler: metricsRouter,
+	}
+
+	misc.StartServers(mainServer, promServer)
 }
